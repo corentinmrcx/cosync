@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votre formulaire d'inscription – FC Soudron</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: system-ui, -apple-system, sans-serif; color: #374151;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 0;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+
+                {# Header #}
+                <tr>
+                    <td style="background-color: #ff3131; padding: 24px 32px;">
+                        <p style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #ffffff; letter-spacing: -0.025em;">FC Soudron</p>
+                        <p style="margin: 4px 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.75);">Formulaire d'inscription {{ 'now'|date('Y') }}-{{ ('now'|date('Y') + 1) }}</p>
+                    </td>
+                </tr>
+
+                {# Body #}
+                <tr>
+                    <td style="padding: 32px;">
+                        <p style="margin: 0 0 16px; font-size: 1rem; color: #1f1f1f;">Bonjour <strong>{{ licencie.nomPrenom }}</strong>,</p>
+
+                        <p style="margin: 0 0 16px; font-size: 0.9375rem; line-height: 1.6;">
+                            Le FC Soudron vous invite à compléter votre dossier d'inscription pour la saison en cours.
+                            Ce formulaire vous permettra de renseigner vos tailles d'équipement, vos autorisations, et de signer le règlement intérieur.
+                        </p>
+
+                        <p style="margin: 0 0 28px; font-size: 0.9375rem; line-height: 1.6;">
+                            Une fois le formulaire complété, votre inscription sera enregistrée. Il ne restera plus qu'à régler la cotisation selon le mode de paiement choisi.
+                        </p>
+
+                        {# CTA button #}
+                        <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto 28px;">
+                            <tr>
+                                <td style="border-radius: 6px; background-color: #ff3131;">
+                                    <a href="{{ url }}"
+                                       target="_blank"
+                                       style="display: inline-block; padding: 14px 28px; font-size: 0.9375rem; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 6px;">
+                                        Compléter mon formulaire →
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin: 0 0 8px; font-size: 0.8125rem; color: #6b7280;">
+                            Ce lien est valable 30 jours. Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :
+                        </p>
+                        <p style="margin: 0 0 28px; font-size: 0.8125rem; word-break: break-all;">
+                            <a href="{{ url }}" style="color: #3b82f6;">{{ url }}</a>
+                        </p>
+
+                        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 24px;">
+
+                        <p style="margin: 0; font-size: 0.8125rem; color: #9ca3af; line-height: 1.5;">
+                            Vous recevez cet email car vous êtes licencié(e) au FC Soudron.<br>
+                            Pour toute question : contactez le club directement.
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

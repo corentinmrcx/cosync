@@ -7,6 +7,7 @@ use App\Repository\CategoryRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\SeasonRepository;
 use App\Repository\TeamRepository;
+use App\Service\Mail\InscriptionLinkService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -71,5 +72,33 @@ class LicencieController extends AbstractController
         return $this->render('admin/licencies/show.html.twig', [
             'licencie' => $licencie,
         ]);
+    }
+
+    #[Route('/{uuid}/send-link', name: 'send_link', methods: ['POST'])]
+    public function sendLink(string $uuid, LicencieRepository $licencieRepo, InscriptionLinkService $inscriptionLinkService, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('send_link_' . $uuid, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+
+        if ($licencie === null) {
+            throw $this->createNotFoundException('Licencié introuvable.');
+        }
+
+        if ($licencie->getEmail() === null) {
+            $this->addFlash('error', 'Ce licencié n\'a pas d\'adresse email renseignée.');
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+        }
+
+        try {
+            $inscriptionLinkService->send($licencie);
+            $this->addFlash('success', 'Lien d\'inscription envoyé à ' . $licencie->getEmail() . '.');
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Erreur lors de l\'envoi : ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
     }
 }
