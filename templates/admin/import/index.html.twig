@@ -1,0 +1,17 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync - Import licenciés{% endblock %}
+
+{% block content %}
+<h1>Import licenciés FootClubs</h1>
+
+<form method="post" action="{{ path('admin_import_process') }}" enctype="multipart/form-data">
+    <div>
+        <label for="xlsx">Fichier XLSX FootClubs</label>
+        <input type="file" id="xlsx" name="xlsx" accept=".xlsx" required>
+    </div>
+    <button type="submit">Importer</button>
+</form>
+
+<p>Colonnes attendues dans le fichier : N° licence, Nom, Prénom, Date de naissance, Email, Téléphone.</p>
+{% endblock %}

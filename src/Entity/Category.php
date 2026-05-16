@@ -24,11 +24,11 @@ class Category
     #[ORM\Column]
     private bool $isEcoleFoot;
 
-    #[ORM\Column]
-    private int $minYear;
+    #[ORM\Column(nullable: true)]
+    private ?int $minYear = null;
 
-    #[ORM\Column]
-    private int $maxYear;
+    #[ORM\Column(nullable: true)]
+    private ?int $maxYear = null;
 
     public function getId(): int
     {
@@ -68,23 +68,23 @@ class Category
         return $this;
     }
 
-    public function getMinYear(): int
+    public function getMinYear(): ?int
     {
         return $this->minYear;
     }
 
-    public function setMinYear(int $minYear): static
+    public function setMinYear(?int $minYear): static
     {
         $this->minYear = $minYear;
         return $this;
     }
 
-    public function getMaxYear(): int
+    public function getMaxYear(): ?int
     {
         return $this->maxYear;
     }
 
-    public function setMaxYear(int $maxYear): static
+    public function setMaxYear(?int $maxYear): static
     {
         $this->maxYear = $maxYear;
         return $this;

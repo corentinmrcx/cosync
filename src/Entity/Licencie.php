@@ -14,9 +14,9 @@ class Licencie
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $uuid;
 
-    /** Clé d'upsert à l'import — numéro de licence FFF */
-    #[ORM\Column(length: 50, unique: true)]
-    private string $numLicence;
+    /** Absent de l'export FootClubs — nullable */
+    #[ORM\Column(length: 50, unique: true, nullable: true)]
+    private ?string $numLicence = null;
 
     #[ORM\Column(length: 100)]
     private string $nom;
@@ -27,8 +27,9 @@ class Licencie
     #[ORM\Column(type: 'date_immutable')]
     private \DateTimeImmutable $dateNaissance;
 
-    #[ORM\Column(length: 180)]
-    private string $email;
+    /** Null si non encore renseigné par l'admin — requis pour envoyer le lien */
+    #[ORM\Column(length: 180, nullable: true)]
+    private ?string $email = null;
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $telephone = null;
@@ -64,12 +65,12 @@ class Licencie
         return $this->uuid;
     }
 
-    public function getNumLicence(): string
+    public function getNumLicence(): ?string
     {
         return $this->numLicence;
     }
 
-    public function setNumLicence(string $numLicence): static
+    public function setNumLicence(?string $numLicence): static
     {
         $this->numLicence = $numLicence;
         return $this;
@@ -113,12 +114,12 @@ class Licencie
         return $this;
     }
 
-    public function getEmail(): string
+    public function getEmail(): ?string
     {
         return $this->email;
     }
 
-    public function setEmail(string $email): static
+    public function setEmail(?string $email): static
     {
         $this->email = $email;
         return $this;

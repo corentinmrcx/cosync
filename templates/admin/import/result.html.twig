@@ -1,0 +1,22 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync - Résultat import{% endblock %}
+
+{% block content %}
+<h1>Résultat de l'import</h1>
+
+<p>✅ Créés : {{ result.created }}</p>
+<p>🔄 Mis à jour : {{ result.updated }}</p>
+<p>❌ Erreurs : {{ result.errors|length }}</p>
+
+{% if result.errors %}
+    <h2>Erreurs</h2>
+    <ul>
+        {% for error in result.errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<a href="{{ path('admin_import_index') }}">Nouvel import</a>
+{% endblock %}

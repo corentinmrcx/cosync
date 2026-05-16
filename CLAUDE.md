@@ -18,6 +18,8 @@ Ce n'est **pas** un remplacement de FootClubs (outil fédéral FFF). C'est un **
 - Donner à l'admin un tableau de bord clair : statut formulaire + statut paiement de chaque licencié
 - Permettre à l'admin de confirmer manuellement les paiements reçus
 - Gérer le stock d'équipements et les dotations par joueur
+- Gérer les saisons (création, tarifs, activation) depuis l'interface admin
+- Gérer le référentiel catégories (édition des codes/labels si la FFF les modifie)
 
 ### Ce que l'outil ne fait PAS
 - Ne recrée pas FootClubs (pas de gestion de licences FFF)
@@ -575,3 +577,28 @@ DATABASE_URL=
 9. **Confirmation paiement** : modal admin + création `Transaction`
 10. **Fiche licencié** : vue détail complète
 11. **Gestion stock** : `StockItem`, `StockMovement`, aide à la commande
+12. **Gestion saisons** : création/activation depuis l'admin (label, tarifs jeunes/seniors)
+13. **Gestion catégories** : édition admin des codes et labels (si la FFF en modifie)
+
+---
+
+## 12. Notes techniques importantes
+
+### Import XLSX FootClubs
+- Format réel : 5 colonnes — `Type licence`, `Nom, prénom`, `Né(e) le`, `Sous catégorie`, `Validité Certif Médic N+1`
+- Seules les lignes `Type licence = Libre` sont importées
+- `Nom, prénom` est **une seule colonne** : split sur le premier espace (avant = NOM, après = Prénom)
+- Clé d'upsert : `nom + prenom + date_naissance` (pas de numéro de licence dans l'export)
+- Catégorie lue depuis `Sous catégorie`, jamais calculée depuis la date de naissance
+- Format date : `JJ/MM/AAAA`
+- L'email n'est **pas** dans l'export FootClubs — il est saisi manuellement par l'admin
+
+### Référentiel catégories (`app:seed-referential`)
+- À lancer **une seule fois** au setup pour pré-remplir la table `category`
+- Les codes FFF (U6, U7…SENIOR, variantes F) sont stables entre les saisons
+- Si la FFF crée de nouveaux codes, les ajouter via l'interface admin (section 13)
+
+### Gestion des saisons
+- Une seule saison `active = true` à la fois (contrainte métier)
+- Création via l'interface admin : label (ex: `2026-2027`), tarifs (`base_costs`)
+- Changer de saison = désactiver l'ancienne + activer la nouvelle
