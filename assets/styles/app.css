@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    /* — Identité club — */
+    --color-primary:       #ff3131;
+    --color-primary-dark:  #cc0000;
+    --color-primary-light: #ffe5e5;
+
+    /* — Textes — */
+    --color-text-base:     #1f1f1f;
+    --color-text-body:     #374151;
+    --color-text-muted:    #6b7280;
+    --color-text-disabled: #9ca3af;
+    --color-text-inverse:  #ffffff;
+
+    /* — Fonds — */
+    --color-bg-page:       #ffffff;
+    --color-bg-subtle:     #f9fafb;
+    --color-bg-muted:      #f3f4f6;
+
+    /* — Bordures — */
+    --color-border:        #e5e7eb;
+    --color-border-strong: #d1d5db;
+
+    /* — Statuts licenciés — */
+    --color-status-sent:         #3b82f6;
+    --color-status-sent-bg:      #eff6ff;
+    --color-status-completed:    #f59e0b;
+    --color-status-completed-bg: #fffbeb;
+    --color-status-validated:    #22c55e;
+    --color-status-validated-bg: #f0fdf4;
+
+    /* — Feedback — */
+    --color-success:    #22c55e;
+    --color-success-bg: #f0fdf4;
+    --color-warning:    #f59e0b;
+    --color-warning-bg: #fffbeb;
+    --color-danger:     #ef4444;
+    --color-danger-bg:  #fef2f2;
+    --color-info:       #3b82f6;
+    --color-info-bg:    #eff6ff;
+
+    /* — Typographie — */
+    --font-sans:      'Inter', system-ui, -apple-system, sans-serif;
+    --font-size-xs:   0.75rem;
+    --font-size-sm:   0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg:   1.125rem;
+    --font-size-xl:   1.25rem;
+    --font-size-2xl:  1.5rem;
+
+    /* — Espacements — */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+
+    /* — Ombres — */
+    --shadow-card:  0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-modal: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+@layer base {
+    body {
+        font-family: var(--font-sans);
+        color: var(--color-text-body);
+        background-color: var(--color-bg-page);
+    }
+}

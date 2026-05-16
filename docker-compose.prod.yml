@@ -1,0 +1,68 @@
+# Production — VPS avec Nginx Proxy Manager
+#
+# Prérequis sur le VPS :
+#   1. Créer le réseau externe NPM une seule fois :
+#      docker network create npm_network
+#   2. Dans NPM, ajouter un Proxy Host vers http://cosync_nginx:80
+#      (le container nginx est visible sur le réseau npm_network)
+#
+# Déploiement :
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml exec php php bin/console doctrine:migrations:migrate --no-interaction
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile.prod
+    image: cosync-php:prod
+    container_name: cosync_php
+    restart: always
+    env_file: .env.prod
+    volumes:
+      - public_assets:/var/www/html/public
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - cosync
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: cosync_nginx
+    restart: always
+    volumes:
+      - ./docker/nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - public_assets:/var/www/html/public:ro
+    depends_on:
+      - php
+    networks:
+      - cosync
+      - npm_network
+
+  database:
+    image: postgres:16-alpine
+    container_name: cosync_db
+    restart: always
+    env_file: .env.prod
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - cosync
+
+volumes:
+  db_data:
+  public_assets:
+
+networks:
+  cosync:
+    driver: bridge
+  npm_network:
+    external: true
+    name: npm_network

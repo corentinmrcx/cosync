@@ -1,0 +1,72 @@
+# ── Stage 1 : Build frontend assets ────────────────────────────────────────
+FROM node:20-alpine AS assets
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --no-audit --no-fund
+
+# Tailwind a besoin des templates pour purger les classes inutilisées
+COPY assets/       ./assets/
+COPY templates/    ./templates/
+COPY tailwind.config.js postcss.config.js webpack.config.js ./
+
+RUN npm run build
+
+# ── Stage 2 : Production PHP-FPM ───────────────────────────────────────────
+FROM php:8.3-fpm-alpine AS production
+
+WORKDIR /var/www/html
+
+RUN apk add --no-cache \
+    libpq-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    icu-dev \
+    oniguruma-dev \
+    libxml2-dev
+
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+        pdo \
+        pdo_pgsql \
+        pgsql \
+        zip \
+        gd \
+        intl \
+        mbstring \
+        xml \
+        opcache
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY docker/php/php.prod.ini /usr/local/etc/php/conf.d/custom.ini
+
+# Dépendances PHP sans dev
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-scripts \
+    --no-interaction
+
+# Code source complet
+COPY . .
+
+# Assets compilés depuis le stage node
+COPY --from=assets /app/public/build ./public/build
+
+# Autoloader optimisé final (maintenant que le code est en place)
+RUN composer dump-autoload --optimize --no-dev
+
+# Sauvegarde de public/ dans un répertoire séparé.
+# L'entrypoint copie ce contenu vers le named volume partagé avec Nginx,
+# ce qui permet à Nginx de servir les assets sans monter le projet entier.
+RUN cp -r /var/www/html/public /var/www/public_template
+
+COPY docker/php/entrypoint.prod.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 9000
+ENTRYPOINT ["/entrypoint.sh"]
