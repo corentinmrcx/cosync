@@ -14,7 +14,6 @@ class Licencie
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $uuid;
 
-    /** Absent de l'export FootClubs — nullable */
     #[ORM\Column(length: 50, unique: true, nullable: true)]
     private ?string $numLicence = null;
 
@@ -33,6 +32,15 @@ class Licencie
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $telephone = null;
+
+    #[ORM\Column(length: 200, nullable: true)]
+    private ?string $voieRue = null;
+
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $codePostal = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $ville = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
@@ -136,6 +144,39 @@ class Licencie
     public function setTelephone(?string $telephone): static
     {
         $this->telephone = $telephone;
+        return $this;
+    }
+
+    public function getVoieRue(): ?string
+    {
+        return $this->voieRue;
+    }
+
+    public function setVoieRue(?string $voieRue): static
+    {
+        $this->voieRue = $voieRue;
+        return $this;
+    }
+
+    public function getCodePostal(): ?string
+    {
+        return $this->codePostal;
+    }
+
+    public function setCodePostal(?string $codePostal): static
+    {
+        $this->codePostal = $codePostal;
+        return $this;
+    }
+
+    public function getVille(): ?string
+    {
+        return $this->ville;
+    }
+
+    public function setVille(?string $ville): static
+    {
+        $this->ville = $ville;
         return $this;
     }
 

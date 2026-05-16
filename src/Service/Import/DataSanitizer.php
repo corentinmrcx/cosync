@@ -55,6 +55,39 @@ final class DataSanitizer
         return $code;
     }
 
+    public function sanitizeEmail(?string $raw): ?string
+    {
+        if ($raw === null || trim($raw) === '') {
+            return null;
+        }
+        return mb_strtolower(trim($raw), 'UTF-8');
+    }
+
+    public function sanitizeNumLicence(string $raw): string
+    {
+        return trim($raw);
+    }
+
+    public function sanitizePhone(?string $raw): ?string
+    {
+        if ($raw === null || trim($raw) === '') {
+            return null;
+        }
+
+        $phone = preg_replace('/[\s\-\.]/', '', trim($raw)) ?? '';
+
+        if ($phone === '') {
+            return null;
+        }
+
+        // 0X… → +33X…
+        if (str_starts_with($phone, '0') && strlen($phone) === 10) {
+            $phone = '+33' . substr($phone, 1);
+        }
+
+        return $phone;
+    }
+
     public function sanitizeDateNaissance(string $raw): \DateTimeImmutable
     {
         $raw = trim($raw);

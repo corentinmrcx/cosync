@@ -16,13 +16,18 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class ImportService
 {
-    // Noms de colonnes FootClubs (insensible à la casse après trim)
-    private const COL_TYPE_LICENCE   = 'type licence';
-    private const COL_NOM_PRENOM     = 'nom, prénom';
-    private const COL_DATE_NAISSANCE = 'né(e) le';
-    private const COL_SOUS_CATEGORIE = 'sous catégorie';
+    // Colonnes FootClubs 26-colonnes (valeurs normalisées en minuscules)
+    private const COL_TYPE_LICENCE        = 'type licence';
+    private const COL_NOM_PRENOM          = 'nom, prénom';
+    private const COL_DATE_NAISSANCE      = 'né(e) le';
+    private const COL_SOUS_CATEGORIE      = 'sous catégorie';
+    private const COL_VOIE_RUE            = 'voie-rue';
+    private const COL_CODE_POSTAL         = 'code postal';
+    private const COL_BUREAU_DISTRIBUTEUR = 'bureau distributeur';
+    private const COL_NUMERO_PERSONNE     = 'numéro personne';
+    private const COL_MOBILE_PERSONNEL    = 'mobile personnel';
+    private const COL_EMAIL_PRINCIPAL     = 'email principal';
 
-    // Seules les licences "Libre" sont importées
     private const TYPE_LICENCE_LIBRE = 'libre';
 
     public function __construct(
@@ -39,7 +44,7 @@ final class ImportService
 
         $season = $this->seasonRepository->findActive();
         if ($season === null) {
-            $result->addError(0, 'Aucune saison active. Lancez app:seed-referential ou créez une saison.');
+            $result->addError(0, 'Aucune saison active. Créez une saison depuis le panneau d\'administration.');
             return $result;
         }
 
@@ -54,16 +59,23 @@ final class ImportService
         $headers    = array_map(fn(mixed $h): string => mb_strtolower(trim((string) $h), 'UTF-8'), $rows[0]);
         $colIndexes = $this->resolveColumnIndexes($headers);
 
-        $missing = array_keys(array_filter($colIndexes, fn(?int $i) => $i === null));
+        // Seules les colonnes obligatoires bloquent l'import
+        $required = [
+            self::COL_TYPE_LICENCE,
+            self::COL_NOM_PRENOM,
+            self::COL_DATE_NAISSANCE,
+            self::COL_SOUS_CATEGORIE,
+            self::COL_NUMERO_PERSONNE,
+        ];
+        $missing = array_filter($required, fn(string $col) => $colIndexes[$col] === null);
         if (!empty($missing)) {
-            $result->addError(1, sprintf('Colonnes introuvables : %s', implode(', ', $missing)));
+            $result->addError(1, sprintf('Colonnes obligatoires introuvables : %s', implode(', ', $missing)));
             return $result;
         }
 
         foreach (array_slice($rows, 1) as $offset => $row) {
             $lineNumber = $offset + 2;
 
-            // Ignorer les lignes dont le type de licence n'est pas "Libre"
             $typeLicence = mb_strtolower(trim((string) ($row[$colIndexes[self::COL_TYPE_LICENCE]] ?? '')), 'UTF-8');
             if ($typeLicence !== self::TYPE_LICENCE_LIBRE) {
                 continue;
@@ -102,7 +114,6 @@ final class ImportService
             $result->addError($lineNumber, "Date de naissance manquante pour $nom $prenom.");
             return;
         }
-
         $dateNaissance = $this->sanitizer->sanitizeDateNaissance($rawDate);
 
         $rawCategorie = trim((string) ($row[$colIndexes[self::COL_SOUS_CATEGORIE]] ?? ''));
@@ -110,32 +121,61 @@ final class ImportService
             $result->addError($lineNumber, "Sous catégorie manquante pour $nom $prenom.");
             return;
         }
-
         $codeCategorie = $this->sanitizer->sanitizeSousCategorie($rawCategorie);
         $category      = $this->categoryRepository->findOneBy(['code' => $codeCategorie]);
-
         if ($category === null) {
             $result->addError($lineNumber, "Catégorie inconnue \"$codeCategorie\" pour $nom $prenom. Ajoutez-la via app:seed-referential.");
             return;
         }
 
-        $licencie = $this->licencieRepository->findByUpsertKey($nom, $prenom, $dateNaissance);
+        $rawNumLicence = trim((string) ($row[$colIndexes[self::COL_NUMERO_PERSONNE]] ?? ''));
+        if ($rawNumLicence === '') {
+            $result->addError($lineNumber, "Numéro de personne manquant pour $nom $prenom.");
+            return;
+        }
+        $numLicence = $this->sanitizer->sanitizeNumLicence($rawNumLicence);
+
+        // Données optionnelles
+        $email     = $this->sanitizer->sanitizeEmail($this->colValue($row, $colIndexes, self::COL_EMAIL_PRINCIPAL));
+        $telephone = $this->sanitizer->sanitizePhone($this->colValue($row, $colIndexes, self::COL_MOBILE_PERSONNEL));
+        $voieRue   = $this->colValue($row, $colIndexes, self::COL_VOIE_RUE);
+        $voieRue   = $voieRue !== null ? trim($voieRue) ?: null : null;
+        $codePostal = $this->colValue($row, $colIndexes, self::COL_CODE_POSTAL);
+        $codePostal = $codePostal !== null ? trim($codePostal) ?: null : null;
+        $ville      = $this->colValue($row, $colIndexes, self::COL_BUREAU_DISTRIBUTEUR);
+        $ville      = $ville !== null ? trim($ville) ?: null : null;
+
+        $licencie = $this->licencieRepository->findByNumLicence($numLicence)
+            ?? $this->licencieRepository->findByNomPrenomNaissance($nom, $prenom, $dateNaissance);
 
         if ($licencie !== null) {
-            // Licencié existant : on met à jour uniquement les données FFF
+            // Enrichit le num_licence si absent (migration depuis l'ancien format)
+            if ($licencie->getNumLicence() === null) {
+                $licencie->setNumLicence($numLicence);
+            }
             $licencie->setNom($nom);
             $licencie->setPrenom($prenom);
+            $licencie->setDateNaissance($dateNaissance);
             $licencie->setCategory($category);
-            // dateNaissance et season ne changent jamais à l'import
+            $licencie->setEmail($email);
+            $licencie->setTelephone($telephone);
+            $licencie->setVoieRue($voieRue);
+            $licencie->setCodePostal($codePostal);
+            $licencie->setVille($ville);
             $result->updated++;
         } else {
-            // Nouveau licencié
             $licencie = new Licencie();
+            $licencie->setNumLicence($numLicence);
             $licencie->setNom($nom);
             $licencie->setPrenom($prenom);
             $licencie->setDateNaissance($dateNaissance);
             $licencie->setCategory($category);
             $licencie->setSeason($season);
+            $licencie->setEmail($email);
+            $licencie->setTelephone($telephone);
+            $licencie->setVoieRue($voieRue);
+            $licencie->setCodePostal($codePostal);
+            $licencie->setVille($ville);
             $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
 
             $dossier = new DossierClub();
@@ -149,9 +189,16 @@ final class ImportService
         }
     }
 
-    /**
-     * @return array<string, int|null>
-     */
+    private function colValue(array $row, array $colIndexes, string $col): ?string
+    {
+        if (!isset($colIndexes[$col]) || $colIndexes[$col] === null) {
+            return null;
+        }
+        $val = $row[$colIndexes[$col]] ?? null;
+        return $val !== null ? (string) $val : null;
+    }
+
+    /** @return array<string, int|null> */
     private function resolveColumnIndexes(array $headers): array
     {
         $find = function (string $name) use ($headers): ?int {
@@ -164,10 +211,16 @@ final class ImportService
         };
 
         return [
-            self::COL_TYPE_LICENCE   => $find(self::COL_TYPE_LICENCE),
-            self::COL_NOM_PRENOM     => $find(self::COL_NOM_PRENOM),
-            self::COL_DATE_NAISSANCE => $find(self::COL_DATE_NAISSANCE),
-            self::COL_SOUS_CATEGORIE => $find(self::COL_SOUS_CATEGORIE),
+            self::COL_TYPE_LICENCE        => $find(self::COL_TYPE_LICENCE),
+            self::COL_NOM_PRENOM          => $find(self::COL_NOM_PRENOM),
+            self::COL_DATE_NAISSANCE      => $find(self::COL_DATE_NAISSANCE),
+            self::COL_SOUS_CATEGORIE      => $find(self::COL_SOUS_CATEGORIE),
+            self::COL_VOIE_RUE            => $find(self::COL_VOIE_RUE),
+            self::COL_CODE_POSTAL         => $find(self::COL_CODE_POSTAL),
+            self::COL_BUREAU_DISTRIBUTEUR => $find(self::COL_BUREAU_DISTRIBUTEUR),
+            self::COL_NUMERO_PERSONNE     => $find(self::COL_NUMERO_PERSONNE),
+            self::COL_MOBILE_PERSONNEL    => $find(self::COL_MOBILE_PERSONNEL),
+            self::COL_EMAIL_PRINCIPAL     => $find(self::COL_EMAIL_PRINCIPAL),
         ];
     }
 }

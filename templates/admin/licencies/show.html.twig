@@ -28,6 +28,10 @@
         <h2 class="font-semibold mb-3" style="color: var(--color-text-base);">Données FootClubs</h2>
         <dl class="space-y-2 text-sm">
             <div class="flex gap-2">
+                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">N° licence</dt>
+                <dd style="color: var(--color-text-body);">{{ licencie.numLicence ?? '—' }}</dd>
+            </div>
+            <div class="flex gap-2">
                 <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Date de naissance</dt>
                 <dd style="color: var(--color-text-body);">{{ licencie.dateNaissance|date('d/m/Y') }}</dd>
             </div>
@@ -42,6 +46,21 @@
             <div class="flex gap-2">
                 <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Email</dt>
                 <dd style="color: var(--color-text-body);">{{ licencie.email ?? '—' }}</dd>
+            </div>
+            <div class="flex gap-2">
+                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Téléphone</dt>
+                <dd style="color: var(--color-text-body);">{{ licencie.telephone ?? '—' }}</dd>
+            </div>
+            <div class="flex gap-2">
+                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Adresse</dt>
+                <dd style="color: var(--color-text-body);">
+                    {% if licencie.voieRue %}
+                        {{ licencie.voieRue }}<br>
+                        {{ licencie.codePostal }} {{ licencie.ville }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </dd>
             </div>
             <div class="flex gap-2">
                 <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Importé le</dt>

@@ -21,8 +21,13 @@ class LicencieRepository extends ServiceEntityRepository
         parent::__construct($registry, Licencie::class);
     }
 
-    /** Clé d'upsert FootClubs : pas de num_licence dans l'export, on identifie par la combinaison nom+prénom+naissance */
-    public function findByUpsertKey(string $nom, string $prenom, \DateTimeImmutable $dateNaissance): ?Licencie
+    public function findByNumLicence(string $numLicence): ?Licencie
+    {
+        return $this->findOneBy(['numLicence' => $numLicence]);
+    }
+
+    /** Fallback pour les licenciés importés avant l'ajout du num_licence */
+    public function findByNomPrenomNaissance(string $nom, string $prenom, \DateTimeImmutable $dateNaissance): ?Licencie
     {
         return $this->createQueryBuilder('l')
             ->where('l.nom = :nom')
