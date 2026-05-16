@@ -2,8 +2,11 @@
 
 namespace App\Repository;
 
+use App\Entity\Category;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Entity\Team;
+use App\Enum\LicenceStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
@@ -47,5 +50,40 @@ class LicencieRepository extends ServiceEntityRepository
             ->addOrderBy('l.prenom', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    /** @return Licencie[] */
+    public function findWithFilters(
+        Season $season,
+        ?Team $team = null,
+        ?Category $category = null,
+        ?LicenceStatus $status = null,
+        ?string $search = null,
+    ): array {
+        $qb = $this->createQueryBuilder('l')
+            ->leftJoin('l.dossierClub', 'd')
+            ->leftJoin('l.team', 't')
+            ->join('l.category', 'c')
+            ->addSelect('d', 't', 'c')
+            ->where('l.season = :season')
+            ->setParameter('season', $season)
+            ->orderBy('l.nom', 'ASC')
+            ->addOrderBy('l.prenom', 'ASC');
+
+        if ($team !== null) {
+            $qb->andWhere('l.team = :team')->setParameter('team', $team);
+        }
+        if ($category !== null) {
+            $qb->andWhere('l.category = :category')->setParameter('category', $category);
+        }
+        if ($status !== null) {
+            $qb->andWhere('d.status = :status')->setParameter('status', $status);
+        }
+        if ($search !== null && $search !== '') {
+            $qb->andWhere('LOWER(CONCAT(l.nom, \' \', l.prenom)) LIKE :search OR LOWER(CONCAT(l.prenom, \' \', l.nom)) LIKE :search')
+               ->setParameter('search', '%' . mb_strtolower($search, 'UTF-8') . '%');
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }

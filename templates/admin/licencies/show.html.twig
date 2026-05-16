@@ -1,0 +1,120 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync - {{ licencie.nomPrenom }}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ path('admin_licencies_list') }}" class="text-sm" style="color: var(--color-text-muted);">
+        ← Retour à la liste
+    </a>
+</div>
+
+<div class="flex items-start justify-between mb-6">
+    <div>
+        <h1 class="text-xl font-bold" style="color: var(--color-text-base);">{{ licencie.nomPrenom }}</h1>
+        <p class="text-sm mt-1" style="color: var(--color-text-muted);">
+            {{ licencie.category.label }} — {{ licencie.season.label }}
+        </p>
+    </div>
+    {% if licencie.dossierClub %}
+        {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
+    {% endif %}
+</div>
+
+<div class="grid grid-cols-2 gap-6">
+
+    {# Données FFF #}
+    <div class="p-4 rounded border" style="border-color: var(--color-border); background-color: var(--color-bg-page);">
+        <h2 class="font-semibold mb-3" style="color: var(--color-text-base);">Données FootClubs</h2>
+        <dl class="space-y-2 text-sm">
+            <div class="flex gap-2">
+                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Date de naissance</dt>
+                <dd style="color: var(--color-text-body);">{{ licencie.dateNaissance|date('d/m/Y') }}</dd>
+            </div>
+            <div class="flex gap-2">
+                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Catégorie</dt>
+                <dd style="color: var(--color-text-body);">{{ licencie.category.label }}</dd>
+            </div>
+            <div class="flex gap-2">
+                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Équipe</dt>
+                <dd style="color: var(--color-text-body);">{{ licencie.team ? licencie.team.name : '—' }}</dd>
+            </div>
+            <div class="flex gap-2">
+                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Email</dt>
+                <dd style="color: var(--color-text-body);">{{ licencie.email ?? '—' }}</dd>
+            </div>
+            <div class="flex gap-2">
+                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Importé le</dt>
+                <dd style="color: var(--color-text-body);">{{ licencie.importedAt|date('d/m/Y à H:i') }}</dd>
+            </div>
+        </dl>
+    </div>
+
+    {# Dossier club #}
+    <div class="p-4 rounded border" style="border-color: var(--color-border); background-color: var(--color-bg-page);">
+        <h2 class="font-semibold mb-3" style="color: var(--color-text-base);">Dossier club</h2>
+        {% if licencie.dossierClub %}
+            {% set d = licencie.dossierClub %}
+            <dl class="space-y-2 text-sm">
+                <div class="flex gap-2">
+                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Taille haut</dt>
+                    <dd style="color: var(--color-text-body);">{{ d.tailleHaut ?? '—' }}</dd>
+                </div>
+                <div class="flex gap-2">
+                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Taille bas</dt>
+                    <dd style="color: var(--color-text-body);">{{ d.tailleBas ?? '—' }}</dd>
+                </div>
+                <div class="flex gap-2">
+                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Pointure</dt>
+                    <dd style="color: var(--color-text-body);">{{ d.pointure ?? '—' }}</dd>
+                </div>
+                <div class="flex gap-2">
+                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Droit à l'image</dt>
+                    <dd style="color: var(--color-text-body);">
+                        {% if d.autorisationPhoto is null %}—
+                        {% elseif d.autorisationPhoto %}Oui
+                        {% else %}Non{% endif %}
+                    </dd>
+                </div>
+                {% if licencie.category.isEcoleFoot %}
+                    <div class="flex gap-2">
+                        <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Transport dirigeants</dt>
+                        <dd style="color: var(--color-text-body);">
+                            {% if d.autorisationTransportDirigeants is null %}—
+                            {% elseif d.autorisationTransportDirigeants %}Oui
+                            {% else %}Non{% endif %}
+                        </dd>
+                    </div>
+                    <div class="flex gap-2">
+                        <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Transport parents</dt>
+                        <dd style="color: var(--color-text-body);">
+                            {% if d.autorisationTransportParents is null %}—
+                            {% elseif d.autorisationTransportParents %}Oui
+                            {% else %}Non{% endif %}
+                        </dd>
+                    </div>
+                {% endif %}
+                <div class="flex gap-2">
+                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Règlement signé</dt>
+                    <dd style="color: var(--color-text-body);">
+                        {% if d.isSigned %}
+                            Oui — {{ d.signatureDate|date('d/m/Y') }}
+                        {% else %}
+                            Non
+                        {% endif %}
+                    </dd>
+                </div>
+                {% if d.paymentIntention %}
+                    <div class="flex gap-2">
+                        <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Mode paiement</dt>
+                        <dd style="color: var(--color-text-body);">{{ d.paymentIntention.label() }}</dd>
+                    </div>
+                {% endif %}
+            </dl>
+        {% else %}
+            <p class="text-sm" style="color: var(--color-text-muted);">Aucun dossier club.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

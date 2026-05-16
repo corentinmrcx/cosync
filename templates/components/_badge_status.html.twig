@@ -1,0 +1,11 @@
+{# Paramètre attendu : status (LicenceStatus value string) #}
+{% set map = {
+    'link_sent':        { label: 'Lien envoyé',         color: 'background-color: var(--color-status-sent-bg); color: var(--color-status-sent);' },
+    'form_completed':   { label: 'Formulaire complété', color: 'background-color: var(--color-status-completed-bg); color: var(--color-status-completed);' },
+    'payment_confirmed':{ label: 'Paiement confirmé',   color: 'background-color: var(--color-status-completed-bg); color: var(--color-status-completed);' },
+    'validated':        { label: 'Validé',              color: 'background-color: var(--color-status-validated-bg); color: var(--color-status-validated);' },
+} %}
+{% set entry = map[status] ?? { label: status, color: '' } %}
+<span class="px-2 py-0.5 rounded text-xs font-medium" style="{{ entry.color }}">
+    {{ entry.label }}
+</span>

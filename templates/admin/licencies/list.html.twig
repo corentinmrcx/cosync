@@ -1,0 +1,110 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync - Licenciés{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold" style="color: var(--color-text-base);">
+        Licenciés
+        {% if season %}
+            <span class="text-sm font-normal ml-2" style="color: var(--color-text-muted);">{{ season.label }}</span>
+        {% endif %}
+    </h1>
+    <a href="{{ path('admin_import_index') }}" class="px-4 py-2 rounded text-sm font-medium" style="background-color: var(--color-primary); color: white;">
+        Importer XLSX
+    </a>
+</div>
+
+{# Filtres #}
+<form method="get" class="flex flex-wrap gap-3 mb-6">
+    <input
+        type="search"
+        name="search"
+        value="{{ search ?? '' }}"
+        placeholder="Rechercher un licencié…"
+        class="border rounded px-3 py-1.5 text-sm"
+        style="border-color: var(--color-border); min-width: 220px;"
+    >
+    <select name="team" class="border rounded px-3 py-1.5 text-sm" style="border-color: var(--color-border);" onchange="this.form.submit()">
+        <option value="">Toutes les équipes</option>
+        {% for team in teams %}
+            <option value="{{ team.id }}" {% if currentTeam and currentTeam.id == team.id %}selected{% endif %}>
+                {{ team.name }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <select name="category" class="border rounded px-3 py-1.5 text-sm" style="border-color: var(--color-border);" onchange="this.form.submit()">
+        <option value="">Toutes les catégories</option>
+        {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if currentCategory and currentCategory.id == cat.id %}selected{% endif %}>
+                {{ cat.label }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <select name="status" class="border rounded px-3 py-1.5 text-sm" style="border-color: var(--color-border);" onchange="this.form.submit()">
+        <option value="">Tous les statuts</option>
+        {% for s in statuses %}
+            <option value="{{ s.value }}" {% if currentStatus and currentStatus.value == s.value %}selected{% endif %}>
+                {{ s.label() }}
+            </option>
+        {% endfor %}
+    </select>
+
+    {% if currentTeam or currentCategory or currentStatus or search %}
+        <a href="{{ path('admin_licencies_list') }}" class="px-3 py-1.5 rounded text-sm" style="color: var(--color-text-muted); border: 1px solid var(--color-border);">
+            Réinitialiser
+        </a>
+    {% endif %}
+</form>
+
+{# Compteur #}
+<p class="text-sm mb-3" style="color: var(--color-text-muted);">{{ licencies|length }} licencié(s)</p>
+
+{# Tableau #}
+{% if licencies is empty %}
+    <p style="color: var(--color-text-muted);">Aucun licencié trouvé.</p>
+{% else %}
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--color-border); background-color: var(--color-bg-subtle);">
+                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Nom Prénom</th>
+                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Catégorie</th>
+                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Équipe</th>
+                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Email</th>
+                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for licencie in licencies %}
+                <tr
+                    class="cursor-pointer hover:bg-gray-50 transition-colors"
+                    style="border-bottom: 1px solid var(--color-border);"
+                    onclick="window.location='{{ path('admin_licencies_show', {uuid: licencie.uuid}) }}'"
+                >
+                    <td class="px-4 py-2.5 font-medium" style="color: var(--color-text-base);">
+                        {{ licencie.nomPrenom }}
+                    </td>
+                    <td class="px-4 py-2.5" style="color: var(--color-text-body);">
+                        {{ licencie.category.code }}
+                    </td>
+                    <td class="px-4 py-2.5" style="color: var(--color-text-body);">
+                        {{ licencie.team ? licencie.team.name : '—' }}
+                    </td>
+                    <td class="px-4 py-2.5" style="color: var(--color-text-muted);">
+                        {{ licencie.email ?? '—' }}
+                    </td>
+                    <td class="px-4 py-2.5">
+                        {% if licencie.dossierClub %}
+                            {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
+                        {% else %}
+                            <span style="color: var(--color-text-disabled);">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+{% endblock %}

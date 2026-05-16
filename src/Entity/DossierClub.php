@@ -15,7 +15,7 @@ class DossierClub
     #[ORM\Column]
     private int $id;
 
-    #[ORM\OneToOne]
+    #[ORM\OneToOne(inversedBy: 'dossierClub')]
     #[ORM\JoinColumn(nullable: false, referencedColumnName: 'uuid')]
     private Licencie $licencie;
 

@@ -54,6 +54,9 @@ class Licencie
     #[ORM\Column]
     private \DateTimeImmutable $importedAt;
 
+    #[ORM\OneToOne(mappedBy: 'licencie')]
+    private ?DossierClub $dossierClub = null;
+
     public function __construct()
     {
         $this->uuid = Uuid::v4();
@@ -189,5 +192,10 @@ class Licencie
     public function getImportedAt(): \DateTimeImmutable
     {
         return $this->importedAt;
+    }
+
+    public function getDossierClub(): ?DossierClub
+    {
+        return $this->dossierClub;
     }
 }

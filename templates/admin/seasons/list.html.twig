@@ -1,0 +1,59 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync - Saisons{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold" style="color: var(--color-text-base);">Saisons</h1>
+    <a href="{{ path('admin_seasons_new') }}" class="px-4 py-2 rounded text-sm font-medium" style="background-color: var(--color-primary); color: white;">
+        Nouvelle saison
+    </a>
+</div>
+
+{% if seasons is empty %}
+    <p style="color: var(--color-text-muted);">Aucune saison. Créez-en une pour commencer.</p>
+{% else %}
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--color-border); background-color: var(--color-bg-subtle);">
+                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Saison</th>
+                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Cotisation jeunes</th>
+                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Cotisation seniors</th>
+                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Statut</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for season in seasons %}
+                <tr style="border-bottom: 1px solid var(--color-border);">
+                    <td class="px-4 py-2.5 font-medium" style="color: var(--color-text-base);">
+                        {{ season.label }}
+                    </td>
+                    <td class="px-4 py-2.5" style="color: var(--color-text-body);">
+                        {{ season.baseCosts.jeunes ?? '—' }} €
+                    </td>
+                    <td class="px-4 py-2.5" style="color: var(--color-text-body);">
+                        {{ season.baseCosts.seniors ?? '—' }} €
+                    </td>
+                    <td class="px-4 py-2.5">
+                        {% if season.active %}
+                            <span class="px-2 py-0.5 rounded text-xs font-medium" style="background-color: var(--color-status-validated-bg); color: var(--color-status-validated);">Active</span>
+                        {% else %}
+                            <span class="px-2 py-0.5 rounded text-xs font-medium" style="background-color: var(--color-bg-muted); color: var(--color-text-muted);">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2.5 text-right space-x-2">
+                        <a href="{{ path('admin_seasons_edit', {id: season.id}) }}" class="text-sm" style="color: var(--color-info);">Modifier</a>
+                        {% if not season.active %}
+                            <form method="post" action="{{ path('admin_seasons_activate', {id: season.id}) }}" class="inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('activate_season_' ~ season.id) }}">
+                                <button type="submit" class="text-sm" style="color: var(--color-success);">Activer</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+{% endblock %}

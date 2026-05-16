@@ -1,0 +1,43 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync - {{ title }}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ path('admin_seasons_list') }}" class="text-sm" style="color: var(--color-text-muted);">← Retour aux saisons</a>
+</div>
+
+<h1 class="text-xl font-bold mb-6" style="color: var(--color-text-base);">{{ title }}</h1>
+
+<div class="max-w-md">
+    {{ form_start(form) }}
+        <div class="space-y-4">
+            <div>
+                {{ form_label(form.label) }}
+                {{ form_widget(form.label) }}
+                {{ form_errors(form.label) }}
+            </div>
+            <div>
+                {{ form_label(form.coutJeunes) }}
+                {{ form_widget(form.coutJeunes) }}
+                {{ form_errors(form.coutJeunes) }}
+            </div>
+            <div>
+                {{ form_label(form.coutSeniors) }}
+                {{ form_widget(form.coutSeniors) }}
+                {{ form_errors(form.coutSeniors) }}
+            </div>
+            <div class="flex items-center gap-2">
+                {{ form_widget(form.active) }}
+                {{ form_label(form.active) }}
+                {{ form_errors(form.active) }}
+            </div>
+        </div>
+        <div class="mt-6">
+            <button type="submit" class="px-4 py-2 rounded text-sm font-medium" style="background-color: var(--color-primary); color: white;">
+                Enregistrer
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>
+{% endblock %}
