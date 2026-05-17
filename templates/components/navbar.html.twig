@@ -1,0 +1,46 @@
+<header class="navbar">
+
+    <div class="navbar-brand">
+        <span class="navbar-brand-name">CoSync</span>
+    </div>
+
+    <div class="navbar-hamburger" x-data="{ open: false }" @click.outside="open = false">
+
+        <button class="navbar-hamburger-btn" @click="open = !open" type="button" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="3" y1="6"  x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
+
+        <div class="navbar-dropdown" x-show="open" x-cloak>
+
+            <div class="navbar-dropdown-section">
+                <p class="navbar-dropdown-label">Saison</p>
+                {% for season in navbar_seasons %}
+                    <a href="{{ path('admin_seasons_switch', {id: season.id}) }}"
+                       class="navbar-dropdown-item {{ navbar_current_season and season.id == navbar_current_season.id ? 'navbar-dropdown-item-active' : '' }}">
+                        {{ season.label }}
+                        {% if navbar_current_season and season.id == navbar_current_season.id %}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+
+            <div class="navbar-dropdown-divider"></div>
+
+            <div class="navbar-dropdown-section">
+                <a href="#" class="navbar-dropdown-item">Modifier mon profil</a>
+                <a href="{{ path('security_logout') }}" class="navbar-dropdown-item navbar-dropdown-item-danger">
+                    Déconnexion
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+</header>

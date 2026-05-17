@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Season;
 use App\Form\SeasonType;
 use App\Repository\SeasonRepository;
+use App\Service\SeasonContext;
 use App\Service\SeasonService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -74,6 +75,14 @@ class SeasonController extends AbstractController
             'title'  => sprintf('Modifier "%s"', $season->getLabel()),
             'season' => $season,
         ]);
+    }
+
+    #[Route('/{id}/switch', name: 'switch', methods: ['GET'])]
+    public function switch(Season $season, SeasonContext $seasonContext, Request $request): Response
+    {
+        $seasonContext->setCurrentSeason($season);
+
+        return $this->redirect($request->headers->get('referer') ?? $this->generateUrl('admin_dashboard'));
     }
 
     #[Route('/{id}/activer', name: 'activate', methods: ['POST'])]
