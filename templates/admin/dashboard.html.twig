@@ -1,9 +1,48 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}CoSync - Tableau de bord{% endblock %}
+{% block title %}CoSync — Tableau de bord{% endblock %}
 
 {% block content %}
-<h1 class="text-xl font-bold mb-6" style="color: var(--color-text-base);">Tableau de bord</h1>
+<div class="dashboard">
 
-<p style="color: var(--color-text-muted);">Bienvenue sur CoSync. Les fonctionnalités arrivent bientôt.</p>
+    <div class="dashboard-hub">
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'users',
+            label: 'Licenciés',
+            sub: 'Gérer les inscrits',
+            route: 'admin_licencies_list'
+        } %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'import',
+            label: 'Import',
+            sub: 'Importer un fichier XLSX',
+            route: 'admin_import_index'
+        } %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'box',
+            label: 'Stocks',
+            sub: 'Bientôt disponible',
+            disabled: true
+        } %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'wallet',
+            label: 'Finance',
+            sub: 'Bientôt disponible',
+            disabled: true
+        } %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'gear',
+            label: 'Configuration',
+            sub: 'Saisons & catégories',
+            route: 'admin_seasons_list'
+        } %}
+
+    </div>
+
+</div>
 {% endblock %}

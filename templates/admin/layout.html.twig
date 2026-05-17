@@ -1,51 +1,13 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-<div class="min-h-screen flex flex-col" style="background-color: var(--color-bg-subtle);">
 
-    {# Header #}
-    <header class="flex items-center justify-between px-6 py-3 shadow-sm" style="background-color: var(--color-primary); color: var(--color-text-inverse);">
-        <div class="flex items-center gap-3">
-            <span class="font-bold text-lg tracking-tight">CoSync</span>
-            <span class="text-xs opacity-70">FC Soudron</span>
-        </div>
-        <nav class="flex items-center gap-5 text-sm font-medium">
-            <a href="{{ path('admin_dashboard') }}" class="opacity-90 hover:opacity-100 transition-opacity">Tableau de bord</a>
-            <a href="{{ path('admin_licencies_list') }}" class="opacity-90 hover:opacity-100 transition-opacity">Licenciés</a>
-            <a href="{{ path('admin_seasons_list') }}" class="opacity-90 hover:opacity-100 transition-opacity">Saisons</a>
-            <a href="#" class="opacity-90 hover:opacity-100 transition-opacity">Stock</a>
-        </nav>
-        <div class="flex items-center gap-3 text-sm">
-            <span class="opacity-75">{{ app.user.email }}</span>
-            <a href="{{ path('security_logout') }}" class="opacity-90 hover:opacity-100 transition-opacity">Déconnexion</a>
-        </div>
-    </header>
-
-    {# Flash messages #}
     {% for type, messages in app.flashes %}
         {% for message in messages %}
-            {% set styles = {
-                'success': 'var(--color-success-bg)',
-                'error':   'var(--color-danger-bg)',
-                'warning': 'var(--color-warning-bg)',
-                'info':    'var(--color-info-bg)',
-            } %}
-            {% set textStyles = {
-                'success': 'var(--color-success)',
-                'error':   'var(--color-danger)',
-                'warning': 'var(--color-warning)',
-                'info':    'var(--color-info)',
-            } %}
-            <div class="px-6 py-3 text-sm font-medium" style="background-color: {{ styles[type] ?? styles['info'] }}; color: {{ textStyles[type] ?? textStyles['info'] }};">
-                {{ message }}
-            </div>
+            <div class="flash flash-{{ type }}">{{ message }}</div>
         {% endfor %}
     {% endfor %}
 
-    {# Content #}
-    <main class="flex-1 px-6 py-6">
-        {% block content %}{% endblock %}
-    </main>
+    {% block content %}{% endblock %}
 
-</div>
 {% endblock %}

@@ -1,6 +1,8 @@
 @import './components/navbar.css';
 @import './components/footer.css';
+@import './components/hub-card.css';
 @import './pages/login.css';
+@import './pages/dashboard.css';
 
 :root {
     /* — Identité club — */
@@ -79,4 +81,6 @@ body {
 
 .main-content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
 }
