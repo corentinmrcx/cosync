@@ -31,6 +31,9 @@ class SeasonController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $startYear = (int) $form->get('startYear')->getData();
+            $endYear   = (int) $form->get('endYear')->getData();
+            $season->setLabel($startYear . '-' . $endYear);
             $season->setBaseCosts([
                 'jeunes'  => $form->get('coutJeunes')->getData(),
                 'seniors' => $form->get('coutSeniors')->getData(),
@@ -52,13 +55,21 @@ class SeasonController extends AbstractController
     public function edit(Season $season, Request $request, SeasonService $seasonService): Response
     {
         $costs = $season->getBaseCosts();
-        $form  = $this->createForm(SeasonType::class, $season, [
+
+        [$startYear, $endYear] = $this->parseSeasonYears($season->getLabel());
+
+        $form = $this->createForm(SeasonType::class, $season, [
+            'start_year'   => $startYear,
+            'end_year'     => $endYear,
             'cout_jeunes'  => $costs['jeunes'] ?? 85,
             'cout_seniors' => $costs['seniors'] ?? 120,
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $startYear = (int) $form->get('startYear')->getData();
+            $endYear   = (int) $form->get('endYear')->getData();
+            $season->setLabel($startYear . '-' . $endYear);
             $season->setBaseCosts([
                 'jeunes'  => $form->get('coutJeunes')->getData(),
                 'seniors' => $form->get('coutSeniors')->getData(),
@@ -75,6 +86,18 @@ class SeasonController extends AbstractController
             'title'  => sprintf('Modifier "%s"', $season->getLabel()),
             'season' => $season,
         ]);
+    }
+
+    /** @return array{int, int} */
+    private function parseSeasonYears(string $label): array
+    {
+        $parts = explode('-', $label);
+        $currentYear = (int) date('Y');
+
+        return [
+            (int) ($parts[0] ?? $currentYear),
+            (int) ($parts[1] ?? $currentYear + 1),
+        ];
     }
 
     #[Route('/{id}/switch', name: 'switch', methods: ['GET'])]
