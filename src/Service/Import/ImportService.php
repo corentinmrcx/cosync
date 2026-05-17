@@ -9,7 +9,6 @@ use App\Entity\Season;
 use App\Enum\LicenceStatus;
 use App\Repository\CategoryRepository;
 use App\Repository\LicencieRepository;
-use App\Repository\SeasonRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -32,21 +31,14 @@ final class ImportService
 
     public function __construct(
         private readonly DataSanitizer $sanitizer,
-        private readonly SeasonRepository $seasonRepository,
         private readonly LicencieRepository $licencieRepository,
         private readonly CategoryRepository $categoryRepository,
         private readonly EntityManagerInterface $em,
     ) {}
 
-    public function importFromXlsx(UploadedFile $file): ImportResultData
+    public function importFromXlsx(UploadedFile $file, Season $season): ImportResultData
     {
         $result = new ImportResultData();
-
-        $season = $this->seasonRepository->findActive();
-        if ($season === null) {
-            $result->addError(0, 'Aucune saison active. Créez une saison depuis le panneau d\'administration.');
-            return $result;
-        }
 
         $spreadsheet = IOFactory::load($file->getPathname());
         $rows        = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);

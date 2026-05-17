@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Service\Import\ImportService;
+use App\Service\SeasonContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,14 +14,23 @@ use Symfony\Component\Routing\Attribute\Route;
 class ImportController extends AbstractController
 {
     #[Route('', name: 'index', methods: ['GET'])]
-    public function index(): Response
+    public function index(SeasonContext $seasonContext): Response
     {
-        return $this->render('admin/import/index.html.twig');
+        return $this->render('admin/import/index.html.twig', [
+            'currentSeason' => $seasonContext->getCurrentSeason(),
+        ]);
     }
 
     #[Route('', name: 'process', methods: ['POST'])]
-    public function process(Request $request, ImportService $importService): Response
+    public function process(Request $request, ImportService $importService, SeasonContext $seasonContext): Response
     {
+        $season = $seasonContext->getCurrentSeason();
+
+        if ($season === null) {
+            $this->addFlash('error', 'Aucune saison sélectionnée. Créez et activez une saison d\'abord.');
+            return $this->redirectToRoute('admin_import_index');
+        }
+
         $file = $request->files->get('xlsx');
 
         if (!$file instanceof UploadedFile) {
@@ -33,7 +43,7 @@ class ImportController extends AbstractController
             return $this->redirectToRoute('admin_import_index');
         }
 
-        $result = $importService->importFromXlsx($file);
+        $result = $importService->importFromXlsx($file, $season);
 
         return $this->render('admin/import/result.html.twig', ['result' => $result]);
     }

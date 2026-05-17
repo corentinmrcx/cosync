@@ -5,9 +5,9 @@ namespace App\Controller\Admin;
 use App\Enum\LicenceStatus;
 use App\Repository\CategoryRepository;
 use App\Repository\LicencieRepository;
-use App\Repository\SeasonRepository;
 use App\Repository\TeamRepository;
 use App\Service\Mail\InscriptionLinkService;
+use App\Service\SeasonContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,11 +21,11 @@ class LicencieController extends AbstractController
     public function list(
         Request $request,
         LicencieRepository $licencieRepo,
-        SeasonRepository $seasonRepo,
+        SeasonContext $seasonContext,
         TeamRepository $teamRepo,
         CategoryRepository $categoryRepo,
     ): Response {
-        $season = $seasonRepo->findActive();
+        $season = $seasonContext->getCurrentSeason();
 
         if ($season === null) {
             return $this->redirectToRoute('admin_seasons_list');

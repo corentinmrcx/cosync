@@ -25,6 +25,15 @@
             Importe le fichier XLSX exporté depuis FootClubs. Les licenciés existants seront mis à jour, les nouveaux créés.
         </p>
 
+        {% if currentSeason %}
+            <div class="import-season-notice">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Import vers la saison <strong>{{ currentSeason.label }}</strong>
+            </div>
+        {% endif %}
+
         <form method="post"
               action="{{ path('admin_import_process') }}"
               enctype="multipart/form-data"

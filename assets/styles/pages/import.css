@@ -249,3 +249,15 @@
 .import-btn-secondary:hover {
     background: var(--color-bg-muted);
 }
+
+.import-season-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    background: var(--color-info-bg);
+    color: var(--color-info);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
