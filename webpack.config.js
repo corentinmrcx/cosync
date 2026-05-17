@@ -56,7 +56,6 @@ Encore
         config.corejs = '3.38';
     })
 
-    .enablePostCssLoader()
 ;
 
 module.exports = Encore.getWebpackConfig();

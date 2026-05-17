@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import './pages/login.css';
 
 :root {
     /* — Identité club — */
@@ -9,7 +7,7 @@
     --color-primary-light: #ffe5e5;
 
     /* — Textes — */
-    --color-text-base:     #1f1f1f;
+    --color-text-base:     #1E1E1E;
     --color-text-body:     #374151;
     --color-text-muted:    #6b7280;
     --color-text-disabled: #9ca3af;
@@ -43,7 +41,7 @@
     --color-info-bg:    #eff6ff;
 
     /* — Typographie — */
-    --font-sans:      'Inter', system-ui, -apple-system, sans-serif;
+    --font-sans:      'Montserrat', system-ui, -apple-system, sans-serif;
     --font-size-xs:   0.75rem;
     --font-size-sm:   0.875rem;
     --font-size-base: 1rem;
@@ -62,10 +60,14 @@
     --shadow-modal: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-@layer base {
-    body {
-        font-family: var(--font-sans);
-        color: var(--color-text-body);
-        background-color: var(--color-bg-page);
-    }
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-sans);
+    color: var(--color-text-body);
+    background-color: var(--color-bg-page);
 }

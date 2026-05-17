@@ -42,7 +42,7 @@ Ce n'est **pas** un remplacement de FootClubs (outil fédéral FFF). C'est un **
 | Framework | Symfony 7.x (monolithe) |
 | Base de données | PostgreSQL |
 | ORM | Doctrine |
-| Frontend | Twig + Tailwind CSS + Alpine.js |
+| Frontend | Twig + CSS natif + Alpine.js |
 | Interactivité légère | Alpine.js (multi-step form, toggles conditionnels) |
 | PDF | DomPDF via bundle Symfony |
 | Import XLSX | PhpSpreadsheet |
@@ -407,14 +407,17 @@ Quand plusieurs templates partagent la même structure visuelle, extraire en com
 
 ```twig
 {# components/_badge_status.html.twig #}
-{% set colors = {
-    'link_sent': 'bg-blue-100 text-blue-800',
-    'form_completed': 'bg-yellow-100 text-yellow-800',
-    'validated': 'bg-green-100 text-green-800',
-} %}
-<span class="px-2 py-1 rounded-full text-xs font-medium {{ colors[status] }}">
+<span class="badge badge--{{ status }}">
     {{ status|trans }}
 </span>
+```
+
+```css
+/* assets/styles/components/_badge.css */
+.badge { padding: 0.25rem 0.5rem; border-radius: var(--radius-xl); font-size: var(--font-size-xs); font-weight: 500; }
+.badge--link_sent       { background: var(--color-status-sent-bg);      color: var(--color-status-sent); }
+.badge--form_completed  { background: var(--color-status-completed-bg);  color: var(--color-status-completed); }
+.badge--validated       { background: var(--color-status-validated-bg);  color: var(--color-status-validated); }
 ```
 
 Un composant Twig n'a pas de logique métier. Il affiche ce qu'on lui passe.
@@ -434,10 +437,48 @@ Un composant Twig n'a pas de logique métier. Il affiche ce qu'on lui passe.
 
 Si la logique Alpine devient complexe, elle va dans un composant JS séparé (`x-data="inscriptionForm()"`).
 
-### 7.8 CSS — Variables uniquement pour l'identité visuelle
+### 7.8 CSS — Organisation et conventions de nommage
+
+Le CSS est écrit en CSS natif, sans framework utilitaire. `app.css` ne contient que les variables globales et les `@import` — un fichier par template.
+
+**Flexbox obligatoire pour tous les layouts.** Pas de float, pas de positionnement absolu pour faire de la mise en page. Flex (ou Grid pour les layouts 2D complexes) partout.
+
+**Structure des fichiers :**
+```
+assets/styles/
+├── app.css              ← variables :root + @import de tout le reste
+├── components/          ← éléments réutilisables sur plusieurs pages
+│   └── badge.css
+└── pages/               ← un fichier par template Twig
+    ├── login.css
+    ├── dashboard.css
+    └── inscription.css
+```
+
+**Convention de nommage : préfixe par page ou composant.**
+
+Chaque classe est préfixée par le nom de la page ou du composant dans lequel elle est définie. Jamais de classe générique sans contexte.
 
 ```css
-/* assets/styles/variables.css */
+/* login.css → préfixe login- */
+.login-page { ... }
+.login-card { ... }
+.login-card-header { ... }
+.login-card-body { ... }
+.login-input { ... }
+.login-field-last { ... }
+
+/* badge.css → préfixe badge- */
+.badge { ... }
+.badge-validated { ... }
+```
+
+Convention : **tirets simples uniquement**. Pas de `__` ni de `--` BEM. Le préfixe de page/composant est toujours présent.
+
+**Variables uniquement pour l'identité visuelle :**
+
+```css
+/* assets/styles/app.css */
 :root {
     /* — Identité club — */
     --color-primary:       #ff3131;   /* Rouge club — boutons CTA, headers, badges actifs */
@@ -445,56 +486,52 @@ Si la logique Alpine devient complexe, elle va dans un composant JS séparé (`x
     --color-primary-light: #ffe5e5;   /* Rouge pâle — backgrounds de badges, alertes légères */
 
     /* — Textes — */
-    --color-text-base:     #1f1f1f;   /* Quasi-noir — titres, labels forts */
-    --color-text-body:     #374151;   /* Gris anthracite — corps de texte, tableaux */
-    --color-text-muted:    #6b7280;   /* Gris moyen — sous-titres, métadonnées */
-    --color-text-disabled: #9ca3af;   /* Gris clair — champs désactivés */
-    --color-text-inverse:  #ffffff;   /* Blanc — texte sur fond rouge */
+    --color-text-base:     #1f1f1f;
+    --color-text-body:     #374151;
+    --color-text-muted:    #6b7280;
+    --color-text-disabled: #9ca3af;
+    --color-text-inverse:  #ffffff;
 
     /* — Fonds — */
-    --color-bg-page:       #ffffff;   /* Fond principal — blanc */
-    --color-bg-subtle:     #f9fafb;   /* Fond alterné — lignes paires tableau, sidebar */
-    --color-bg-muted:      #f3f4f6;   /* Fond désactivé, inputs readonly */
+    --color-bg-page:   #ffffff;
+    --color-bg-subtle: #f9fafb;
+    --color-bg-muted:  #f3f4f6;
 
     /* — Bordures — */
-    --color-border:        #e5e7eb;   /* Bordures tableau, cards, inputs */
-    --color-border-strong: #d1d5db;   /* Bordures au focus ou en emphase */
+    --color-border:        #e5e7eb;
+    --color-border-strong: #d1d5db;
 
     /* — Statuts licenciés — */
-    --color-status-sent:       #3b82f6;   /* Bleu — lien envoyé */
-    --color-status-sent-bg:    #eff6ff;
-    --color-status-completed:  #f59e0b;   /* Amber — formulaire complété */
+    --color-status-sent:         #3b82f6;
+    --color-status-sent-bg:      #eff6ff;
+    --color-status-completed:    #f59e0b;
     --color-status-completed-bg: #fffbeb;
-    --color-status-validated:  #22c55e;   /* Vert — validé */
+    --color-status-validated:    #22c55e;
     --color-status-validated-bg: #f0fdf4;
 
     /* — Feedback — */
-    --color-success:       #22c55e;
-    --color-success-bg:    #f0fdf4;
-    --color-warning:       #f59e0b;
-    --color-warning-bg:    #fffbeb;
-    --color-danger:        #ef4444;
-    --color-danger-bg:     #fef2f2;
-    --color-info:          #3b82f6;
-    --color-info-bg:       #eff6ff;
+    --color-success:    #22c55e;  --color-success-bg: #f0fdf4;
+    --color-warning:    #f59e0b;  --color-warning-bg: #fffbeb;
+    --color-danger:     #ef4444;  --color-danger-bg:  #fef2f2;
+    --color-info:       #3b82f6;  --color-info-bg:    #eff6ff;
 
     /* — Typographie — */
-    --font-sans:   'Inter', system-ui, -apple-system, sans-serif;
-    --font-size-xs:   0.75rem;    /* 12px */
-    --font-size-sm:   0.875rem;   /* 14px */
-    --font-size-base: 1rem;       /* 16px */
-    --font-size-lg:   1.125rem;   /* 18px */
-    --font-size-xl:   1.25rem;    /* 20px */
-    --font-size-2xl:  1.5rem;     /* 24px */
+    --font-sans:      'Montserrat', system-ui, -apple-system, sans-serif;
+    --font-size-xs:   0.75rem;
+    --font-size-sm:   0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg:   1.125rem;
+    --font-size-xl:   1.25rem;
+    --font-size-2xl:  1.5rem;
 
     /* — Espacements — */
-    --radius-sm:  0.25rem;
-    --radius-md:  0.5rem;
-    --radius-lg:  0.75rem;
-    --radius-xl:  1rem;
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
 
     /* — Ombres — */
-    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-card:  0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-modal: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 ```
@@ -504,7 +541,7 @@ Si la logique Alpine devient complexe, elle va dans un composant JS séparé (`x
 - **Rouge réservé aux éléments forts** : bouton CTA principal, header admin, bandeaux de section, badges de statut actif.
 - **Texte anthracite (`--color-text-body`)** pour tout le corps de texte. Noir pur uniquement pour les titres.
 - **Tableaux lisibles** : alternance `--color-bg-page` / `--color-bg-subtle` sur les lignes. Bordures légères `--color-border`.
-- **Jamais de couleur en dur dans les templates.** Toujours passer par les variables CSS ou les classes Tailwind configurées depuis ces variables.
+- **Jamais de couleur en dur dans les templates.** Toujours passer par les variables CSS.
 
 ---
 
