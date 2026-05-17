@@ -1,0 +1,251 @@
+.import-page {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+    background-color: var(--color-bg-subtle);
+}
+
+.import-card {
+    width: 100%;
+    max-width: 540px;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-card);
+}
+
+.import-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--color-text-base);
+    margin-bottom: 0.75rem;
+}
+
+.import-card-title {
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+}
+
+.import-card-desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+/* — Dropzone — */
+.import-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 2rem 1.5rem;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    margin-bottom: 1.25rem;
+    text-align: center;
+}
+
+.import-dropzone:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.import-dropzone-input {
+    display: none;
+}
+
+.import-dropzone-text {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-base);
+}
+
+.import-dropzone-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* — Submit — */
+.import-submit {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.import-submit:hover {
+    background: var(--color-primary-dark);
+}
+
+/* — Info bloc — */
+.import-info {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+}
+
+.import-info-title {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+}
+
+.import-info-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.625rem;
+}
+
+.import-info-list li {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-body);
+    padding-left: 0.875rem;
+    position: relative;
+}
+
+.import-info-list li::before {
+    content: '·';
+    position: absolute;
+    left: 0;
+    color: var(--color-text-muted);
+}
+
+.import-info-note {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+/* — Stats résultat — */
+.import-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.import-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 1.25rem 0.75rem;
+    border-radius: var(--radius-lg);
+    text-align: center;
+}
+
+.import-stat-success { background: var(--color-success-bg); }
+.import-stat-info    { background: var(--color-info-bg); }
+.import-stat-danger  { background: var(--color-danger-bg); }
+
+.import-stat-value {
+    font-size: var(--font-size-2xl);
+    font-weight: 900;
+    line-height: 1;
+}
+
+.import-stat-success .import-stat-value { color: var(--color-success); }
+.import-stat-info    .import-stat-value { color: var(--color-info); }
+.import-stat-danger  .import-stat-value { color: var(--color-danger); }
+
+.import-stat-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+/* — Erreurs — */
+.import-errors {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--color-danger-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-danger);
+}
+
+.import-errors-title {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-danger);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+}
+
+.import-errors-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.import-errors-list li {
+    font-size: var(--font-size-sm);
+    color: var(--color-danger);
+    padding-left: 0.875rem;
+    position: relative;
+}
+
+.import-errors-list li::before {
+    content: '·';
+    position: absolute;
+    left: 0;
+}
+
+/* — Actions — */
+.import-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.import-btn-primary,
+.import-btn-secondary {
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.import-btn-primary {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.import-btn-primary:hover {
+    background: var(--color-primary-dark);
+}
+
+.import-btn-secondary {
+    background: var(--color-bg-subtle);
+    color: var(--color-text-base);
+    border: 1px solid var(--color-border);
+}
+
+.import-btn-secondary:hover {
+    background: var(--color-bg-muted);
+}

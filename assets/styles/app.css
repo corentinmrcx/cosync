@@ -1,8 +1,10 @@
 @import './components/navbar.css';
 @import './components/footer.css';
 @import './components/hub-card.css';
+@import './components/breadcrumb.css';
 @import './pages/login.css';
 @import './pages/dashboard.css';
+@import './pages/import.css';
 
 :root {
     /* — Identité club — */

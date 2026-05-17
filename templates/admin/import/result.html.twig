@@ -1,22 +1,61 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}CoSync - Résultat import{% endblock %}
+{% block title %}CoSync — Résultat import{% endblock %}
 
 {% block content %}
-<h1>Résultat de l'import</h1>
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Import', route: 'admin_import_index' },
+    { label: 'Résultat' }
+] } %}
 
-<p>✅ Créés : {{ result.created }}</p>
-<p>🔄 Mis à jour : {{ result.updated }}</p>
-<p>❌ Erreurs : {{ result.errors|length }}</p>
+<div class="import-page">
 
-{% if result.errors %}
-    <h2>Erreurs</h2>
-    <ul>
-        {% for error in result.errors %}
-            <li>{{ error }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
+    <div class="import-card">
 
-<a href="{{ path('admin_import_index') }}">Nouvel import</a>
+        <div class="import-card-header">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <h1 class="import-card-title">Résultat de l'import</h1>
+        </div>
+
+        <div class="import-stats">
+            <div class="import-stat import-stat-success">
+                <span class="import-stat-value">{{ result.created }}</span>
+                <span class="import-stat-label">Créés</span>
+            </div>
+            <div class="import-stat import-stat-info">
+                <span class="import-stat-value">{{ result.updated }}</span>
+                <span class="import-stat-label">Mis à jour</span>
+            </div>
+            <div class="import-stat import-stat-danger">
+                <span class="import-stat-value">{{ result.errors|length }}</span>
+                <span class="import-stat-label">Erreurs</span>
+            </div>
+        </div>
+
+        {% if result.errors %}
+            <div class="import-errors">
+                <p class="import-errors-title">Détail des erreurs</p>
+                <ul class="import-errors-list">
+                    {% for error in result.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <div class="import-actions">
+            <a href="{{ path('admin_import_index') }}" class="import-btn-secondary">
+                Nouvel import
+            </a>
+            <a href="{{ path('admin_licencies_list') }}" class="import-btn-primary">
+                Voir les licenciés
+            </a>
+        </div>
+
+    </div>
+
+</div>
 {% endblock %}

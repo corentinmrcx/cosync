@@ -1,0 +1,10 @@
+<nav class="breadcrumb">
+    {% for item in items %}
+        {% if not loop.last %}
+            <a href="{{ path(item.route) }}" class="breadcrumb-link">{{ item.label }}</a>
+            <span class="breadcrumb-sep">›</span>
+        {% else %}
+            <span class="breadcrumb-current">{{ item.label }}</span>
+        {% endif %}
+    {% endfor %}
+</nav>
