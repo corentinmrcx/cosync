@@ -16,8 +16,8 @@ class SeasonRepository extends ServiceEntityRepository
         parent::__construct($registry, Season::class);
     }
 
-    public function findActive(): ?Season
+    public function findMostRecent(): ?Season
     {
-        return $this->findOneBy(['active' => true]);
+        return $this->findOneBy([], ['createdAt' => 'DESC']);
     }
 }

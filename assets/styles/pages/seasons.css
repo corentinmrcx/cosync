@@ -100,27 +100,6 @@
     text-align: right;
 }
 
-.seasons-badge-active {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.625rem;
-    border-radius: 999px;
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    background: var(--color-status-validated-bg);
-    color: var(--color-status-validated);
-}
-
-.seasons-badge-inactive {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.625rem;
-    border-radius: 999px;
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    background: var(--color-bg-muted);
-    color: var(--color-text-muted);
-}
 
 .seasons-action-link {
     font-size: var(--font-size-sm);
@@ -165,8 +144,7 @@
 }
 
 @media (max-width: 640px) {
-    .seasons-col-costs  { display: none; }
-    .seasons-col-status { display: none; }
+    .seasons-col-costs { display: none; }
 }
 
 /* — Formulaire saison — */

@@ -16,9 +16,6 @@ class Season
     #[ORM\Column(length: 20)]
     private string $label;
 
-    #[ORM\Column]
-    private bool $active = false;
-
     /** @var array<string, int> ex: {"jeunes": 85, "seniors": 120} */
     #[ORM\Column(type: 'json')]
     private array $baseCosts = [];
@@ -44,17 +41,6 @@ class Season
     public function setLabel(string $label): static
     {
         $this->label = $label;
-        return $this;
-    }
-
-    public function isActive(): bool
-    {
-        return $this->active;
-    }
-
-    public function setActive(bool $active): static
-    {
-        $this->active = $active;
         return $this;
     }
 

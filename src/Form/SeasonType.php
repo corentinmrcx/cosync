@@ -4,7 +4,6 @@ namespace App\Form;
 
 use App\Entity\Season;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -47,10 +46,7 @@ class SeasonType extends AbstractType
                 'data'        => $options['cout_seniors'],
                 'constraints' => [new Positive()],
             ])
-            ->add('active', CheckboxType::class, [
-                'label'    => 'Saison active',
-                'required' => false,
-            ]);
+        ;
     }
 
     public function configureOptions(OptionsResolver $resolver): void

@@ -27,7 +27,7 @@ class SeasonContext
             }
         }
 
-        return $this->seasonRepository->findActive();
+        return $this->seasonRepository->findMostRecent();
     }
 
     public function setCurrentSeason(Season $season): void

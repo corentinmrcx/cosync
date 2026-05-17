@@ -108,12 +108,5 @@ class SeasonController extends AbstractController
         return $this->redirect($request->headers->get('referer') ?? $this->generateUrl('admin_dashboard'));
     }
 
-    #[Route('/{id}/activer', name: 'activate', methods: ['POST'])]
-    public function activate(Season $season, SeasonService $seasonService): Response
-    {
-        $seasonService->activate($season);
 
-        $this->addFlash('success', sprintf('Saison "%s" activée.', $season->getLabel()));
-        return $this->redirectToRoute('admin_seasons_list');
-    }
 }
