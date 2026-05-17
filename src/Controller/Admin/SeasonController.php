@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/admin/saisons', name: 'admin_seasons_')]
+#[Route('/admin/config/saisons', name: 'admin_seasons_')]
 class SeasonController extends AbstractController
 {
     #[Route('', name: 'list')]

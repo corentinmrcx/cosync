@@ -1,0 +1,37 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Configuration{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Configuration' }
+] } %}
+
+<div class="dashboard">
+    <div class="dashboard-hub">
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'gear',
+            label: 'Saisons',
+            sub: 'Gérer les saisons et les tarifs',
+            route: 'admin_seasons_list'
+        } %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'users',
+            label: 'Utilisateurs',
+            sub: 'Gérer les comptes admin',
+            route: 'admin_users_list'
+        } %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'box',
+            label: 'Catégories',
+            sub: 'Bientôt disponible',
+            disabled: true
+        } %}
+
+    </div>
+</div>
+{% endblock %}

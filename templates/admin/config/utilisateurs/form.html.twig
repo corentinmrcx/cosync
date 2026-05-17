@@ -1,0 +1,46 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — {{ title }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Configuration', route: 'admin_config_index' },
+    { label: 'Utilisateurs', route: 'admin_users_list' },
+    { label: title }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+
+        <h1 class="season-form-header">{{ title }}</h1>
+
+        <hr class="season-form-divider">
+
+        <div class="season-form-field">
+            {{ form_label(form.email) }}
+            {{ form_widget(form.email) }}
+            {{ form_errors(form.email) }}
+        </div>
+
+        <div class="season-form-field">
+            {{ form_label(form.plainPassword) }}
+            {{ form_widget(form.plainPassword) }}
+            {{ form_errors(form.plainPassword) }}
+        </div>
+
+        <hr class="season-form-divider">
+
+        <div class="season-form-checkbox">
+            {{ form_widget(form.isAdmin) }}
+            {{ form_label(form.isAdmin) }}
+            {{ form_errors(form.isAdmin) }}
+        </div>
+
+        <button type="submit" class="season-form-submit">Enregistrer</button>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

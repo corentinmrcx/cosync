@@ -5,15 +5,18 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Configuration', route: 'admin_config_index' },
     { label: 'Saisons', route: 'admin_seasons_list' },
     { label: title }
 ] } %}
 
 <div class="season-form-page">
 
-    <h1 class="season-form-header">{{ title }}</h1>
-
     {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+
+        <h1 class="season-form-header">{{ title }}</h1>
+
+        <hr class="season-form-divider">
 
         <div class="season-form-years">
             <div class="season-form-field">
