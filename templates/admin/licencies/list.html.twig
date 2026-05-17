@@ -1,110 +1,199 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}CoSync - Licenciés{% endblock %}
+{% block title %}CoSync — Licenciés{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-    <h1 class="text-xl font-bold" style="color: var(--color-text-base);">
-        Licenciés
-        {% if season %}
-            <span class="text-sm font-normal ml-2" style="color: var(--color-text-muted);">{{ season.label }}</span>
-        {% endif %}
-    </h1>
-    <a href="{{ path('admin_import_index') }}" class="px-4 py-2 rounded text-sm font-medium" style="background-color: var(--color-primary); color: white;">
-        Importer XLSX
-    </a>
-</div>
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Licenciés' }
+] } %}
 
-{# Filtres #}
-<form method="get" class="flex flex-wrap gap-3 mb-6">
-    <input
-        type="search"
-        name="search"
-        value="{{ search ?? '' }}"
-        placeholder="Rechercher un licencié…"
-        class="border rounded px-3 py-1.5 text-sm"
-        style="border-color: var(--color-border); min-width: 220px;"
-    >
-    <select name="team" class="border rounded px-3 py-1.5 text-sm" style="border-color: var(--color-border);" onchange="this.form.submit()">
-        <option value="">Toutes les équipes</option>
-        {% for team in teams %}
-            <option value="{{ team.id }}" {% if currentTeam and currentTeam.id == team.id %}selected{% endif %}>
-                {{ team.name }}
-            </option>
-        {% endfor %}
-    </select>
+<div class="licencies-page">
 
-    <select name="category" class="border rounded px-3 py-1.5 text-sm" style="border-color: var(--color-border);" onchange="this.form.submit()">
-        <option value="">Toutes les catégories</option>
-        {% for cat in categories %}
-            <option value="{{ cat.id }}" {% if currentCategory and currentCategory.id == cat.id %}selected{% endif %}>
-                {{ cat.label }}
-            </option>
-        {% endfor %}
-    </select>
+    <div class="licencies-filters">
 
-    <select name="status" class="border rounded px-3 py-1.5 text-sm" style="border-color: var(--color-border);" onchange="this.form.submit()">
-        <option value="">Tous les statuts</option>
-        {% for s in statuses %}
-            <option value="{{ s.value }}" {% if currentStatus and currentStatus.value == s.value %}selected{% endif %}>
-                {{ s.label() }}
-            </option>
-        {% endfor %}
-    </select>
+        {% set activeCount = (currentTeam ? 1 : 0) + (currentCategory ? 1 : 0) + (currentStatus ? 1 : 0) %}
 
-    {% if currentTeam or currentCategory or currentStatus or search %}
-        <a href="{{ path('admin_licencies_list') }}" class="px-3 py-1.5 rounded text-sm" style="color: var(--color-text-muted); border: 1px solid var(--color-border);">
-            Réinitialiser
-        </a>
-    {% endif %}
-</form>
+        <form method="get" id="licencies-form">
+            {# Conserver la page courante sur la recherche #}
+            <input type="hidden" name="team"     value="{{ currentTeam     ? currentTeam.id     : '' }}">
+            <input type="hidden" name="category" value="{{ currentCategory ? currentCategory.id  : '' }}">
+            <input type="hidden" name="status"   value="{{ currentStatus   ? currentStatus.value : '' }}">
 
-{# Compteur #}
-<p class="text-sm mb-3" style="color: var(--color-text-muted);">{{ licencies|length }} licencié(s)</p>
+            <div class="licencies-search-row">
+                <div class="licencies-search-wrap">
+                    <svg class="licencies-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="search"
+                           name="search"
+                           value="{{ search ?? '' }}"
+                           placeholder="Rechercher un licencié…"
+                           class="licencies-search-input">
+                </div>
+            </div>
+        </form>
 
-{# Tableau #}
-{% if licencies is empty %}
-    <p style="color: var(--color-text-muted);">Aucun licencié trouvé.</p>
-{% else %}
-    <table class="w-full text-sm border-collapse">
-        <thead>
-            <tr style="border-bottom: 2px solid var(--color-border); background-color: var(--color-bg-subtle);">
-                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Nom Prénom</th>
-                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Catégorie</th>
-                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Équipe</th>
-                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Email</th>
-                <th class="text-left px-4 py-2 font-semibold" style="color: var(--color-text-body);">Statut</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for licencie in licencies %}
-                <tr
-                    class="cursor-pointer hover:bg-gray-50 transition-colors"
-                    style="border-bottom: 1px solid var(--color-border);"
-                    onclick="window.location='{{ path('admin_licencies_show', {uuid: licencie.uuid}) }}'"
-                >
-                    <td class="px-4 py-2.5 font-medium" style="color: var(--color-text-base);">
-                        {{ licencie.nomPrenom }}
-                    </td>
-                    <td class="px-4 py-2.5" style="color: var(--color-text-body);">
-                        {{ licencie.category.code }}
-                    </td>
-                    <td class="px-4 py-2.5" style="color: var(--color-text-body);">
-                        {{ licencie.team ? licencie.team.name : '—' }}
-                    </td>
-                    <td class="px-4 py-2.5" style="color: var(--color-text-muted);">
-                        {{ licencie.email ?? '—' }}
-                    </td>
-                    <td class="px-4 py-2.5">
-                        {% if licencie.dossierClub %}
-                            {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
-                        {% else %}
-                            <span style="color: var(--color-text-disabled);">—</span>
+        <form method="get" id="licencies-filters-form">
+            <input type="hidden" name="search" value="{{ search ?? '' }}">
+
+            <div class="licencies-toolbar">
+
+                <div class="licencies-toolbar-left"
+                     x-data="{ open: false }"
+                     @click.outside="open = false">
+
+                    <button type="button"
+                            class="licencies-btn-filters {{ activeCount > 0 ? 'licencies-btn-filters-active' : '' }}"
+                            @click="open = !open">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="6"  x2="20" y2="6"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                            <line x1="11" y1="18" x2="13" y2="18"/>
+                        </svg>
+                        Filtres
+                        {% if activeCount > 0 %}
+                            <span class="licencies-filters-count">{{ activeCount }}</span>
                         {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% endif %}
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                             :style="open ? 'transform: rotate(180deg)' : ''">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+
+                    <div class="licencies-filters-dropdown" x-show="open" x-cloak>
+                        <p class="licencies-filters-dropdown-title">Filtrer par</p>
+
+                        <div class="licencies-filter-group">
+                            <label class="licencies-filter-label">Équipe</label>
+                            <select name="team" class="licencies-select" onchange="this.form.submit()">
+                                <option value="">Toutes</option>
+                                {% for team in teams %}
+                                    <option value="{{ team.id }}" {{ currentTeam and currentTeam.id == team.id ? 'selected' : '' }}>
+                                        {{ team.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="licencies-filter-group">
+                            <label class="licencies-filter-label">Catégorie</label>
+                            <select name="category" class="licencies-select" onchange="this.form.submit()">
+                                <option value="">Toutes</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}" {{ currentCategory and currentCategory.id == cat.id ? 'selected' : '' }}>
+                                        {{ cat.label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="licencies-filter-group">
+                            <label class="licencies-filter-label">Statut</label>
+                            <select name="status" class="licencies-select" onchange="this.form.submit()">
+                                <option value="">Tous</option>
+                                {% for s in statuses %}
+                                    <option value="{{ s.value }}" {{ currentStatus and currentStatus.value == s.value ? 'selected' : '' }}>
+                                        {{ s.label() }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {% if activeCount > 0 %}
+                            <a href="{{ path('admin_licencies_list', {search: search}) }}"
+                               class="licencies-filters-reset">
+                                Réinitialiser les filtres
+                            </a>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                <a href="{{ path('admin_import_index') }}" class="licencies-import-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Importer XLSX
+                </a>
+
+            </div>
+        </form>
+
+    </div>
+
+    {% if licencies is empty %}
+        <div class="licencies-empty">
+            <p>Aucun licencié trouvé.</p>
+        </div>
+    {% else %}
+        <div class="licencies-table-wrap">
+            <table class="licencies-table">
+                <thead>
+                    <tr>
+                        <th>Nom / Prénom</th>
+                        <th class="licencies-col-category">Catégorie</th>
+                        <th class="licencies-col-team">Équipe</th>
+                        <th class="licencies-col-email">Email</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for licencie in licencies %}
+                        <tr class="licencies-row"
+                            onclick="window.location='{{ path('admin_licencies_show', {uuid: licencie.uuid}) }}'">
+                            <td class="licencies-td-name">{{ licencie.nomPrenom }}</td>
+                            <td class="licencies-col-category">{{ licencie.category.code }}</td>
+                            <td class="licencies-col-team">{{ licencie.team ? licencie.team.name : '—' }}</td>
+                            <td class="licencies-col-email licencies-td-muted">{{ licencie.email ?? '—' }}</td>
+                            <td>
+                                {% if licencie.dossierClub %}
+                                    {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
+                                {% else %}
+                                    <span class="licencies-td-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="licencies-footer">
+            <p class="licencies-count">{{ total }} licencié{{ total > 1 ? 's' : '' }}</p>
+
+            {% if pages > 1 %}
+                <nav class="licencies-pagination">
+                    {% if page > 1 %}
+                        <a href="{{ path('admin_licencies_list', app.request.query.all|merge({page: page - 1})) }}"
+                           class="licencies-page-btn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                        </a>
+                    {% endif %}
+
+                    {% for p in 1..pages %}
+                        <a href="{{ path('admin_licencies_list', app.request.query.all|merge({page: p})) }}"
+                           class="licencies-page-btn {{ p == page ? 'licencies-page-btn-active' : '' }}">
+                            {{ p }}
+                        </a>
+                    {% endfor %}
+
+                    {% if page < pages %}
+                        <a href="{{ path('admin_licencies_list', app.request.query.all|merge({page: page + 1})) }}"
+                           class="licencies-page-btn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </a>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        </div>
+    {% endif %}
+
+</div>
 {% endblock %}

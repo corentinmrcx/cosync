@@ -64,7 +64,37 @@ class LicencieRepository extends ServiceEntityRepository
         ?Category $category = null,
         ?LicenceStatus $status = null,
         ?string $search = null,
+        int $limit = 25,
+        int $offset = 0,
     ): array {
+        return $this->buildFilterQuery($season, $team, $category, $status, $search)
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countWithFilters(
+        Season $season,
+        ?Team $team = null,
+        ?Category $category = null,
+        ?LicenceStatus $status = null,
+        ?string $search = null,
+    ): int {
+        return (int) $this->buildFilterQuery($season, $team, $category, $status, $search)
+            ->select('COUNT(l.uuid)')
+            ->resetDQLPart('orderBy')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function buildFilterQuery(
+        Season $season,
+        ?Team $team,
+        ?Category $category,
+        ?LicenceStatus $status,
+        ?string $search,
+    ): \Doctrine\ORM\QueryBuilder {
         $qb = $this->createQueryBuilder('l')
             ->leftJoin('l.dossierClub', 'd')
             ->leftJoin('l.team', 't')
@@ -89,6 +119,6 @@ class LicencieRepository extends ServiceEntityRepository
                ->setParameter('search', '%' . mb_strtolower($search, 'UTF-8') . '%');
         }
 
-        return $qb->getQuery()->getResult();
+        return $qb;
     }
 }

@@ -1,150 +1,194 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}CoSync - {{ licencie.nomPrenom }}{% endblock %}
+{% block title %}CoSync — {{ licencie.nomPrenom }}{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <a href="{{ path('admin_licencies_list') }}" class="text-sm" style="color: var(--color-text-muted);">
-        ← Retour à la liste
-    </a>
-</div>
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Licenciés', route: 'admin_licencies_list' },
+    { label: licencie.nomPrenom }
+] } %}
 
-<div class="flex items-start justify-between mb-6">
-    <div>
-        <h1 class="text-xl font-bold" style="color: var(--color-text-base);">{{ licencie.nomPrenom }}</h1>
-        <p class="text-sm mt-1" style="color: var(--color-text-muted);">
-            {{ licencie.category.label }} — {{ licencie.season.label }}
-        </p>
-    </div>
-    <div class="flex items-center gap-3">
-        {% if licencie.dossierClub %}
-            {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
-        {% endif %}
-        {% if licencie.email %}
-            <form method="post" action="{{ path('admin_licencies_send_link', {uuid: licencie.uuid}) }}">
-                <input type="hidden" name="_token" value="{{ csrf_token('send_link_' ~ licencie.uuid) }}">
-                <button type="submit" class="px-3 py-1.5 rounded text-sm font-medium" style="background-color: var(--color-primary); color: white;">
-                    Envoyer le lien
-                </button>
-            </form>
-        {% else %}
-            <span class="text-sm" style="color: var(--color-text-disabled);">Pas d'email</span>
-        {% endif %}
-    </div>
-</div>
+<div class="licencie-show-page">
 
-<div class="grid grid-cols-2 gap-6">
+    <div class="licencie-show-header">
+        <div>
+            <h1 class="licencie-show-title">{{ licencie.nomPrenom }}</h1>
+        </div>
 
-    {# Données FFF #}
-    <div class="p-4 rounded border" style="border-color: var(--color-border); background-color: var(--color-bg-page);">
-        <h2 class="font-semibold mb-3" style="color: var(--color-text-base);">Données FootClubs</h2>
-        <dl class="space-y-2 text-sm">
-            <div class="flex gap-2">
-                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">N° licence</dt>
-                <dd style="color: var(--color-text-body);">{{ licencie.numLicence ?? '—' }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Date de naissance</dt>
-                <dd style="color: var(--color-text-body);">{{ licencie.dateNaissance|date('d/m/Y') }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Catégorie</dt>
-                <dd style="color: var(--color-text-body);">{{ licencie.category.label }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Équipe</dt>
-                <dd style="color: var(--color-text-body);">{{ licencie.team ? licencie.team.name : '—' }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Email</dt>
-                <dd style="color: var(--color-text-body);">{{ licencie.email ?? '—' }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Téléphone</dt>
-                <dd style="color: var(--color-text-body);">{{ licencie.telephone ?? '—' }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Adresse</dt>
-                <dd style="color: var(--color-text-body);">
-                    {% if licencie.voieRue %}
-                        {{ licencie.voieRue }}<br>
-                        {{ licencie.codePostal }} {{ licencie.ville }}
-                    {% else %}
-                        —
-                    {% endif %}
-                </dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Importé le</dt>
-                <dd style="color: var(--color-text-body);">{{ licencie.importedAt|date('d/m/Y à H:i') }}</dd>
-            </div>
-        </dl>
+        <div class="licencie-show-header-actions">
+            {% if licencie.dossierClub %}
+                {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
+            {% endif %}
+
+            {% if licencie.email %}
+                <form method="post" action="{{ path('admin_licencies_send_link', {uuid: licencie.uuid}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('send_link_' ~ licencie.uuid) }}">
+                    <button type="submit" class="licencie-show-send-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                        Envoyer le lien
+                    </button>
+                </form>
+            {% else %}
+                <span class="licencie-show-no-email">Pas d'email renseigné</span>
+            {% endif %}
+        </div>
     </div>
 
-    {# Dossier club #}
-    <div class="p-4 rounded border" style="border-color: var(--color-border); background-color: var(--color-bg-page);">
-        <h2 class="font-semibold mb-3" style="color: var(--color-text-base);">Dossier club</h2>
-        {% if licencie.dossierClub %}
-            {% set d = licencie.dossierClub %}
-            <dl class="space-y-2 text-sm">
-                <div class="flex gap-2">
-                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Taille haut</dt>
-                    <dd style="color: var(--color-text-body);">{{ d.tailleHaut ?? '—' }}</dd>
-                </div>
-                <div class="flex gap-2">
-                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Taille bas</dt>
-                    <dd style="color: var(--color-text-body);">{{ d.tailleBas ?? '—' }}</dd>
-                </div>
-                <div class="flex gap-2">
-                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Pointure</dt>
-                    <dd style="color: var(--color-text-body);">{{ d.pointure ?? '—' }}</dd>
-                </div>
-                <div class="flex gap-2">
-                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Droit à l'image</dt>
-                    <dd style="color: var(--color-text-body);">
-                        {% if d.autorisationPhoto is null %}—
-                        {% elseif d.autorisationPhoto %}Oui
-                        {% else %}Non{% endif %}
+    <div class="licencie-show-grid">
+
+        {# — Données FootClubs — #}
+        <div class="licencie-show-card">
+            <h2 class="licencie-show-card-title">Données FootClubs</h2>
+
+            <dl class="licencie-show-dl">
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">N° licence</dt>
+                    <dd class="{{ licencie.numLicence ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ licencie.numLicence ?? '—' }}
                     </dd>
                 </div>
-                {% if licencie.category.isEcoleFoot %}
-                    <div class="flex gap-2">
-                        <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Transport dirigeants</dt>
-                        <dd style="color: var(--color-text-body);">
-                            {% if d.autorisationTransportDirigeants is null %}—
-                            {% elseif d.autorisationTransportDirigeants %}Oui
-                            {% else %}Non{% endif %}
-                        </dd>
-                    </div>
-                    <div class="flex gap-2">
-                        <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Transport parents</dt>
-                        <dd style="color: var(--color-text-body);">
-                            {% if d.autorisationTransportParents is null %}—
-                            {% elseif d.autorisationTransportParents %}Oui
-                            {% else %}Non{% endif %}
-                        </dd>
-                    </div>
-                {% endif %}
-                <div class="flex gap-2">
-                    <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Règlement signé</dt>
-                    <dd style="color: var(--color-text-body);">
-                        {% if d.isSigned %}
-                            Oui — {{ d.signatureDate|date('d/m/Y') }}
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Date de naissance</dt>
+                    <dd class="licencie-show-dd">{{ licencie.dateNaissance|date('d/m/Y') }}</dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Catégorie</dt>
+                    <dd class="licencie-show-dd">{{ licencie.category.label }}</dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Équipe</dt>
+                    <dd class="{{ licencie.team ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ licencie.team ? licencie.team.name : '—' }}
+                    </dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Email</dt>
+                    <dd class="{{ licencie.email ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ licencie.email ?? '—' }}
+                    </dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Téléphone</dt>
+                    <dd class="{{ licencie.telephone ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ licencie.telephone ?? '—' }}
+                    </dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Adresse</dt>
+                    <dd class="{{ licencie.voieRue ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {% if licencie.voieRue %}
+                            {{ licencie.voieRue }}<br>
+                            {{ licencie.codePostal }} {{ licencie.ville }}
                         {% else %}
-                            Non
+                            —
                         {% endif %}
                     </dd>
                 </div>
-                {% if d.paymentIntention %}
-                    <div class="flex gap-2">
-                        <dt class="w-36 shrink-0" style="color: var(--color-text-muted);">Mode paiement</dt>
-                        <dd style="color: var(--color-text-body);">{{ d.paymentIntention.label() }}</dd>
-                    </div>
-                {% endif %}
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Importé le</dt>
+                    <dd class="licencie-show-dd">{{ licencie.importedAt|date('d/m/Y à H:i') }}</dd>
+                </div>
             </dl>
-        {% else %}
-            <p class="text-sm" style="color: var(--color-text-muted);">Aucun dossier club.</p>
-        {% endif %}
+        </div>
+
+        {# — Dossier club — #}
+        <div class="licencie-show-card">
+            <h2 class="licencie-show-card-title">Dossier club</h2>
+
+            {% if licencie.dossierClub %}
+                {% set d = licencie.dossierClub %}
+                <dl class="licencie-show-dl">
+                    <div class="licencie-show-dl-row">
+                        <dt class="licencie-show-dt">Taille haut</dt>
+                        <dd class="{{ d.tailleHaut ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                            {{ d.tailleHaut ?? '—' }}
+                        </dd>
+                    </div>
+                    <div class="licencie-show-dl-row">
+                        <dt class="licencie-show-dt">Taille bas</dt>
+                        <dd class="{{ d.tailleBas ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                            {{ d.tailleBas ?? '—' }}
+                        </dd>
+                    </div>
+                    <div class="licencie-show-dl-row">
+                        <dt class="licencie-show-dt">Pointure</dt>
+                        <dd class="{{ d.pointure ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                            {{ d.pointure ?? '—' }}
+                        </dd>
+                    </div>
+                    <div class="licencie-show-dl-row">
+                        <dt class="licencie-show-dt">Droit à l'image</dt>
+                        <dd class="licencie-show-dd">
+                            {% if d.autorisationPhoto is null %}
+                                <span class="licencie-show-dd-empty">—</span>
+                            {% elseif d.autorisationPhoto %}
+                                <span class="licencie-show-pill licencie-show-pill-yes">Oui</span>
+                            {% else %}
+                                <span class="licencie-show-pill licencie-show-pill-no">Non</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    {% if licencie.category.isEcoleFoot %}
+                        <div class="licencie-show-dl-row">
+                            <dt class="licencie-show-dt">Transport dirigeants</dt>
+                            <dd class="licencie-show-dd">
+                                {% if d.autorisationTransportDirigeants is null %}
+                                    <span class="licencie-show-dd-empty">—</span>
+                                {% elseif d.autorisationTransportDirigeants %}
+                                    <span class="licencie-show-pill licencie-show-pill-yes">Oui</span>
+                                {% else %}
+                                    <span class="licencie-show-pill licencie-show-pill-no">Non</span>
+                                {% endif %}
+                            </dd>
+                        </div>
+                        <div class="licencie-show-dl-row">
+                            <dt class="licencie-show-dt">Transport parents</dt>
+                            <dd class="licencie-show-dd">
+                                {% if d.autorisationTransportParents is null %}
+                                    <span class="licencie-show-dd-empty">—</span>
+                                {% elseif d.autorisationTransportParents %}
+                                    <span class="licencie-show-pill licencie-show-pill-yes">Oui</span>
+                                {% else %}
+                                    <span class="licencie-show-pill licencie-show-pill-no">Non</span>
+                                {% endif %}
+                            </dd>
+                        </div>
+                    {% endif %}
+                    <div class="licencie-show-dl-row">
+                        <dt class="licencie-show-dt">Règlement signé</dt>
+                        <dd class="licencie-show-dd">
+                            {% if d.isSigned %}
+                                <span class="licencie-show-pill licencie-show-pill-yes">Oui</span>
+                                <span class="licencie-show-dd-empty" style="font-size: var(--font-size-xs); margin-left: 0.25rem;">
+                                    le {{ d.signatureDate|date('d/m/Y') }}
+                                </span>
+                            {% else %}
+                                <span class="licencie-show-pill licencie-show-pill-no">Non</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="licencie-show-dl-row">
+                        <dt class="licencie-show-dt">Mode de paiement</dt>
+                        <dd class="{{ d.paymentIntention ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                            {{ d.paymentIntention ? d.paymentIntention.label() : '—' }}
+                        </dd>
+                    </div>
+                    {% if d.formCompletedAt %}
+                        <div class="licencie-show-dl-row">
+                            <dt class="licencie-show-dt">Formulaire complété</dt>
+                            <dd class="licencie-show-dd">{{ d.formCompletedAt|date('d/m/Y à H:i') }}</dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            {% else %}
+                <p class="licencie-show-empty">Aucun dossier club — le lien d'inscription n'a pas encore été complété.</p>
+            {% endif %}
+        </div>
+
     </div>
 
 </div>

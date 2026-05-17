@@ -2,9 +2,12 @@
 @import './components/footer.css';
 @import './components/hub-card.css';
 @import './components/breadcrumb.css';
+@import './components/badge-status.css';
 @import './pages/login.css';
 @import './pages/dashboard.css';
 @import './pages/import.css';
+@import './pages/licencies.css';
+@import './pages/licencie-show.css';
 
 :root {
     /* — Identité club — */
@@ -76,7 +79,8 @@ body {
     font-family: var(--font-sans);
     color: var(--color-text-body);
     background-color: var(--color-bg-page);
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
@@ -85,4 +89,5 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }

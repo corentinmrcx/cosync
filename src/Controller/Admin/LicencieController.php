@@ -45,10 +45,16 @@ class LicencieController extends AbstractController
             $currentStatus = LicenceStatus::tryFrom($request->query->get('status'));
         }
 
-        $search = trim((string) $request->query->get('search', ''));
+        $search  = trim((string) $request->query->get('search', ''));
+        $page    = max(1, (int) $request->query->get('page', 1));
+        $perPage = 25;
+        $offset  = ($page - 1) * $perPage;
+
+        $total = $licencieRepo->countWithFilters($season, $currentTeam, $currentCategory, $currentStatus, $search ?: null);
+        $pages = (int) ceil($total / $perPage);
 
         return $this->render('admin/licencies/list.html.twig', [
-            'licencies'       => $licencieRepo->findWithFilters($season, $currentTeam, $currentCategory, $currentStatus, $search ?: null),
+            'licencies'       => $licencieRepo->findWithFilters($season, $currentTeam, $currentCategory, $currentStatus, $search ?: null, $perPage, $offset),
             'season'          => $season,
             'teams'           => $teamRepo->findBySeason($season),
             'categories'      => $categoryRepo->findAll(),
@@ -57,6 +63,9 @@ class LicencieController extends AbstractController
             'currentCategory' => $currentCategory,
             'currentStatus'   => $currentStatus,
             'search'          => $search,
+            'total'           => $total,
+            'page'            => $page,
+            'pages'           => $pages,
         ]);
     }
 

@@ -1,11 +1,16 @@
-{# Paramètre attendu : status (LicenceStatus value string) #}
-{% set map = {
-    'link_sent':        { label: 'Lien envoyé',         color: 'background-color: var(--color-status-sent-bg); color: var(--color-status-sent);' },
-    'form_completed':   { label: 'Formulaire complété', color: 'background-color: var(--color-status-completed-bg); color: var(--color-status-completed);' },
-    'payment_confirmed':{ label: 'Paiement confirmé',   color: 'background-color: var(--color-status-completed-bg); color: var(--color-status-completed);' },
-    'validated':        { label: 'Validé',              color: 'background-color: var(--color-status-validated-bg); color: var(--color-status-validated);' },
+{% set classes = {
+    'link_sent':         'badge-status badge-status-sent',
+    'form_completed':    'badge-status badge-status-completed',
+    'payment_confirmed': 'badge-status badge-status-completed',
+    'validated':         'badge-status badge-status-validated',
 } %}
-{% set entry = map[status] ?? { label: status, color: '' } %}
-<span class="px-2 py-0.5 rounded text-xs font-medium" style="{{ entry.color }}">
-    {{ entry.label }}
+{% set labels = {
+    'link_sent':         'Lien envoyé',
+    'form_completed':    'Formulaire complété',
+    'payment_confirmed': 'Paiement confirmé',
+    'validated':         'Validé',
+} %}
+<span class="{{ classes[status] ?? 'badge-status' }}">
+    <span class="badge-status-dot"></span>
+    {{ labels[status] ?? status }}
 </span>
