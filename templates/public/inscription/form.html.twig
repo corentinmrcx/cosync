@@ -1,343 +1,293 @@
-{% extends 'base.html.twig' %}
+{% extends 'public/layout.html.twig' %}
 
-{% block title %}Inscription – FC Soudron{% endblock %}
+{% block title %}Inscription – Foyer de Soudron{% endblock %}
 
 {% block head %}
-    {# signature_pad via CDN — chargé uniquement sur cette page #}
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js" defer></script>
-    <style>
-        canvas[x-ref="signatureCanvas"] {
-            width: 100%;
-            height: 160px;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            cursor: crosshair;
-            touch-action: none;
-            display: block;
-        }
-    </style>
 {% endblock %}
 
 {% block body %}
-<div class="min-h-screen" style="background-color: var(--color-bg-subtle);">
+<div class="inscription-page"
+     x-data="inscriptionForm({ isEcoleFoot: {{ licencie.category.isEcoleFoot ? 'true' : 'false' }}, montant: {{ montant }} })">
 
-    {# Header #}
-    <header class="px-4 py-4 shadow-sm" style="background-color: var(--color-primary); color: white;">
-        <p class="font-bold text-lg">FC Soudron</p>
-        <p class="text-sm opacity-75">Formulaire d'inscription {{ licencie.season.label }}</p>
-    </header>
-
-    {# Flash errors #}
-    {% for message in app.flashes('error') %}
-        <div class="px-4 py-3 text-sm font-medium" style="background-color: var(--color-danger-bg); color: var(--color-danger);">
-            {{ message }}
+    {# — Header — #}
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+            <span class="inscription-header-step" x-text="`Étape ${step} sur 5`"></span>
         </div>
-    {% endfor %}
-
-    <div class="max-w-lg mx-auto px-4 py-6"
-         x-data="inscriptionForm({ isEcoleFoot: {{ licencie.category.isEcoleFoot ? 'true' : 'false' }}, montant: {{ montant }} })">
-
-        {# Indicateur de progression #}
-        <div class="flex items-center gap-1 mb-6">
+        <div class="inscription-progress">
             {% for i in 1..5 %}
-                <div class="flex-1 h-1.5 rounded-full transition-colors"
-                     :style="step >= {{ i }} ? 'background-color: var(--color-primary)' : 'background-color: var(--color-border)'">
-                </div>
+                <div class="inscription-progress-segment"
+                     :class="step >= {{ i }} ? 'inscription-progress-segment-done' : ''"></div>
             {% endfor %}
         </div>
-        <p class="text-xs mb-6" style="color: var(--color-text-muted);" x-text="`Étape ${step} sur 5`"></p>
+    </header>
 
-        <form method="post" action="{{ path('public_inscription_submit', {uuid: licencie.uuid}) }}">
-            <input type="hidden" name="_token" value="{{ csrf_token('inscription_submit') }}">
-            <input type="hidden" name="signature_data" :value="signatureData">
+    {# — Flash — #}
+    {% for message in app.flashes('error') %}
+        <div class="inscription-flash-error">{{ message }}</div>
+    {% endfor %}
 
-            {# ── Étape 1 : Bienvenue ─────────────────────────────────────── #}
-            <div x-show="step === 1">
-                <h1 class="text-xl font-bold mb-2" style="color: var(--color-text-base);">
-                    Bonjour {{ licencie.prenom }} 👋
-                </h1>
-                <p class="text-sm mb-4" style="color: var(--color-text-body);">
-                    Bienvenue dans le formulaire d'inscription au <strong>FC Soudron</strong> pour la saison {{ licencie.season.label }}.
-                </p>
-                <p class="text-sm mb-6" style="color: var(--color-text-body);">
-                    Ce formulaire vous prendra environ <strong>3 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations, et signerez le règlement intérieur.
-                </p>
-                <button type="button" @click="next"
-                        class="w-full py-3 rounded font-semibold text-white"
-                        style="background-color: var(--color-primary);">
-                    Commencer →
-                </button>
-            </div>
+    <main class="inscription-main">
+        <div class="inscription-container">
 
-            {# ── Étape 2 : Équipement ─────────────────────────────────────── #}
-            <div x-show="step === 2">
-                <h2 class="text-lg font-bold mb-4" style="color: var(--color-text-base);">Tailles d'équipement</h2>
+            <form method="post" action="{{ path('public_inscription_submit', {uuid: licencie.uuid}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('inscription_submit') }}">
+                <input type="hidden" name="signature_data" :value="signatureData">
 
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1" style="color: var(--color-text-body);">Taille haut *</label>
-                        <select name="taille_haut" x-model="tailleHaut" required
-                                class="w-full border rounded px-3 py-2.5 text-sm" style="border-color: var(--color-border);">
-                            <option value="">— Choisir —</option>
-                            <optgroup label="Tailles enfants">
-                                <option value="6 ans">6 ans</option>
-                                <option value="8 ans">8 ans</option>
-                                <option value="10 ans">10 ans</option>
-                                <option value="12 ans">12 ans</option>
-                                <option value="14 ans">14 ans</option>
-                                <option value="16 ans">16 ans</option>
-                            </optgroup>
-                            <optgroup label="Tailles adultes">
-                                <option value="XS">XS</option>
-                                <option value="S">S</option>
-                                <option value="M">M</option>
-                                <option value="L">L</option>
-                                <option value="XL">XL</option>
-                                <option value="XXL">XXL</option>
-                            </optgroup>
-                        </select>
-                    </div>
+                {# ── Étape 1 : Bienvenue ── #}
+                <div x-show="step === 1" class="inscription-card">
+                    <h1 class="inscription-welcome-name">Bonjour {{ licencie.prenom }} 👋</h1>
+                    <p class="inscription-welcome-text">
+                        Bienvenue dans le formulaire d'inscription au <strong>Foyer de Soudron</strong> pour la saison <strong>{{ licencie.season.label }}</strong>.
+                    </p>
+                    <p class="inscription-welcome-text">
+                        Ce formulaire vous prendra environ <strong>3 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations et signerez le règlement intérieur.
+                    </p>
+                    <button type="button" @click="next" class="inscription-btn-start">
+                        Commencer →
+                    </button>
+                </div>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-1" style="color: var(--color-text-body);">Taille bas *</label>
-                        <select name="taille_bas" x-model="tailleBas" required
-                                class="w-full border rounded px-3 py-2.5 text-sm" style="border-color: var(--color-border);">
-                            <option value="">— Choisir —</option>
-                            <optgroup label="Tailles enfants">
-                                <option value="6 ans">6 ans</option>
-                                <option value="8 ans">8 ans</option>
-                                <option value="10 ans">10 ans</option>
-                                <option value="12 ans">12 ans</option>
-                                <option value="14 ans">14 ans</option>
-                                <option value="16 ans">16 ans</option>
-                            </optgroup>
-                            <optgroup label="Tailles adultes">
-                                <option value="XS">XS</option>
-                                <option value="S">S</option>
-                                <option value="M">M</option>
-                                <option value="L">L</option>
-                                <option value="XL">XL</option>
-                                <option value="XXL">XXL</option>
-                            </optgroup>
-                        </select>
-                    </div>
+                {# ── Étape 2 : Équipement ── #}
+                <div x-show="step === 2" class="inscription-card">
+                    <h2 class="inscription-step-title">Tailles d'équipement</h2>
+                    <div class="inscription-fields">
 
-                    <div>
-                        <label class="block text-sm font-medium mb-1" style="color: var(--color-text-body);">Pointure *</label>
-                        <select name="pointure" x-model="pointure" required
-                                class="w-full border rounded px-3 py-2.5 text-sm" style="border-color: var(--color-border);">
-                            <option value="">— Choisir —</option>
-                            {% for p in range(28, 48) %}
-                                <option value="{{ p }}">{{ p }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="inscription-field">
+                            <label class="inscription-label" for="taille_haut">Taille haut *</label>
+                            <select id="taille_haut" name="taille_haut" x-model="tailleHaut" required class="inscription-select">
+                                <option value="">— Choisir —</option>
+                                <optgroup label="Tailles enfants">
+                                    <option value="6 ans">6 ans</option>
+                                    <option value="8 ans">8 ans</option>
+                                    <option value="10 ans">10 ans</option>
+                                    <option value="12 ans">12 ans</option>
+                                    <option value="14 ans">14 ans</option>
+                                    <option value="16 ans">16 ans</option>
+                                </optgroup>
+                                <optgroup label="Tailles adultes">
+                                    <option value="XS">XS</option>
+                                    <option value="S">S</option>
+                                    <option value="M">M</option>
+                                    <option value="L">L</option>
+                                    <option value="XL">XL</option>
+                                    <option value="XXL">XXL</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div class="inscription-field">
+                            <label class="inscription-label" for="taille_bas">Taille bas *</label>
+                            <select id="taille_bas" name="taille_bas" x-model="tailleBas" required class="inscription-select">
+                                <option value="">— Choisir —</option>
+                                <optgroup label="Tailles enfants">
+                                    <option value="6 ans">6 ans</option>
+                                    <option value="8 ans">8 ans</option>
+                                    <option value="10 ans">10 ans</option>
+                                    <option value="12 ans">12 ans</option>
+                                    <option value="14 ans">14 ans</option>
+                                    <option value="16 ans">16 ans</option>
+                                </optgroup>
+                                <optgroup label="Tailles adultes">
+                                    <option value="XS">XS</option>
+                                    <option value="S">S</option>
+                                    <option value="M">M</option>
+                                    <option value="L">L</option>
+                                    <option value="XL">XL</option>
+                                    <option value="XXL">XXL</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div class="inscription-field">
+                            <label class="inscription-label" for="pointure">Pointure *</label>
+                            <select id="pointure" name="pointure" x-model="pointure" required class="inscription-select">
+                                <option value="">— Choisir —</option>
+                                {% for p in range(28, 48) %}
+                                    <option value="{{ p }}">{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
                     </div>
                 </div>
-            </div>
 
-            {# ── Étape 3 : Autorisations ───────────────────────────────────── #}
-            <div x-show="step === 3">
-                <h2 class="text-lg font-bold mb-4" style="color: var(--color-text-base);">Autorisations</h2>
+                {# ── Étape 3 : Autorisations ── #}
+                <div x-show="step === 3" class="inscription-card">
+                    <h2 class="inscription-step-title">Autorisations</h2>
+                    <div class="inscription-fields">
 
-                <div class="space-y-5">
-                    {# Droit à l'image — pour tous #}
-                    <div>
-                        <p class="text-sm font-medium mb-2" style="color: var(--color-text-body);">
-                            Droit à l'image *<br>
-                            <span class="font-normal text-xs" style="color: var(--color-text-muted);">
-                                Autorisation de diffuser des photos/vidéos du licencié sur les supports du club.
-                            </span>
-                        </p>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                <input type="radio" name="autorisation_photo" value="1" x-model="autorisationPhoto">
-                                Oui
-                            </label>
-                            <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                <input type="radio" name="autorisation_photo" value="0" x-model="autorisationPhoto">
-                                Non
-                            </label>
+                        <div class="inscription-question-block">
+                            <span class="inscription-question-label">Droit à l'image *</span>
+                            <span class="inscription-question-hint">Autorisation de diffuser des photos/vidéos du licencié sur les supports du club.</span>
+                            <div class="inscription-radio-group">
+                                <label class="inscription-radio-option">
+                                    <input type="radio" name="autorisation_photo" value="1" x-model="autorisationPhoto">
+                                    <span class="inscription-radio-label">Oui</span>
+                                </label>
+                                <label class="inscription-radio-option">
+                                    <input type="radio" name="autorisation_photo" value="0" x-model="autorisationPhoto">
+                                    <span class="inscription-radio-label">Non</span>
+                                </label>
+                            </div>
                         </div>
+
+                        <template x-if="isEcoleFoot">
+                            <div class="inscription-fields">
+                                <hr class="inscription-question-divider">
+
+                                <div class="inscription-question-block">
+                                    <span class="inscription-question-label">Transport par les dirigeants *</span>
+                                    <span class="inscription-question-hint">Autorisation que votre enfant soit transporté par les dirigeants du club lors des déplacements.</span>
+                                    <div class="inscription-radio-group">
+                                        <label class="inscription-radio-option">
+                                            <input type="radio" name="autorisation_transport_dirigeants" value="1" x-model="autorisationTransportDirigeants">
+                                            <span class="inscription-radio-label">Oui</span>
+                                        </label>
+                                        <label class="inscription-radio-option">
+                                            <input type="radio" name="autorisation_transport_dirigeants" value="0" x-model="autorisationTransportDirigeants">
+                                            <span class="inscription-radio-label">Non</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="inscription-question-block">
+                                    <span class="inscription-question-label">Transport par d'autres parents *</span>
+                                    <span class="inscription-question-hint">Autorisation que votre enfant soit transporté par d'autres parents lors des déplacements.</span>
+                                    <div class="inscription-radio-group">
+                                        <label class="inscription-radio-option">
+                                            <input type="radio" name="autorisation_transport_parents" value="1" x-model="autorisationTransportParents">
+                                            <span class="inscription-radio-label">Oui</span>
+                                        </label>
+                                        <label class="inscription-radio-option">
+                                            <input type="radio" name="autorisation_transport_parents" value="0" x-model="autorisationTransportParents">
+                                            <span class="inscription-radio-label">Non</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                    </div>
+                </div>
+
+                {# ── Étape 4 : Règlement + Signature ── #}
+                <div x-show="step === 4" class="inscription-card">
+                    <h2 class="inscription-step-title">Règlement intérieur</h2>
+
+                    <div class="inscription-reglement">
+                        <p class="inscription-reglement-article">Article 1 – Respect</p>
+                        <p>Tout licencié s'engage à respecter ses coéquipiers, les adversaires, les arbitres et les dirigeants. Tout comportement irrespectueux pourra entraîner une sanction disciplinaire.</p>
+                        <p class="inscription-reglement-article">Article 2 – Ponctualité</p>
+                        <p>Les licenciés doivent se présenter aux entraînements et matchs à l'heure indiquée par l'entraîneur. Toute absence doit être signalée dans les meilleurs délais.</p>
+                        <p class="inscription-reglement-article">Article 3 – Équipement</p>
+                        <p>Le licencié doit prendre soin du matériel mis à sa disposition par le club. Tout équipement perdu ou endommagé par négligence pourra être facturé.</p>
+                        <p class="inscription-reglement-article">Article 4 – Cotisation</p>
+                        <p>L'inscription n'est définitive qu'à réception du règlement complet de la cotisation. Aucune participation aux matchs officiels ne sera autorisée sans paiement.</p>
+                        <p class="inscription-reglement-article">Article 5 – Comportement</p>
+                        <p>Tout comportement contraire à l'éthique sportive (violence, insultes, tricherie) est strictement interdit et pourra entraîner une exclusion temporaire ou définitive du club.</p>
                     </div>
 
-                    {# Transport — école de foot uniquement #}
-                    <template x-if="isEcoleFoot">
-                        <div class="space-y-5">
-                            <div>
-                                <p class="text-sm font-medium mb-2" style="color: var(--color-text-body);">
-                                    Transport par les dirigeants *<br>
-                                    <span class="font-normal text-xs" style="color: var(--color-text-muted);">
-                                        Autorisation que votre enfant soit transporté par les dirigeants du club lors des déplacements.
-                                    </span>
-                                </p>
-                                <div class="flex gap-4">
-                                    <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                        <input type="radio" name="autorisation_transport_dirigeants" value="1" x-model="autorisationTransportDirigeants">
-                                        Oui
-                                    </label>
-                                    <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                        <input type="radio" name="autorisation_transport_dirigeants" value="0" x-model="autorisationTransportDirigeants">
-                                        Non
-                                    </label>
-                                </div>
-                            </div>
+                    <label class="inscription-checkbox-row">
+                        <input type="checkbox" x-model="hasRead">
+                        <span class="inscription-checkbox-text">J'ai lu et j'accepte le règlement intérieur du Foyer de Soudron.</span>
+                    </label>
 
-                            <div>
-                                <p class="text-sm font-medium mb-2" style="color: var(--color-text-body);">
-                                    Transport par d'autres parents *<br>
-                                    <span class="font-normal text-xs" style="color: var(--color-text-muted);">
-                                        Autorisation que votre enfant soit transporté par d'autres parents lors des déplacements.
-                                    </span>
-                                </p>
-                                <div class="flex gap-4">
-                                    <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                        <input type="radio" name="autorisation_transport_parents" value="1" x-model="autorisationTransportParents">
-                                        Oui
-                                    </label>
-                                    <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                        <input type="radio" name="autorisation_transport_parents" value="0" x-model="autorisationTransportParents">
-                                        Non
-                                    </label>
-                                </div>
+                    <div x-show="hasRead">
+                        <p class="inscription-signature-label">Signature *</p>
+                        <p class="inscription-signature-hint">Signez dans le cadre ci-dessous avec votre doigt ou votre souris.</p>
+                        <div class="inscription-signature-wrap">
+                            <canvas class="inscription-signature-canvas" x-ref="signatureCanvas"></canvas>
+                            <div class="inscription-signature-bar">
+                                <button type="button" @click="clearSignature" class="inscription-signature-clear">
+                                    Effacer
+                                </button>
+                                <span class="inscription-signature-saved" x-show="signatureData !== ''">
+                                    ✓ Signature enregistrée
+                                </span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {# ── Étape 5 : Paiement ── #}
+                <div x-show="step === 5" class="inscription-card">
+                    <h2 class="inscription-step-title">Mode de paiement</h2>
+
+                    <p class="inscription-montant">Cotisation : <strong x-text="montant + ' €'"></strong></p>
+                    <p class="inscription-warning">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        Votre inscription ne sera validée qu'à réception du paiement.
+                    </p>
+
+                    <div class="inscription-payment-options">
+                        {% set modes = [
+                            { value: 'virement',   label: 'Virement bancaire' },
+                            { value: 'cheque',     label: 'Chèque' },
+                            { value: 'especes',    label: 'Espèces' },
+                            { value: 'cb_online',  label: 'Carte bancaire en ligne (SumUp)' },
+                            { value: 'pass_sport', label: "Pass'Sport" },
+                            { value: 'caf',        label: 'Chèque CAF' },
+                            { value: 'ancv',       label: 'ANCV / Chèques Vacances' },
+                        ] %}
+                        {% for mode in modes %}
+                            <label class="inscription-payment-option">
+                                <input type="radio" name="payment_intention" value="{{ mode.value }}" x-model="paymentMode">
+                                <span class="inscription-payment-label">{{ mode.label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+
+                    <div x-show="paymentMode === 'virement'" class="inscription-payment-info">
+                        <p><strong>Coordonnées bancaires du club</strong></p>
+                        <p>IBAN : <strong>FR76 XXXX XXXX XXXX XXXX XXXX XXX</strong></p>
+                        <p>BIC : <strong>XXXXXXXX</strong></p>
+                        <p>Libellé : <strong>COTISATION {{ licencie.nom }} {{ licencie.season.label }}</strong></p>
+                    </div>
+                    <div x-show="paymentMode === 'cheque'" class="inscription-payment-info">
+                        Chèque à l'ordre de <strong>Foyer de Soudron</strong>, à remettre au local lors d'une permanence ou à un dirigeant.
+                    </div>
+                    <div x-show="paymentMode === 'especes'" class="inscription-payment-info">
+                        Espèces à remettre au local lors d'une permanence ou à un dirigeant.
+                    </div>
+                    <div x-show="paymentMode === 'cb_online'" class="inscription-payment-info">
+                        <p>Paiement sécurisé par carte bancaire via SumUp.</p>
+                        <p style="color: var(--color-text-muted); font-size: var(--font-size-xs);">Des frais de traitement peuvent s'appliquer (+1,5%). Le lien de paiement vous sera transmis par le club.</p>
+                    </div>
+                    <div x-show="['pass_sport', 'caf', 'ancv'].includes(paymentMode)" class="inscription-payment-info">
+                        Document à remettre en main propre à un dirigeant du club.
+                    </div>
+                </div>
+
+                {# ── Navigation ── #}
+                <div class="inscription-nav">
+                    <template x-if="step > 1">
+                        <button type="button" @click="prev" class="inscription-btn-prev">
+                            ← Précédent
+                        </button>
+                    </template>
+
+                    <template x-if="step > 1 && step < 5">
+                        <button type="button" @click="next" :disabled="!canGoNext" class="inscription-btn-next">
+                            Suivant →
+                        </button>
+                    </template>
+
+                    <template x-if="step === 5">
+                        <button type="submit" :disabled="!canGoNext" class="inscription-btn-submit">
+                            Valider mon inscription ✓
+                        </button>
                     </template>
                 </div>
-            </div>
 
-            {# ── Étape 4 : Règlement + Signature ──────────────────────────── #}
-            <div x-show="step === 4">
-                <h2 class="text-lg font-bold mb-4" style="color: var(--color-text-base);">Règlement intérieur</h2>
+            </form>
 
-                <div class="text-sm mb-4 p-4 rounded border overflow-y-auto"
-                     style="max-height: 240px; border-color: var(--color-border); color: var(--color-text-body); line-height: 1.6;">
-                    <p class="font-semibold mb-2">Article 1 – Respect</p>
-                    <p class="mb-3">Tout licencié s'engage à respecter ses coéquipiers, les adversaires, les arbitres et les dirigeants. Tout comportement irrespectueux pourra entraîner une sanction disciplinaire.</p>
-                    <p class="font-semibold mb-2">Article 2 – Ponctualité</p>
-                    <p class="mb-3">Les licenciés doivent se présenter aux entraînements et matchs à l'heure indiquée par l'entraîneur. Toute absence doit être signalée dans les meilleurs délais.</p>
-                    <p class="font-semibold mb-2">Article 3 – Équipement</p>
-                    <p class="mb-3">Le licencié doit prendre soin du matériel mis à sa disposition par le club. Tout équipement perdu ou endommagé par négligence pourra être facturé.</p>
-                    <p class="font-semibold mb-2">Article 4 – Cotisation</p>
-                    <p class="mb-3">L'inscription n'est définitive qu'à réception du règlement complet de la cotisation. Aucune participation aux matchs officiels ne sera autorisée sans paiement.</p>
-                    <p class="font-semibold mb-2">Article 5 – Comportement</p>
-                    <p>Tout comportement contraire à l'éthique sportive (violence, insultes, tricherie) est strictement interdit et pourra entraîner une exclusion temporaire ou définitive du club.</p>
-                </div>
+        </div>
+    </main>
 
-                <label class="flex items-start gap-2 text-sm mb-5 cursor-pointer">
-                    <input type="checkbox" x-model="hasRead" class="mt-0.5 shrink-0">
-                    <span style="color: var(--color-text-body);">
-                        J'ai lu et j'accepte le règlement intérieur du FC Soudron.
-                    </span>
-                </label>
-
-                <div x-show="hasRead">
-                    <p class="text-sm font-medium mb-2" style="color: var(--color-text-body);">Signature *</p>
-                    <p class="text-xs mb-2" style="color: var(--color-text-muted);">Signez dans le cadre ci-dessous.</p>
-                    <canvas x-ref="signatureCanvas"></canvas>
-                    <div class="flex items-center justify-between mt-2">
-                        <button type="button" @click="clearSignature"
-                                class="text-xs px-3 py-1 rounded border"
-                                style="color: var(--color-text-muted); border-color: var(--color-border);">
-                            Effacer
-                        </button>
-                        <span class="text-xs" style="color: var(--color-text-muted);" x-show="signatureData !== ''">
-                            ✓ Signature enregistrée
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {# ── Étape 5 : Paiement ───────────────────────────────────────── #}
-            <div x-show="step === 5">
-                <h2 class="text-lg font-bold mb-2" style="color: var(--color-text-base);">Mode de paiement</h2>
-                <p class="text-sm mb-1" style="color: var(--color-text-body);">
-                    Cotisation : <strong x-text="montant + ' €'"></strong>
-                </p>
-                <p class="text-xs mb-5 font-medium" style="color: var(--color-warning);">
-                    Votre inscription ne sera validée qu'à réception du paiement.
-                </p>
-
-                <div class="space-y-3 mb-5">
-                    {% set modes = [
-                        { value: 'virement',  label: 'Virement bancaire' },
-                        { value: 'cheque',    label: 'Chèque' },
-                        { value: 'especes',   label: 'Espèces' },
-                        { value: 'cb_online', label: 'Carte bancaire en ligne (SumUp)' },
-                        { value: 'pass_sport',label: 'Pass\'Sport' },
-                        { value: 'caf',       label: 'Chèque CAF' },
-                        { value: 'ancv',      label: 'ANCV / Chèques Vacances' },
-                    ] %}
-                    {% for mode in modes %}
-                        <label class="flex items-center gap-3 p-3 rounded border cursor-pointer text-sm"
-                               style="border-color: var(--color-border); color: var(--color-text-body);"
-                               :style="paymentMode === '{{ mode.value }}' ? 'border-color: var(--color-primary); background-color: var(--color-primary-light);' : ''">
-                            <input type="radio" name="payment_intention" value="{{ mode.value }}" x-model="paymentMode">
-                            {{ mode.label }}
-                        </label>
-                    {% endfor %}
-                </div>
-
-                {# Info conditionnelle selon le mode choisi #}
-                <div x-show="paymentMode === 'virement'"
-                     class="p-3 rounded text-sm" style="background-color: var(--color-info-bg); color: var(--color-text-body);">
-                    <p class="font-semibold mb-1">Coordonnées bancaires du club</p>
-                    <p>IBAN : <strong>FR76 XXXX XXXX XXXX XXXX XXXX XXX</strong></p>
-                    <p>BIC : <strong>XXXXXXXX</strong></p>
-                    <p class="mt-1">Libellé : <strong>COTISATION {{ licencie.nom }} {{ licencie.season.label }}</strong></p>
-                </div>
-
-                <div x-show="paymentMode === 'cheque'"
-                     class="p-3 rounded text-sm" style="background-color: var(--color-info-bg); color: var(--color-text-body);">
-                    Chèque à l'ordre de <strong>FC Soudron</strong>, à remettre au local lors d'une permanence ou à un dirigeant.
-                </div>
-
-                <div x-show="paymentMode === 'especes'"
-                     class="p-3 rounded text-sm" style="background-color: var(--color-info-bg); color: var(--color-text-body);">
-                    Espèces à remettre au local lors d'une permanence ou à un dirigeant.
-                </div>
-
-                <div x-show="paymentMode === 'cb_online'"
-                     class="p-3 rounded text-sm" style="background-color: var(--color-info-bg); color: var(--color-text-body);">
-                    <p class="mb-1">Paiement sécurisé par carte bancaire via SumUp.</p>
-                    <p class="text-xs" style="color: var(--color-text-muted);">Des frais de traitement peuvent s'appliquer (+1,5%). Le lien de paiement vous sera transmis par le club.</p>
-                </div>
-
-                <div x-show="['pass_sport', 'caf', 'ancv'].includes(paymentMode)"
-                     class="p-3 rounded text-sm" style="background-color: var(--color-info-bg); color: var(--color-text-body);">
-                    Document à remettre en main propre à un dirigeant du club.
-                </div>
-            </div>
-
-            {# ── Navigation ───────────────────────────────────────────────── #}
-            <div class="mt-6 flex items-center gap-3">
-                <template x-if="step > 1">
-                    <button type="button" @click="prev"
-                            class="flex-1 py-3 rounded border text-sm font-medium"
-                            style="border-color: var(--color-border); color: var(--color-text-body);">
-                        ← Précédent
-                    </button>
-                </template>
-
-                <template x-if="step > 1 && step < 5">
-                    <button type="button" @click="next"
-                            :disabled="!canGoNext"
-                            class="flex-1 py-3 rounded text-sm font-semibold text-white"
-                            :style="canGoNext ? 'background-color: var(--color-primary);' : 'background-color: var(--color-border); cursor: not-allowed;'">
-                        Suivant →
-                    </button>
-                </template>
-
-                <template x-if="step === 5">
-                    <button type="submit"
-                            :disabled="!canGoNext"
-                            class="flex-1 py-3 rounded text-sm font-semibold text-white"
-                            :style="canGoNext ? 'background-color: var(--color-primary);' : 'background-color: var(--color-border); cursor: not-allowed;'">
-                        Valider mon inscription ✓
-                    </button>
-                </template>
-            </div>
-
-        </form>
-    </div>
 </div>
 {% endblock %}

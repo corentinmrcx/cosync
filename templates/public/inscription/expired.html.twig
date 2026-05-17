@@ -1,12 +1,28 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lien expiré – FC Soudron</title>
-</head>
-<body style="font-family: system-ui, sans-serif; max-width: 480px; margin: 80px auto; padding: 0 24px; text-align: center; color: #374151;">
-    <h1 style="font-size: 1.25rem; color: #1f1f1f;">Lien expiré ou invalide</h1>
-    <p>Ce lien n'est plus valide. Contactez le club pour recevoir un nouveau lien d'inscription.</p>
-</body>
-</html>
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Lien expiré – Foyer de Soudron{% endblock %}
+
+{% block body %}
+<div class="inscription-page">
+
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+        </div>
+    </header>
+
+    <main class="inscription-main">
+        <div class="inscription-container">
+            <div class="inscription-card">
+                <div class="inscription-expired-icon">⏰</div>
+                <h1 class="inscription-expired-title">Lien expiré ou invalide</h1>
+                <p class="inscription-expired-text">
+                    Ce lien n'est plus valide.<br>
+                    Contactez le club pour recevoir un nouveau lien d'inscription.
+                </p>
+            </div>
+        </div>
+    </main>
+
+</div>
+{% endblock %}
