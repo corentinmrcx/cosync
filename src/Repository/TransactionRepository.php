@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Licencie;
+use App\Entity\Season;
 use App\Entity\Transaction;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -21,5 +22,10 @@ class TransactionRepository extends ServiceEntityRepository
     public function findByLicencie(Licencie $licencie): array
     {
         return $this->findBy(['licencie' => $licencie], ['datePaiement' => 'DESC']);
+    }
+
+    public function findByLicencieAndSeason(Licencie $licencie, Season $season): ?Transaction
+    {
+        return $this->findOneBy(['licencie' => $licencie, 'season' => $season]);
     }
 }

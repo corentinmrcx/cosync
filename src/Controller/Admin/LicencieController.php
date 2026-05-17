@@ -3,9 +3,13 @@
 namespace App\Controller\Admin;
 
 use App\Enum\LicenceStatus;
+use App\Enum\PaymentMode;
+use App\Form\LicencieEditType;
 use App\Repository\CategoryRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
+use App\Repository\TransactionRepository;
+use App\Service\LicencieService;
 use App\Service\Mail\InscriptionLinkService;
 use App\Service\SeasonContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -70,16 +74,85 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}', name: 'show')]
-    public function show(string $uuid, LicencieRepository $licencieRepo): Response
-    {
+    public function show(
+        string $uuid,
+        LicencieRepository $licencieRepo,
+        TransactionRepository $transactionRepo,
+        SeasonContext $seasonContext,
+    ): Response {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null) {
             throw $this->createNotFoundException('Licencié introuvable.');
         }
 
+        $season      = $seasonContext->getCurrentSeason();
+        $transaction = $season ? $transactionRepo->findByLicencieAndSeason($licencie, $season) : null;
+
         return $this->render('admin/licencies/show.html.twig', [
-            'licencie' => $licencie,
+            'licencie'    => $licencie,
+            'transaction' => $transaction,
+        ]);
+    }
+
+    #[Route('/{uuid}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    public function edit(
+        string $uuid,
+        Request $request,
+        LicencieRepository $licencieRepo,
+        TransactionRepository $transactionRepo,
+        SeasonContext $seasonContext,
+        LicencieService $licencieService,
+    ): Response {
+        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        if ($licencie === null) {
+            throw $this->createNotFoundException('Licencié introuvable.');
+        }
+
+        $season = $seasonContext->getCurrentSeason();
+        if ($season === null) {
+            return $this->redirectToRoute('admin_seasons_list');
+        }
+
+        $dossier     = $licencie->getDossierClub();
+        $transaction = $transactionRepo->findByLicencieAndSeason($licencie, $season);
+
+        $form = $this->createForm(LicencieEditType::class, $licencie, [
+            'season'            => $season,
+            'taille_haut'       => $dossier?->getTailleHaut(),
+            'taille_bas'        => $dossier?->getTailleBas(),
+            'pointure'          => $dossier?->getPointure(),
+            'payment_mode'      => $transaction?->getMode(),
+            'payment_montant'   => $transaction?->getMontant(),
+            'payment_reference' => $transaction?->getReference(),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $paymentModeValue = $form->get('paymentMode')->getData();
+            $paymentMode      = $paymentModeValue ? PaymentMode::tryFrom($paymentModeValue) : null;
+            $montant          = $form->get('paymentMontant')->getData();
+
+            $licencieService->edit(
+                $licencie,
+                $form->get('tailleHaut')->getData() ?: null,
+                $form->get('tailleBas')->getData() ?: null,
+                $form->get('pointure')->getData() ?: null,
+                $paymentMode,
+                is_numeric($montant) ? (float) $montant : null,
+                $form->get('paymentReference')->getData() ?: null,
+                $this->getUser(),
+                $season,
+            );
+
+            $this->addFlash('success', 'Dossier de ' . $licencie->getNomPrenom() . ' mis à jour.');
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+        }
+
+        return $this->render('admin/licencies/edit.html.twig', [
+            'form'        => $form,
+            'licencie'    => $licencie,
+            'transaction' => $transaction,
         ]);
     }
 

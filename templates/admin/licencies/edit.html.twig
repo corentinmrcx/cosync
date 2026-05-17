@@ -1,0 +1,102 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Modifier {{ licencie.nomPrenom }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Licenciés', route: 'admin_licencies_list' },
+    { label: licencie.nomPrenom, route: 'admin_licencies_show', params: { uuid: licencie.uuid } },
+    { label: 'Modifier' }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card licencie-edit-card' } }) }}
+
+        <h1 class="season-form-header">{{ licencie.nomPrenom }}</h1>
+
+        <hr class="season-form-divider">
+
+        {# — Équipe — #}
+        <p class="licencie-edit-section">Équipe</p>
+
+        <div class="season-form-field">
+            {{ form_label(form.team) }}
+            {{ form_widget(form.team) }}
+            {{ form_errors(form.team) }}
+        </div>
+
+        <hr class="season-form-divider">
+
+        {# — Équipement — #}
+        <p class="licencie-edit-section">Équipement</p>
+
+        {% if licencie.dossierClub is null %}
+            <p class="licencie-edit-note">Le licencié n'a pas encore complété son formulaire d'inscription.</p>
+        {% endif %}
+
+        <div class="season-form-field">
+            {{ form_label(form.tailleHaut) }}
+            {{ form_widget(form.tailleHaut) }}
+            {{ form_errors(form.tailleHaut) }}
+        </div>
+
+        <div class="season-form-field">
+            {{ form_label(form.tailleBas) }}
+            {{ form_widget(form.tailleBas) }}
+            {{ form_errors(form.tailleBas) }}
+        </div>
+
+        <div class="season-form-field">
+            {{ form_label(form.pointure) }}
+            {{ form_widget(form.pointure) }}
+            {{ form_errors(form.pointure) }}
+        </div>
+
+        <hr class="season-form-divider">
+
+        {# — Paiement — #}
+        <p class="licencie-edit-section">Paiement</p>
+
+        {% if licencie.dossierClub and licencie.dossierClub.paymentIntention %}
+            <div class="licencie-edit-intent">
+                Intention déclarée par le licencié :
+                <strong>{{ licencie.dossierClub.paymentIntention.label() }}</strong>
+            </div>
+        {% endif %}
+
+        {% if transaction %}
+            <div class="licencie-edit-payment-status licencie-edit-payment-confirmed">
+                Paiement confirmé le {{ transaction.datePaiement|date('d/m/Y') }}
+                — {{ transaction.montant }} € — {{ transaction.mode.label() }}
+                {% if transaction.reference %}({{ transaction.reference }}){% endif %}
+            </div>
+        {% endif %}
+
+        <div class="season-form-field">
+            {{ form_label(form.paymentMode) }}
+            {{ form_widget(form.paymentMode) }}
+            {{ form_errors(form.paymentMode) }}
+        </div>
+
+        <div class="season-form-field">
+            {{ form_label(form.paymentMontant) }}
+            {{ form_widget(form.paymentMontant, { attr: { placeholder: '85.00', min: '0', step: '0.01' } }) }}
+            {{ form_errors(form.paymentMontant) }}
+        </div>
+
+        <div class="season-form-field">
+            {{ form_label(form.paymentReference) }}
+            {{ form_widget(form.paymentReference) }}
+            {{ form_errors(form.paymentReference) }}
+        </div>
+
+        <p class="licencie-edit-note">Remplissez le mode <strong>et</strong> le montant pour confirmer le paiement.</p>
+
+        <button type="submit" class="season-form-submit">Enregistrer</button>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

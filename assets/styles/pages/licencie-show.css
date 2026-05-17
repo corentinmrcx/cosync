@@ -75,6 +75,10 @@
     }
 }
 
+.licencie-show-card-full {
+    grid-column: 1 / -1;
+}
+
 /* — Carte — */
 .licencie-show-card {
     background: var(--color-bg-page);

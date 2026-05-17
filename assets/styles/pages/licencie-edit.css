@@ -1,0 +1,54 @@
+/* — Édition licencié — */
+.licencie-edit-card {
+    max-width: 560px;
+}
+
+.licencie-edit-section {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.licencie-edit-note {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.licencie-edit-intent {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    background: var(--color-bg-muted);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+}
+
+.licencie-edit-payment-confirmed {
+    font-size: var(--font-size-sm);
+    color: var(--color-status-validated);
+    background: var(--color-status-validated-bg);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+}
+
+/* — Bouton modifier sur la fiche show — */
+.licencie-show-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.4rem 0.875rem;
+    background: var(--color-bg-muted);
+    color: var(--color-text-body);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: background 0.15s;
+}
+
+.licencie-show-edit-btn:hover {
+    background: var(--color-border);
+}
