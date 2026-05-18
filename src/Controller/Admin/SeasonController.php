@@ -4,7 +4,6 @@ namespace App\Controller\Admin;
 
 use App\Entity\Season;
 use App\Form\SeasonType;
-use App\Repository\SeasonRepository;
 use App\Service\SeasonContext;
 use App\Service\SeasonService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,14 +14,6 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin/config/saisons', name: 'admin_seasons_')]
 class SeasonController extends AbstractController
 {
-    #[Route('', name: 'list')]
-    public function list(SeasonRepository $seasonRepo): Response
-    {
-        return $this->render('admin/seasons/list.html.twig', [
-            'seasons' => $seasonRepo->findBy([], ['createdAt' => 'DESC']),
-        ]);
-    }
-
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]
     public function new(Request $request, SeasonService $seasonService): Response
     {
@@ -42,7 +33,7 @@ class SeasonController extends AbstractController
             $seasonService->create($season);
 
             $this->addFlash('success', sprintf('Saison "%s" créée.', $season->getLabel()));
-            return $this->redirectToRoute('admin_seasons_list');
+            return $this->redirectToRoute('admin_config_index');
         }
 
         return $this->render('admin/seasons/form.html.twig', [
@@ -78,7 +69,7 @@ class SeasonController extends AbstractController
             $seasonService->update($season);
 
             $this->addFlash('success', sprintf('Saison "%s" mise à jour.', $season->getLabel()));
-            return $this->redirectToRoute('admin_seasons_list');
+            return $this->redirectToRoute('admin_config_index');
         }
 
         return $this->render('admin/seasons/form.html.twig', [
@@ -107,6 +98,4 @@ class SeasonController extends AbstractController
 
         return $this->redirect($request->headers->get('referer') ?? $this->generateUrl('admin_dashboard'));
     }
-
-
 }

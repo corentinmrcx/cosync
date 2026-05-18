@@ -8,30 +8,35 @@
     { label: 'Configuration' }
 ] } %}
 
-<div class="dashboard">
-    <div class="dashboard-hub">
+<div class="config-page">
 
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'gear',
-            label: 'Saisons',
-            sub: 'Gérer les saisons et les tarifs',
-            route: 'admin_seasons_list'
-        } %}
-
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'users',
-            label: 'Utilisateurs',
-            sub: 'Gérer les comptes admin',
-            route: 'admin_users_list'
-        } %}
-
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'box',
-            label: 'Catégories',
-            sub: 'Bientôt disponible',
-            disabled: true
-        } %}
-
+    <div class="config-header">
+        <h1 class="config-title">Configuration</h1>
     </div>
+
+    <section class="config-section">
+        <h2 class="config-section-title">Saison sélectionnée</h2>
+
+        {% if currentSeason %}
+            <div class="config-season-card">
+                <div class="config-season-card-body">
+                    <span class="config-season-card-label">{{ currentSeason.label }}</span>
+                    <div class="config-season-card-costs">
+                        <span>Jeunes : <strong>{{ currentSeason.baseCosts.jeunes ?? '—' }} €</strong></span>
+                        <span>Seniors : <strong>{{ currentSeason.baseCosts.seniors ?? '—' }} €</strong></span>
+                    </div>
+                </div>
+                <a href="{{ path('admin_seasons_edit', {id: currentSeason.id}) }}" class="config-action-link">
+                    Modifier la saison
+                </a>
+            </div>
+        {% else %}
+            <div class="config-empty">
+                Aucune saison sélectionnée.
+                <a href="{{ path('admin_seasons_new') }}">Créer une saison →</a>
+            </div>
+        {% endif %}
+    </section>
+
 </div>
 {% endblock %}

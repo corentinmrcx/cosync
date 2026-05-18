@@ -2,6 +2,8 @@
 
 namespace App\Controller\Admin;
 
+use App\Repository\SeasonRepository;
+use App\Service\SeasonContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -10,8 +12,11 @@ use Symfony\Component\Routing\Attribute\Route;
 class ConfigController extends AbstractController
 {
     #[Route('', name: 'index')]
-    public function index(): Response
+    public function index(SeasonRepository $seasonRepo, SeasonContext $seasonContext): Response
     {
-        return $this->render('admin/config/index.html.twig');
+        return $this->render('admin/config/index.html.twig', [
+            'currentSeason' => $seasonContext->getCurrentSeason(),
+            'seasons'       => $seasonRepo->findBy([], ['createdAt' => 'DESC']),
+        ]);
     }
 }

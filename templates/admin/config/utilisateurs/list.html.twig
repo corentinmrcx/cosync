@@ -5,15 +5,14 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Configuration', route: 'admin_config_index' },
     { label: 'Utilisateurs' }
 ] } %}
 
-<div class="seasons-page">
+<div class="users-page">
 
-    <div class="seasons-header">
-        <h1 class="seasons-title">Utilisateurs</h1>
-        <a href="{{ path('admin_users_new') }}" class="seasons-new-btn">
+    <div class="users-header">
+        <h1 class="users-title">Utilisateurs</h1>
+        <a href="{{ path('admin_users_new') }}" class="users-new-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
@@ -21,35 +20,34 @@
         </a>
     </div>
 
-    <div class="seasons-table-wrap">
-        <table class="seasons-table">
+    <div class="users-table-wrap">
+        <table class="users-table">
             <thead>
                 <tr>
                     <th>Email</th>
-                    <th class="seasons-col-status">Rôle</th>
+                    <th>Rôle</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 {% for user in users %}
-                    <tr class="seasons-row">
-                        <td class="seasons-td-label">{{ user.email }}</td>
-                        <td class="seasons-col-status">
+                    <tr class="users-row">
+                        <td class="users-td-email">{{ user.email }}</td>
+                        <td>
                             {% if 'ROLE_ADMIN' in user.roles %}
-                                <span class="seasons-badge-active">Admin</span>
+                                <span class="users-badge-admin">Admin</span>
                             {% else %}
-                                <span class="seasons-badge-inactive">Utilisateur</span>
+                                <span class="users-badge-user">Utilisateur</span>
                             {% endif %}
                         </td>
                         <td>
-                            <div class="seasons-actions-cell">
-                                <a href="{{ path('admin_users_edit', {id: user.id}) }}" class="seasons-action-link">Modifier</a>
+                            <div class="users-actions-cell">
+                                <a href="{{ path('admin_users_edit', {id: user.id}) }}" class="users-action-edit">Modifier</a>
                                 {% if app.user.id != user.id %}
                                     <form method="post" action="{{ path('admin_users_delete', {id: user.id}) }}">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete_user_' ~ user.id) }}">
-                                        <button type="submit" class="seasons-action-btn"
-                                                onclick="return confirm('Supprimer cet utilisateur ?')"
-                                                style="color: var(--color-danger);">
+                                        <button type="submit" class="users-action-delete"
+                                                onclick="return confirm('Supprimer cet utilisateur ?')">
                                             Supprimer
                                         </button>
                                     </form>

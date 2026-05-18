@@ -18,17 +18,31 @@
 
             <div class="navbar-dropdown-section">
                 <p class="navbar-dropdown-label">Saison</p>
-                {% for season in navbar_seasons %}
-                    <a href="{{ path('admin_seasons_switch', {id: season.id}) }}"
-                       class="navbar-dropdown-item {{ navbar_current_season and season.id == navbar_current_season.id ? 'navbar-dropdown-item-active' : '' }}">
-                        {{ season.label }}
-                        {% if navbar_current_season and season.id == navbar_current_season.id %}
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                        {% endif %}
-                    </a>
-                {% endfor %}
+                <div class="navbar-season-select-wrap">
+                    <select class="navbar-season-select"
+                            @change="window.location.href = $event.target.value">
+                        {% for season in navbar_seasons %}
+                            <option value="{{ path('admin_seasons_switch', {id: season.id}) }}"
+                                    {{ navbar_current_season and season.id == navbar_current_season.id ? 'selected' : '' }}>
+                                {{ season.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <a href="{{ path('admin_seasons_new') }}" class="navbar-dropdown-item navbar-dropdown-item-new-season">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Nouvelle saison
+                </a>
+            </div>
+
+            <div class="navbar-dropdown-divider"></div>
+
+            <div class="navbar-dropdown-section">
+                <p class="navbar-dropdown-label">Administration</p>
+                <a href="{{ path('admin_users_list') }}" class="navbar-dropdown-item">Utilisateurs</a>
+                <span class="navbar-dropdown-item navbar-dropdown-item-disabled">Catégories FFF</span>
             </div>
 
             <div class="navbar-dropdown-divider"></div>

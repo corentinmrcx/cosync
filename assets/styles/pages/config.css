@@ -1,0 +1,112 @@
+.config-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    background-color: var(--color-bg-subtle);
+    gap: 2rem;
+}
+
+.config-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.config-title {
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+    margin: 0;
+}
+
+/* — Sections — */
+
+.config-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.config-section-title {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+/* — Card saison courante — */
+
+.config-season-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-card);
+}
+
+.config-season-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.config-season-card-label {
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+}
+
+.config-season-card-costs {
+    display: flex;
+    gap: 1.5rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.config-season-card-costs strong {
+    color: var(--color-text-body);
+}
+
+.config-action-link {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-info);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+}
+
+.config-action-link:hover {
+    opacity: 0.75;
+}
+
+/* — État vide — */
+
+.config-empty {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.config-empty a {
+    color: var(--color-info);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .config-season-card { flex-direction: column; align-items: flex-start; }
+    .config-season-card-costs { flex-direction: column; gap: 0.25rem; }
+}

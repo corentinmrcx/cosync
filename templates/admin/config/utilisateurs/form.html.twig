@@ -5,40 +5,39 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Configuration', route: 'admin_config_index' },
     { label: 'Utilisateurs', route: 'admin_users_list' },
     { label: title }
 ] } %}
 
-<div class="season-form-page">
+<div class="users-form-page">
 
-    {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+    {{ form_start(form, { attr: { class: 'users-form-card' } }) }}
 
-        <h1 class="season-form-header">{{ title }}</h1>
+        <h1 class="users-form-title">{{ title }}</h1>
 
-        <hr class="season-form-divider">
+        <hr class="users-form-divider">
 
-        <div class="season-form-field">
+        <div class="users-form-field">
             {{ form_label(form.email) }}
             {{ form_widget(form.email) }}
             {{ form_errors(form.email) }}
         </div>
 
-        <div class="season-form-field">
+        <div class="users-form-field">
             {{ form_label(form.plainPassword) }}
             {{ form_widget(form.plainPassword) }}
             {{ form_errors(form.plainPassword) }}
         </div>
 
-        <hr class="season-form-divider">
+        <hr class="users-form-divider">
 
-        <div class="season-form-checkbox">
+        <div class="users-form-checkbox">
             {{ form_widget(form.isAdmin) }}
             {{ form_label(form.isAdmin) }}
             {{ form_errors(form.isAdmin) }}
         </div>
 
-        <button type="submit" class="season-form-submit">Enregistrer</button>
+        <button type="submit" class="users-form-submit">Enregistrer</button>
 
     {{ form_end(form) }}
 

@@ -32,7 +32,7 @@ class LicencieController extends AbstractController
         $season = $seasonContext->getCurrentSeason();
 
         if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_list');
+            return $this->redirectToRoute('admin_seasons_new');
         }
 
         $currentTeam     = null;
@@ -111,7 +111,7 @@ class LicencieController extends AbstractController
 
         $season = $seasonContext->getCurrentSeason();
         if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_list');
+            return $this->redirectToRoute('admin_seasons_new');
         }
 
         $dossier     = $licencie->getDossierClub();
