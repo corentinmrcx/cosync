@@ -178,16 +178,11 @@
                     <h2 class="inscription-step-title">Règlement intérieur</h2>
 
                     <div class="inscription-reglement">
-                        <p class="inscription-reglement-article">Article 1 – Respect</p>
-                        <p>Tout licencié s'engage à respecter ses coéquipiers, les adversaires, les arbitres et les dirigeants. Tout comportement irrespectueux pourra entraîner une sanction disciplinaire.</p>
-                        <p class="inscription-reglement-article">Article 2 – Ponctualité</p>
-                        <p>Les licenciés doivent se présenter aux entraînements et matchs à l'heure indiquée par l'entraîneur. Toute absence doit être signalée dans les meilleurs délais.</p>
-                        <p class="inscription-reglement-article">Article 3 – Équipement</p>
-                        <p>Le licencié doit prendre soin du matériel mis à sa disposition par le club. Tout équipement perdu ou endommagé par négligence pourra être facturé.</p>
-                        <p class="inscription-reglement-article">Article 4 – Cotisation</p>
-                        <p>L'inscription n'est définitive qu'à réception du règlement complet de la cotisation. Aucune participation aux matchs officiels ne sera autorisée sans paiement.</p>
-                        <p class="inscription-reglement-article">Article 5 – Comportement</p>
-                        <p>Tout comportement contraire à l'éthique sportive (violence, insultes, tricherie) est strictement interdit et pourra entraîner une exclusion temporaire ou définitive du club.</p>
+                        {% if licencie.season.reglementText %}
+                            {{ licencie.season.reglementText|raw }}
+                        {% else %}
+                            <p class="inscription-reglement-empty">Aucun règlement n'a encore été défini pour cette saison. Contactez le club.</p>
+                        {% endif %}
                     </div>
 
                     <label class="inscription-checkbox-row">

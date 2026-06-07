@@ -13,6 +13,7 @@
 @import './pages/users.css';
 @import './pages/config.css';
 @import './pages/inscription.css';
+@import './pages/reglement-edit.css';
 
 :root {
     /* — Identité club — */

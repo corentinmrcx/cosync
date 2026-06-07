@@ -134,3 +134,17 @@
 .season-form-submit:hover {
     background: var(--color-primary-dark);
 }
+
+.season-form-reglement-link {
+    display: block;
+    text-align: center;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-info);
+    text-decoration: none;
+    padding-top: 0.5rem;
+}
+
+.season-form-reglement-link:hover {
+    opacity: 0.75;
+}

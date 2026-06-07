@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            color: #1f1f1f;
+            line-height: 1.5;
+        }
+
+        .header {
+            background-color: #ff3131;
+            color: #ffffff;
+            padding: 20px 30px;
+            margin-bottom: 24px;
+        }
+
+        .header-title {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .header-subtitle {
+            font-size: 10pt;
+            opacity: 0.85;
+        }
+
+        .content {
+            padding: 0 30px;
+        }
+
+        .section-title {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #1f1f1f;
+            border-bottom: 2px solid #ff3131;
+            padding-bottom: 6px;
+            margin-bottom: 14px;
+            margin-top: 24px;
+        }
+
+        .reglement-text {
+            font-size: 10pt;
+            color: #374151;
+            white-space: pre-wrap;
+            line-height: 1.7;
+        }
+
+        .attestation-block {
+            margin-top: 32px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 20px 24px;
+            background-color: #f9fafb;
+        }
+
+        .attestation-text {
+            font-size: 10.5pt;
+            color: #1f1f1f;
+            margin-bottom: 20px;
+        }
+
+        .attestation-text strong {
+            color: #ff3131;
+        }
+
+        .attestation-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 24px;
+        }
+
+        .attestation-meta {
+            font-size: 9.5pt;
+            color: #6b7280;
+            line-height: 1.8;
+        }
+
+        .attestation-meta span {
+            display: block;
+        }
+
+        .attestation-meta strong {
+            color: #1f1f1f;
+        }
+
+        .signature-block {
+            text-align: right;
+        }
+
+        .signature-label {
+            font-size: 9pt;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .signature-img {
+            max-width: 220px;
+            max-height: 90px;
+            border-bottom: 1px solid #d1d5db;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding: 12px 30px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 8.5pt;
+            color: #9ca3af;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-title">FC Soudron — Règlement intérieur</div>
+    <div class="header-subtitle">Saison {{ season.label }}</div>
+</div>
+
+<div class="content">
+
+    <div class="section-title">Règlement intérieur</div>
+
+    <div class="reglement-text">{{ season.reglementText ? season.reglementText|raw : 'Aucun règlement défini pour cette saison.' }}</div>
+
+    <div class="attestation-block">
+        <div class="attestation-text">
+            Je soussigné(e) <strong>{{ licencie.prenom }} {{ licencie.nom }}</strong>,
+            reconnais avoir lu et accepté le règlement intérieur du FC Soudron
+            pour la saison <strong>{{ season.label }}</strong>.
+        </div>
+
+        <div class="attestation-row">
+            <div class="attestation-meta">
+                <span>Licencié(e) : <strong>{{ licencie.prenom }} {{ licencie.nom }}</strong></span>
+                <span>Catégorie : <strong>{{ licencie.category.label }}</strong></span>
+                <span>Date de signature : <strong>{{ signedAt|date('d/m/Y à H:i') }}</strong></span>
+            </div>
+            <div class="signature-block">
+                <div class="signature-label">Signature :</div>
+                <img class="signature-img" src="{{ signatureDataUrl }}" alt="Signature">
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    Document généré automatiquement par CoSync — FC Soudron
+</div>
+
+</body>
+</html>

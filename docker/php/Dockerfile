@@ -36,6 +36,7 @@ COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 
 # Répertoires Symfony writable par www-data
 RUN mkdir -p /var/www/html/var/signatures \
+    && mkdir -p /var/www/html/var/pdfs \
     && chown -R www-data:www-data /var/www/html/var
 
 EXPOSE 9000

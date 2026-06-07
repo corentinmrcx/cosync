@@ -1,0 +1,116 @@
+.reglement-edit-page {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+    background-color: var(--color-bg-subtle);
+}
+
+.reglement-edit-card {
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-card);
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.reglement-edit-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.reglement-edit-title {
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+    margin: 0;
+}
+
+.reglement-edit-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.reglement-edit-divider {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 0;
+}
+
+.reglement-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.reglement-edit-label {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-body);
+}
+
+.reglement-edit-editor {
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    color: var(--color-text-base);
+    background: var(--color-bg-page);
+}
+
+.ql-toolbar.ql-snow {
+    border: 1.5px solid var(--color-border) !important;
+    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+    font-family: var(--font-sans) !important;
+}
+
+.ql-container.ql-snow {
+    border: 1.5px solid var(--color-border) !important;
+    border-top: none !important;
+    border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+    font-family: var(--font-sans) !important;
+    font-size: var(--font-size-sm) !important;
+    min-height: 400px;
+}
+
+.reglement-edit-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.reglement-edit-cancel {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-decoration: none;
+}
+
+.reglement-edit-cancel:hover {
+    color: var(--color-text-body);
+}
+
+.reglement-edit-submit {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.25rem;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.reglement-edit-submit:hover {
+    background: var(--color-primary-dark);
+}

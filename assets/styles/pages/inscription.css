@@ -224,15 +224,30 @@
     background: var(--color-bg-subtle);
 }
 
-.inscription-reglement-article {
+.inscription-reglement h1,
+.inscription-reglement h2,
+.inscription-reglement h3 {
     font-weight: 700;
     color: var(--color-text-base);
     margin-top: 0.875rem;
     margin-bottom: 0.25rem;
 }
 
-.inscription-reglement-article:first-child {
-    margin-top: 0;
+.inscription-reglement h1 { font-size: var(--font-size-base); }
+.inscription-reglement h2 { font-size: var(--font-size-sm); }
+.inscription-reglement h3 { font-size: var(--font-size-sm); }
+
+.inscription-reglement p { margin-bottom: 0.5rem; }
+
+.inscription-reglement ul,
+.inscription-reglement ol {
+    padding-left: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.inscription-reglement-empty {
+    color: var(--color-text-muted);
+    font-style: italic;
 }
 
 .inscription-checkbox-row {
