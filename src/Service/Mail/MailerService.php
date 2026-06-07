@@ -24,9 +24,9 @@ final class MailerService
         );
 
         $email = (new TemplatedEmail())
-            ->from(new Address('noreply@fcsoudron.fr', 'FC Soudron'))
+            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
             ->to(new Address($licencie->getEmail(), $licencie->getNomPrenom()))
-            ->subject('Votre formulaire d\'inscription – FC Soudron')
+            ->subject('Votre formulaire d\'inscription – Foyer de Soudron')
             ->htmlTemplate('email/inscription_link.html.twig')
             ->context([
                 'licencie' => $licencie,
