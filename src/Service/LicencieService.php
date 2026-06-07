@@ -62,6 +62,36 @@ final class LicencieService
         $this->em->flush();
     }
 
+    public function confirmPaiement(
+        Licencie $licencie,
+        PaymentMode $mode,
+        float $montant,
+        ?string $reference,
+        User $confirmedBy,
+        Season $season,
+    ): void {
+        $transaction = $this->transactionRepo->findByLicencieAndSeason($licencie, $season);
+        if ($transaction === null) {
+            $transaction = new Transaction();
+            $transaction->setLicencie($licencie);
+            $transaction->setSeason($season);
+            $this->em->persist($transaction);
+        }
+
+        $transaction->setMode($mode);
+        $transaction->setMontant(number_format($montant, 2, '.', ''));
+        $transaction->setReference($reference);
+        $transaction->setDatePaiement(new \DateTimeImmutable());
+        $transaction->setConfirmedBy($confirmedBy);
+
+        $dossier = $licencie->getDossierClub();
+        if ($dossier !== null) {
+            $dossier->setStatus(LicenceStatus::VALIDATED);
+        }
+
+        $this->em->flush();
+    }
+
     private function computeStatus(bool $isSigned, bool $hasTransaction): LicenceStatus
     {
         if (!$isSigned) {

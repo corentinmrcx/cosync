@@ -9,7 +9,52 @@
     { label: licencie.nomPrenom }
 ] } %}
 
-<div class="licencie-show-page">
+<div class="licencie-show-page"
+     x-data="{
+        paymentModal: false,
+        mode: '{{ licencie.dossierClub and licencie.dossierClub.paymentIntention ? licencie.dossierClub.paymentIntention.value : '' }}',
+        montant: '{{ montant }}',
+        reference: ''
+     }">
+
+    {# — Modal confirmation paiement — #}
+    <div x-show="paymentModal" class="licencie-modal-backdrop" @click.self="paymentModal = false" x-cloak>
+        <div class="licencie-modal">
+            <div class="licencie-modal-header">
+                <h2 class="licencie-modal-title">Confirmer le paiement</h2>
+                <button type="button" @click="paymentModal = false" class="licencie-modal-close">✕</button>
+            </div>
+
+            <form method="post" action="{{ path('admin_licencies_confirm_payment', {uuid: licencie.uuid}) }}" class="licencie-modal-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('confirm_payment_' ~ licencie.uuid) }}">
+
+                <div class="licencie-modal-field">
+                    <label class="licencie-modal-label">Mode de paiement *</label>
+                    <select name="mode" x-model="mode" required class="licencie-modal-input">
+                        <option value="">— Choisir —</option>
+                        {% for m in paymentModes %}
+                            <option value="{{ m.value }}">{{ m.label() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="licencie-modal-field">
+                    <label class="licencie-modal-label">Montant (€) *</label>
+                    <input type="number" name="montant" x-model="montant" step="0.01" min="0.01" required class="licencie-modal-input">
+                </div>
+
+                <div class="licencie-modal-field" x-show="['cheque', 'virement'].includes(mode)">
+                    <label class="licencie-modal-label">Référence <span class="licencie-modal-hint">(n° chèque, référence virement)</span></label>
+                    <input type="text" name="reference" x-model="reference" class="licencie-modal-input" placeholder="Ex : 1234567">
+                </div>
+
+                <div class="licencie-modal-actions">
+                    <button type="button" @click="paymentModal = false" class="licencie-modal-cancel">Annuler</button>
+                    <button type="submit" class="licencie-modal-submit">Confirmer le paiement</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div class="licencie-show-header">
         <div>
@@ -19,6 +64,15 @@
         <div class="licencie-show-header-actions">
             {% if licencie.dossierClub %}
                 {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
+            {% endif %}
+
+            {% if licencie.dossierClub and licencie.dossierClub.status.value != 'validated' and licencie.dossierClub.isSigned %}
+                <button type="button" @click="paymentModal = true" class="licencie-show-confirm-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Confirmer le paiement
+                </button>
             {% endif %}
 
             <a href="{{ path('admin_licencies_edit', {uuid: licencie.uuid}) }}" class="licencie-show-edit-btn">
@@ -231,5 +285,5 @@
 
     </div>
 
-</div>
+</div>{# fin x-data #}
 {% endblock %}

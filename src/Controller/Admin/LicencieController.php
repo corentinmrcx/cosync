@@ -89,9 +89,17 @@ class LicencieController extends AbstractController
         $season      = $seasonContext->getCurrentSeason();
         $transaction = $season ? $transactionRepo->findByLicencieAndSeason($licencie, $season) : null;
 
+        $baseCosts = $season?->getBaseCosts() ?? [];
+        $montant   = $licencie->getCategory()->isEcoleFoot()
+            ? ($baseCosts['jeunes'] ?? 0)
+            : ($baseCosts['seniors'] ?? 0);
+
         return $this->render('admin/licencies/show.html.twig', [
-            'licencie'    => $licencie,
-            'transaction' => $transaction,
+            'licencie'     => $licencie,
+            'transaction'  => $transaction,
+            'season'       => $season,
+            'montant'      => $montant,
+            'paymentModes' => PaymentMode::cases(),
         ]);
     }
 
@@ -154,6 +162,50 @@ class LicencieController extends AbstractController
             'licencie'    => $licencie,
             'transaction' => $transaction,
         ]);
+    }
+
+    #[Route('/{uuid}/confirmer-paiement', name: 'confirm_payment', methods: ['POST'])]
+    public function confirmPayment(
+        string $uuid,
+        Request $request,
+        LicencieRepository $licencieRepo,
+        SeasonContext $seasonContext,
+        LicencieService $licencieService,
+    ): Response {
+        if (!$this->isCsrfTokenValid('confirm_payment_' . $uuid, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        if ($licencie === null) {
+            throw $this->createNotFoundException('Licencié introuvable.');
+        }
+
+        $season = $seasonContext->getCurrentSeason();
+        if ($season === null) {
+            $this->addFlash('error', 'Aucune saison sélectionnée.');
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+        }
+
+        $mode    = PaymentMode::tryFrom($request->request->get('mode', ''));
+        $montant = (float) str_replace(',', '.', $request->request->get('montant', '0'));
+
+        if ($mode === null || $montant <= 0) {
+            $this->addFlash('error', 'Mode de paiement ou montant invalide.');
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+        }
+
+        $licencieService->confirmPaiement(
+            $licencie,
+            $mode,
+            $montant,
+            $request->request->get('reference') ?: null,
+            $this->getUser(),
+            $season,
+        );
+
+        $this->addFlash('success', 'Paiement de ' . $licencie->getNomPrenom() . ' confirmé.');
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
     }
 
     #[Route('/{uuid}/send-link', name: 'send_link', methods: ['POST'])]
