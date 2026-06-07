@@ -43,55 +43,6 @@ class SeasonController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'])]
-    public function edit(Season $season, Request $request, SeasonService $seasonService): Response
-    {
-        $costs = $season->getBaseCosts();
-
-        [$startYear, $endYear] = $this->parseSeasonYears($season->getLabel());
-
-        $form = $this->createForm(SeasonType::class, $season, [
-            'start_year'   => $startYear,
-            'end_year'     => $endYear,
-            'cout_jeunes'  => $costs['jeunes'] ?? 85,
-            'cout_seniors' => $costs['seniors'] ?? 120,
-        ]);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $startYear = (int) $form->get('startYear')->getData();
-            $endYear   = (int) $form->get('endYear')->getData();
-            $season->setLabel($startYear . '-' . $endYear);
-            $season->setBaseCosts([
-                'jeunes'  => $form->get('coutJeunes')->getData(),
-                'seniors' => $form->get('coutSeniors')->getData(),
-            ]);
-
-            $seasonService->update($season);
-
-            $this->addFlash('success', sprintf('Saison "%s" mise à jour.', $season->getLabel()));
-            return $this->redirectToRoute('admin_config_index');
-        }
-
-        return $this->render('admin/seasons/form.html.twig', [
-            'form'   => $form,
-            'title'  => sprintf('Modifier "%s"', $season->getLabel()),
-            'season' => $season,
-        ]);
-    }
-
-    /** @return array{int, int} */
-    private function parseSeasonYears(string $label): array
-    {
-        $parts = explode('-', $label);
-        $currentYear = (int) date('Y');
-
-        return [
-            (int) ($parts[0] ?? $currentYear),
-            (int) ($parts[1] ?? $currentYear + 1),
-        ];
-    }
-
     #[Route('/{id}/reglement', name: 'reglement', methods: ['GET', 'POST'])]
     public function reglement(Season $season, Request $request, EntityManagerInterface $em): Response
     {

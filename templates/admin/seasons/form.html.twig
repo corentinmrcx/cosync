@@ -45,13 +45,6 @@
 
         <button type="submit" class="season-form-submit">Enregistrer</button>
 
-        {% if season is defined %}
-            <hr class="season-form-divider">
-            <a href="{{ path('admin_seasons_reglement', {id: season.id}) }}" class="season-form-reglement-link">
-                Éditer le règlement intérieur →
-            </a>
-        {% endif %}
-
     {{ form_end(form) }}
 
 </div>

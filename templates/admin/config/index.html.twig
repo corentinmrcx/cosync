@@ -8,35 +8,64 @@
     { label: 'Configuration' }
 ] } %}
 
-<div class="config-page">
+<div class="season-form-page">
 
-    <div class="config-header">
-        <h1 class="config-title">Configuration</h1>
-    </div>
+    {% if season is null %}
 
-    <section class="config-section">
-        <h2 class="config-section-title">Saison sélectionnée</h2>
+        <div class="season-form-card">
+            <h1 class="season-form-header">Configuration</h1>
+            <hr class="season-form-divider">
+            <p class="season-form-empty">Aucune saison sélectionnée. Commencez par créer une saison.</p>
+            <a href="{{ path('admin_seasons_new') }}" class="season-form-submit" style="text-decoration:none; align-self:flex-start;">
+                Créer une saison →
+            </a>
+        </div>
 
-        {% if currentSeason %}
-            <div class="config-season-card">
-                <div class="config-season-card-body">
-                    <span class="config-season-card-label">{{ currentSeason.label }}</span>
-                    <div class="config-season-card-costs">
-                        <span>Jeunes : <strong>{{ currentSeason.baseCosts.jeunes ?? '—' }} €</strong></span>
-                        <span>Seniors : <strong>{{ currentSeason.baseCosts.seniors ?? '—' }} €</strong></span>
-                    </div>
+    {% else %}
+
+        {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+
+            <h1 class="season-form-header">Saison {{ season.label }}</h1>
+
+            <hr class="season-form-divider">
+
+            <div class="season-form-years">
+                <div class="season-form-field">
+                    {{ form_label(form.startYear) }}
+                    {{ form_widget(form.startYear) }}
+                    {{ form_errors(form.startYear) }}
                 </div>
-                <a href="{{ path('admin_seasons_edit', {id: currentSeason.id}) }}" class="config-action-link">
-                    Modifier la saison
-                </a>
+                <div class="season-form-years-sep">→</div>
+                <div class="season-form-field">
+                    {{ form_label(form.endYear) }}
+                    {{ form_widget(form.endYear) }}
+                    {{ form_errors(form.endYear) }}
+                </div>
             </div>
-        {% else %}
-            <div class="config-empty">
-                Aucune saison sélectionnée.
-                <a href="{{ path('admin_seasons_new') }}">Créer une saison →</a>
+
+            <div class="season-form-field">
+                {{ form_label(form.coutJeunes) }}
+                {{ form_widget(form.coutJeunes, { attr: { placeholder: '85' } }) }}
+                {{ form_errors(form.coutJeunes) }}
             </div>
-        {% endif %}
-    </section>
+
+            <div class="season-form-field">
+                {{ form_label(form.coutSeniors) }}
+                {{ form_widget(form.coutSeniors, { attr: { placeholder: '120' } }) }}
+                {{ form_errors(form.coutSeniors) }}
+            </div>
+
+            <button type="submit" class="season-form-submit">Enregistrer</button>
+
+            <hr class="season-form-divider">
+
+            <a href="{{ path('admin_seasons_reglement', {id: season.id}) }}" class="season-form-reglement-link">
+                Éditer le règlement intérieur →
+            </a>
+
+        {{ form_end(form) }}
+
+    {% endif %}
 
 </div>
 {% endblock %}

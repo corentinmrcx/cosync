@@ -59,6 +59,8 @@
 
 .season-form-field input[type="text"],
 .season-form-field input[type="number"],
+.season-form-field input[type="email"],
+.season-form-field input[type="password"],
 .season-form-field select {
     padding: 0.625rem 0.875rem;
     border: 1.5px solid var(--color-border);
@@ -76,6 +78,8 @@
 
 .season-form-field input[type="text"]:focus,
 .season-form-field input[type="number"]:focus,
+.season-form-field input[type="email"]:focus,
+.season-form-field input[type="password"]:focus,
 .season-form-field select:focus {
     border-color: var(--color-primary);
 }
@@ -133,6 +137,11 @@
 
 .season-form-submit:hover {
     background: var(--color-primary-dark);
+}
+
+.season-form-empty {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
 }
 
 .season-form-reglement-link {
