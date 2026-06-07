@@ -20,6 +20,9 @@ class Season
     #[ORM\Column(type: 'json')]
     private array $baseCosts = [];
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $reglementText = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -52,6 +55,17 @@ class Season
     public function setBaseCosts(array $baseCosts): static
     {
         $this->baseCosts = $baseCosts;
+        return $this;
+    }
+
+    public function getReglementText(): ?string
+    {
+        return $this->reglementText;
+    }
+
+    public function setReglementText(?string $reglementText): static
+    {
+        $this->reglementText = $reglementText;
         return $this;
     }
 

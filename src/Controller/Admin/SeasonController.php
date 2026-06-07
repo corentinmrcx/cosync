@@ -6,6 +6,7 @@ use App\Entity\Season;
 use App\Form\SeasonType;
 use App\Service\SeasonContext;
 use App\Service\SeasonService;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -89,6 +90,22 @@ class SeasonController extends AbstractController
             (int) ($parts[0] ?? $currentYear),
             (int) ($parts[1] ?? $currentYear + 1),
         ];
+    }
+
+    #[Route('/{id}/reglement', name: 'reglement', methods: ['GET', 'POST'])]
+    public function reglement(Season $season, Request $request, EntityManagerInterface $em): Response
+    {
+        if ($request->isMethod('POST')) {
+            $season->setReglementText($request->request->get('reglement_text') ?: null);
+            $em->flush();
+
+            $this->addFlash('success', 'Règlement mis à jour.');
+            return $this->redirectToRoute('admin_seasons_reglement', ['id' => $season->getId()]);
+        }
+
+        return $this->render('admin/seasons/reglement.html.twig', [
+            'season' => $season,
+        ]);
     }
 
     #[Route('/{id}/switch', name: 'switch', methods: ['GET'])]

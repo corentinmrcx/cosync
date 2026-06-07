@@ -5,6 +5,7 @@ namespace App\Service\Form;
 use App\DTO\InscriptionFormData;
 use App\Entity\Licencie;
 use App\Enum\LicenceStatus;
+use App\Service\Pdf\PdfGeneratorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -12,6 +13,7 @@ final class InscriptionFormService
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
+        private readonly PdfGeneratorService $pdfGenerator,
         #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
     ) {}
 
@@ -35,29 +37,23 @@ final class InscriptionFormService
         $dossier->setFormCompletedAt(new \DateTimeImmutable());
         $dossier->setStatus(LicenceStatus::FORM_COMPLETED);
 
-        $this->saveSignatureTemp($licencie, $data->signatureData);
+        $pdfPath = $this->pdfGenerator->generateReglementSigne($licencie, $data->signatureData);
+        $dossier->setSignaturePath($pdfPath);
 
         // Le lien n'est plus utilisable après soumission
         $licencie->setFormTokenExpiresAt(null);
 
         $this->em->flush();
+
+        // Nettoyage de l'ancienne signature temp si elle existe encore
+        $this->deleteSignatureTemp((string) $licencie->getUuid());
     }
 
-    /** Sauvegarde la signature en fichier temp pour la génération PDF ultérieure */
-    private function saveSignatureTemp(Licencie $licencie, string $signatureDataUrl): void
+    private function deleteSignatureTemp(string $uuid): void
     {
-        $base64 = (string) preg_replace('/^data:image\/\w+;base64,/', '', $signatureDataUrl);
-        $imageData = base64_decode($base64, true);
-
-        if ($imageData === false || $imageData === '') {
-            return;
+        $path = $this->projectDir . '/var/signatures/' . $uuid . '.png';
+        if (file_exists($path)) {
+            unlink($path);
         }
-
-        $dir = $this->projectDir . '/var/signatures';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        file_put_contents($dir . '/' . $licencie->getUuid() . '.png', $imageData);
     }
 }
