@@ -32,6 +32,9 @@ assets:
 watch:
 	npm run watch
 
+drive-retry:
+	$(COMPOSE) exec php php bin/console app:drive-retry-upload
+
 cache-clear:
 	$(COMPOSE) exec php php bin/console cache:clear
 

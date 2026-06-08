@@ -21,4 +21,15 @@ class DossierClubRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['licencie' => $licencie]);
     }
+
+    /** @return DossierClub[] */
+    public function findWithLocalPdf(): array
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.isSigned = true')
+            ->andWhere('d.signaturePath LIKE :prefix')
+            ->setParameter('prefix', '/var/www/html/var/pdfs/%')
+            ->getQuery()
+            ->getResult();
+    }
 }
