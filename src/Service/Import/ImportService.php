@@ -65,6 +65,8 @@ final class ImportService
             return $result;
         }
 
+        $pendingNumLicences = [];
+
         foreach (array_slice($rows, 1) as $offset => $row) {
             $lineNumber = $offset + 2;
 
@@ -79,13 +81,18 @@ final class ImportService
             }
 
             try {
-                $this->processRow($row, $colIndexes, $season, $result, $lineNumber);
+                $this->processRow($row, $colIndexes, $season, $result, $lineNumber, $pendingNumLicences);
             } catch (\Throwable $e) {
                 $result->addError($lineNumber, $e->getMessage());
             }
         }
 
-        $this->em->flush();
+        try {
+            $this->em->flush();
+        } catch (\Throwable) {
+            $this->em->clear();
+            $result->addError(0, 'Une erreur est survenue lors de l\'enregistrement. Aucune donnée n\'a été importée.');
+        }
 
         return $result;
     }
@@ -96,6 +103,7 @@ final class ImportService
         Season $season,
         ImportResultData $result,
         int $lineNumber,
+        array &$pendingNumLicences,
     ): void {
         ['nom' => $nom, 'prenom' => $prenom] = $this->sanitizer->splitNomPrenom(
             (string) $row[$colIndexes[self::COL_NOM_PRENOM]]
@@ -127,6 +135,11 @@ final class ImportService
         }
         $numLicence = $this->sanitizer->sanitizeNumLicence($rawNumLicence);
 
+        if (isset($pendingNumLicences[$numLicence])) {
+            $result->addError($lineNumber, "Doublon ignoré : $nom $prenom (n°$numLicence) apparaît plusieurs fois dans le fichier.");
+            return;
+        }
+
         // Données optionnelles
         $email     = $this->sanitizer->sanitizeEmail($this->colValue($row, $colIndexes, self::COL_EMAIL_PRINCIPAL));
         $telephone = $this->sanitizer->sanitizePhone($this->colValue($row, $colIndexes, self::COL_MOBILE_PERSONNEL));
@@ -139,6 +152,8 @@ final class ImportService
 
         $licencie = $this->licencieRepository->findByNumLicence($numLicence)
             ?? $this->licencieRepository->findByNomPrenomNaissance($nom, $prenom, $dateNaissance);
+
+        $pendingNumLicences[$numLicence] = true;
 
         if ($licencie !== null) {
             // Enrichit le num_licence si absent (migration depuis l'ancien format)

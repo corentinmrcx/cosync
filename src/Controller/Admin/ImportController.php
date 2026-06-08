@@ -48,7 +48,12 @@ class ImportController extends AbstractController
             return $this->redirectToRoute('admin_import_index');
         }
 
-        $result = $importService->importFromXlsx($file, $season);
+        try {
+            $result = $importService->importFromXlsx($file, $season);
+        } catch (\Throwable) {
+            $this->addFlash('error', 'Une erreur inattendue est survenue pendant l\'import. Veuillez réessayer.');
+            return $this->redirectToRoute('admin_import_index');
+        }
 
         return $this->render('admin/import/result.html.twig', ['result' => $result]);
     }
