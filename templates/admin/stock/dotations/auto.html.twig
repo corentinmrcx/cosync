@@ -1,0 +1,125 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Dotations automatiques{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: 'Dotations automatiques' }
+] } %}
+
+<div class="dotations-page" x-data="dotationsManager()">
+
+    <div class="dotations-header">
+        <div>
+            <h1 class="dotations-title">Dotations automatiques</h1>
+            <p class="dotations-subtitle">Attribuez les équipements aux licenciés selon leurs tailles déclarées lors de l'inscription.</p>
+        </div>
+        <a href="{{ path('admin_stock_dashboard') }}" class="dotations-back">← Stock</a>
+    </div>
+
+    {% if suggestions is empty %}
+        <div class="dotations-empty">
+            <p>Aucune correspondance trouvée.</p>
+            <p class="dotations-empty-hint">
+                Pour utiliser les dotations automatiques, vos articles vestimentaires doivent avoir un <strong>type de vêtement</strong> et une <strong>taille</strong> renseignés,
+                et les licenciés doivent avoir complété leur formulaire d'inscription.
+            </p>
+            <a href="{{ path('admin_stock_items_new') }}" class="dotations-btn-primary">Créer un article</a>
+        </div>
+    {% else %}
+        <form method="post" action="{{ path('admin_stock_dotations_apply') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotations_apply') }}">
+
+            <div class="dotations-toolbar">
+                <button type="button" class="dotations-select-all" @click="selectAll()">Tout sélectionner</button>
+                <button type="button" class="dotations-select-none" @click="selectNone()">Tout déselectionner</button>
+                <span class="dotations-counter" x-text="selected.length + ' sélectionné(s)'"></span>
+                <button type="submit" class="dotations-btn-primary" :disabled="selected.length === 0">
+                    Générer les dotations sélectionnées
+                </button>
+            </div>
+
+            {% for suggestion in suggestions %}
+                {% set item = suggestion.item %}
+                <div class="dotations-card">
+
+                    <div class="dotations-card-header">
+                        <div class="dotations-item-info">
+                            <span class="dotations-item-nom">{{ item.nom }}</span>
+                            <div class="dotations-item-meta">
+                                {% if item.marque %}<span class="dotations-meta-tag">{{ item.marque }}</span>{% endif %}
+                                {% if item.taille %}<span class="dotations-meta-tag dotations-meta-taille">Taille {{ item.taille }}</span>{% endif %}
+                                {% if item.couleur %}<span class="dotations-meta-tag">{{ item.couleur }}</span>{% endif %}
+                                {% if item.typeVetement %}<span class="dotations-meta-tag dotations-meta-type">{{ item.typeVetement.label() }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="dotations-stock-info">
+                            <span class="stock-badge stock-badge-{{ suggestion.stock > 0 ? 'ok' : 'danger' }}">
+                                {{ suggestion.stock }} en stock
+                            </span>
+                            <span class="dotations-match-count">{{ suggestion.matches|length }} correspondance(s)</span>
+                        </div>
+                    </div>
+
+                    <div class="dotations-card-body">
+                        {% for match in suggestion.matches %}
+                            {% set pairKey = item.id ~ ':' ~ match.licencie.uuid %}
+                            {% if match.deja_dote %}
+                                <div class="dotations-match dotations-match-done">
+                                    <span class="dotations-match-name">{{ match.licencie.nomPrenom }}</span>
+                                    <span class="dotations-match-badge-done">Déjà attribué</span>
+                                </div>
+                            {% else %}
+                                <label class="dotations-match dotations-match-available" :class="{ 'selected': isSelected('{{ pairKey }}') }">
+                                    <input
+                                        type="checkbox"
+                                        name="pairs[]"
+                                        value="{{ pairKey }}"
+                                        @change="toggle('{{ pairKey }}')"
+                                        class="dotations-checkbox"
+                                    >
+                                    <span class="dotations-match-name">{{ match.licencie.nomPrenom }}</span>
+                                    <span class="dotations-match-taille">{{ match.taille }}</span>
+                                    {% if match.licencie.team %}
+                                        <span class="dotations-match-team">{{ match.licencie.team.name }}</span>
+                                    {% endif %}
+                                </label>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                </div>
+            {% endfor %}
+
+            <div class="dotations-submit-bar">
+                <span class="dotations-counter-lg" x-text="selected.length + ' dotation(s) à créer'"></span>
+                <button type="submit" class="dotations-btn-primary dotations-btn-lg" :disabled="selected.length === 0">
+                    Générer les dotations sélectionnées
+                </button>
+            </div>
+
+        </form>
+    {% endif %}
+
+</div>
+
+<script>
+function dotationsManager() {
+    return {
+        selected: [],
+        toggle(key) {
+            const idx = this.selected.indexOf(key);
+            if (idx === -1) this.selected.push(key);
+            else this.selected.splice(idx, 1);
+        },
+        isSelected(key) { return this.selected.includes(key); },
+        selectAll() {
+            this.selected = [...document.querySelectorAll('.dotations-checkbox')].map(el => el.value);
+        },
+        selectNone() { this.selected = []; },
+    };
+}
+</script>
+{% endblock %}

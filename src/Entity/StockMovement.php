@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Repository\StockMovementRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -32,9 +33,17 @@ class StockMovement
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $note = null;
 
+    #[ORM\Column(enumType: StockMovementSource::class)]
+    private StockMovementSource $source = StockMovementSource::MANUEL;
+
+    /** Identifiant de la transaction SumUp — Phase 2 */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $sumupTransactionId = null;
+
+    /** Nullable pour les mouvements automatiques SumUp (Phase 2) */
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
-    private User $createdBy;
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $createdBy = null;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
@@ -42,6 +51,7 @@ class StockMovement
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
+        $this->source    = StockMovementSource::MANUEL;
     }
 
     public function getId(): int
@@ -104,12 +114,34 @@ class StockMovement
         return $this;
     }
 
-    public function getCreatedBy(): User
+    public function getSource(): StockMovementSource
+    {
+        return $this->source;
+    }
+
+    public function setSource(StockMovementSource $source): static
+    {
+        $this->source = $source;
+        return $this;
+    }
+
+    public function getSumupTransactionId(): ?string
+    {
+        return $this->sumupTransactionId;
+    }
+
+    public function setSumupTransactionId(?string $sumupTransactionId): static
+    {
+        $this->sumupTransactionId = $sumupTransactionId;
+        return $this;
+    }
+
+    public function getCreatedBy(): ?User
     {
         return $this->createdBy;
     }
 
-    public function setCreatedBy(User $createdBy): static
+    public function setCreatedBy(?User $createdBy): static
     {
         $this->createdBy = $createdBy;
         return $this;

@@ -36,8 +36,9 @@
         {% include 'components/hub-card.html.twig' with {
             icon: 'box',
             label: 'Stocks',
-            sub: 'Bientôt disponible',
-            disabled: true
+            sub: hasSeason ? 'Gérer les stocks' : 'Saison requise',
+            route: hasSeason ? 'admin_stock_dashboard' : null,
+            disabled: not hasSeason
         } %}
 
         {% include 'components/hub-card.html.twig' with {

@@ -1,0 +1,101 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — {{ title }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: title }
+] } %}
+
+<div class="stock-items-page">
+    <div class="stock-items-card">
+
+        <div class="stock-items-card-header">
+            <h1 class="stock-items-card-title">{{ title }}</h1>
+        </div>
+
+        {{ form_start(form, {attr: {class: 'stock-items-form'}}) }}
+
+            <div class="stock-items-section-title">Identification</div>
+
+            <div class="stock-items-field">
+                {{ form_label(form.nom) }}
+                {{ form_widget(form.nom, {attr: {class: 'stock-items-input'}}) }}
+                {{ form_errors(form.nom) }}
+            </div>
+
+            <div class="stock-items-row">
+                <div class="stock-items-field">
+                    {{ form_label(form.marque) }}
+                    {{ form_widget(form.marque, {attr: {class: 'stock-items-input'}}) }}
+                </div>
+                <div class="stock-items-field">
+                    {{ form_label(form.taille) }}
+                    {{ form_widget(form.taille, {attr: {class: 'stock-items-input'}}) }}
+                    {{ form_help(form.taille) }}
+                </div>
+                <div class="stock-items-field">
+                    {{ form_label(form.couleur) }}
+                    {{ form_widget(form.couleur, {attr: {class: 'stock-items-input'}}) }}
+                </div>
+            </div>
+
+            <div class="stock-items-section-title">Catégorisation</div>
+
+            <div class="stock-items-row">
+                <div class="stock-items-field">
+                    <div class="stock-items-label-row">
+                        {{ form_label(form.category) }}
+                        <a href="{{ path('admin_stock_categories_list') }}" class="stock-items-label-link" target="_blank">Gérer ↗</a>
+                    </div>
+                    {{ form_widget(form.category, {attr: {class: 'stock-items-select'}}) }}
+                </div>
+                <div class="stock-items-field">
+                    {{ form_label(form.typeVetement) }}
+                    {{ form_widget(form.typeVetement, {attr: {class: 'stock-items-select'}}) }}
+                    {{ form_help(form.typeVetement) }}
+                </div>
+            </div>
+
+            <div class="stock-items-section-title">Stock & budget</div>
+
+            <div class="stock-items-row">
+                <div class="stock-items-field">
+                    {{ form_label(form.alertSeuil) }}
+                    {{ form_widget(form.alertSeuil, {attr: {class: 'stock-items-input'}}) }}
+                    {{ form_help(form.alertSeuil) }}
+                </div>
+                <div class="stock-items-field">
+                    {{ form_label(form.prixAchat) }}
+                    {{ form_widget(form.prixAchat, {attr: {class: 'stock-items-input'}}) }}
+                    {{ form_help(form.prixAchat) }}
+                </div>
+            </div>
+
+            <div class="stock-items-section-title">Référence</div>
+
+            <div class="stock-items-row">
+                <div class="stock-items-field">
+                    {{ form_label(form.refCatalogue) }}
+                    {{ form_widget(form.refCatalogue, {attr: {class: 'stock-items-input'}}) }}
+                </div>
+                <div class="stock-items-field">
+                    {{ form_label(form.lienAchat) }}
+                    {{ form_widget(form.lienAchat, {attr: {class: 'stock-items-input'}}) }}
+                </div>
+            </div>
+
+            <div class="stock-items-actions">
+                <a href="{{ path('admin_stock_dashboard') }}" class="stock-items-cancel">Annuler</a>
+                <button type="submit" class="stock-items-submit">
+                    {{ item ? 'Enregistrer les modifications' : 'Créer l\'article' }}
+                </button>
+            </div>
+
+        {{ form_end(form) }}
+
+    </div>
+</div>
+{% endblock %}

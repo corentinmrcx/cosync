@@ -1,0 +1,117 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Historique des mouvements{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: 'Historique' }
+] } %}
+
+<div class="stock-mouvements-page">
+
+    <div class="stock-mouvements-header">
+        <h1 class="stock-mouvements-title">Historique des mouvements</h1>
+        <span class="stock-mouvements-count">{{ total }} mouvement{{ total > 1 ? 's' : '' }}</span>
+    </div>
+
+    <form method="get" class="stock-mouvements-filters">
+        <select name="item_id" class="stock-mouvements-filter-select">
+            <option value="">Tous les articles</option>
+            {% for item in items %}
+                <option value="{{ item.id }}" {{ filters.item_id is defined and filters.item_id == item.id ? 'selected' : '' }}>
+                    {{ item.nom }}{% if item.couleur %} — {{ item.couleur }}{% endif %}
+                </option>
+            {% endfor %}
+        </select>
+
+        <select name="type" class="stock-mouvements-filter-select">
+            <option value="">Tous les types</option>
+            {% for type in types %}
+                <option value="{{ type.value }}" {{ filters.type is defined and filters.type == type.value ? 'selected' : '' }}>
+                    {{ type.label() }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <select name="source" class="stock-mouvements-filter-select">
+            <option value="">Toutes les sources</option>
+            {% for source in sources %}
+                <option value="{{ source.value }}" {{ filters.source is defined and filters.source == source.value ? 'selected' : '' }}>
+                    {{ source.label() }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <input type="date" name="date_from" class="stock-mouvements-filter-input" value="{{ filters.date_from ?? '' }}" title="Du">
+        <input type="date" name="date_to" class="stock-mouvements-filter-input" value="{{ filters.date_to ?? '' }}" title="Au">
+
+        <button type="submit" class="stock-mouvements-filter-btn">Filtrer</button>
+        {% if filters is not empty %}
+            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-mouvements-filter-reset">Réinitialiser</a>
+        {% endif %}
+    </form>
+
+    {% if movements is empty %}
+        <div class="stock-mouvements-empty">Aucun mouvement trouvé.</div>
+    {% else %}
+        <div class="stock-mouvements-table-wrapper">
+            <table class="stock-mouvements-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Article</th>
+                        <th>Type</th>
+                        <th>Source</th>
+                        <th>Quantité</th>
+                        <th>Note</th>
+                        <th>Par</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in movements %}
+                        <tr>
+                            <td class="stock-mouvements-date">{{ m.createdAt|date('d/m/Y H:i') }}</td>
+                            <td>
+                                <span class="stock-mouvements-item-nom">{{ m.item.nom }}</span>
+                                {% if m.item.couleur %}<span class="stock-mouvements-item-couleur">{{ m.item.couleur }}</span>{% endif %}
+                            </td>
+                            <td>
+                                <span class="stock-badge-type stock-badge-type-{{ m.type.value }}">
+                                    {{ m.type.label() }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="stock-badge-source stock-badge-source-{{ m.source.value }}">
+                                    {{ m.source.label() }}
+                                </span>
+                                {% if m.licencie %}
+                                    <span class="stock-mouvements-licencie">{{ m.licencie.nomPrenom }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="stock-mouvements-quantite stock-mouvements-quantite-{{ m.type.value }}">
+                                {{ m.type.value == 'entree' ? '+' : '−' }}{{ m.quantite }}
+                            </td>
+                            <td class="stock-mouvements-note">{{ m.note ?? '—' }}</td>
+                            <td class="stock-mouvements-by">{{ m.createdBy ? m.createdBy.email : '—' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pages > 1 %}
+            <div class="stock-mouvements-pagination">
+                {% for p in 1..pages %}
+                    <a
+                        href="{{ path('admin_stock_mouvements_list', filters|merge({page: p})) }}"
+                        class="stock-mouvements-page-btn {{ p == page ? 'active' : '' }}"
+                    >{{ p }}</a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -159,13 +159,26 @@ confirmed_by: User
 season: Season
 ```
 
+### StockCategory
+```php
+id: int
+name: string           // "Buvette", "Vêtements"…
+position: int          // ordre d'affichage
+```
+
 ### StockItem
 ```php
 id: int
 nom: string
+marque: ?string        // Nike, Adidas, Coca-Cola…
+taille: ?string        // M, L, XL, 33cl, EU42… — clé pour les dotations auto
 couleur: ?string
+typeVetement: ?StockItemVetementType  // HAUT | BAS | CHAUSSURES — lie avec DossierClub
+prixAchat: ?float      // coût unitaire pour suivi budgétaire
+alertSeuil: ?int       // seuil alerte stock bas
 ref_catalogue: ?string
 lien_achat: ?string
+category: ?StockCategory
 season: Season
 ```
 
@@ -174,10 +187,12 @@ season: Season
 id: int
 item: StockItem
 quantite: int
-type: StockMovementType  // ENTREE | SORTIE | REBUT
-licencie: ?Licencie      // si sortie liée à un joueur
+type: StockMovementType    // ENTREE | SORTIE | REBUT
+source: StockMovementSource // MANUEL | DOTATION | SUMUP (Phase 2)
+licencie: ?Licencie         // si dotation liée à un joueur
 note: ?string
-created_by: User
+created_by: ?User           // null pour mouvements SumUp automatiques (Phase 2)
+sumup_transaction_id: ?string  // déduplication SumUp (Phase 2)
 created_at: datetime
 ```
 
@@ -210,7 +225,33 @@ enum StockMovementType: string {
     case SORTIE = 'sortie';
     case REBUT = 'rebut';
 }
+
+enum StockMovementSource: string {
+    case MANUEL   = 'manuel';
+    case DOTATION = 'dotation';
+    case SUMUP    = 'sumup';    // Phase 2
+}
+
+enum StockItemVetementType: string {
+    case HAUT       = 'haut';        // → DossierClub.tailleHaut
+    case BAS        = 'bas';         // → DossierClub.tailleBas
+    case CHAUSSURES = 'chaussures';  // → DossierClub.pointure
+}
 ```
+
+### Dotations automatiques
+
+`StockService::getSuggestedDotations(Season)` compare `StockItem.taille` + `StockItem.typeVetement`
+avec les champs correspondants du `DossierClub` de chaque licencié.
+Permet de générer en masse les sorties DOTATION depuis `/admin/stock/dotations-auto`.
+
+### SumUp — Phase 2 (non implémenté)
+
+- API : `GET /v2.1/merchants/{merchant_code}/transactions` (Bearer token, pas v0.1)
+- `StockItem.sumupProductIds: array` (JSON) → à ajouter en Phase 2
+- `SumupSyncState` entity → à créer en Phase 2
+- Cron : `app:sumup-sync` toutes les 5 min → à créer en Phase 2
+- Env var : `SUMUP_ACCESS_TOKEN=` → à renseigner en Phase 2
 
 ---
 
