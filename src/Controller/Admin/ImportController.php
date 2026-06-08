@@ -16,6 +16,11 @@ class ImportController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(SeasonContext $seasonContext): Response
     {
+        if ($seasonContext->getCurrentSeason() === null) {
+            $this->addFlash('warning', 'Créez une saison avant de pouvoir importer des licenciés.');
+            return $this->redirectToRoute('admin_seasons_new');
+        }
+
         return $this->render('admin/import/index.html.twig', [
             'currentSeason' => $seasonContext->getCurrentSeason(),
         ]);

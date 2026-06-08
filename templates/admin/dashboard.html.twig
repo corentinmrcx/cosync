@@ -5,20 +5,32 @@
 {% block content %}
 <div class="dashboard">
 
+    {% if not hasSeason %}
+    <div class="dashboard-alert">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>Aucune saison configurée. Certaines fonctionnalités sont désactivées.</span>
+        <a href="{{ path('admin_seasons_new') }}" class="dashboard-alert-link">Créer une saison →</a>
+    </div>
+    {% endif %}
+
     <div class="dashboard-hub">
 
         {% include 'components/hub-card.html.twig' with {
             icon: 'users',
             label: 'Licenciés',
-            sub: 'Gérer les inscrits',
-            route: 'admin_licencies_list'
+            sub: hasSeason ? 'Gérer les inscrits' : 'Saison requise',
+            route: hasSeason ? 'admin_licencies_list' : null,
+            disabled: not hasSeason
         } %}
 
         {% include 'components/hub-card.html.twig' with {
             icon: 'import',
             label: 'Import',
-            sub: 'Importer un fichier XLSX',
-            route: 'admin_import_index'
+            sub: hasSeason ? 'Importer un fichier XLSX' : 'Saison requise',
+            route: hasSeason ? 'admin_import_index' : null,
+            disabled: not hasSeason
         } %}
 
         {% include 'components/hub-card.html.twig' with {
