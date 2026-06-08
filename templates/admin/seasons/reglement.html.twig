@@ -28,7 +28,9 @@
 
         <div class="reglement-edit-field">
             <label class="reglement-edit-label">Texte du règlement</label>
-            <div id="quill-editor" class="reglement-edit-editor">{{ season.reglementText|raw }}</div>
+            <div class="reglement-edit-editor-wrapper">
+                <div id="quill-editor" class="reglement-edit-editor">{{ season.reglementText|raw }}</div>
+            </div>
         </div>
 
         <div class="reglement-edit-actions">
