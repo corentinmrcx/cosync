@@ -9,6 +9,7 @@ use App\Entity\Season;
 use App\Enum\LicenceStatus;
 use App\Repository\CategoryRepository;
 use App\Repository\LicencieRepository;
+use App\Service\Mail\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -34,6 +35,7 @@ final class ImportService
         private readonly LicencieRepository $licencieRepository,
         private readonly CategoryRepository $categoryRepository,
         private readonly EntityManagerInterface $em,
+        private readonly MailerService $mailerService,
     ) {}
 
     public function importFromXlsx(UploadedFile $file, Season $season): ImportResultData
@@ -66,6 +68,7 @@ final class ImportService
         }
 
         $pendingNumLicences = [];
+        $newLicencies       = [];
 
         foreach (array_slice($rows, 1) as $offset => $row) {
             $lineNumber = $offset + 2;
@@ -81,7 +84,7 @@ final class ImportService
             }
 
             try {
-                $this->processRow($row, $colIndexes, $season, $result, $lineNumber, $pendingNumLicences);
+                $this->processRow($row, $colIndexes, $season, $result, $lineNumber, $pendingNumLicences, $newLicencies);
             } catch (\Throwable $e) {
                 $result->addError($lineNumber, $e->getMessage());
             }
@@ -92,6 +95,19 @@ final class ImportService
         } catch (\Throwable) {
             $this->em->clear();
             $result->addError(0, 'Une erreur est survenue lors de l\'enregistrement. Aucune donnée n\'a été importée.');
+            return $result;
+        }
+
+        foreach ($newLicencies as $licencie) {
+            if ($licencie->getEmail() === null) {
+                continue;
+            }
+            try {
+                $this->mailerService->sendInscriptionLink($licencie);
+                $result->emailsSent++;
+            } catch (\Throwable) {
+                $result->emailsFailed++;
+            }
         }
 
         return $result;
@@ -104,6 +120,7 @@ final class ImportService
         ImportResultData $result,
         int $lineNumber,
         array &$pendingNumLicences,
+        array &$newLicencies,
     ): void {
         ['nom' => $nom, 'prenom' => $prenom] = $this->sanitizer->splitNomPrenom(
             (string) $row[$colIndexes[self::COL_NOM_PRENOM]]
@@ -192,6 +209,7 @@ final class ImportService
             $this->em->persist($licencie);
             $this->em->persist($dossier);
 
+            $newLicencies[] = $licencie;
             $result->created++;
         }
     }

@@ -4,8 +4,10 @@ namespace App\DTO;
 
 final class ImportResultData
 {
-    public int $created = 0;
-    public int $updated = 0;
+    public int $created      = 0;
+    public int $updated      = 0;
+    public int $emailsSent   = 0;
+    public int $emailsFailed = 0;
     /** @var array<int, string> */
     public array $errors = [];
 
