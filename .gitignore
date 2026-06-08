@@ -29,6 +29,7 @@ docker/db/data/
 ###< ide ###
 
 ###> google credentials ###
+/config/secrets/
 google-credentials.json
 google-service-account.json
 ###< google credentials ###
