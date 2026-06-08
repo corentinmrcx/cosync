@@ -26,6 +26,20 @@ class LicencieRepository extends ServiceEntityRepository
         return $this->findOneBy(['numLicence' => $numLicence]);
     }
 
+    /** Licenciés dont le paiement est confirmé — éligibles aux dotations */
+    public function findValidatedBySeason(Season $season): array
+    {
+        return $this->createQueryBuilder('l')
+            ->join('l.dossierClub', 'd')
+            ->where('l.season = :season')
+            ->andWhere('d.status = :status')
+            ->setParameter('season', $season)
+            ->setParameter('status', LicenceStatus::VALIDATED)
+            ->orderBy('l.nom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     /** Fallback pour les licenciés importés avant l'ajout du num_licence */
     public function findByNomPrenomNaissance(string $nom, string $prenom, \DateTimeImmutable $dateNaissance): ?Licencie
     {

@@ -78,6 +78,7 @@ class LicencieController extends AbstractController
         string $uuid,
         LicencieRepository $licencieRepo,
         TransactionRepository $transactionRepo,
+        \App\Repository\StockMovementRepository $stockMovementRepo,
         SeasonContext $seasonContext,
     ): Response {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
@@ -100,6 +101,7 @@ class LicencieController extends AbstractController
             'season'       => $season,
             'montant'      => $montant,
             'paymentModes' => PaymentMode::cases(),
+            'dotations'    => $stockMovementRepo->findDotationsByLicencie($licencie),
         ]);
     }
 

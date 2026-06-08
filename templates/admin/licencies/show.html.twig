@@ -283,6 +283,36 @@
             </dl>
         </div>
 
+        {# — Dotations stock — #}
+        {% if dotations is not empty %}
+        <div class="licencie-show-card licencie-show-card-full">
+            <h2 class="licencie-show-card-title">Équipements attribués</h2>
+            <table class="licencie-show-dotations-table">
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Quantité</th>
+                        <th>Note</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in dotations %}
+                        <tr>
+                            <td>
+                                <span class="licencie-show-dd">{{ d.item.nom }}</span>
+                                {% if d.item.couleur %}<span class="licencie-show-dd-empty" style="font-size:var(--font-size-xs)"> — {{ d.item.couleur }}</span>{% endif %}
+                            </td>
+                            <td class="licencie-show-dd">{{ d.quantite }}</td>
+                            <td class="licencie-show-dd-empty">{{ d.note ?? '—' }}</td>
+                            <td class="licencie-show-dd-empty">{{ d.createdAt|date('d/m/Y') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
     </div>
 
 </div>{# fin x-data #}
