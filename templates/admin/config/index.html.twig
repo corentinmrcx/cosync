@@ -23,123 +23,103 @@
 
     {% else %}
 
+    <div class="config-row">
+
+        {# — Paramètres saison — #}
         {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
 
             <h1 class="season-form-header">Saison {{ season.label }}</h1>
-
             <hr class="season-form-divider">
 
             <div class="season-form-years">
                 <div class="season-form-field">
                     {{ form_label(form.startYear) }}
                     {{ form_widget(form.startYear) }}
-                    {{ form_errors(form.startYear) }}
                 </div>
                 <div class="season-form-years-sep">→</div>
                 <div class="season-form-field">
                     {{ form_label(form.endYear) }}
                     {{ form_widget(form.endYear) }}
-                    {{ form_errors(form.endYear) }}
                 </div>
             </div>
 
             <div class="season-form-field">
                 {{ form_label(form.coutJeunes) }}
                 {{ form_widget(form.coutJeunes, { attr: { placeholder: '85' } }) }}
-                {{ form_errors(form.coutJeunes) }}
             </div>
 
             <div class="season-form-field">
                 {{ form_label(form.coutSeniors) }}
                 {{ form_widget(form.coutSeniors, { attr: { placeholder: '120' } }) }}
-                {{ form_errors(form.coutSeniors) }}
             </div>
 
             <button type="submit" class="season-form-submit">Enregistrer</button>
-
             <hr class="season-form-divider">
-
             <a href="{{ path('admin_seasons_reglement', {id: season.id}) }}" class="season-form-reglement-link">
                 Éditer le règlement intérieur →
             </a>
 
         {{ form_end(form) }}
 
-        {# — Gestion des équipes — #}
-        <div class="season-form-card" x-data="{ editingTeam: null }" style="margin-top: 1.5rem">
+        {# — Équipes — #}
+        <div class="season-form-card config-teams-card" x-data="{ editingTeam: null }">
 
-            <h2 class="season-form-header" style="font-size: var(--font-size-lg)">Équipes de la saison</h2>
-            <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin: 0 0 1rem">
-                La catégorie FFF par défaut permet l'auto-assignation des licenciés à l'import.
-                Un admin peut toujours modifier l'équipe d'un licencié manuellement.
-            </p>
-
+            <h2 class="season-form-header" style="font-size:var(--font-size-lg)">Équipes de la saison</h2>
+            <p class="config-teams-intro">Les licenciés importés sont automatiquement assignés à l'équipe correspondant à leur catégorie FFF.</p>
             <hr class="season-form-divider">
 
             {% if teams is empty %}
-                <p style="color: var(--color-text-muted); font-size: var(--font-size-sm)">Aucune équipe configurée.</p>
+                <p class="season-form-empty">Aucune équipe configurée.</p>
             {% else %}
                 <ul class="config-teams-list">
                     {% for team in teams %}
                         <li class="config-teams-item">
-                            <div class="config-teams-view" x-show="editingTeam !== {{ team.id }}">
-                                <span class="config-teams-name">{{ team.name }}</span>
-                                <span class="config-teams-category">
-                                    {% if team.defaultCategory %}
-                                        {{ team.defaultCategory.code }} — {{ team.defaultCategory.label }}
-                                    {% else %}
-                                        <span style="color: var(--color-text-muted)">Aucune catégorie auto</span>
-                                    {% endif %}
-                                </span>
-                                <div class="config-teams-actions">
-                                    <button type="button" class="config-teams-edit-btn" @click="editingTeam = {{ team.id }}">Modifier</button>
+                            <div class="config-teams-row" x-show="editingTeam !== {{ team.id }}">
+                                <div class="config-teams-info">
+                                    <span class="config-teams-name">{{ team.name }}</span>
+                                </div>
+                                <div class="config-teams-btns">
+                                    <button type="button" class="config-teams-btn-edit" @click="editingTeam = {{ team.id }}">Renommer</button>
                                     <form method="post" action="{{ path('admin_config_teams_delete', {id: team.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cette équipe ?')">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete_team_' ~ team.id) }}">
-                                        <button type="submit" class="config-teams-delete-btn">Supprimer</button>
+                                        <button type="submit" class="config-teams-btn-delete">Supprimer</button>
                                     </form>
                                 </div>
                             </div>
                             <form method="post" action="{{ path('admin_config_teams_edit', {id: team.id}) }}"
-                                  class="config-teams-edit-form"
+                                  class="config-teams-edit-row"
                                   x-show="editingTeam === {{ team.id }}"
                                   style="display:none">
-                                <input type="text" name="team[name]" value="{{ team.name }}" class="config-teams-input" required placeholder="Nom">
-                                <select name="team[defaultCategory]" class="config-teams-select">
-                                    <option value="">— Aucune —</option>
-                                    {% for cat in categories %}
-                                        <option value="{{ cat.id }}" {{ team.defaultCategory and team.defaultCategory.id == cat.id ? 'selected' : '' }}>
-                                            {{ cat.code }} — {{ cat.label }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit" class="config-teams-save-btn">Sauvegarder</button>
-                                <button type="button" class="config-teams-cancel-btn" @click="editingTeam = null">Annuler</button>
+                                <input type="text" name="team[name]" value="{{ team.name }}" class="season-form-input config-teams-edit-input" required>
+                                <button type="submit" class="season-form-submit" style="padding:0.4rem 0.875rem;font-size:var(--font-size-xs)">OK</button>
+                                <button type="button" style="background:none;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:0.4rem 0.625rem;font-size:var(--font-size-xs);cursor:pointer;font-family:var(--font-sans);color:var(--color-text-muted)" @click="editingTeam = null">✕</button>
                             </form>
                         </li>
                     {% endfor %}
                 </ul>
             {% endif %}
 
-            <hr class="season-form-divider" style="margin: 1rem 0">
+            <hr class="season-form-divider">
 
-            <h3 style="font-size: var(--font-size-sm); font-weight: 700; color: var(--color-text-body); margin: 0 0 0.75rem">Nouvelle équipe</h3>
-            {{ form_start(newTeamForm, {attr: {class: 'config-teams-new-form'}}) }}
-                <div class="config-teams-new-row">
-                    <div style="flex:2">
-                        {{ form_label(newTeamForm.name) }}
-                        {{ form_widget(newTeamForm.name, {attr: {class: 'config-teams-input'}}) }}
-                        {{ form_errors(newTeamForm.name) }}
-                    </div>
-                    <div style="flex:3">
-                        {{ form_label(newTeamForm.defaultCategory) }}
-                        {{ form_widget(newTeamForm.defaultCategory, {attr: {class: 'config-teams-select'}}) }}
-                        {{ form_help(newTeamForm.defaultCategory) }}
-                    </div>
+            <p class="season-form-header" style="font-size:var(--font-size-sm);font-weight:700;color:var(--color-text-body)">Ajouter une équipe</p>
+
+            {{ form_start(newTeamForm, {attr: {class: 'config-teams-add-form'}}) }}
+                <div class="season-form-field">
+                    {{ form_label(newTeamForm.category) }}
+                    {{ form_widget(newTeamForm.category) }}
+                    {{ form_errors(newTeamForm.category) }}
                 </div>
-                <button type="submit" class="season-form-submit" style="margin-top: 0.75rem">Créer l'équipe</button>
+                <div class="season-form-field">
+                    {{ form_label(newTeamForm.suffix) }}
+                    {{ form_widget(newTeamForm.suffix) }}
+                </div>
+                <p class="config-teams-hint">Nom généré automatiquement depuis la catégorie, ex : <strong>SENIOR</strong>, <strong>U15 A</strong></p>
+                <button type="submit" class="season-form-submit">Ajouter l'équipe</button>
             {{ form_end(newTeamForm) }}
 
         </div>
+
+    </div>{# fin config-row #}
 
     {% endif %}
 

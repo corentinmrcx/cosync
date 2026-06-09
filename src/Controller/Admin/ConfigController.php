@@ -2,9 +2,10 @@
 
 namespace App\Controller\Admin;
 
+use App\DTO\TeamSetupData;
 use App\Entity\Team;
 use App\Form\SeasonType;
-use App\Form\TeamType;
+use App\Form\TeamSetupType;
 use App\Repository\CategoryRepository;
 use App\Repository\TeamRepository;
 use App\Service\SeasonContext;
@@ -59,8 +60,7 @@ class ConfigController extends AbstractController
             return $this->redirectToRoute('admin_config_index');
         }
 
-        $newTeam     = new Team();
-        $newTeamForm = $this->createForm(TeamType::class, $newTeam, [
+        $newTeamForm = $this->createForm(TeamSetupType::class, new TeamSetupData(), [
             'action' => $this->generateUrl('admin_config_teams_new'),
         ]);
 
@@ -69,7 +69,7 @@ class ConfigController extends AbstractController
             'season'      => $season,
             'teams'       => $teamRepo->findBySeason($season),
             'newTeamForm' => $newTeamForm,
-            'categories'  => $categoryRepo->findBy([], ['code' => 'ASC']),
+            'categories'  => $categoryRepo->findBy([], ['minYear' => 'ASC']),
         ]);
     }
 
@@ -81,17 +81,25 @@ class ConfigController extends AbstractController
             return $this->redirectToRoute('admin_config_index');
         }
 
-        $team = new Team();
-        $team->setSeason($season);
-        $form = $this->createForm(TeamType::class, $team);
+        $data = new TeamSetupData();
+        $form = $this->createForm(TeamSetupType::class, $data);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid() && $data->category !== null) {
+            $name = $data->category->getCode();
+            if ($data->suffix !== null && $data->suffix !== '') {
+                $name .= ' ' . trim($data->suffix);
+            }
+
+            $team = new Team();
+            $team->setName($name);
+            $team->setSeason($season);
+            $team->setDefaultCategory($data->category);
             $em->persist($team);
             $em->flush();
-            $this->addFlash('success', sprintf('Équipe "%s" créée.', $team->getName()));
+            $this->addFlash('success', sprintf('Équipe "%s" créée.', $name));
         } else {
-            $this->addFlash('error', 'Données invalides.');
+            $this->addFlash('error', 'Sélectionnez une catégorie FFF.');
         }
 
         return $this->redirectToRoute('admin_config_index');
@@ -100,14 +108,14 @@ class ConfigController extends AbstractController
     #[Route('/equipes/{id}/modifier', name: 'teams_edit', methods: ['POST'])]
     public function teamEdit(Team $team, Request $request, EntityManagerInterface $em): Response
     {
-        $form = $this->createForm(TeamType::class, $team);
-        $form->handleRequest($request);
+        $name = trim($request->request->all('team')['name'] ?? '');
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($name !== '') {
+            $team->setName($name);
             $em->flush();
             $this->addFlash('success', sprintf('Équipe "%s" mise à jour.', $team->getName()));
         } else {
-            $this->addFlash('error', 'Données invalides.');
+            $this->addFlash('error', 'Le nom ne peut pas être vide.');
         }
 
         return $this->redirectToRoute('admin_config_index');

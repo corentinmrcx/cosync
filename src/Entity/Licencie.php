@@ -48,7 +48,7 @@ class Licencie
 
     /** Assigné manuellement par l'admin */
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Team $team = null;
 
     #[ORM\ManyToOne]
