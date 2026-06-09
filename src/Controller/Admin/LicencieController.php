@@ -5,7 +5,6 @@ namespace App\Controller\Admin;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
 use App\Form\LicencieEditType;
-use App\Repository\CategoryRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
@@ -27,7 +26,6 @@ class LicencieController extends AbstractController
         LicencieRepository $licencieRepo,
         SeasonContext $seasonContext,
         TeamRepository $teamRepo,
-        CategoryRepository $categoryRepo,
     ): Response {
         $season = $seasonContext->getCurrentSeason();
 
@@ -35,15 +33,11 @@ class LicencieController extends AbstractController
             return $this->redirectToRoute('admin_seasons_new');
         }
 
-        $currentTeam     = null;
-        $currentCategory = null;
-        $currentStatus   = null;
+        $currentTeam   = null;
+        $currentStatus = null;
 
         if ($request->query->has('team') && $request->query->get('team') !== '') {
             $currentTeam = $teamRepo->find((int) $request->query->get('team'));
-        }
-        if ($request->query->has('category') && $request->query->get('category') !== '') {
-            $currentCategory = $categoryRepo->find((int) $request->query->get('category'));
         }
         if ($request->query->has('status') && $request->query->get('status') !== '') {
             $currentStatus = LicenceStatus::tryFrom($request->query->get('status'));
@@ -54,22 +48,20 @@ class LicencieController extends AbstractController
         $perPage = 25;
         $offset  = ($page - 1) * $perPage;
 
-        $total = $licencieRepo->countWithFilters($season, $currentTeam, $currentCategory, $currentStatus, $search ?: null);
+        $total = $licencieRepo->countWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null);
         $pages = (int) ceil($total / $perPage);
 
         return $this->render('admin/licencies/list.html.twig', [
-            'licencies'       => $licencieRepo->findWithFilters($season, $currentTeam, $currentCategory, $currentStatus, $search ?: null, $perPage, $offset),
-            'season'          => $season,
-            'teams'           => $teamRepo->findBySeason($season),
-            'categories'      => $categoryRepo->findAll(),
-            'statuses'        => LicenceStatus::cases(),
-            'currentTeam'     => $currentTeam,
-            'currentCategory' => $currentCategory,
-            'currentStatus'   => $currentStatus,
-            'search'          => $search,
-            'total'           => $total,
-            'page'            => $page,
-            'pages'           => $pages,
+            'licencies'     => $licencieRepo->findWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $perPage, $offset),
+            'season'        => $season,
+            'teams'         => $teamRepo->findBySeason($season),
+            'statuses'      => LicenceStatus::cases(),
+            'currentTeam'   => $currentTeam,
+            'currentStatus' => $currentStatus,
+            'search'        => $search,
+            'total'         => $total,
+            'page'          => $page,
+            'pages'         => $pages,
         ]);
     }
 

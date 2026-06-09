@@ -22,4 +22,9 @@ class TeamRepository extends ServiceEntityRepository
     {
         return $this->findBy(['season' => $season], ['name' => 'ASC']);
     }
+
+    public function findDefaultForCategory(\App\Entity\Category $category, Season $season): ?Team
+    {
+        return $this->findOneBy(['defaultCategory' => $category, 'season' => $season]);
+    }
 }

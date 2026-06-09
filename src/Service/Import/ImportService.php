@@ -9,6 +9,7 @@ use App\Entity\Season;
 use App\Enum\LicenceStatus;
 use App\Repository\CategoryRepository;
 use App\Repository\LicencieRepository;
+use App\Repository\TeamRepository;
 use App\Service\Mail\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -34,6 +35,7 @@ final class ImportService
         private readonly DataSanitizer $sanitizer,
         private readonly LicencieRepository $licencieRepository,
         private readonly CategoryRepository $categoryRepository,
+        private readonly TeamRepository $teamRepository,
         private readonly EntityManagerInterface $em,
         private readonly MailerService $mailerService,
     ) {}
@@ -201,6 +203,12 @@ final class ImportService
             $licencie->setCodePostal($codePostal);
             $licencie->setVille($ville);
             $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
+
+            // Auto-assignation d'équipe si une équipe par défaut est configurée
+            $defaultTeam = $this->teamRepository->findDefaultForCategory($category, $season);
+            if ($defaultTeam !== null) {
+                $licencie->setTeam($defaultTeam);
+            }
 
             $dossier = new DossierClub();
             $dossier->setLicencie($licencie);

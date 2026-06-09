@@ -21,6 +21,15 @@ class Team
     #[ORM\JoinColumn(nullable: false)]
     private Season $season;
 
+    /**
+     * Catégorie FFF par défaut pour cette équipe.
+     * Utilisé pour l'auto-assignation à l'import XLSX.
+     * Null = équipe spéciale (loisirs, dirigeants…) sans auto-assignation.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Category $defaultCategory = null;
+
     public function getId(): int
     {
         return $this->id;
@@ -45,6 +54,17 @@ class Team
     public function setSeason(Season $season): static
     {
         $this->season = $season;
+        return $this;
+    }
+
+    public function getDefaultCategory(): ?Category
+    {
+        return $this->defaultCategory;
+    }
+
+    public function setDefaultCategory(?Category $defaultCategory): static
+    {
+        $this->defaultCategory = $defaultCategory;
         return $this;
     }
 }

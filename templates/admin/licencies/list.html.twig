@@ -12,13 +12,12 @@
 
     <div class="licencies-filters">
 
-        {% set activeCount = (currentTeam ? 1 : 0) + (currentCategory ? 1 : 0) + (currentStatus ? 1 : 0) %}
+        {% set activeCount = (currentTeam ? 1 : 0) + (currentStatus ? 1 : 0) %}
 
         <form method="get" id="licencies-form">
             {# Conserver la page courante sur la recherche #}
-            <input type="hidden" name="team"     value="{{ currentTeam     ? currentTeam.id     : '' }}">
-            <input type="hidden" name="category" value="{{ currentCategory ? currentCategory.id  : '' }}">
-            <input type="hidden" name="status"   value="{{ currentStatus   ? currentStatus.value : '' }}">
+            <input type="hidden" name="team"   value="{{ currentTeam   ? currentTeam.id     : '' }}">
+            <input type="hidden" name="status" value="{{ currentStatus ? currentStatus.value : '' }}">
 
             <div class="licencies-search-row">
                 <div class="licencies-search-wrap">
@@ -36,6 +35,8 @@
 
         <form method="get" id="licencies-filters-form">
             <input type="hidden" name="search" value="{{ search ?? '' }}">
+            <input type="hidden" name="team"   value="{{ currentTeam   ? currentTeam.id     : '' }}">
+            <input type="hidden" name="status" value="{{ currentStatus ? currentStatus.value : '' }}">
 
             <div class="licencies-toolbar">
 
@@ -77,18 +78,6 @@
                         </div>
 
                         <div class="licencies-filter-group">
-                            <label class="licencies-filter-label">Catégorie</label>
-                            <select name="category" class="licencies-select" onchange="this.form.submit()">
-                                <option value="">Toutes</option>
-                                {% for cat in categories %}
-                                    <option value="{{ cat.id }}" {{ currentCategory and currentCategory.id == cat.id ? 'selected' : '' }}>
-                                        {{ cat.label }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="licencies-filter-group">
                             <label class="licencies-filter-label">Statut</label>
                             <select name="status" class="licencies-select" onchange="this.form.submit()">
                                 <option value="">Tous</option>
@@ -101,7 +90,7 @@
                         </div>
 
                         {% if activeCount > 0 %}
-                            <a href="{{ path('admin_licencies_list', {search: search}) }}"
+                            <a href="{{ path('admin_licencies_list', {search: search ?? ''}) }}"
                                class="licencies-filters-reset">
                                 Réinitialiser les filtres
                             </a>
@@ -134,7 +123,6 @@
                 <thead>
                     <tr>
                         <th>Nom / Prénom</th>
-                        <th class="licencies-col-category">Catégorie</th>
                         <th class="licencies-col-team">Équipe</th>
                         <th class="licencies-col-email">Email</th>
                         <th>Statut</th>
@@ -145,7 +133,6 @@
                         <tr class="licencies-row"
                             onclick="window.location='{{ path('admin_licencies_show', {uuid: licencie.uuid}) }}'">
                             <td class="licencies-td-name">{{ licencie.nomPrenom }}</td>
-                            <td class="licencies-col-category">{{ licencie.category.code }}</td>
                             <td class="licencies-col-team">{{ licencie.team ? licencie.team.name : '—' }}</td>
                             <td class="licencies-col-email licencies-td-muted">{{ licencie.email ?? '—' }}</td>
                             <td>
