@@ -18,8 +18,6 @@ Ce n'est **pas** un remplacement de FootClubs (outil fédéral FFF). C'est un **
 - Donner à l'admin un tableau de bord clair : statut formulaire + statut paiement de chaque licencié
 - Permettre à l'admin de confirmer manuellement les paiements reçus
 - Gérer le stock d'équipements et les dotations par joueur
-- Gérer les saisons (création, tarifs, activation) depuis l'interface admin
-- Gérer le référentiel catégories (édition des codes/labels si la FFF les modifie)
 
 ### Ce que l'outil ne fait PAS
 - Ne recrée pas FootClubs (pas de gestion de licences FFF)
@@ -159,26 +157,13 @@ confirmed_by: User
 season: Season
 ```
 
-### StockCategory
-```php
-id: int
-name: string           // "Buvette", "Vêtements"…
-position: int          // ordre d'affichage
-```
-
 ### StockItem
 ```php
 id: int
 nom: string
-marque: ?string        // Nike, Adidas, Coca-Cola…
-taille: ?string        // M, L, XL, 33cl, EU42… — clé pour les dotations auto
 couleur: ?string
-typeVetement: ?StockItemVetementType  // HAUT | BAS | CHAUSSURES — lie avec DossierClub
-prixAchat: ?float      // coût unitaire pour suivi budgétaire
-alertSeuil: ?int       // seuil alerte stock bas
 ref_catalogue: ?string
 lien_achat: ?string
-category: ?StockCategory
 season: Season
 ```
 
@@ -187,12 +172,10 @@ season: Season
 id: int
 item: StockItem
 quantite: int
-type: StockMovementType    // ENTREE | SORTIE | REBUT
-source: StockMovementSource // MANUEL | DOTATION | SUMUP (Phase 2)
-licencie: ?Licencie         // si dotation liée à un joueur
+type: StockMovementType  // ENTREE | SORTIE | REBUT
+licencie: ?Licencie      // si sortie liée à un joueur
 note: ?string
-created_by: ?User           // null pour mouvements SumUp automatiques (Phase 2)
-sumup_transaction_id: ?string  // déduplication SumUp (Phase 2)
+created_by: User
 created_at: datetime
 ```
 
@@ -225,33 +208,7 @@ enum StockMovementType: string {
     case SORTIE = 'sortie';
     case REBUT = 'rebut';
 }
-
-enum StockMovementSource: string {
-    case MANUEL   = 'manuel';
-    case DOTATION = 'dotation';
-    case SUMUP    = 'sumup';    // Phase 2
-}
-
-enum StockItemVetementType: string {
-    case HAUT       = 'haut';        // → DossierClub.tailleHaut
-    case BAS        = 'bas';         // → DossierClub.tailleBas
-    case CHAUSSURES = 'chaussures';  // → DossierClub.pointure
-}
 ```
-
-### Dotations automatiques
-
-`StockService::getSuggestedDotations(Season)` compare `StockItem.taille` + `StockItem.typeVetement`
-avec les champs correspondants du `DossierClub` de chaque licencié.
-Permet de générer en masse les sorties DOTATION depuis `/admin/stock/dotations-auto`.
-
-### SumUp — Phase 2 (non implémenté)
-
-- API : `GET /v2.1/merchants/{merchant_code}/transactions` (Bearer token, pas v0.1)
-- `StockItem.sumupProductIds: array` (JSON) → à ajouter en Phase 2
-- `SumupSyncState` entity → à créer en Phase 2
-- Cron : `app:sumup-sync` toutes les 5 min → à créer en Phase 2
-- Env var : `SUMUP_ACCESS_TOKEN=` → à renseigner en Phase 2
 
 ---
 
@@ -261,17 +218,38 @@ Permet de générer en masse les sorties DOTATION depuis `/admin/stock/dotations
 
 **Comportement attendu : idempotent, jamais destructeur.**
 
+#### Procédure d'export depuis FootClubs (documentée dans l'UI `/admin/import`)
+1. Menu gauche → **Licenciés → Éditions et extractions**
+2. Sélectionner **Édition licenciés**
+3. Catégories : **tout sélectionner** (clic sur la première, puis Shift+clic sur la dernière)
+4. Format : **Extraction MS Excel**
+5. Sortie et tri : **Complet** ← important, donne les colonnes avec emails et mobiles
+6. Cliquer **Valider**
+
+#### Colonnes utiles du fichier
+| Colonne FootClubs | Champ CoSync |
+|---|---|
+| `Numéro personne` | `num_licence` — clé d'upsert |
+| `Nom, prénom` | split → `nom` (MAJUSCULES) + `prenom` (Capitalize) |
+| `Né(e) le` | `date_naissance` |
+| `Sous catégorie` | `category` |
+| `Email principal` | `email` |
+| `Mobile personnel` | `telephone` |
+| Toutes les autres | ignorées |
+
+#### Traitement dans CoSync
 1. Admin drag & drop le fichier XLSX sur `/admin/import`
 2. `ImportService` lit le fichier via PhpSpreadsheet
 3. `DataSanitizer` normalise chaque ligne :
+   - Ignorer les lignes où `Type licence` ≠ `Libre` (pas de dirigeants, éducateurs)
    - Nom en MAJUSCULES, Prénom en Capitalize
    - Téléphone : supprime espaces/tirets, format +33
    - Email : trim + lowercase
-   - Catégorie : calculée depuis `date_naissance` et la saison active
-4. Pour chaque ligne : `upsert` sur `num_licence`
-   - Si le licencié existe : mise à jour des données FFF uniquement (nom, prénom, email, tel, catégorie). Les données club (DossierClub, Transaction) ne sont jamais touchées.
+4. Pour chaque ligne : `upsert` sur `num_licence` (`Numéro personne`)
+   - Si le licencié existe : mise à jour des données FFF uniquement. Les données club (DossierClub, Transaction) ne sont jamais touchées.
    - Si nouveau : création + génération UUID + envoi mail automatique
 5. Rapport d'import affiché : X mis à jour, Y créés, Z erreurs
+
 
 ### B. Formulaire Public `/inscription/{uuid}`
 
@@ -655,28 +633,3 @@ DATABASE_URL=
 9. **Confirmation paiement** : modal admin + création `Transaction`
 10. **Fiche licencié** : vue détail complète
 11. **Gestion stock** : `StockItem`, `StockMovement`, aide à la commande
-12. **Gestion saisons** : création/activation depuis l'admin (label, tarifs jeunes/seniors)
-13. **Gestion catégories** : édition admin des codes et labels (si la FFF en modifie)
-
----
-
-## 12. Notes techniques importantes
-
-### Import XLSX FootClubs
-- Format réel : 5 colonnes — `Type licence`, `Nom, prénom`, `Né(e) le`, `Sous catégorie`, `Validité Certif Médic N+1`
-- Seules les lignes `Type licence = Libre` sont importées
-- `Nom, prénom` est **une seule colonne** : split sur le premier espace (avant = NOM, après = Prénom)
-- Clé d'upsert : `nom + prenom + date_naissance` (pas de numéro de licence dans l'export)
-- Catégorie lue depuis `Sous catégorie`, jamais calculée depuis la date de naissance
-- Format date : `JJ/MM/AAAA`
-- L'email n'est **pas** dans l'export FootClubs — il est saisi manuellement par l'admin
-
-### Référentiel catégories (`app:seed-referential`)
-- À lancer **une seule fois** au setup pour pré-remplir la table `category`
-- Les codes FFF (U6, U7…SENIOR, variantes F) sont stables entre les saisons
-- Si la FFF crée de nouveaux codes, les ajouter via l'interface admin (section 13)
-
-### Gestion des saisons
-- Une seule saison `active = true` à la fois (contrainte métier)
-- Création via l'interface admin : label (ex: `2026-2027`), tarifs (`base_costs`)
-- Changer de saison = désactiver l'ancienne + activer la nouvelle
