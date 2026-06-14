@@ -1,8 +1,8 @@
 <header class="navbar">
 
-    <div class="navbar-brand">
+    <a href="{{ path('admin_dashboard') }}" class="navbar-brand">
         <span class="navbar-brand-name">CoSync</span>
-    </div>
+    </a>
 
     <div class="navbar-hamburger" x-data="{ open: false }" @click.outside="open = false">
 

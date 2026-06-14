@@ -12,6 +12,8 @@
 }
 
 /* — Brand — */
+.navbar-brand { text-decoration: none; }
+
 .navbar-brand-name {
     color: var(--color-text-inverse);
     font-weight: 900;
