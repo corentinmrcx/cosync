@@ -20,7 +20,6 @@
         {% include 'components/hub-card.html.twig' with {
             icon: 'users',
             label: 'Licenciés',
-            sub: hasSeason ? 'Gérer les inscrits' : 'Saison requise',
             route: hasSeason ? 'admin_licencies_list' : null,
             disabled: not hasSeason
         } %}
@@ -28,7 +27,6 @@
         {% include 'components/hub-card.html.twig' with {
             icon: 'import',
             label: 'Import',
-            sub: hasSeason ? 'Importer un fichier XLSX' : 'Saison requise',
             route: hasSeason ? 'admin_import_index' : null,
             disabled: not hasSeason
         } %}
@@ -36,7 +34,6 @@
         {% include 'components/hub-card.html.twig' with {
             icon: 'box',
             label: 'Stocks',
-            sub: hasSeason ? 'Gérer les stocks' : 'Saison requise',
             route: hasSeason ? 'admin_stock_dashboard' : null,
             disabled: not hasSeason
         } %}
@@ -51,7 +48,6 @@
         {% include 'components/hub-card.html.twig' with {
             icon: 'gear',
             label: 'Configuration',
-            sub: 'Saisons, utilisateurs…',
             route: 'admin_config_index'
         } %}
 

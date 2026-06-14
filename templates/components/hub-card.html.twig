@@ -36,6 +36,6 @@
     </div>
 
     <span class="hub-card-label">{{ label }}</span>
-    <span class="hub-card-sub">{{ sub }}</span>
+    {% if sub is defined %}<span class="hub-card-sub">{{ sub }}</span>{% endif %}
 
 </{{ tag }}>
