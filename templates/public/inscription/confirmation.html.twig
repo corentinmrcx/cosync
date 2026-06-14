@@ -21,8 +21,13 @@
 
             <div class="inscription-card">
                 <div class="inscription-confirm-icon">✅</div>
-                <h1 class="inscription-confirm-title">Merci {{ licencie.prenom }} !</h1>
-                <p class="inscription-confirm-text">Votre formulaire d'inscription a bien été enregistré.</p>
+                {% if licencie.category.isJeune %}
+                    <h1 class="inscription-confirm-title">Merci !</h1>
+                    <p class="inscription-confirm-text">Le formulaire d'inscription de <strong>{{ licencie.prenom }}</strong> a bien été enregistré.</p>
+                {% else %}
+                    <h1 class="inscription-confirm-title">Merci {{ licencie.prenom }} !</h1>
+                    <p class="inscription-confirm-text">Votre formulaire d'inscription a bien été enregistré.</p>
+                {% endif %}
 
                 {% if dossier.paymentIntention %}
                     <p class="inscription-recap-title">Récapitulatif du paiement</p>
