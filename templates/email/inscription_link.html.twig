@@ -50,9 +50,18 @@
                         <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #ff3131;">
                             Inscription · Saison {{ licencie.season.label }}
                         </p>
+                        {% if licencie.category.isEcoleFoot %}
+                        <h1 class="h1" style="margin: 0 0 6px; font-size: 30px; line-height: 1.2; font-weight: 800; color: #1f1f1f;">
+                            Bonjour,
+                        </h1>
+                        <p style="margin: 0 0 18px; font-size: 18px; font-weight: 700; color: #374151;">
+                            Inscription de {{ licencie.prenom }} au Foyer de Soudron
+                        </p>
+                        {% else %}
                         <h1 class="h1" style="margin: 0 0 18px; font-size: 30px; line-height: 1.2; font-weight: 800; color: #1f1f1f;">
                             Bonjour {{ licencie.prenom }},<br>finalisez votre dossier
                         </h1>
+                        {% endif %}
                         <p style="margin: 0; font-size: 16px; line-height: 1.65; color: #374151;">
                             Le Foyer de Soudron vous invite à compléter votre dossier d'inscription.
                             Cela prend <strong style="color: #1f1f1f;">moins de 5 minutes</strong>.
