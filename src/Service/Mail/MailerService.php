@@ -26,7 +26,7 @@ final class MailerService
         $email = (new TemplatedEmail())
             ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
             ->to(new Address($licencie->getEmail(), $licencie->getNomPrenom()))
-            ->subject('Votre formulaire d\'inscription – Foyer de Soudron')
+            ->subject('Finalisez votre dossier — Foyer de Soudron, saison ' . $licencie->getSeason()->getLabel())
             ->htmlTemplate('email/inscription_link.html.twig')
             ->context([
                 'licencie' => $licencie,
