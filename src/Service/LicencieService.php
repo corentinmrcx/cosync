@@ -23,40 +23,12 @@ final class LicencieService
         ?string $tailleHaut,
         ?string $tailleBas,
         ?string $pointure,
-        ?PaymentMode $paymentMode,
-        ?float $montant,
-        ?string $reference,
-        User $confirmedBy,
-        Season $season,
     ): void {
         $dossier = $licencie->getDossierClub();
         if ($dossier !== null) {
             $dossier->setTailleHaut($tailleHaut ?: null);
             $dossier->setTailleBas($tailleBas ?: null);
             $dossier->setPointure($pointure ?: null);
-        }
-
-        $hasTransaction = false;
-        if ($paymentMode !== null && $montant !== null && $montant > 0) {
-            $transaction = $this->transactionRepo->findByLicencieAndSeason($licencie, $season);
-            if ($transaction === null) {
-                $transaction = new Transaction();
-                $transaction->setLicencie($licencie);
-                $transaction->setSeason($season);
-                $transaction->setDatePaiement(new \DateTimeImmutable());
-                $this->em->persist($transaction);
-            }
-            $transaction->setMode($paymentMode);
-            $transaction->setMontant(number_format($montant, 2, '.', ''));
-            $transaction->setReference($reference ?: null);
-            $transaction->setConfirmedBy($confirmedBy);
-            $hasTransaction = true;
-        } else {
-            $hasTransaction = $this->transactionRepo->findByLicencieAndSeason($licencie, $season) !== null;
-        }
-
-        if ($dossier !== null) {
-            $dossier->setStatus($this->computeStatus($dossier->isSigned(), $hasTransaction));
         }
 
         $this->em->flush();

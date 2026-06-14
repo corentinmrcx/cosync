@@ -87,6 +87,29 @@ class LicencieController extends AbstractController
             ? ($baseCosts['jeunes'] ?? 0)
             : ($baseCosts['seniors'] ?? 0);
 
+        $history = [
+            ['date' => $licencie->getImportedAt(), 'label' => 'Licencié importé depuis FootClubs', 'who' => 'Système'],
+        ];
+
+        if ($licencie->getEmail() !== null) {
+            $history[] = ['date' => $licencie->getImportedAt(), 'label' => 'Lien d\'inscription envoyé par email', 'who' => 'Système'];
+        }
+
+        $dossier = $licencie->getDossierClub();
+        if ($dossier?->getFormCompletedAt() !== null) {
+            $history[] = ['date' => $dossier->getFormCompletedAt(), 'label' => 'Formulaire complété par le licencié', 'who' => 'Licencié'];
+        }
+
+        if ($transaction !== null) {
+            $history[] = [
+                'date'  => $transaction->getDatePaiement(),
+                'label' => 'Paiement confirmé',
+                'who'   => $transaction->getConfirmedBy()?->getEmail() ?? 'Admin',
+            ];
+        }
+
+        usort($history, static fn (array $a, array $b): int => $a['date'] <=> $b['date']);
+
         return $this->render('admin/licencies/show.html.twig', [
             'licencie'     => $licencie,
             'transaction'  => $transaction,
@@ -94,6 +117,7 @@ class LicencieController extends AbstractController
             'montant'      => $montant,
             'paymentModes' => PaymentMode::cases(),
             'dotations'    => $stockMovementRepo->findDotationsByLicencie($licencie),
+            'history'      => $history,
         ]);
     }
 
@@ -102,7 +126,6 @@ class LicencieController extends AbstractController
         string $uuid,
         Request $request,
         LicencieRepository $licencieRepo,
-        TransactionRepository $transactionRepo,
         SeasonContext $seasonContext,
         LicencieService $licencieService,
     ): Response {
@@ -116,35 +139,22 @@ class LicencieController extends AbstractController
             return $this->redirectToRoute('admin_seasons_new');
         }
 
-        $dossier     = $licencie->getDossierClub();
-        $transaction = $transactionRepo->findByLicencieAndSeason($licencie, $season);
+        $dossier = $licencie->getDossierClub();
 
         $form = $this->createForm(LicencieEditType::class, $licencie, [
-            'season'            => $season,
-            'taille_haut'       => $dossier?->getTailleHaut(),
-            'taille_bas'        => $dossier?->getTailleBas(),
-            'pointure'          => $dossier?->getPointure(),
-            'payment_mode'      => $transaction?->getMode(),
-            'payment_montant'   => $transaction?->getMontant(),
-            'payment_reference' => $transaction?->getReference(),
+            'season'      => $season,
+            'taille_haut' => $dossier?->getTailleHaut(),
+            'taille_bas'  => $dossier?->getTailleBas(),
+            'pointure'    => $dossier?->getPointure(),
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $paymentModeValue = $form->get('paymentMode')->getData();
-            $paymentMode      = $paymentModeValue ? PaymentMode::tryFrom($paymentModeValue) : null;
-            $montant          = $form->get('paymentMontant')->getData();
-
             $licencieService->edit(
                 $licencie,
                 $form->get('tailleHaut')->getData() ?: null,
                 $form->get('tailleBas')->getData() ?: null,
                 $form->get('pointure')->getData() ?: null,
-                $paymentMode,
-                is_numeric($montant) ? (float) $montant : null,
-                $form->get('paymentReference')->getData() ?: null,
-                $this->getUser(),
-                $season,
             );
 
             $this->addFlash('success', 'Dossier de ' . $licencie->getNomPrenom() . ' mis à jour.');
@@ -152,9 +162,8 @@ class LicencieController extends AbstractController
         }
 
         return $this->render('admin/licencies/edit.html.twig', [
-            'form'        => $form,
-            'licencie'    => $licencie,
-            'transaction' => $transaction,
+            'form'     => $form,
+            'licencie' => $licencie,
         ]);
     }
 

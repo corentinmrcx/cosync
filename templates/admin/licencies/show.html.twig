@@ -66,15 +66,6 @@
                 {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
             {% endif %}
 
-            {% if licencie.dossierClub and licencie.dossierClub.status.value != 'validated' and licencie.dossierClub.isSigned %}
-                <button type="button" @click="paymentModal = true" class="licencie-show-confirm-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    Confirmer le paiement
-                </button>
-            {% endif %}
-
             <a href="{{ path('admin_licencies_edit', {uuid: licencie.uuid}) }}" class="licencie-show-edit-btn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -163,89 +154,152 @@
 
             {% if licencie.dossierClub %}
                 {% set d = licencie.dossierClub %}
+
                 <dl class="licencie-show-dl">
                     <div class="licencie-show-dl-row">
                         <dt class="licencie-show-dt">Taille haut</dt>
-                        <dd class="{{ d.tailleHaut ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
-                            {{ d.tailleHaut ?? '—' }}
-                        </dd>
+                        <dd class="{{ d.tailleHaut ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">{{ d.tailleHaut ?? '—' }}</dd>
                     </div>
                     <div class="licencie-show-dl-row">
                         <dt class="licencie-show-dt">Taille bas</dt>
-                        <dd class="{{ d.tailleBas ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
-                            {{ d.tailleBas ?? '—' }}
-                        </dd>
+                        <dd class="{{ d.tailleBas ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">{{ d.tailleBas ?? '—' }}</dd>
                     </div>
                     <div class="licencie-show-dl-row">
                         <dt class="licencie-show-dt">Pointure</dt>
-                        <dd class="{{ d.pointure ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
-                            {{ d.pointure ?? '—' }}
-                        </dd>
+                        <dd class="{{ d.pointure ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">{{ d.pointure ?? '—' }}</dd>
                     </div>
+                    {% if transaction %}
                     <div class="licencie-show-dl-row">
-                        <dt class="licencie-show-dt">Droit à l'image</dt>
-                        <dd class="licencie-show-dd">
-                            {% if d.autorisationPhoto is null %}
-                                <span class="licencie-show-dd-empty">—</span>
-                            {% elseif d.autorisationPhoto %}
-                                <span class="licencie-show-pill licencie-show-pill-yes">Oui</span>
-                            {% else %}
-                                <span class="licencie-show-pill licencie-show-pill-no">Non</span>
-                            {% endif %}
+                        <dt class="licencie-show-dt">Intention paiement</dt>
+                        <dd class="{{ d.paymentIntention ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                            {{ d.paymentIntention ? d.paymentIntention.label() : '—' }}
                         </dd>
                     </div>
-                    {% if licencie.category.isEcoleFoot %}
-                        <div class="licencie-show-dl-row">
-                            <dt class="licencie-show-dt">Transport dirigeants</dt>
-                            <dd class="licencie-show-dd">
-                                {% if d.autorisationTransportDirigeants is null %}
-                                    <span class="licencie-show-dd-empty">—</span>
-                                {% elseif d.autorisationTransportDirigeants %}
-                                    <span class="licencie-show-pill licencie-show-pill-yes">Oui</span>
-                                {% else %}
-                                    <span class="licencie-show-pill licencie-show-pill-no">Non</span>
-                                {% endif %}
-                            </dd>
-                        </div>
-                        <div class="licencie-show-dl-row">
-                            <dt class="licencie-show-dt">Transport parents</dt>
-                            <dd class="licencie-show-dd">
-                                {% if d.autorisationTransportParents is null %}
-                                    <span class="licencie-show-dd-empty">—</span>
-                                {% elseif d.autorisationTransportParents %}
-                                    <span class="licencie-show-pill licencie-show-pill-yes">Oui</span>
-                                {% else %}
-                                    <span class="licencie-show-pill licencie-show-pill-no">Non</span>
-                                {% endif %}
-                            </dd>
-                        </div>
-                    {% endif %}
-                    <div class="licencie-show-dl-row">
-                        <dt class="licencie-show-dt">Règlement signé</dt>
-                        <dd class="licencie-show-dd">
-                            {% if d.isSigned %}
-                                <span class="licencie-show-pill licencie-show-pill-yes">Oui</span>
-                                <span class="licencie-show-dd-empty" style="font-size: var(--font-size-xs); margin-left: 0.25rem;">
-                                    le {{ d.signatureDate|date('d/m/Y') }}
-                                </span>
-                            {% else %}
-                                <span class="licencie-show-pill licencie-show-pill-no">Non</span>
-                            {% endif %}
-                        </dd>
-                    </div>
-                    {% if d.formCompletedAt %}
-                        <div class="licencie-show-dl-row">
-                            <dt class="licencie-show-dt">Formulaire complété</dt>
-                            <dd class="licencie-show-dd">{{ d.formCompletedAt|date('d/m/Y à H:i') }}</dd>
-                        </div>
                     {% endif %}
                 </dl>
+
+                <hr class="licencie-show-divider">
+
+                <ul class="licencie-show-checklist">
+
+                    {# Règlement signé #}
+                    <li class="licencie-show-check-item">
+                        {% if d.isSigned %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span class="licencie-show-check-label">Règlement signé</span>
+                            {% if d.signatureDate %}
+                                <span class="licencie-show-check-date">le {{ d.signatureDate|date('d/m/Y') }}</span>
+                            {% endif %}
+                        {% else %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span class="licencie-show-check-label licencie-show-check-label-pending">Règlement signé</span>
+                            <span class="licencie-show-check-badge-pending">En attente</span>
+                        {% endif %}
+                    </li>
+
+                    {# Droit à l'image #}
+                    <li class="licencie-show-check-item">
+                        {% if d.autorisationPhoto is null %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span class="licencie-show-check-label licencie-show-check-label-pending">Droit à l'image</span>
+                            <span class="licencie-show-check-badge-pending">En attente</span>
+                        {% elseif d.autorisationPhoto %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span class="licencie-show-check-label">Droit à l'image</span>
+                            <span class="licencie-show-check-badge-yes">Accordé</span>
+                        {% else %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <span class="licencie-show-check-label">Droit à l'image</span>
+                            <span class="licencie-show-check-badge-no">Refusé</span>
+                        {% endif %}
+                    </li>
+
+                    {% if licencie.category.isEcoleFoot %}
+                        {# Transport dirigeants #}
+                        <li class="licencie-show-check-item">
+                            {% if d.autorisationTransportDirigeants is null %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span class="licencie-show-check-label licencie-show-check-label-pending">Transport dirigeants</span>
+                                <span class="licencie-show-check-badge-pending">En attente</span>
+                            {% elseif d.autorisationTransportDirigeants %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span class="licencie-show-check-label">Transport dirigeants</span>
+                                <span class="licencie-show-check-badge-yes">Accordé</span>
+                            {% else %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span class="licencie-show-check-label">Transport dirigeants</span>
+                                <span class="licencie-show-check-badge-no">Refusé</span>
+                            {% endif %}
+                        </li>
+
+                        {# Transport parents #}
+                        <li class="licencie-show-check-item">
+                            {% if d.autorisationTransportParents is null %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span class="licencie-show-check-label licencie-show-check-label-pending">Transport parents</span>
+                                <span class="licencie-show-check-badge-pending">En attente</span>
+                            {% elseif d.autorisationTransportParents %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span class="licencie-show-check-label">Transport parents</span>
+                                <span class="licencie-show-check-badge-yes">Accordé</span>
+                            {% else %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span class="licencie-show-check-label">Transport parents</span>
+                                <span class="licencie-show-check-badge-no">Refusé</span>
+                            {% endif %}
+                        </li>
+                    {% endif %}
+
+                    {# Paiement cotisation #}
+                    <li class="licencie-show-check-item">
+                        {% if transaction %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span class="licencie-show-check-label">Paiement cotisation</span>
+                        {% else %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span class="licencie-show-check-label licencie-show-check-label-pending">Paiement cotisation</span>
+                            <span class="licencie-show-check-badge-pending">En attente</span>
+                        {% endif %}
+                    </li>
+
+                </ul>
+
+                {# Bouton confirmer paiement ou état validé #}
+                {% if d.status.value == 'validated' %}
+                    <div class="licencie-show-validated">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        Paiement confirmé
+                    </div>
+                {% elseif d.isSigned %}
+                    <button type="button" @click="paymentModal = true" class="licencie-show-confirm-full">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                        Confirmer le paiement
+                    </button>
+                {% endif %}
+
             {% else %}
                 <p class="licencie-show-empty">Aucun dossier club — le lien d'inscription n'a pas encore été complété.</p>
             {% endif %}
         </div>
 
+        {# — Historique — #}
+        <div class="licencie-show-card licencie-show-card-full">
+            <h2 class="licencie-show-card-title">Historique</h2>
+            <ul class="licencie-show-history">
+                {% for event in history %}
+                    <li class="licencie-show-history-item {{ not loop.last ? 'licencie-show-history-item-sep' }}">
+                        <span class="licencie-show-history-date">{{ event.date|date('d/m/Y à H:i') }}</span>
+                        <span class="licencie-show-history-label">{{ event.label }}</span>
+                        <span class="licencie-show-history-who">{{ event.who }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
         {# — Paiement — #}
+        {% if transaction or (licencie.dossierClub and licencie.dossierClub.paymentIntention) %}
         <div class="licencie-show-card licencie-show-card-full">
             <h2 class="licencie-show-card-title">Paiement</h2>
 
@@ -282,6 +336,7 @@
                 </div>
             </dl>
         </div>
+        {% endif %}
 
         {# — Dotations stock — #}
         {% if dotations is not empty %}

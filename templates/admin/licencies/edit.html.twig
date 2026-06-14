@@ -54,46 +54,6 @@
             {{ form_errors(form.pointure) }}
         </div>
 
-        <hr class="season-form-divider">
-
-        {# — Paiement — #}
-        <p class="licencie-edit-section">Paiement</p>
-
-        {% if licencie.dossierClub and licencie.dossierClub.paymentIntention %}
-            <div class="licencie-edit-intent">
-                Intention déclarée par le licencié :
-                <strong>{{ licencie.dossierClub.paymentIntention.label() }}</strong>
-            </div>
-        {% endif %}
-
-        {% if transaction %}
-            <div class="licencie-edit-payment-status licencie-edit-payment-confirmed">
-                Paiement confirmé le {{ transaction.datePaiement|date('d/m/Y') }}
-                — {{ transaction.montant }} € — {{ transaction.mode.label() }}
-                {% if transaction.reference %}({{ transaction.reference }}){% endif %}
-            </div>
-        {% endif %}
-
-        <div class="season-form-field">
-            {{ form_label(form.paymentMode) }}
-            {{ form_widget(form.paymentMode) }}
-            {{ form_errors(form.paymentMode) }}
-        </div>
-
-        <div class="season-form-field">
-            {{ form_label(form.paymentMontant) }}
-            {{ form_widget(form.paymentMontant, { attr: { placeholder: '85.00', min: '0', step: '0.01' } }) }}
-            {{ form_errors(form.paymentMontant) }}
-        </div>
-
-        <div class="season-form-field">
-            {{ form_label(form.paymentReference) }}
-            {{ form_widget(form.paymentReference) }}
-            {{ form_errors(form.paymentReference) }}
-        </div>
-
-        <p class="licencie-edit-note">Remplissez le mode <strong>et</strong> le montant pour confirmer le paiement.</p>
-
         <button type="submit" class="season-form-submit">Enregistrer</button>
 
     {{ form_end(form) }}
