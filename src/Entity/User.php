@@ -25,6 +25,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private string $password;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Season $selectedSeason = null;
+
     public function getId(): int
     {
         return $this->id;
@@ -67,6 +71,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
+        return $this;
+    }
+
+    public function getSelectedSeason(): ?Season
+    {
+        return $this->selectedSeason;
+    }
+
+    public function setSelectedSeason(?Season $season): static
+    {
+        $this->selectedSeason = $season;
         return $this;
     }
 
