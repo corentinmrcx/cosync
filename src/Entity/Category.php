@@ -62,6 +62,12 @@ class Category
         return $this->isEcoleFoot;
     }
 
+    /** true pour toutes les catégories jeunes (U6 à U19) — conditionne le message parent/adulte */
+    public function isJeune(): bool
+    {
+        return str_starts_with($this->code, 'U');
+    }
+
     public function setIsEcoleFoot(bool $isEcoleFoot): static
     {
         $this->isEcoleFoot = $isEcoleFoot;

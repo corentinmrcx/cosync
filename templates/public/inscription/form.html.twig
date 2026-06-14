@@ -38,10 +38,17 @@
 
                 {# ── Étape 1 : Bienvenue ── #}
                 <div x-show="step === 1" class="inscription-card">
-                    <h1 class="inscription-welcome-name">Bonjour {{ licencie.prenom }} 👋</h1>
-                    <p class="inscription-welcome-text">
-                        Bienvenue dans le formulaire d'inscription au <strong>Foyer de Soudron</strong> pour la saison <strong>{{ licencie.season.label }}</strong>.
-                    </p>
+                    {% if licencie.category.isJeune %}
+                        <h1 class="inscription-welcome-name">Bonjour 👋</h1>
+                        <p class="inscription-welcome-text">
+                            Inscription de <strong>{{ licencie.prenom }}</strong> au <strong>Foyer de Soudron</strong> pour la saison <strong>{{ licencie.season.label }}</strong>.
+                        </p>
+                    {% else %}
+                        <h1 class="inscription-welcome-name">Bonjour {{ licencie.prenom }} 👋</h1>
+                        <p class="inscription-welcome-text">
+                            Bienvenue dans le formulaire d'inscription au <strong>Foyer de Soudron</strong> pour la saison <strong>{{ licencie.season.label }}</strong>.
+                        </p>
+                    {% endif %}
                     <p class="inscription-welcome-text">
                         Ce formulaire vous prendra environ <strong>3 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations et signerez le règlement intérieur.
                     </p>
