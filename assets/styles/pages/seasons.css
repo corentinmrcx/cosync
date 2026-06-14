@@ -180,7 +180,7 @@
 @media (min-width: 800px) {
     .config-row {
         flex-direction: row;
-        align-items: flex-start;
+        align-items: stretch;
     }
     .config-row > * { flex: 1; max-width: 480px; }
 }
