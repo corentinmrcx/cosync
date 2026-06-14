@@ -4,7 +4,6 @@ namespace App\Form;
 
 use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -31,12 +30,7 @@ class UserType extends AbstractType
                     : [],
                 'attr'        => ['placeholder' => $options['is_new'] ? '' : 'Laisser vide pour ne pas changer'],
             ])
-            ->add('isAdmin', CheckboxType::class, [
-                'label'    => 'Rôle administrateur',
-                'mapped'   => false,
-                'required' => false,
-                'data'     => $options['is_admin'],
-            ]);
+        ;
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -44,7 +38,6 @@ class UserType extends AbstractType
         $resolver->setDefaults([
             'data_class' => User::class,
             'is_new'     => true,
-            'is_admin'   => true,
         ]);
     }
 }

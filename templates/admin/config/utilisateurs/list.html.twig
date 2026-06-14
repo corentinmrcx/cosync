@@ -25,7 +25,6 @@
             <thead>
                 <tr>
                     <th>Email</th>
-                    <th>Rôle</th>
                     <th></th>
                 </tr>
             </thead>
@@ -33,13 +32,6 @@
                 {% for user in users %}
                     <tr class="users-row">
                         <td class="users-td-email">{{ user.email }}</td>
-                        <td>
-                            {% if 'ROLE_ADMIN' in user.roles %}
-                                <span class="users-badge-admin">Admin</span>
-                            {% else %}
-                                <span class="users-badge-user">Utilisateur</span>
-                            {% endif %}
-                        </td>
                         <td>
                             <div class="users-actions-cell">
                                 <a href="{{ path('admin_users_edit', {id: user.id}) }}" class="users-action-edit">Modifier</a>

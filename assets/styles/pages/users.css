@@ -91,25 +91,6 @@
     color: var(--color-text-base);
 }
 
-.users-badge-admin {
-    display: inline-flex;
-    padding: 0.125rem 0.5rem;
-    background: var(--color-primary-light);
-    color: var(--color-primary);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    border-radius: var(--radius-xl);
-}
-
-.users-badge-user {
-    display: inline-flex;
-    padding: 0.125rem 0.5rem;
-    background: var(--color-bg-muted);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    border-radius: var(--radius-xl);
-}
 
 .users-actions-cell {
     display: flex;
@@ -221,26 +202,6 @@
     color: var(--color-danger);
 }
 
-.users-form-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-}
-
-.users-form-checkbox input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
-    accent-color: var(--color-primary);
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.users-form-checkbox label {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-text-body);
-    cursor: pointer;
-}
 
 .users-form-submit {
     display: inline-flex;

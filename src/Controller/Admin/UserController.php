@@ -35,7 +35,6 @@ class UserController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $user->setPassword($hasher->hashPassword($user, $form->get('plainPassword')->getData()));
-            $user->setRoles($form->get('isAdmin')->getData() ? ['ROLE_ADMIN'] : []);
 
             $em->persist($user);
             $em->flush();
@@ -58,10 +57,7 @@ class UserController extends AbstractController
         UserPasswordHasherInterface $hasher,
         EntityManagerInterface $em,
     ): Response {
-        $form = $this->createForm(UserType::class, $user, [
-            'is_new'   => false,
-            'is_admin' => in_array('ROLE_ADMIN', $user->getRoles(), true),
-        ]);
+        $form = $this->createForm(UserType::class, $user, ['is_new' => false]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -69,7 +65,6 @@ class UserController extends AbstractController
             if ($plain !== null && $plain !== '') {
                 $user->setPassword($hasher->hashPassword($user, $plain));
             }
-            $user->setRoles($form->get('isAdmin')->getData() ? ['ROLE_ADMIN'] : []);
 
             $em->flush();
 
