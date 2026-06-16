@@ -3,156 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page {
+            size: A4;
+            margin: 20mm 25mm 20mm 25mm;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 11pt;
-            color: #1f1f1f;
+            font-size: 12px;
+            color: #111;
             line-height: 1.5;
+            padding: 12mm 10mm;
         }
 
+        /* ── Header ── */
         .header {
-            background-color: #ff3131;
-            color: #ffffff;
-            padding: 20px 30px;
-            margin-bottom: 24px;
+            width: 100%;
+            border-collapse: collapse;
+            border-bottom: 2px solid #ff0033;
+            margin-bottom: 6mm;
+        }
+
+        .header td { vertical-align: middle; padding: 0 0 6mm 0; }
+
+        .header-logo {
+            width: 20mm;
+            height: 20mm;
+            object-fit: contain;
         }
 
         .header-title {
-            font-size: 18pt;
-            font-weight: bold;
-            margin-bottom: 4px;
+            text-align: center;
+            padding: 0 8px;
         }
 
-        .header-subtitle {
-            font-size: 10pt;
-            opacity: 0.85;
+        .header-title h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 3px;
         }
 
+        .header-title p {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ff0033;
+        }
+
+        /* ── Contenu règlement ── */
         .content {
-            padding: 0 30px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #111;
+            margin-bottom: 12mm;
         }
 
-        .section-title {
-            font-size: 13pt;
-            font-weight: bold;
-            color: #1f1f1f;
-            border-bottom: 2px solid #ff3131;
-            padding-bottom: 6px;
-            margin-bottom: 14px;
-            margin-top: 24px;
+        .content h2 {
+            font-size: 15px;
+            margin: 20px 0 10px;
+            page-break-after: avoid;
         }
 
-        .reglement-text {
-            font-size: 10pt;
-            color: #374151;
-            white-space: pre-wrap;
-            line-height: 1.7;
+        .content h3 {
+            font-size: 13px;
+            margin: 16px 0 7px;
+            page-break-after: avoid;
         }
 
-        .attestation-block {
-            margin-top: 32px;
-            border: 1.5px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 20px 24px;
-            background-color: #f9fafb;
+        .content p {
+            margin: 0 0 12px;
+            page-break-inside: avoid;
         }
 
-        .attestation-text {
-            font-size: 10.5pt;
-            color: #1f1f1f;
-            margin-bottom: 20px;
+        .content ul,
+        .content ol {
+            margin: 8px 0 14px 20px;
         }
 
-        .attestation-text strong {
-            color: #ff3131;
+        .content li {
+            margin-bottom: 6px;
+            page-break-inside: avoid;
         }
 
-        .attestation-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 24px;
+        /* ── Footer ── */
+        .footer {
+            border-top: 1px solid #ccc;
+            padding-top: 6mm;
+            font-size: 10px;
+            page-break-inside: avoid;
         }
 
-        .attestation-meta {
-            font-size: 9.5pt;
-            color: #6b7280;
-            line-height: 1.8;
+        .footer-approval {
+            color: #555;
+            margin-bottom: 8px;
         }
 
-        .attestation-meta span {
-            display: block;
+        .footer-date {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
         }
 
-        .attestation-meta strong {
-            color: #1f1f1f;
+        .footer-statement {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.6;
         }
 
-        .signature-block {
-            text-align: right;
-        }
+        .footer-statement .highlight { color: #ff0033; }
 
-        .signature-label {
-            font-size: 9pt;
-            color: #6b7280;
+        .sign-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #555;
             margin-bottom: 6px;
         }
 
-        .signature-img {
+        .sign-img {
+            max-height: 80px;
             max-width: 220px;
-            max-height: 90px;
-            border-bottom: 1px solid #d1d5db;
-        }
-
-        .footer {
-            margin-top: 40px;
-            padding: 12px 30px;
-            border-top: 1px solid #e5e7eb;
-            font-size: 8.5pt;
-            color: #9ca3af;
-            text-align: center;
+            display: block;
         }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div class="header-title">Foyer de Soudron — Règlement intérieur</div>
-    <div class="header-subtitle">Saison {{ season.label }}</div>
-</div>
+{# ── Header ── #}
+<table class="header" cellpadding="0" cellspacing="0">
+    <tr>
+        <td width="68">
+            <img src="{{ logoDataUrl }}" alt="Logo club" class="header-logo">
+        </td>
+        <td class="header-title">
+            <h1>Règlement intérieur</h1>
+            <p>Foyer de Soudron — Saison {{ season.label }}</p>
+        </td>
+        <td width="68" style="text-align: right;">
+            <img src="{{ foyerLogoDataUrl }}" alt="Foyer de Soudron" class="header-logo">
+        </td>
+    </tr>
+</table>
 
+{# ── Contenu du règlement ── #}
 <div class="content">
-
-    <div class="section-title">Règlement intérieur</div>
-
-    <div class="reglement-text">{{ season.reglementText ? season.reglementText|raw : 'Aucun règlement défini pour cette saison.' }}</div>
-
-    <div class="attestation-block">
-        <div class="attestation-text">
-            Je soussigné(e) <strong>{{ licencie.prenom }} {{ licencie.nom }}</strong>,
-            reconnais avoir lu et accepté le règlement intérieur du Foyer de Soudron
-            pour la saison <strong>{{ season.label }}</strong>.
-        </div>
-
-        <div class="attestation-row">
-            <div class="attestation-meta">
-                <span>Licencié(e) : <strong>{{ licencie.prenom }} {{ licencie.nom }}</strong></span>
-                <span>Catégorie : <strong>{{ licencie.category.label }}</strong></span>
-                <span>Date de signature : <strong>{{ signedAt|date('d/m/Y à H:i') }}</strong></span>
-            </div>
-            <div class="signature-block">
-                <div class="signature-label">Signature :</div>
-                <img class="signature-img" src="{{ signatureDataUrl }}" alt="Signature">
-            </div>
-        </div>
-    </div>
-
+    {{ season.reglementText ? season.reglementText|raw : '<p>Aucun règlement défini pour cette saison.</p>' }}
 </div>
 
+{# ── Footer ── #}
 <div class="footer">
-    Document généré automatiquement par CoSync — Foyer de Soudron
+    <p class="footer-approval">
+        Le présent règlement est approuvé par le Conseil d'Administration du Foyer de Soudron et entre en application immédiatement.
+    </p>
+    <p class="footer-date">Soudron, le {{ signedAt|date('d/m/Y') }}</p>
+    <p class="footer-statement">
+        Je soussigné·e <span class="highlight">{{ licencie.prenom }} {{ licencie.nom }}</span>, reconnais avoir lu et accepté le règlement intérieur du Foyer de Soudron pour la saison <span class="highlight">{{ season.label }}</span>.
+    </p>
+    <div class="sign-label">Signature :</div>
+    <img class="sign-img" src="{{ signatureDataUrl }}" alt="Signature">
 </div>
 
 </body>

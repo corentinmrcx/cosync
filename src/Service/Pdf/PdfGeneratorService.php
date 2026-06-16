@@ -21,11 +21,15 @@ final class PdfGeneratorService
      */
     public function generateReglementSigne(Licencie $licencie, string $signatureDataUrl): string
     {
+        $encode = fn(string $path): string => 'data:image/png;base64,' . base64_encode(file_get_contents($path));
+
         $html = $this->twig->render('pdf/reglement_signe.html.twig', [
-            'licencie'        => $licencie,
-            'season'          => $licencie->getSeason(),
-            'signatureDataUrl' => $signatureDataUrl,
-            'signedAt'        => new \DateTimeImmutable(),
+            'licencie'          => $licencie,
+            'season'            => $licencie->getSeason(),
+            'signatureDataUrl'  => $signatureDataUrl,
+            'signedAt'          => new \DateTimeImmutable(),
+            'logoDataUrl'       => $encode($this->projectDir . '/public/images/logo/logo.png'),
+            'foyerLogoDataUrl'  => $encode($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
         ]);
 
         $options = new Options();
