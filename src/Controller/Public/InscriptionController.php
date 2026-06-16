@@ -107,6 +107,10 @@ class InscriptionController extends AbstractController
             return null;
         }
 
+        if (!str_starts_with($signatureData, 'data:image/')) {
+            return null;
+        }
+
         $paymentMode = PaymentMode::tryFrom($paymentRaw);
         if ($paymentMode === null) {
             return null;

@@ -90,6 +90,7 @@
                                   class="config-teams-edit-row"
                                   x-show="editingTeam === {{ team.id }}"
                                   style="display:none">
+                                <input type="hidden" name="_token" value="{{ csrf_token('edit_team_' ~ team.id) }}">
                                 <input type="text" name="team[name]" value="{{ team.name }}" class="season-form-input config-teams-edit-input" required>
                                 <button type="submit" class="season-form-submit" style="padding:0.4rem 0.875rem;font-size:var(--font-size-xs)">OK</button>
                                 <button type="button" style="background:none;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:0.4rem 0.625rem;font-size:var(--font-size-xs);cursor:pointer;font-family:var(--font-sans);color:var(--color-text-muted)" @click="editingTeam = null">✕</button>

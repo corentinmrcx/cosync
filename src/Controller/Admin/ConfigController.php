@@ -108,6 +108,11 @@ class ConfigController extends AbstractController
     #[Route('/equipes/{id}/modifier', name: 'teams_edit', methods: ['POST'])]
     public function teamEdit(Team $team, Request $request, EntityManagerInterface $em): Response
     {
+        if (!$this->isCsrfTokenValid('edit_team_' . $team->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_config_index');
+        }
+
         $name = trim($request->request->all('team')['name'] ?? '');
 
         if ($name !== '') {

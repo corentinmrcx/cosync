@@ -232,8 +232,8 @@ class LicencieController extends AbstractController
         try {
             $inscriptionLinkService->send($licencie);
             $this->addFlash('success', 'Lien d\'inscription envoyé à ' . $licencie->getEmail() . '.');
-        } catch (\Throwable $e) {
-            $this->addFlash('error', 'Erreur lors de l\'envoi : ' . $e->getMessage());
+        } catch (\Throwable) {
+            $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
         }
 
         return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
