@@ -51,7 +51,7 @@ class SeasonController extends AbstractController
             $em->flush();
 
             $this->addFlash('success', 'Règlement mis à jour.');
-            return $this->redirectToRoute('admin_seasons_reglement', ['id' => $season->getId()]);
+            return $this->redirectToRoute('admin_config_index');
         }
 
         return $this->render('admin/seasons/reglement.html.twig', [
