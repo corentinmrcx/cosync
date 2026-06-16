@@ -60,7 +60,7 @@ class InscriptionController extends AbstractController
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
-        $data = $this->buildFormData($request, $licencie->getCategory()->isEcoleFoot());
+        $data = $this->buildFormData($request, $licencie->getCategory()->isJeune());
 
         if ($data === null) {
             $this->addFlash('error', 'Formulaire incomplet, veuillez remplir tous les champs.');

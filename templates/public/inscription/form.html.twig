@@ -8,7 +8,7 @@
 
 {% block body %}
 <div class="inscription-page"
-     x-data="inscriptionForm({ isEcoleFoot: {{ licencie.category.isEcoleFoot ? 'true' : 'false' }}, montant: {{ montant }} })">
+     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }} })">
 
     {# — Header — #}
     <header class="inscription-header">
@@ -141,7 +141,7 @@
                             </div>
                         </div>
 
-                        <template x-if="isEcoleFoot">
+                        <template x-if="isJeune">
                             <div class="inscription-fields">
                                 <hr class="inscription-question-divider">
 

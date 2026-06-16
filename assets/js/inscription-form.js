@@ -1,7 +1,7 @@
-export function inscriptionForm({ isEcoleFoot, montant }) {
+export function inscriptionForm({ isJeune, montant }) {
     return {
         step: 1,
-        isEcoleFoot,
+        isJeune,
         montant,
 
         // Étape 2
@@ -39,7 +39,7 @@ export function inscriptionForm({ isEcoleFoot, montant }) {
                     return this.tailleHaut !== '' && this.tailleBas !== '' && this.pointure !== '';
                 case 3:
                     if (this.autorisationPhoto === null) return false;
-                    if (this.isEcoleFoot) {
+                    if (this.isJeune) {
                         return this.autorisationTransportDirigeants !== null
                             && this.autorisationTransportParents !== null;
                     }
