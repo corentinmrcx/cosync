@@ -15,6 +15,17 @@ final class MailerService
         private readonly UrlGeneratorInterface $urlGenerator,
     ) {}
 
+    public function sendTestEmail(string $to): void
+    {
+        $email = (new TemplatedEmail())
+            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
+            ->to($to)
+            ->subject('Test d\'envoi — Foyer de Soudron')
+            ->htmlTemplate('email/test.html.twig');
+
+        $this->mailer->send($email);
+    }
+
     public function sendInscriptionLink(Licencie $licencie): void
     {
         $url = $this->urlGenerator->generate(

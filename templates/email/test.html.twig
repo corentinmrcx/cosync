@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test d'envoi — Foyer de Soudron</title>
+    <style>
+        body { margin: 0; padding: 0; background: #ebedf0; -webkit-font-smoothing: antialiased; }
+    </style>
+</head>
+<body>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #ebedf0; font-family: Arial, sans-serif;">
+    <tr>
+        <td align="center" style="padding: 40px 16px;">
+
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+                   style="width: 600px; max-width: 600px; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.08);">
+
+                <tr>
+                    <td style="background: #ff3131; padding: 30px 40px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="vertical-align: middle;">
+                                    <span style="color: #ffffff; font-size: 22px; font-weight: 900; letter-spacing: 2px;">CoSync</span>
+                                </td>
+                                <td align="right" style="vertical-align: middle;">
+                                    <img src="{{ absolute_url(asset('images/logo/logo.png')) }}"
+                                         alt="Foyer de Soudron"
+                                         width="48" height="48"
+                                         style="display: block; width: 48px; height: 48px; object-fit: contain;">
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding: 44px 40px 36px;">
+                        <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #ff3131;">
+                            Test de configuration
+                        </p>
+                        <h1 style="margin: 0 0 18px; font-size: 28px; line-height: 1.2; font-weight: 800; color: #1f1f1f;">
+                            L'envoi de mails fonctionne !
+                        </h1>
+                        <p style="margin: 0; font-size: 16px; line-height: 1.65; color: #374151;">
+                            Ce mail de test confirme que la configuration SMTP de CoSync est opérationnelle.<br>
+                            Les licenciés recevront leurs liens d'inscription depuis cette adresse.
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="background: #1f1f1f; padding: 28px 40px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td>
+                                    <p style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: #ffffff;">Foyer de Soudron</p>
+                                    <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #9aa1aa;">
+                                        Stade municipal · 51320 Soudron
+                                    </p>
+                                </td>
+                                <td align="right" style="vertical-align: bottom;">
+                                    <p style="margin: 0; font-size: 11px; color: #5b6068;">Propulsé par <a href="https://codepp.fr/" style="color: #ff3131; font-weight: 700; text-decoration: none;">Codepp</a></p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Diagnostic{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Diagnostic' }
+] } %}
+
+<div class="diag-page">
+
+    <div class="diag-card">
+        <h2 class="diag-card-title">Test d'envoi mail</h2>
+        <p class="diag-card-desc">Envoie un mail de test pour vérifier que la configuration SMTP est opérationnelle. Aucun licencié ne sera contacté.</p>
+        <hr class="diag-divider">
+        <form method="post" action="{{ path('admin_diag_test_mail') }}" class="diag-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('test_mail') }}">
+            <input type="email" name="test_email" placeholder="votre@email.fr" required class="diag-input">
+            <button type="submit" class="diag-btn">Envoyer</button>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
