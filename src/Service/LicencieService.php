@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\DTO\LicencieCreateData;
+use App\DTO\LicencieIdentityData;
 use App\Entity\DossierClub;
 use App\Entity\Licencie;
 use App\Entity\Season;
@@ -62,6 +63,7 @@ final class LicencieService
         $licencie->setTelephone($phone);
         $licencie->setNumLicence($numLicence);
         $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
+        $licencie->setCreatedManually(true);
 
         $dossier = new DossierClub();
         $dossier->setLicencie($licencie);
@@ -72,6 +74,44 @@ final class LicencieService
         $this->em->flush();
 
         return $licencie;
+    }
+
+    /**
+     * @throws \DomainException si le nouveau num_licence ou nom+prénom+naissance appartient déjà à un autre licencié
+     */
+    public function editIdentity(Licencie $licencie, LicencieIdentityData $data): void
+    {
+        $nom    = mb_strtoupper(trim((string) $data->nom), 'UTF-8');
+        $prenom = mb_convert_case(trim((string) $data->prenom), MB_CASE_TITLE, 'UTF-8');
+        $email  = $this->sanitizer->sanitizeEmail($data->email);
+        $phone  = $this->sanitizer->sanitizePhone($data->telephone);
+        $numLicence = $data->numLicence !== null && trim($data->numLicence) !== ''
+            ? $this->sanitizer->sanitizeNumLicence($data->numLicence)
+            : null;
+
+        if ($numLicence !== null && $numLicence !== $licencie->getNumLicence()) {
+            $other = $this->licencieRepo->findByNumLicence($numLicence);
+            if ($other !== null && !$other->getUuid()->equals($licencie->getUuid())) {
+                throw new \DomainException(sprintf('Le numéro FootClubs "%s" est déjà utilisé par %s.', $numLicence, $other->getNomPrenom()));
+            }
+        }
+
+        if ($nom !== $licencie->getNom() || $prenom !== $licencie->getPrenom() || $data->dateNaissance != $licencie->getDateNaissance()) {
+            $other = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance);
+            if ($other !== null && !$other->getUuid()->equals($licencie->getUuid())) {
+                throw new \DomainException(sprintf('%s %s (né(e) le %s) existe déjà dans la base.', $nom, $prenom, $data->dateNaissance->format('d/m/Y')));
+            }
+        }
+
+        $licencie->setNom($nom);
+        $licencie->setPrenom($prenom);
+        $licencie->setDateNaissance($data->dateNaissance);
+        $licencie->setCategory($data->category);
+        $licencie->setEmail($email);
+        $licencie->setTelephone($phone);
+        $licencie->setNumLicence($numLicence);
+
+        $this->em->flush();
     }
 
     public function edit(

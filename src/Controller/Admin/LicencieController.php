@@ -3,10 +3,12 @@
 namespace App\Controller\Admin;
 
 use App\DTO\LicencieCreateData;
+use App\DTO\LicencieIdentityData;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
 use App\Form\LicencieCreateType;
 use App\Form\LicencieEditType;
+use App\Form\LicencieIdentityType;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
@@ -108,6 +110,50 @@ class LicencieController extends AbstractController
         return $this->render('admin/licencies/new.html.twig', ['form' => $form]);
     }
 
+    #[Route('/{uuid}/identite', name: 'edit_identity', methods: ['GET', 'POST'])]
+    public function editIdentity(
+        string $uuid,
+        Request $request,
+        LicencieRepository $licencieRepo,
+        LicencieService $licencieService,
+    ): Response {
+        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        if ($licencie === null) {
+            throw $this->createNotFoundException('Licencié introuvable.');
+        }
+
+        if (!$licencie->isCreatedManually()) {
+            throw $this->createAccessDeniedException('La correction d\'identité n\'est disponible que pour les licenciés créés manuellement.');
+        }
+
+        $data = new LicencieIdentityData();
+        $data->nom          = $licencie->getNom();
+        $data->prenom       = $licencie->getPrenom();
+        $data->dateNaissance = $licencie->getDateNaissance();
+        $data->category     = $licencie->getCategory();
+        $data->email        = $licencie->getEmail();
+        $data->telephone    = $licencie->getTelephone();
+        $data->numLicence   = $licencie->getNumLicence();
+
+        $form = $this->createForm(LicencieIdentityType::class, $data);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $licencieService->editIdentity($licencie, $data);
+                $this->addFlash('success', 'Identité de ' . $licencie->getNomPrenom() . ' mise à jour.');
+                return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+            } catch (\DomainException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
+        }
+
+        return $this->render('admin/licencies/identity.html.twig', [
+            'form'     => $form,
+            'licencie' => $licencie,
+        ]);
+    }
+
     #[Route('/{uuid}', name: 'show')]
     public function show(
         string $uuid,
@@ -131,7 +177,13 @@ class LicencieController extends AbstractController
             : ($baseCosts['seniors'] ?? 0);
 
         $history = [
-            ['date' => $licencie->getImportedAt(), 'label' => 'Licencié importé depuis FootClubs', 'who' => 'Système'],
+            [
+                'date'  => $licencie->getImportedAt(),
+                'label' => $licencie->isCreatedManually()
+                    ? 'Licencié créé manuellement'
+                    : 'Licencié importé depuis FootClubs',
+                'who'   => 'Admin',
+            ],
         ];
 
         if ($licencie->getEmail() !== null) {

@@ -91,6 +91,14 @@
     gap: 1rem;
 }
 
+.licencie-show-card-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--color-primary);
+}
+
 .licencie-show-card-title {
     font-size: var(--font-size-sm);
     font-weight: 800;
@@ -100,6 +108,31 @@
     padding-bottom: 0.75rem;
     border-bottom: 2px solid var(--color-primary);
     margin: 0;
+}
+
+.licencie-show-card-title-row .licencie-show-card-title {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.licencie-show-identity-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.625rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+
+.licencie-show-identity-edit-btn:hover {
+    background: var(--color-bg-muted);
+    color: var(--color-text-base);
 }
 
 /* — Liste de données — */

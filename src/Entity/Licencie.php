@@ -59,6 +59,9 @@ class Licencie
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $formTokenExpiresAt = null;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $createdManually = false;
+
     #[ORM\Column]
     private \DateTimeImmutable $importedAt;
 
@@ -228,6 +231,17 @@ class Licencie
     {
         return $this->formTokenExpiresAt !== null
             && $this->formTokenExpiresAt > new \DateTimeImmutable();
+    }
+
+    public function isCreatedManually(): bool
+    {
+        return $this->createdManually;
+    }
+
+    public function setCreatedManually(bool $createdManually): static
+    {
+        $this->createdManually = $createdManually;
+        return $this;
     }
 
     public function getImportedAt(): \DateTimeImmutable

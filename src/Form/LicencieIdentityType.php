@@ -2,22 +2,18 @@
 
 namespace App\Form;
 
-use App\DTO\LicencieCreateData;
+use App\DTO\LicencieIdentityData;
 use App\Entity\Category;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormError;
-use Symfony\Component\Form\FormEvent;
-use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
-class LicencieCreateType extends AbstractType
+class LicencieIdentityType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -33,9 +29,9 @@ class LicencieCreateType extends AbstractType
                 'attr'        => ['placeholder' => 'Thomas'],
             ])
             ->add('dateNaissance', DateType::class, [
-                'label'  => 'Date de naissance',
-                'widget' => 'single_text',
-                'input'  => 'datetime_immutable',
+                'label'       => 'Date de naissance',
+                'widget'      => 'single_text',
+                'input'       => 'datetime_immutable',
                 'constraints' => [new NotBlank(message: 'La date de naissance est requise.')],
             ])
             ->add('category', EntityType::class, [
@@ -58,28 +54,13 @@ class LicencieCreateType extends AbstractType
             ->add('numLicence', TextType::class, [
                 'label'    => 'Numéro FootClubs',
                 'required' => false,
-                'attr'     => ['placeholder' => 'Ex : 123456 (facultatif)'],
-            ])
-            ->add('sendLink', CheckboxType::class, [
-                'label'    => 'Envoyer le lien d\'inscription par email',
-                'mapped'   => false,
-                'required' => false,
-                'data'     => true,
+                'attr'     => ['placeholder' => 'Ex : 123456'],
             ])
         ;
-
-        $builder->addEventListener(FormEvents::POST_SUBMIT, function (FormEvent $event): void {
-            $form = $event->getForm();
-            if ($form->get('sendLink')->getData() === true && !$form->get('email')->getData()) {
-                $form->get('email')->addError(
-                    new FormError('Un email est requis pour envoyer le lien d\'inscription.')
-                );
-            }
-        });
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults(['data_class' => LicencieCreateData::class]);
+        $resolver->setDefaults(['data_class' => LicencieIdentityData::class]);
     }
 }
