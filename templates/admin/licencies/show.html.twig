@@ -142,7 +142,7 @@
                 <div class="licencie-show-dl-row">
                     <dt class="licencie-show-dt">Téléphone</dt>
                     <dd class="{{ licencie.telephone ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
-                        {{ licencie.telephone ?? '—' }}
+                        {{ licencie.telephone|phone_format }}
                     </dd>
                 </div>
                 <div class="licencie-show-dl-row">

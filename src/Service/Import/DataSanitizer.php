@@ -80,7 +80,12 @@ final class DataSanitizer
             return null;
         }
 
-        // 0X… → +33X…
+        // 9 chiffres sans zéro initial (export FootClubs) → +33X…
+        if (strlen($phone) === 9 && preg_match('/^[67]/', $phone)) {
+            $phone = '+33' . $phone;
+        }
+
+        // 0X… (10 chiffres) → +33X…
         if (str_starts_with($phone, '0') && strlen($phone) === 10) {
             $phone = '+33' . substr($phone, 1);
         }
