@@ -1,14 +1,3 @@
-# Production — VPS avec Nginx Proxy Manager
-#
-# Prérequis sur le VPS :
-#   1. Créer le réseau externe NPM une seule fois :
-#      docker network create npm_network
-#   2. Dans NPM, ajouter un Proxy Host vers http://cosync_nginx:80
-#      (le container nginx est visible sur le réseau npm_network)
-#
-# Déploiement :
-#   make prod-deploy
-
 services:
   php:
     build:
