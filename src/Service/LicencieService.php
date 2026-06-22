@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
 use App\Repository\TransactionRepository;
+use App\Service\Mail\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class LicencieService
@@ -16,6 +17,7 @@ final class LicencieService
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly TransactionRepository $transactionRepo,
+        private readonly MailerService $mailerService,
     ) {}
 
     public function edit(
@@ -62,6 +64,8 @@ final class LicencieService
         }
 
         $this->em->flush();
+
+        $this->mailerService->sendValidation($licencie);
     }
 
     private function computeStatus(bool $isSigned, bool $hasTransaction): LicenceStatus

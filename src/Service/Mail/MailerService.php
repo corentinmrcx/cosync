@@ -46,4 +46,22 @@ final class MailerService
 
         $this->mailer->send($email);
     }
+
+    public function sendValidation(Licencie $licencie): void
+    {
+        $subject = $licencie->getCategory()->isJeune()
+            ? 'Licence de ' . $licencie->getPrenom() . ' validée — Foyer de Soudron, saison ' . $licencie->getSeason()->getLabel()
+            : 'Votre licence est validée — Foyer de Soudron, saison ' . $licencie->getSeason()->getLabel();
+
+        $email = (new TemplatedEmail())
+            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
+            ->to(new Address($licencie->getEmail(), $licencie->getNomPrenom()))
+            ->subject($subject)
+            ->htmlTemplate('email/validation.html.twig')
+            ->context([
+                'licencie' => $licencie,
+            ]);
+
+        $this->mailer->send($email);
+    }
 }
