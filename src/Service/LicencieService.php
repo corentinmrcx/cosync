@@ -159,17 +159,8 @@ final class LicencieService
 
         $this->em->flush();
 
-        $this->mailerService->sendValidation($licencie);
-    }
-
-    private function computeStatus(bool $isSigned, bool $hasTransaction): LicenceStatus
-    {
-        if (!$isSigned) {
-            return LicenceStatus::LINK_SENT;
+        if ($licencie->getEmail() !== null) {
+            $this->mailerService->sendValidation($licencie);
         }
-        if (!$hasTransaction) {
-            return LicenceStatus::FORM_COMPLETED;
-        }
-        return LicenceStatus::VALIDATED;
     }
 }
