@@ -3,7 +3,7 @@ COMPOSE_PROD = docker compose -f docker-compose.prod.yml
 
 .PHONY: up down build bash db-migrate db-reset assets watch cache-clear logs setup-dirs \
         prod-up prod-down prod-build prod-deploy prod-migrate prod-bash prod-logs \
-        prod-backup prod-backup-list prod-restore
+        prod-backup prod-backup-list prod-restore prod-init
 
 # ── Développement ────────────────────────────────────────────────────────────
 
@@ -47,6 +47,18 @@ setup-dirs:
 	$(COMPOSE) exec --user root php chown www-data:www-data /var/www/html/var/locks
 
 # ── Production (VPS) ─────────────────────────────────────────────────────────
+
+prod-init: prod-build prod-up prod-migrate prod-backup
+	@echo ""
+	@echo "========================================"
+	@echo "  CoSync — Initialisation prod terminée"
+	@echo "========================================"
+	@echo ""
+	@echo "Dernière étape : activer la sauvegarde automatique nightly."
+	@echo "Lance 'crontab -e' et ajoute cette ligne :"
+	@echo ""
+	@echo "  0 2 * * * cd $$(pwd) && make prod-backup >> $(BACKUP_DIR)/backup.log 2>&1"
+	@echo ""
 
 prod-build:
 	$(COMPOSE_PROD) build --no-cache
