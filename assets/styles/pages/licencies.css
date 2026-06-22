@@ -173,6 +173,28 @@
     text-decoration: underline;
 }
 
+/* — Boutons toolbar — */
+.licencies-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--color-bg-page);
+    color: var(--color-text-body);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    text-decoration: none;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: background 0.15s, border-color 0.15s;
+    margin-left: auto;
+}
+
+.licencies-add-btn:hover {
+    background: var(--color-bg-subtle);
+    border-color: var(--color-border-strong);
+}
+
 /* — Bouton import — */
 .licencies-import-btn {
     display: flex;
@@ -186,7 +208,6 @@
     text-decoration: none;
     border-radius: var(--radius-md);
     transition: background 0.15s;
-    margin-left: auto;
 }
 
 .licencies-import-btn:hover {

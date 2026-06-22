@@ -79,6 +79,7 @@
 .season-form-field input[type="number"],
 .season-form-field input[type="email"],
 .season-form-field input[type="password"],
+.season-form-field input[type="date"],
 .season-form-field select {
     padding: 0.625rem 0.875rem;
     border: 1.5px solid var(--color-border);
@@ -126,6 +127,40 @@
     color: var(--color-text-body);
     cursor: pointer;
 }
+
+.season-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+@media (min-width: 560px) {
+    .season-form-row {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .season-form-row > .season-form-field { flex: 1; }
+}
+
+.season-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.season-form-cancel {
+    padding: 0.625rem 1rem;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-body);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-muted);
+    transition: background 0.15s;
+}
+
+.season-form-cancel:hover { background: var(--color-border); }
 
 .season-form-submit {
     display: inline-flex;

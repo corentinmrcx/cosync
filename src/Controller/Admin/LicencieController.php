@@ -2,8 +2,10 @@
 
 namespace App\Controller\Admin;
 
+use App\DTO\LicencieCreateData;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
+use App\Form\LicencieCreateType;
 use App\Form\LicencieEditType;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
@@ -63,6 +65,47 @@ class LicencieController extends AbstractController
             'page'          => $page,
             'pages'         => $pages,
         ]);
+    }
+
+    #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
+    public function new(
+        Request $request,
+        SeasonContext $seasonContext,
+        LicencieService $licencieService,
+        InscriptionLinkService $inscriptionLinkService,
+    ): Response {
+        $season = $seasonContext->getCurrentSeason();
+        if ($season === null) {
+            return $this->redirectToRoute('admin_seasons_new');
+        }
+
+        $data = new LicencieCreateData();
+        $form = $this->createForm(LicencieCreateType::class, $data);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $licencie = $licencieService->create($data, $season);
+            } catch (\DomainException $e) {
+                $this->addFlash('error', $e->getMessage());
+                return $this->render('admin/licencies/new.html.twig', ['form' => $form]);
+            }
+
+            if ($form->get('sendLink')->getData() && $licencie->getEmail() !== null) {
+                try {
+                    $inscriptionLinkService->send($licencie);
+                    $this->addFlash('success', $licencie->getNomPrenom() . ' ajouté(e). Lien d\'inscription envoyé.');
+                } catch (\Throwable) {
+                    $this->addFlash('warning', $licencie->getNomPrenom() . ' ajouté(e), mais l\'envoi du mail a échoué. Vérifiez la configuration SMTP.');
+                }
+            } else {
+                $this->addFlash('success', $licencie->getNomPrenom() . ' ajouté(e) avec succès.');
+            }
+
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+        }
+
+        return $this->render('admin/licencies/new.html.twig', ['form' => $form]);
     }
 
     #[Route('/{uuid}', name: 'show')]

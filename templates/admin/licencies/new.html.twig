@@ -1,0 +1,89 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Nouveau licencié{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Licenciés', route: 'admin_licencies_list' },
+    { label: 'Nouveau licencié' }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card licencie-new-card' } }) }}
+
+        <h1 class="season-form-header">Ajouter un licencié manuellement</h1>
+        <p class="licencie-new-intro">Utilisez ce formulaire si FootClubs n'est pas disponible. Le numéro FootClubs est facultatif : il pourra être complété lors du prochain import.</p>
+
+        <hr class="season-form-divider">
+
+        <p class="licencie-edit-section">Identité</p>
+
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.nom) }}
+                {{ form_widget(form.nom, { attr: { class: 'season-form-input' } }) }}
+                {{ form_errors(form.nom) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.prenom) }}
+                {{ form_widget(form.prenom, { attr: { class: 'season-form-input' } }) }}
+                {{ form_errors(form.prenom) }}
+            </div>
+        </div>
+
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.dateNaissance) }}
+                {{ form_widget(form.dateNaissance, { attr: { class: 'season-form-input' } }) }}
+                {{ form_errors(form.dateNaissance) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.category) }}
+                {{ form_widget(form.category, { attr: { class: 'season-form-input' } }) }}
+                {{ form_errors(form.category) }}
+            </div>
+        </div>
+
+        <div class="season-form-field">
+            {{ form_label(form.numLicence) }}
+            {{ form_widget(form.numLicence, { attr: { class: 'season-form-input' } }) }}
+            {{ form_errors(form.numLicence) }}
+            <p class="licencie-new-hint">Facultatif si l'export FootClubs est indisponible. Sera mis à jour automatiquement lors du prochain import XLSX.</p>
+        </div>
+
+        <hr class="season-form-divider">
+
+        <p class="licencie-edit-section">Contact</p>
+
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.email) }}
+                {{ form_widget(form.email, { attr: { class: 'season-form-input' } }) }}
+                {{ form_errors(form.email) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.telephone) }}
+                {{ form_widget(form.telephone, { attr: { class: 'season-form-input' } }) }}
+                {{ form_errors(form.telephone) }}
+            </div>
+        </div>
+
+        <hr class="season-form-divider">
+
+        <div class="licencie-new-checkbox">
+            {{ form_widget(form.sendLink) }}
+            {{ form_label(form.sendLink) }}
+            {{ form_errors(form.sendLink) }}
+        </div>
+
+        <div class="season-form-actions">
+            <a href="{{ path('admin_licencies_list') }}" class="season-form-cancel">Annuler</a>
+            <button type="submit" class="season-form-submit">Ajouter le licencié</button>
+        </div>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}
