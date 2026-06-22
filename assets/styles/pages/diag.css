@@ -39,8 +39,24 @@
 
 .diag-form {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.75rem;
     align-items: center;
+}
+
+.diag-radio-group {
+    flex-basis: 100%;
+    display: flex;
+    gap: 1.5rem;
+}
+
+.diag-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    cursor: pointer;
 }
 
 .diag-input {

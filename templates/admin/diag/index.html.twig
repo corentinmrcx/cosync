@@ -21,5 +21,24 @@
         </form>
     </div>
 
+    <div class="diag-card">
+        <h2 class="diag-card-title">Test mail de validation de licence</h2>
+        <p class="diag-card-desc">Envoie un aperçu du mail de validation envoyé aux licenciés une fois leur dossier complet et leur paiement confirmé.</p>
+        <hr class="diag-divider">
+        <form method="post" action="{{ path('admin_diag_test_validation_mail') }}" class="diag-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('test_validation_mail') }}">
+            <input type="email" name="test_email" placeholder="votre@email.fr" required class="diag-input">
+            <div class="diag-radio-group">
+                <label class="diag-radio-label">
+                    <input type="radio" name="profil" value="jeune" checked> Jeune (U6–U19)
+                </label>
+                <label class="diag-radio-label">
+                    <input type="radio" name="profil" value="senior"> Senior
+                </label>
+            </div>
+            <button type="submit" class="diag-btn">Envoyer</button>
+        </form>
+    </div>
+
 </div>
 {% endblock %}

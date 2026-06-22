@@ -47,6 +47,29 @@ final class MailerService
         $this->mailer->send($email);
     }
 
+    public function sendValidationTest(string $to, bool $isJeune): void
+    {
+        $subject = $isJeune
+            ? 'Licence de Thomas validée — Foyer de Soudron, saison 2025-2026'
+            : 'Votre licence est validée — Foyer de Soudron, saison 2025-2026';
+
+        $email = (new TemplatedEmail())
+            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
+            ->to($to)
+            ->subject($subject)
+            ->htmlTemplate('email/validation.html.twig')
+            ->context([
+                'licencie' => [
+                    'prenom'   => $isJeune ? 'Thomas' : 'Kévin',
+                    'nom'      => $isJeune ? 'DUPONT' : 'MARTIN',
+                    'season'   => ['label' => '2025-2026'],
+                    'category' => ['isJeune' => $isJeune],
+                ],
+            ]);
+
+        $this->mailer->send($email);
+    }
+
     public function sendValidation(Licencie $licencie): void
     {
         $subject = $licencie->getCategory()->isJeune()

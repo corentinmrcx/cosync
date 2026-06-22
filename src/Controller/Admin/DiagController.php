@@ -41,4 +41,32 @@ class DiagController extends AbstractController
 
         return $this->redirectToRoute('admin_diag_index');
     }
+
+    #[Route('/test-validation-mail', name: 'test_validation_mail', methods: ['POST'])]
+    public function testValidationMail(Request $request, MailerService $mailerService): Response
+    {
+        if (!$this->isCsrfTokenValid('test_validation_mail', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_diag_index');
+        }
+
+        $to = filter_var(trim((string) $request->request->get('test_email', '')), FILTER_VALIDATE_EMAIL);
+
+        if ($to === false) {
+            $this->addFlash('error', 'Adresse email invalide.');
+            return $this->redirectToRoute('admin_diag_index');
+        }
+
+        $isJeune = $request->request->get('profil') === 'jeune';
+
+        try {
+            $mailerService->sendValidationTest($to, $isJeune);
+            $profil = $isJeune ? 'jeune (Thomas DUPONT)' : 'senior (Kévin MARTIN)';
+            $this->addFlash('success', sprintf('Mail de validation envoyé à %s (profil %s).', $to, $profil));
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Échec d\'envoi : ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_diag_index');
+    }
 }
