@@ -7,6 +7,7 @@ use App\Entity\Dirigeant;
 use App\Entity\Season;
 use App\Repository\DirigeantRepository;
 use App\Service\Import\DataSanitizer;
+use App\Service\Mail\DirigeantLinkService;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class DirigeantService
@@ -15,6 +16,7 @@ final class DirigeantService
         private readonly EntityManagerInterface $em,
         private readonly DirigeantRepository $dirigeantRepo,
         private readonly DataSanitizer $sanitizer,
+        private readonly DirigeantLinkService $dirigeantLinkService,
     ) {}
 
     /**
@@ -39,6 +41,10 @@ final class DirigeantService
 
         $this->em->persist($dirigeant);
         $this->em->flush();
+
+        if ($dirigeant->getEmail() !== null) {
+            $this->dirigeantLinkService->send($dirigeant);
+        }
 
         return $dirigeant;
     }

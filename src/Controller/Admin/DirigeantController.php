@@ -59,7 +59,10 @@ class DirigeantController extends AbstractController
 
             try {
                 $dirigeant = $dirigeantService->create($data, $season);
-                $this->addFlash('success', $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant.');
+                $message = $dirigeant->getEmail() !== null
+                    ? $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant. Lien envoyé par email.'
+                    : $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant (aucune adresse email renseignée).';
+                $this->addFlash('success', $message);
                 return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
             } catch (\DomainException $e) {
                 $this->addFlash('error', $e->getMessage());
@@ -92,6 +95,14 @@ class DirigeantController extends AbstractController
                 : 'Dirigeant importé depuis FootClubs',
             'who'   => 'Admin',
         ]];
+
+        if ($dirigeant->getFormTokenExpiresAt() !== null) {
+            $history[] = [
+                'date'  => $dirigeant->getFormTokenExpiresAt()->modify('-30 days'),
+                'label' => 'Lien de formulaire envoyé par email',
+                'who'   => 'Système',
+            ];
+        }
 
         if ($dirigeant->getFormCompletedAt() !== null) {
             $history[] = [
