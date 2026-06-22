@@ -2,7 +2,7 @@ COMPOSE      = docker compose
 COMPOSE_PROD = docker compose -f docker-compose.prod.yml
 
 .PHONY: up down build bash db-migrate db-reset assets watch cache-clear logs setup-dirs \
-        prod-up prod-down prod-build prod-deploy prod-migrate prod-bash prod-logs prod-setup-dirs
+        prod-up prod-down prod-build prod-deploy prod-migrate prod-bash prod-logs
 
 # ── Développement ────────────────────────────────────────────────────────────
 
@@ -56,7 +56,7 @@ prod-up:
 prod-down:
 	$(COMPOSE_PROD) down
 
-prod-deploy: prod-build prod-up prod-migrate prod-setup-dirs
+prod-deploy: prod-build prod-up prod-migrate
 	@echo "Déploiement terminé."
 
 prod-migrate:
@@ -67,7 +67,3 @@ prod-bash:
 
 prod-logs:
 	$(COMPOSE_PROD) logs -f
-
-prod-setup-dirs:
-	$(COMPOSE_PROD) exec --user root php mkdir -p /var/www/html/var/locks
-	$(COMPOSE_PROD) exec --user root php chown www-data:www-data /var/www/html/var/locks
