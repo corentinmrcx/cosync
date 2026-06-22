@@ -1,0 +1,84 @@
+.cselect {
+    position: relative;
+    width: 100%;
+}
+
+.cselect-trigger {
+    width: 100%;
+    padding: 0.75rem 0.875rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    color: var(--color-text-base);
+    background: var(--color-bg-page);
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    transition: border-color 0.15s;
+}
+
+.cselect-trigger:focus,
+.cselect-trigger-open {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.cselect-placeholder {
+    color: var(--color-text-muted);
+}
+
+.cselect-chevron {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+    transition: transform 0.15s;
+}
+
+.cselect-chevron-open {
+    transform: rotate(180deg);
+}
+
+.cselect-dropdown {
+    position: fixed;
+    background: var(--color-bg-page);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-modal);
+    max-height: 14rem;
+    overflow-y: auto;
+    z-index: 9999;
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem 0;
+}
+
+.cselect-optgroup-label {
+    padding: 0.5rem 0.875rem 0.25rem;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    pointer-events: none;
+    user-select: none;
+}
+
+.cselect-option {
+    padding: 0.5rem 0.875rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    cursor: pointer;
+}
+
+.cselect-option:hover {
+    background: var(--color-bg-subtle);
+}
+
+.cselect-option-active {
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    font-weight: 600;
+}

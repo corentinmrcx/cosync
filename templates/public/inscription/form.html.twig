@@ -63,59 +63,91 @@
                     <div class="inscription-fields">
 
                         <div class="inscription-field">
-                            <label class="inscription-label" for="taille_haut">Taille haut *</label>
-                            <select id="taille_haut" name="taille_haut" x-model="tailleHaut" required class="inscription-select">
-                                <option value="">— Choisir —</option>
-                                <optgroup label="Tailles enfants">
-                                    <option value="6 ans">6 ans</option>
-                                    <option value="8 ans">8 ans</option>
-                                    <option value="10 ans">10 ans</option>
-                                    <option value="12 ans">12 ans</option>
-                                    <option value="14 ans">14 ans</option>
-                                    <option value="16 ans">16 ans</option>
-                                </optgroup>
-                                <optgroup label="Tailles adultes">
-                                    <option value="XS">XS</option>
-                                    <option value="S">S</option>
-                                    <option value="M">M</option>
-                                    <option value="L">L</option>
-                                    <option value="XL">XL</option>
-                                    <option value="XXL">XXL</option>
-                                </optgroup>
-                            </select>
+                            <label class="inscription-label">Taille haut *</label>
+                            <div x-data="{
+                                open: false, top: 0, left: 0, width: 0,
+                                toggle() {
+                                    if (!this.open) {
+                                        const r = this.$refs.trigger.getBoundingClientRect();
+                                        this.top = (window.innerHeight - r.bottom < 230) ? r.top - 230 - 4 : r.bottom + 4;
+                                        this.left = r.left; this.width = r.width;
+                                    }
+                                    this.open = !this.open;
+                                }
+                            }" @click.outside="open = false" class="cselect">
+                                <button x-ref="trigger" type="button" @click="toggle()" :class="{'cselect-trigger-open': open}" class="cselect-trigger">
+                                    <span x-text="tailleHaut || '— Choisir —'" :class="{'cselect-placeholder': !tailleHaut}"></span>
+                                    <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
+                                    <li class="cselect-optgroup-label">Tailles enfants</li>
+                                    {% for t in ['6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'] %}
+                                        <li @mousedown.prevent="tailleHaut = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleHaut === '{{ t }}'}" class="cselect-option">{{ t }}</li>
+                                    {% endfor %}
+                                    <li class="cselect-optgroup-label">Tailles adultes</li>
+                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL'] %}
+                                        <li @mousedown.prevent="tailleHaut = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleHaut === '{{ t }}'}" class="cselect-option">{{ t }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <input type="hidden" name="taille_haut" :value="tailleHaut">
+                            </div>
                         </div>
 
                         <div class="inscription-field">
-                            <label class="inscription-label" for="taille_bas">Taille bas *</label>
-                            <select id="taille_bas" name="taille_bas" x-model="tailleBas" required class="inscription-select">
-                                <option value="">— Choisir —</option>
-                                <optgroup label="Tailles enfants">
-                                    <option value="6 ans">6 ans</option>
-                                    <option value="8 ans">8 ans</option>
-                                    <option value="10 ans">10 ans</option>
-                                    <option value="12 ans">12 ans</option>
-                                    <option value="14 ans">14 ans</option>
-                                    <option value="16 ans">16 ans</option>
-                                </optgroup>
-                                <optgroup label="Tailles adultes">
-                                    <option value="XS">XS</option>
-                                    <option value="S">S</option>
-                                    <option value="M">M</option>
-                                    <option value="L">L</option>
-                                    <option value="XL">XL</option>
-                                    <option value="XXL">XXL</option>
-                                </optgroup>
-                            </select>
+                            <label class="inscription-label">Taille bas *</label>
+                            <div x-data="{
+                                open: false, top: 0, left: 0, width: 0,
+                                toggle() {
+                                    if (!this.open) {
+                                        const r = this.$refs.trigger.getBoundingClientRect();
+                                        this.top = (window.innerHeight - r.bottom < 230) ? r.top - 230 - 4 : r.bottom + 4;
+                                        this.left = r.left; this.width = r.width;
+                                    }
+                                    this.open = !this.open;
+                                }
+                            }" @click.outside="open = false" class="cselect">
+                                <button x-ref="trigger" type="button" @click="toggle()" :class="{'cselect-trigger-open': open}" class="cselect-trigger">
+                                    <span x-text="tailleBas || '— Choisir —'" :class="{'cselect-placeholder': !tailleBas}"></span>
+                                    <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
+                                    <li class="cselect-optgroup-label">Tailles enfants</li>
+                                    {% for t in ['6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'] %}
+                                        <li @mousedown.prevent="tailleBas = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleBas === '{{ t }}'}" class="cselect-option">{{ t }}</li>
+                                    {% endfor %}
+                                    <li class="cselect-optgroup-label">Tailles adultes</li>
+                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL'] %}
+                                        <li @mousedown.prevent="tailleBas = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleBas === '{{ t }}'}" class="cselect-option">{{ t }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <input type="hidden" name="taille_bas" :value="tailleBas">
+                            </div>
                         </div>
 
                         <div class="inscription-field">
-                            <label class="inscription-label" for="pointure">Pointure *</label>
-                            <select id="pointure" name="pointure" x-model="pointure" required class="inscription-select">
-                                <option value="">— Choisir —</option>
-                                {% for p in range(28, 48) %}
-                                    <option value="{{ p }}">{{ p }}</option>
-                                {% endfor %}
-                            </select>
+                            <label class="inscription-label">Pointure *</label>
+                            <div x-data="{
+                                open: false, top: 0, left: 0, width: 0,
+                                toggle() {
+                                    if (!this.open) {
+                                        const r = this.$refs.trigger.getBoundingClientRect();
+                                        this.top = (window.innerHeight - r.bottom < 230) ? r.top - 230 - 4 : r.bottom + 4;
+                                        this.left = r.left; this.width = r.width;
+                                    }
+                                    this.open = !this.open;
+                                }
+                            }" @click.outside="open = false" class="cselect">
+                                <button x-ref="trigger" type="button" @click="toggle()" :class="{'cselect-trigger-open': open}" class="cselect-trigger">
+                                    <span x-text="pointure || '— Choisir —'" :class="{'cselect-placeholder': !pointure}"></span>
+                                    <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
+                                    {% for p in range(28, 48) %}
+                                        <li @mousedown.prevent="pointure = '{{ p }}'; open = false" :class="{'cselect-option-active': pointure === '{{ p }}'}" class="cselect-option">{{ p }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <input type="hidden" name="pointure" :value="pointure">
+                            </div>
                         </div>
 
                     </div>

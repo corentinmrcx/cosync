@@ -1,0 +1,309 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — {{ dirigeant ? 'Modifier ' ~ dirigeant.nomPrenom : 'Nouveau dirigeant' }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Dirigeants', route: 'admin_dirigeants_list' },
+    { label: dirigeant ? dirigeant.nomPrenom : 'Nouveau dirigeant' }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card licencie-new-card' } }) }}
+
+        <h1 class="season-form-header">
+            {{ dirigeant ? 'Modifier ' ~ dirigeant.nomPrenom : 'Ajouter un dirigeant' }}
+        </h1>
+
+        <hr class="season-form-divider">
+
+        {# ── Double rôle — en tête pour pré-remplir le reste ── #}
+        <p class="licencie-edit-section">Double rôle</p>
+        <p class="licencie-new-hint" style="margin-bottom: 0.75rem;">
+            Si ce dirigeant est également licencié joueur cette saison, sélectionnez son profil —
+            les coordonnées et les tailles se rempliront automatiquement.
+        </p>
+
+        <div class="season-form-field">
+            {{ form_label(form.licencie) }}
+            {{ form_widget(form.licencie) }}
+            {{ form_errors(form.licencie) }}
+        </div>
+
+        {# — Bandeau de sync (visible quand un licencié est sélectionné) — #}
+        <div id="dirigeant-sync-banner" class="dirigeant-sync-banner" style="display: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>Données pré-remplies depuis <strong id="dirigeant-sync-name"></strong>. Vous pouvez les modifier librement.</span>
+        </div>
+
+        <hr class="season-form-divider">
+
+        {# ── Identité ── #}
+        <p class="licencie-edit-section">Identité</p>
+
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.nom) }}
+                {{ form_widget(form.nom) }}
+                {{ form_errors(form.nom) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.prenom) }}
+                {{ form_widget(form.prenom) }}
+                {{ form_errors(form.prenom) }}
+            </div>
+        </div>
+
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.dateNaissance) }}
+                {{ form_widget(form.dateNaissance) }}
+                {{ form_errors(form.dateNaissance) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.numLicence) }}
+                {{ form_widget(form.numLicence) }}
+                {{ form_errors(form.numLicence) }}
+            </div>
+        </div>
+
+        <hr class="season-form-divider">
+
+        {# ── Contact ── #}
+        <p class="licencie-edit-section">Contact</p>
+
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.email) }}
+                {{ form_widget(form.email) }}
+                {{ form_errors(form.email) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.telephone) }}
+                {{ form_widget(form.telephone) }}
+                {{ form_errors(form.telephone) }}
+            </div>
+        </div>
+
+        <hr class="season-form-divider">
+
+        {# ── Rôle & équipe ── #}
+        <p class="licencie-edit-section">Rôle & équipe</p>
+
+        <div class="season-form-row">
+
+            <div class="season-form-field"
+                 x-data="roleCombobox(
+                     {{ rolesJson }},
+                     {{ dirigeant and dirigeant.role ? dirigeant.role.id : 'null' }},
+                     '{{ dirigeant and dirigeant.role ? dirigeant.role.label : '' }}',
+                     '{{ csrf_token('dirigeant_role_create') }}'
+                 )">
+                <label>Rôle</label>
+                <input type="hidden" name="roleId" :value="selectedId ?? ''">
+
+                <div class="role-combobox" @click.outside="open = false">
+                    <div class="role-combobox-input-wrap">
+                        <input type="text"
+                               class="role-combobox-input"
+                               placeholder="Rechercher ou créer un rôle…"
+                               x-model="query"
+                               @focus="open = true"
+                               @input="open = true"
+                               autocomplete="off">
+                        <button type="button"
+                                class="role-combobox-clear"
+                                x-show="selectedId !== null"
+                                @click="clear()"
+                                title="Effacer">×</button>
+                    </div>
+
+                    <div class="role-combobox-dropdown" x-show="open" x-cloak>
+                        <template x-if="filtered.length === 0 && !showCreate">
+                            <div class="role-combobox-empty">Aucun rôle trouvé</div>
+                        </template>
+
+                        <template x-for="role in filtered" :key="role.id">
+                            <button type="button"
+                                    class="role-combobox-option"
+                                    :class="selectedId === role.id ? 'role-combobox-option-selected' : ''"
+                                    @click="select(role)"
+                                    x-text="role.label">
+                            </button>
+                        </template>
+
+                        <template x-if="showCreate">
+                            <button type="button"
+                                    class="role-combobox-create"
+                                    @click="create()"
+                                    :disabled="creating">
+                                <span x-show="!creating">Créer « <span x-text="query"></span> »</span>
+                                <span x-show="creating">Création…</span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="season-form-field">
+                {{ form_label(form.team) }}
+                {{ form_widget(form.team) }}
+                {{ form_errors(form.team) }}
+            </div>
+        </div>
+
+        <hr class="season-form-divider">
+
+        {# ── Équipement ── #}
+        <p class="licencie-edit-section">Équipement</p>
+        <p class="licencie-new-hint" style="margin-bottom: 0.5rem;">Pré-rempli depuis le profil joueur si disponible. Laissez vide si non renseigné.</p>
+
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.tailleHaut) }}
+                {{ form_widget(form.tailleHaut) }}
+                {{ form_errors(form.tailleHaut) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.tailleBas) }}
+                {{ form_widget(form.tailleBas) }}
+                {{ form_errors(form.tailleBas) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.pointure) }}
+                {{ form_widget(form.pointure) }}
+                {{ form_errors(form.pointure) }}
+            </div>
+        </div>
+
+        <div class="season-form-actions">
+            <a href="{{ dirigeant ? path('admin_dirigeants_show', {uuid: dirigeant.uuid}) : path('admin_dirigeants_list') }}"
+               class="season-form-cancel">Annuler</a>
+            <button type="submit" class="season-form-submit">
+                {{ dirigeant ? 'Enregistrer' : 'Ajouter le dirigeant' }}
+            </button>
+        </div>
+
+    {{ form_end(form) }}
+
+</div>
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const data = {{ licenciesSizes|raw }};
+
+    const licencieSelect  = document.getElementById('{{ form.licencie.vars.id }}');
+    const nomInput        = document.getElementById('{{ form.nom.vars.id }}');
+    const prenomInput     = document.getElementById('{{ form.prenom.vars.id }}');
+    const emailInput      = document.getElementById('{{ form.email.vars.id }}');
+    const telephoneInput  = document.getElementById('{{ form.telephone.vars.id }}');
+    const dateInput       = document.getElementById('{{ form.dateNaissance.vars.id }}');
+    const numLicenceInput = document.getElementById('{{ form.numLicence.vars.id }}');
+    const tailleHautSelect = document.getElementById('{{ form.tailleHaut.vars.id }}');
+    const talleBasSelect   = document.getElementById('{{ form.tailleBas.vars.id }}');
+    const pointureSelect   = document.getElementById('{{ form.pointure.vars.id }}');
+
+    const banner   = document.getElementById('dirigeant-sync-banner');
+    const syncName = document.getElementById('dirigeant-sync-name');
+
+    if (!licencieSelect) return;
+
+    function syncFromLicencie(uuid) {
+        if (!uuid || !data[uuid]) {
+            if (banner) banner.style.display = 'none';
+            return;
+        }
+        const d = data[uuid];
+        const selectedOption = licencieSelect.options[licencieSelect.selectedIndex];
+
+        if (nomInput        && d.nom)          nomInput.value        = d.nom;
+        if (prenomInput     && d.prenom)       prenomInput.value     = d.prenom;
+        if (emailInput      && d.email)        emailInput.value      = d.email;
+        if (telephoneInput  && d.telephone)    telephoneInput.value  = d.telephone;
+        if (dateInput       && d.dateNaissance) dateInput.value      = d.dateNaissance;
+        if (numLicenceInput && d.numLicence)   numLicenceInput.value = d.numLicence;
+        if (tailleHautSelect && d.tailleHaut)  tailleHautSelect.value = d.tailleHaut;
+        if (talleBasSelect   && d.tailleBas)   talleBasSelect.value   = d.tailleBas;
+        if (pointureSelect   && d.pointure)    pointureSelect.value   = d.pointure;
+
+        if (banner)   banner.style.display = 'flex';
+        if (syncName) syncName.textContent = selectedOption.text;
+    }
+
+    licencieSelect.addEventListener('change', function () {
+        syncFromLicencie(this.value);
+    });
+
+    // Sur la page d'édition : si un licencié est déjà lié, afficher le bandeau
+    {% if dirigeant and dirigeant.licencie %}
+    if (banner)   banner.style.display = 'flex';
+    if (syncName) syncName.textContent = '{{ dirigeant.licencie.nomPrenom }}';
+    {% endif %}
+});
+
+function roleCombobox(roles, currentId, currentLabel, csrfToken) {
+    return {
+        roles: roles,
+        query: currentLabel || '',
+        selectedId: currentId,
+        open: false,
+        creating: false,
+
+        get filtered() {
+            if (!this.query) return this.roles;
+            const q = this.query.toLowerCase();
+            return this.roles.filter(r => r.label.toLowerCase().includes(q));
+        },
+
+        get showCreate() {
+            if (!this.query.trim()) return false;
+            return !this.roles.some(r => r.label.toLowerCase() === this.query.trim().toLowerCase());
+        },
+
+        select(role) {
+            this.selectedId = role.id;
+            this.query = role.label;
+            this.open = false;
+        },
+
+        clear() {
+            this.selectedId = null;
+            this.query = '';
+            this.open = false;
+        },
+
+        async create() {
+            if (this.creating) return;
+            this.creating = true;
+            try {
+                const res = await fetch('{{ path('admin_dirigeant_roles_create') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ label: this.query.trim(), _token: csrfToken }),
+                });
+                const data = await res.json();
+                if (data.id) {
+                    if (!this.roles.some(r => r.id === data.id)) {
+                        this.roles.push(data);
+                        this.roles.sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+                    }
+                    this.select(data);
+                }
+            } finally {
+                this.creating = false;
+            }
+        },
+    };
+}
+</script>
+{% endblock %}
+{% endblock %}

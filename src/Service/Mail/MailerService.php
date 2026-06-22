@@ -2,6 +2,7 @@
 
 namespace App\Service\Mail;
 
+use App\Entity\Dirigeant;
 use App\Entity\Licencie;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
@@ -42,6 +43,27 @@ final class MailerService
             ->context([
                 'licencie' => $licencie,
                 'url'      => $url,
+            ]);
+
+        $this->mailer->send($email);
+    }
+
+    public function sendDirigeantLink(Dirigeant $dirigeant): void
+    {
+        $url = $this->urlGenerator->generate(
+            'public_dirigeant_show',
+            ['uuid' => $dirigeant->getUuid()],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+
+        $email = (new TemplatedEmail())
+            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
+            ->to(new Address($dirigeant->getEmail(), $dirigeant->getNomPrenom()))
+            ->subject('Complétez votre fiche — Foyer de Soudron, saison ' . $dirigeant->getSeason()->getLabel())
+            ->htmlTemplate('email/dirigeant_link.html.twig')
+            ->context([
+                'dirigeant' => $dirigeant,
+                'url'       => $url,
             ]);
 
         $this->mailer->send($email);

@@ -40,6 +40,14 @@
             <div class="navbar-dropdown-divider"></div>
 
             <div class="navbar-dropdown-section">
+                <p class="navbar-dropdown-label">Gestion</p>
+                <a href="{{ path('admin_licencies_list') }}" class="navbar-dropdown-item">Licenciés</a>
+                <a href="{{ path('admin_dirigeants_list') }}" class="navbar-dropdown-item">Dirigeants</a>
+            </div>
+
+            <div class="navbar-dropdown-divider"></div>
+
+            <div class="navbar-dropdown-section">
                 <p class="navbar-dropdown-label">Administration</p>
                 <a href="{{ path('admin_users_list') }}" class="navbar-dropdown-item">Utilisateurs</a>
                 <a href="{{ path('admin_diag_index') }}" class="navbar-dropdown-item">Diagnostic</a>

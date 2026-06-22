@@ -1,0 +1,53 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Fiche complétée — Foyer de Soudron{% endblock %}
+
+{% block body %}
+<div class="inscription-page">
+
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+        </div>
+        <div class="inscription-progress">
+            <div class="inscription-progress-segment inscription-progress-segment-done"></div>
+            <div class="inscription-progress-segment inscription-progress-segment-done"></div>
+        </div>
+    </header>
+
+    <main class="inscription-main">
+        <div class="inscription-container">
+            <div class="inscription-card">
+                <div class="inscription-expired-icon">✅</div>
+                <h1 class="inscription-expired-title">Fiche complétée !</h1>
+                <p class="inscription-expired-text">
+                    Merci {{ dirigeant.prenom }}, vos tailles d'équipement ont bien été enregistrées.<br>
+                    Le club les utilisera pour préparer vos dotations.
+                </p>
+
+                <dl style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+                    <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
+                        <span style="color: #6b7280; font-weight: 500;">Taille haut</span>
+                        <span style="font-weight: 600;">{{ dirigeant.tailleHaut }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
+                        <span style="color: #6b7280; font-weight: 500;">Taille bas</span>
+                        <span style="font-weight: 600;">{{ dirigeant.tailleBas }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                        <span style="color: #6b7280; font-weight: 500;">Pointure</span>
+                        <span style="font-weight: 600;">{{ dirigeant.pointure }}</span>
+                    </div>
+                </dl>
+
+                <p style="margin-top: 1.5rem; font-size: 0.8125rem; color: #9ca3af; line-height: 1.6;">
+                    Pour toute question, contactez le club directement.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    {% include 'components/footer.html.twig' %}
+
+</div>
+{% endblock %}

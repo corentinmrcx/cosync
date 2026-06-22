@@ -1,0 +1,192 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — {{ dirigeant.nomPrenom }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Dirigeants', route: 'admin_dirigeants_list' },
+    { label: dirigeant.nomPrenom }
+] } %}
+
+<div class="licencie-show-page">
+
+    <div class="licencie-show-header">
+        <div>
+            <h1 class="licencie-show-title">{{ dirigeant.nomPrenom }}</h1>
+            {% if dirigeant.role %}
+                <p class="dirigeant-show-role">{{ dirigeant.role }}</p>
+            {% endif %}
+        </div>
+
+        <div class="licencie-show-header-actions">
+            <a href="{{ path('admin_dirigeants_edit', {uuid: dirigeant.uuid}) }}" class="licencie-show-edit-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Modifier
+            </a>
+
+            {% if not dirigeant.licencie and not dirigeant.formCompletedAt %}
+                {% if dirigeant.email %}
+                    <form method="post" action="{{ path('admin_dirigeants_send_link', {uuid: dirigeant.uuid}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_send_link_' ~ dirigeant.uuid) }}">
+                        <button type="submit" class="licencie-show-send-btn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                            {{ dirigeant.formTokenValid ? 'Renvoyer le lien' : 'Envoyer le lien' }}
+                        </button>
+                    </form>
+                {% else %}
+                    <span class="licencie-show-no-email">Pas d'email renseigné</span>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="licencie-show-grid">
+
+        {# — Informations — #}
+        <div class="licencie-show-card">
+            <h2 class="licencie-show-card-title">
+                {% if dirigeant.createdManually %}Données saisies manuellement{% else %}Données FootClubs{% endif %}
+            </h2>
+
+            <dl class="licencie-show-dl">
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">N° licence</dt>
+                    <dd class="{{ dirigeant.numLicence ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ dirigeant.numLicence ?? '—' }}
+                    </dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Date de naissance</dt>
+                    <dd class="{{ dirigeant.dateNaissance ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ dirigeant.dateNaissance ? dirigeant.dateNaissance|date('d/m/Y') : '—' }}
+                    </dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Email</dt>
+                    <dd class="{{ dirigeant.email ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ dirigeant.email ?? '—' }}
+                    </dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Téléphone</dt>
+                    <dd class="{{ dirigeant.telephone ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ dirigeant.telephone ?? '—' }}
+                    </dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Équipe</dt>
+                    <dd class="{{ dirigeant.team ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ dirigeant.team ? dirigeant.team.name : '—' }}
+                    </dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Profil joueur</dt>
+                    <dd class="{{ dirigeant.licencie ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {% if dirigeant.licencie %}
+                            <a href="{{ path('admin_licencies_show', {uuid: dirigeant.licencie.uuid}) }}"
+                               style="color: var(--color-primary); text-decoration: none; font-weight: 600;">
+                                {{ dirigeant.licencie.nomPrenom }} →
+                            </a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Ajouté le</dt>
+                    <dd class="licencie-show-dd">{{ dirigeant.importedAt|date('d/m/Y à H:i') }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        {# — Équipement — #}
+        <div class="licencie-show-card">
+            <h2 class="licencie-show-card-title">Équipement</h2>
+
+            <dl class="licencie-show-dl">
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Taille haut</dt>
+                    <dd class="{{ dirigeant.tailleHaut ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">{{ dirigeant.tailleHaut ?? '—' }}</dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Taille bas</dt>
+                    <dd class="{{ dirigeant.tailleBas ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">{{ dirigeant.tailleBas ?? '—' }}</dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Pointure</dt>
+                    <dd class="{{ dirigeant.pointure ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">{{ dirigeant.pointure ?? '—' }}</dd>
+                </div>
+            </dl>
+
+            {% if not dirigeant.licencie %}
+                <hr class="licencie-show-divider">
+
+                <ul class="licencie-show-checklist">
+                    <li class="licencie-show-check-item">
+                        {% if dirigeant.formCompletedAt %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span class="licencie-show-check-label">Formulaire équipement</span>
+                            <span class="licencie-show-check-date">le {{ dirigeant.formCompletedAt|date('d/m/Y') }}</span>
+                        {% elseif dirigeant.formTokenValid %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span class="licencie-show-check-label licencie-show-check-label-pending">Formulaire équipement</span>
+                            <span class="licencie-show-check-badge-pending">Lien envoyé</span>
+                        {% else %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span class="licencie-show-check-label licencie-show-check-label-pending">Formulaire équipement</span>
+                            <span class="licencie-show-check-badge-pending">En attente</span>
+                        {% endif %}
+                    </li>
+                </ul>
+            {% endif %}
+        </div>
+
+        {# — Historique — #}
+        <div class="licencie-show-card licencie-show-card-full">
+            <h2 class="licencie-show-card-title">Historique</h2>
+            <ul class="licencie-show-history">
+                {% for event in history %}
+                    <li class="licencie-show-history-item {{ not loop.last ? 'licencie-show-history-item-sep' }}">
+                        <span class="licencie-show-history-date">{{ event.date|date('d/m/Y à H:i') }}</span>
+                        <span class="licencie-show-history-label">{{ event.label }}</span>
+                        <span class="licencie-show-history-who">{{ event.who }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        {# — Dotations — #}
+        {% if dotations is not empty %}
+        <div class="licencie-show-card licencie-show-card-full">
+            <h2 class="licencie-show-card-title">Équipements attribués</h2>
+            <table class="licencie-show-dotations-table">
+                <thead>
+                    <tr><th>Article</th><th>Quantité</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                    {% for d in dotations %}
+                        <tr>
+                            <td>
+                                <span class="licencie-show-dd">{{ d.item.nom }}</span>
+                                {% if d.item.couleur %}<span class="licencie-show-dd-empty" style="font-size:var(--font-size-xs)"> — {{ d.item.couleur }}</span>{% endif %}
+                            </td>
+                            <td class="licencie-show-dd">{{ d.quantite }}</td>
+                            <td class="licencie-show-dd-empty">{{ d.createdAt|date('d/m/Y') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+{% endblock %}

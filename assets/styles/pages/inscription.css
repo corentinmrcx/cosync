@@ -1,6 +1,6 @@
 /* — Page globale — */
 .inscription-page {
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     background: var(--color-bg-subtle);
@@ -64,7 +64,6 @@
 /* — Contenu principal — */
 .inscription-main {
     flex: 1;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -146,6 +145,7 @@
 .inscription-select:focus {
     border-color: var(--color-primary);
 }
+
 
 /* — Questions Oui/Non — */
 .inscription-question-block {

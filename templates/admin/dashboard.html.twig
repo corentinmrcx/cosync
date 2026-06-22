@@ -25,6 +25,13 @@
         } %}
 
         {% include 'components/hub-card.html.twig' with {
+            icon: 'shield',
+            label: 'Dirigeants',
+            route: hasSeason ? 'admin_dirigeants_list' : null,
+            disabled: not hasSeason
+        } %}
+
+        {% include 'components/hub-card.html.twig' with {
             icon: 'import',
             label: 'Import',
             route: hasSeason ? 'admin_import_index' : null,

@@ -1,0 +1,55 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Dirigeants{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Dirigeants' }
+] } %}
+
+<div class="dirigeants-page">
+
+    <div class="dirigeants-toolbar">
+        <p class="dirigeants-count">{{ dirigeants|length }} dirigeant{{ dirigeants|length > 1 ? 's' : '' }}</p>
+        <a href="{{ path('admin_dirigeants_new') }}" class="dirigeants-add-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nouveau dirigeant
+        </a>
+    </div>
+
+    {% if dirigeants is empty %}
+        <div class="dirigeants-empty">
+            <p>Aucun dirigeant pour cette saison.</p>
+            <p>Ajoutez-les manuellement ou importez le fichier FootClubs — les dirigeants sont automatiquement détectés.</p>
+        </div>
+    {% else %}
+        <div class="dirigeants-table-wrap">
+            <table class="dirigeants-table">
+                <thead>
+                    <tr>
+                        <th>Nom / Prénom</th>
+                        <th class="dirigeants-col-role">Rôle</th>
+                        <th class="dirigeants-col-team">Équipe</th>
+                        <th class="dirigeants-col-email">Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dirigeant in dirigeants %}
+                        <tr class="dirigeants-row"
+                            onclick="window.location='{{ path('admin_dirigeants_show', {uuid: dirigeant.uuid}) }}'">
+                            <td class="dirigeants-td-name">{{ dirigeant.nomPrenom }}</td>
+                            <td class="dirigeants-col-role dirigeants-td-muted">{{ dirigeant.role ?? '—' }}</td>
+                            <td class="dirigeants-col-team dirigeants-td-muted">{{ dirigeant.team ? dirigeant.team.name : '—' }}</td>
+                            <td class="dirigeants-col-email dirigeants-td-muted">{{ dirigeant.email ?? '—' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

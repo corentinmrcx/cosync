@@ -1,0 +1,191 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Fiche équipement — Foyer de Soudron{% endblock %}
+
+{% block body %}
+<div class="inscription-page"
+     x-data="{
+         step: 1,
+         maxStep: 2,
+         tailleHaut: '',
+         tailleBas: '',
+         pointure: '',
+         get canGoNext() {
+             if (this.step === 1) return true;
+             if (this.step === 2) return this.tailleHaut !== '' && this.tailleBas !== '' && this.pointure !== '';
+             return false;
+         },
+         next() { if (this.canGoNext && this.step < this.maxStep) this.step++; },
+         prev() { if (this.step > 1) this.step--; },
+     }">
+
+    {# — Header — #}
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+            <span class="inscription-header-step" x-text="`Étape ${step} sur 2`"></span>
+        </div>
+        <div class="inscription-progress">
+            {% for i in 1..2 %}
+                <div class="inscription-progress-segment"
+                     :class="step >= {{ i }} ? 'inscription-progress-segment-done' : ''"></div>
+            {% endfor %}
+        </div>
+    </header>
+
+    {# — Flash — #}
+    {% for message in app.flashes('error') %}
+        <div class="inscription-flash-error">{{ message }}</div>
+    {% endfor %}
+
+    <main class="inscription-main">
+        <div class="inscription-container">
+
+            <form method="post" action="{{ path('public_dirigeant_submit', {uuid: dirigeant.uuid}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_submit') }}">
+
+                {# ── Étape 1 : Bienvenue ── #}
+                <div x-show="step === 1" class="inscription-card">
+                    <h1 class="inscription-welcome-name">Bonjour {{ dirigeant.prenom }} 👋</h1>
+                    <p class="inscription-welcome-text">
+                        {% if dirigeant.role %}
+                            En tant que <strong>{{ dirigeant.role }}</strong> au <strong>Foyer de Soudron</strong>
+                        {% else %}
+                            En tant que dirigeant(e) au <strong>Foyer de Soudron</strong>
+                        {% endif %}
+                        pour la saison <strong>{{ dirigeant.season.label }}</strong>, merci de compléter ce formulaire.
+                    </p>
+                    <p class="inscription-welcome-text">
+                        Il vous prendra moins d'une minute. Vous renseignerez vos <strong>tailles d'équipement</strong> pour que le club puisse préparer vos dotations.
+                    </p>
+                    <button type="button" @click="next" class="inscription-btn-start">
+                        Commencer →
+                    </button>
+                </div>
+
+                {# ── Étape 2 : Équipement ── #}
+                <div x-show="step === 2" class="inscription-card">
+                    <h2 class="inscription-step-title">Tailles d'équipement</h2>
+                    <div class="inscription-fields">
+
+                        <div class="inscription-field">
+                            <label class="inscription-label">Taille haut *</label>
+                            <div x-data="{
+                                open: false, top: 0, left: 0, width: 0,
+                                toggle() {
+                                    if (!this.open) {
+                                        const r = this.$refs.trigger.getBoundingClientRect();
+                                        this.top = (window.innerHeight - r.bottom < 230) ? r.top - 230 - 4 : r.bottom + 4;
+                                        this.left = r.left; this.width = r.width;
+                                    }
+                                    this.open = !this.open;
+                                }
+                            }" @click.outside="open = false" class="cselect">
+                                <button x-ref="trigger" type="button" @click="toggle()" :class="{'cselect-trigger-open': open}" class="cselect-trigger">
+                                    <span x-text="tailleHaut || '— Choisir —'" :class="{'cselect-placeholder': !tailleHaut}"></span>
+                                    <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
+                                    <li class="cselect-optgroup-label">Tailles enfants</li>
+                                    {% for t in ['6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'] %}
+                                        <li @mousedown.prevent="tailleHaut = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleHaut === '{{ t }}'}" class="cselect-option">{{ t }}</li>
+                                    {% endfor %}
+                                    <li class="cselect-optgroup-label">Tailles adultes</li>
+                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL'] %}
+                                        <li @mousedown.prevent="tailleHaut = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleHaut === '{{ t }}'}" class="cselect-option">{{ t }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <input type="hidden" name="taille_haut" :value="tailleHaut">
+                            </div>
+                        </div>
+
+                        <div class="inscription-field">
+                            <label class="inscription-label">Taille bas *</label>
+                            <div x-data="{
+                                open: false, top: 0, left: 0, width: 0,
+                                toggle() {
+                                    if (!this.open) {
+                                        const r = this.$refs.trigger.getBoundingClientRect();
+                                        this.top = (window.innerHeight - r.bottom < 230) ? r.top - 230 - 4 : r.bottom + 4;
+                                        this.left = r.left; this.width = r.width;
+                                    }
+                                    this.open = !this.open;
+                                }
+                            }" @click.outside="open = false" class="cselect">
+                                <button x-ref="trigger" type="button" @click="toggle()" :class="{'cselect-trigger-open': open}" class="cselect-trigger">
+                                    <span x-text="tailleBas || '— Choisir —'" :class="{'cselect-placeholder': !tailleBas}"></span>
+                                    <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
+                                    <li class="cselect-optgroup-label">Tailles enfants</li>
+                                    {% for t in ['6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'] %}
+                                        <li @mousedown.prevent="tailleBas = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleBas === '{{ t }}'}" class="cselect-option">{{ t }}</li>
+                                    {% endfor %}
+                                    <li class="cselect-optgroup-label">Tailles adultes</li>
+                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL'] %}
+                                        <li @mousedown.prevent="tailleBas = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleBas === '{{ t }}'}" class="cselect-option">{{ t }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <input type="hidden" name="taille_bas" :value="tailleBas">
+                            </div>
+                        </div>
+
+                        <div class="inscription-field">
+                            <label class="inscription-label">Pointure *</label>
+                            <div x-data="{
+                                open: false, top: 0, left: 0, width: 0,
+                                toggle() {
+                                    if (!this.open) {
+                                        const r = this.$refs.trigger.getBoundingClientRect();
+                                        this.top = (window.innerHeight - r.bottom < 230) ? r.top - 230 - 4 : r.bottom + 4;
+                                        this.left = r.left; this.width = r.width;
+                                    }
+                                    this.open = !this.open;
+                                }
+                            }" @click.outside="open = false" class="cselect">
+                                <button x-ref="trigger" type="button" @click="toggle()" :class="{'cselect-trigger-open': open}" class="cselect-trigger">
+                                    <span x-text="pointure || '— Choisir —'" :class="{'cselect-placeholder': !pointure}"></span>
+                                    <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
+                                    {% for p in range(28, 48) %}
+                                        <li @mousedown.prevent="pointure = '{{ p }}'; open = false" :class="{'cselect-option-active': pointure === '{{ p }}'}" class="cselect-option">{{ p }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <input type="hidden" name="pointure" :value="pointure">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                {# ── Navigation ── #}
+                <div class="inscription-nav">
+                    <template x-if="step > 1">
+                        <button type="button" @click="prev" class="inscription-btn-prev">
+                            ← Précédent
+                        </button>
+                    </template>
+
+                    <template x-if="step > 1 && step < maxStep">
+                        <button type="button" @click="next" :disabled="!canGoNext" class="inscription-btn-next">
+                            Suivant →
+                        </button>
+                    </template>
+
+                    <template x-if="step === maxStep">
+                        <button type="submit" :disabled="!canGoNext" class="inscription-btn-submit">
+                            Valider ✓
+                        </button>
+                    </template>
+                </div>
+
+            </form>
+
+        </div>
+    </main>
+
+    {% include 'components/footer.html.twig' %}
+
+</div>
+{% endblock %}

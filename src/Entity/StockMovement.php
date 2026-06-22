@@ -6,6 +6,7 @@ use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Repository\StockMovementRepository;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\Dirigeant;
 
 #[ORM\Entity(repositoryClass: StockMovementRepository::class)]
 class StockMovement
@@ -25,10 +26,15 @@ class StockMovement
     #[ORM\Column(enumType: StockMovementType::class)]
     private StockMovementType $type;
 
-    /** Renseigné uniquement pour les sorties liées à un joueur */
+    /** Renseigné pour les sorties liées à un joueur */
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, referencedColumnName: 'uuid')]
     private ?Licencie $licencie = null;
+
+    /** Renseigné pour les sorties liées à un dirigeant */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, referencedColumnName: 'uuid')]
+    private ?Dirigeant $dirigeant = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $note = null;
@@ -100,6 +106,17 @@ class StockMovement
     public function setLicencie(?Licencie $licencie): static
     {
         $this->licencie = $licencie;
+        return $this;
+    }
+
+    public function getDirigeant(): ?Dirigeant
+    {
+        return $this->dirigeant;
+    }
+
+    public function setDirigeant(?Dirigeant $dirigeant): static
+    {
+        $this->dirigeant = $dirigeant;
         return $this;
     }
 

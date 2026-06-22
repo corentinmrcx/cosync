@@ -63,6 +63,20 @@ class StockMovementRepository extends ServiceEntityRepository
     }
 
     /** @return StockMovement[] */
+    public function findDotationsByDirigeant(\App\Entity\Dirigeant $dirigeant): array
+    {
+        return $this->createQueryBuilder('m')
+            ->join('m.item', 'i')
+            ->where('m.dirigeant = :dirigeant')
+            ->andWhere('m.source = :source')
+            ->setParameter('dirigeant', $dirigeant)
+            ->setParameter('source', \App\Enum\StockMovementSource::DOTATION)
+            ->orderBy('m.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return StockMovement[] */
     public function findDotationsByLicencie(\App\Entity\Licencie $licencie): array
     {
         return $this->createQueryBuilder('m')

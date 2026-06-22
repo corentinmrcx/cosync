@@ -3,11 +3,15 @@
 namespace App\Service\Import;
 
 use App\DTO\ImportResultData;
+use App\Entity\Dirigeant;
+use App\Entity\DirigeantRole;
 use App\Entity\DossierClub;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Enum\LicenceStatus;
 use App\Repository\CategoryRepository;
+use App\Repository\DirigeantRepository;
+use App\Repository\DirigeantRoleRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Service\Mail\MailerService;
@@ -29,16 +33,24 @@ final class ImportService
     private const COL_MOBILE_PERSONNEL    = 'mobile personnel';
     private const COL_EMAIL_PRINCIPAL     = 'email principal';
 
-    private const TYPE_LICENCE_LIBRE = 'libre';
+    private const TYPE_LICENCE_LIBRE      = 'libre';
+    private const TYPE_LICENCE_DIRIGEANT  = 'dirigeant';
 
     public function __construct(
         private readonly DataSanitizer $sanitizer,
         private readonly LicencieRepository $licencieRepository,
+        private readonly DirigeantRepository $dirigeantRepository,
+        private readonly DirigeantRoleRepository $dirigeantRoleRepository,
         private readonly CategoryRepository $categoryRepository,
         private readonly TeamRepository $teamRepository,
         private readonly EntityManagerInterface $em,
         private readonly MailerService $mailerService,
-    ) {}
+    ) {
+        $this->roleCache = [];
+    }
+
+    /** @var array<string, DirigeantRole> */
+    private array $roleCache;
 
     public function importFromXlsx(UploadedFile $file, Season $season): ImportResultData
     {
@@ -86,7 +98,11 @@ final class ImportService
             }
 
             try {
-                $this->processRow($row, $colIndexes, $season, $result, $lineNumber, $pendingNumLicences, $newLicencies);
+                if ($typeLicence === self::TYPE_LICENCE_DIRIGEANT) {
+                    $this->processDirigeantRow($row, $colIndexes, $season, $result, $lineNumber, $pendingNumLicences);
+                } else {
+                    $this->processRow($row, $colIndexes, $season, $result, $lineNumber, $pendingNumLicences, $newLicencies);
+                }
             } catch (\Throwable $e) {
                 $result->addError($lineNumber, $e->getMessage());
             }
@@ -220,6 +236,85 @@ final class ImportService
             $newLicencies[] = $licencie;
             $result->created++;
         }
+    }
+
+    private function processDirigeantRow(
+        array $row,
+        array $colIndexes,
+        Season $season,
+        ImportResultData $result,
+        int $lineNumber,
+        array &$pendingNumLicences,
+    ): void {
+        ['nom' => $nom, 'prenom' => $prenom] = $this->sanitizer->splitNomPrenom(
+            (string) $row[$colIndexes[self::COL_NOM_PRENOM]]
+        );
+
+        $rawNumLicence = trim((string) ($row[$colIndexes[self::COL_NUMERO_PERSONNE]] ?? ''));
+        $numLicence    = $rawNumLicence !== '' ? $this->sanitizer->sanitizeNumLicence($rawNumLicence) : null;
+
+        if ($numLicence !== null && isset($pendingNumLicences[$numLicence])) {
+            $result->addError($lineNumber, "Doublon ignoré : $nom $prenom (n°$numLicence) apparaît plusieurs fois dans le fichier.");
+            return;
+        }
+
+        $email      = $this->sanitizer->sanitizeEmail($this->colValue($row, $colIndexes, self::COL_EMAIL_PRINCIPAL));
+        $telephone  = $this->sanitizer->sanitizePhone($this->colValue($row, $colIndexes, self::COL_MOBILE_PERSONNEL));
+        $rawDate    = trim((string) ($row[$colIndexes[self::COL_DATE_NAISSANCE]] ?? ''));
+        $dateNaissance = $rawDate !== '' ? $this->sanitizer->sanitizeDateNaissance($rawDate) : null;
+        $rawRole    = trim((string) ($row[$colIndexes[self::COL_SOUS_CATEGORIE]] ?? ''));
+        $role       = $rawRole !== '' ? $this->findOrCreateRole(mb_convert_case($rawRole, MB_CASE_TITLE, 'UTF-8')) : null;
+
+        $dirigeant = ($numLicence !== null ? $this->dirigeantRepository->findByNumLicence($numLicence) : null)
+            ?? $this->dirigeantRepository->findByNomPrenomSaison($nom, $prenom, $season);
+
+        if ($numLicence !== null) {
+            $pendingNumLicences[$numLicence] = true;
+        }
+
+        if ($dirigeant !== null) {
+            if ($dirigeant->getNumLicence() === null && $numLicence !== null) {
+                $dirigeant->setNumLicence($numLicence);
+            }
+            $dirigeant->setNom($nom);
+            $dirigeant->setPrenom($prenom);
+            $dirigeant->setEmail($email);
+            $dirigeant->setTelephone($telephone);
+            $dirigeant->setDateNaissance($dateNaissance);
+            $dirigeant->setRole($role);
+            $result->updated++;
+        } else {
+            $dirigeant = new Dirigeant();
+            $dirigeant->setNumLicence($numLicence);
+            $dirigeant->setNom($nom);
+            $dirigeant->setPrenom($prenom);
+            $dirigeant->setEmail($email);
+            $dirigeant->setTelephone($telephone);
+            $dirigeant->setDateNaissance($dateNaissance);
+            $dirigeant->setRole($role);
+            $dirigeant->setSeason($season);
+
+            $this->em->persist($dirigeant);
+            $result->created++;
+        }
+    }
+
+    private function findOrCreateRole(string $label): DirigeantRole
+    {
+        if (isset($this->roleCache[$label])) {
+            return $this->roleCache[$label];
+        }
+
+        $role = $this->dirigeantRoleRepository->findByLabel($label);
+        if ($role === null) {
+            $role = new DirigeantRole();
+            $role->setLabel($label);
+            $this->em->persist($role);
+            $this->em->flush();
+        }
+
+        $this->roleCache[$label] = $role;
+        return $role;
     }
 
     private function colValue(array $row, array $colIndexes, string $col): ?string
