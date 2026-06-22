@@ -1,0 +1,23 @@
+name: Deploy
+
+on:
+  push:
+    branches: [production]
+
+jobs:
+  deploy:
+    name: Deploy sur le VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH → git pull + make prod-deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd ${{ secrets.VPS_PATH }}
+            git pull origin production
+            make prod-deploy
