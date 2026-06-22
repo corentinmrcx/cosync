@@ -56,7 +56,7 @@ prod-up:
 prod-down:
 	$(COMPOSE_PROD) down
 
-prod-deploy: prod-build prod-up prod-migrate
+prod-deploy: prod-build prod-up prod-migrate prod-setup-dirs
 	@echo "Déploiement terminé."
 
 prod-migrate:
