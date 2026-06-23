@@ -633,3 +633,52 @@ DATABASE_URL=
 9. **Confirmation paiement** : modal admin + création `Transaction`
 10. **Fiche licencié** : vue détail complète
 11. **Gestion stock** : `StockItem`, `StockMovement`, aide à la commande
+
+## 12. Workflow Git
+ 
+### Branches
+ 
+| Branche | Rôle | Push direct |
+|---|---|---|
+| `développement` | Tout le dev actif | ✅ Autorisé |
+| `main` | Code propre et validé | ❌ Bloqué — PR obligatoire |
+| `production` | Code déployé en prod | ❌ Bloqué — PR obligatoire |
+ 
+### Workflow
+ 
+```
+développement → PR → main → PR → production
+                                      ↓
+                               déploiement automatique
+```
+ 
+1. Tout le développement se fait sur `développement`
+2. Une fois une feature terminée et testée → PR de `développement` vers `main`
+3. Quand on veut mettre en prod → PR de `main` vers `production` → déploiement automatique déclenché
+### Règles de merge
+ 
+- **Jamais de fast-forward** — toujours `--no-ff` pour garder l'historique lisible
+- **Jamais de commit direct** sur `main` ou `production` — même en urgence
+- Une PR = une feature ou un fix, pas un mois de développement groupé
+- Ne pas laisser `développement` dériver trop longtemps sans merger sur `main`
+### Nommage des PRs
+ 
+Format : `type: description courte`
+ 
+| Type | Usage |
+|---|---|
+| `feat` | Nouvelle fonctionnalité |
+| `fix` | Correction de bug |
+| `refactor` | Refactoring sans changement de comportement |
+| `style` | CSS / UI uniquement |
+| `chore` | Config, dépendances, CI |
+ 
+Exemples :
+- `feat: formulaire public étape signature`
+- `fix: import XLSX doublon sur nom composé`
+- `chore: ajout règles GitHub branch protection`
+### Ce que Claude Code ne doit jamais faire
+ 
+- ❌ Commiter directement sur `main` ou `production`
+- ❌ Proposer un `git push --force` sur une branche protégée
+- ❌ Grouper plusieurs features sans rapport dans un seul commit
