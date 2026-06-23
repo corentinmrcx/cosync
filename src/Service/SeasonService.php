@@ -21,4 +21,10 @@ final class SeasonService
     {
         $this->em->flush();
     }
+
+    public function updateReglement(Season $season, ?string $reglementText): void
+    {
+        $season->setReglementText($reglementText);
+        $this->em->flush();
+    }
 }

@@ -6,7 +6,6 @@ use App\Entity\Season;
 use App\Form\SeasonType;
 use App\Service\SeasonContext;
 use App\Service\SeasonService;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -44,11 +43,15 @@ class SeasonController extends AbstractController
     }
 
     #[Route('/{id}/reglement', name: 'reglement', methods: ['GET', 'POST'])]
-    public function reglement(Season $season, Request $request, EntityManagerInterface $em): Response
+    public function reglement(Season $season, Request $request, SeasonService $seasonService): Response
     {
         if ($request->isMethod('POST')) {
-            $season->setReglementText($request->request->get('reglement_text') ?: null);
-            $em->flush();
+            if (!$this->isCsrfTokenValid('reglement_' . $season->getId(), $request->request->get('_token'))) {
+                $this->addFlash('error', 'Token CSRF invalide.');
+                return $this->redirectToRoute('admin_seasons_reglement', ['id' => $season->getId()]);
+            }
+
+            $seasonService->updateReglement($season, $request->request->get('reglement_text') ?: null);
 
             $this->addFlash('success', 'Règlement mis à jour.');
             return $this->redirectToRoute('admin_config_index');
@@ -59,11 +62,21 @@ class SeasonController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/switch', name: 'switch', methods: ['GET'])]
+    #[Route('/{id}/switch', name: 'switch', methods: ['POST'])]
     public function switch(Season $season, SeasonContext $seasonContext, Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('season_switch_' . $season->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_dashboard');
+        }
+
         $seasonContext->setCurrentSeason($season);
 
-        return $this->redirect($request->headers->get('referer') ?? $this->generateUrl('admin_dashboard'));
+        $returnTo = $request->request->get('returnTo', '');
+        if ($returnTo !== '' && str_starts_with($returnTo, '/')) {
+            return $this->redirect($returnTo);
+        }
+
+        return $this->redirectToRoute('admin_dashboard');
     }
 }

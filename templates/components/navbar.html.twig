@@ -18,16 +18,28 @@
 
             <div class="navbar-dropdown-section">
                 <p class="navbar-dropdown-label">Saison</p>
-                <div class="navbar-season-select-wrap">
+                <div class="navbar-season-select-wrap"
+                     x-data="{ switchSeason(seasonId) {
+                         document.getElementById('navbar-season-id-' + seasonId).submit();
+                     } }">
                     <select class="navbar-season-select"
-                            @change="window.location.href = $event.target.value">
+                            @change="switchSeason($event.target.value)">
                         {% for season in navbar_seasons %}
-                            <option value="{{ path('admin_seasons_switch', {id: season.id}) }}"
+                            <option value="{{ season.id }}"
                                     {{ navbar_current_season and season.id == navbar_current_season.id ? 'selected' : '' }}>
                                 {{ season.label }}
                             </option>
                         {% endfor %}
                     </select>
+                    {% for season in navbar_seasons %}
+                        <form id="navbar-season-id-{{ season.id }}"
+                              method="post"
+                              action="{{ path('admin_seasons_switch', {id: season.id}) }}"
+                              style="display:none">
+                            <input type="hidden" name="_token" value="{{ csrf_token('season_switch_' ~ season.id) }}">
+                            <input type="hidden" name="returnTo" value="{{ app.request.pathInfo }}">
+                        </form>
+                    {% endfor %}
                 </div>
                 <a href="{{ path('admin_seasons_new') }}" class="navbar-dropdown-item navbar-dropdown-item-new-season">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

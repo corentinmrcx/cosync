@@ -2,7 +2,7 @@ COMPOSE      = docker compose
 COMPOSE_PROD = docker compose -f docker-compose.prod.yml
 
 .PHONY: up down build bash db-migrate db-reset assets watch cache-clear logs setup-dirs \
-        prod-up prod-down prod-build prod-deploy prod-migrate prod-bash prod-logs \
+        prod-up prod-down prod-build prod-deploy prod-migrate prod-bash prod-db prod-logs \
         prod-backup prod-backup-list prod-restore prod-init
 
 # ── Développement ────────────────────────────────────────────────────────────
@@ -77,6 +77,9 @@ prod-migrate:
 
 prod-bash:
 	$(COMPOSE_PROD) exec php sh
+
+prod-db:
+	$(COMPOSE_PROD) exec database sh -c 'psql -U $$POSTGRES_USER $$POSTGRES_DB'
 
 prod-logs:
 	$(COMPOSE_PROD) logs -f

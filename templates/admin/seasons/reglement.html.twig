@@ -17,6 +17,7 @@
 
     <form method="post" action="{{ path('admin_seasons_reglement', {id: season.id}) }}" class="reglement-edit-card" id="reglement-form">
 
+        <input type="hidden" name="_token" value="{{ csrf_token('reglement_' ~ season.id) }}">
         <input type="hidden" name="reglement_text" id="reglement_text_input">
 
         <div class="reglement-edit-header">

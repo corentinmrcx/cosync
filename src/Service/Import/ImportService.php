@@ -88,7 +88,7 @@ final class ImportService
             $lineNumber = $offset + 2;
 
             $typeLicence = mb_strtolower(trim((string) ($row[$colIndexes[self::COL_TYPE_LICENCE]] ?? '')), 'UTF-8');
-            if ($typeLicence !== self::TYPE_LICENCE_LIBRE) {
+            if ($typeLicence !== self::TYPE_LICENCE_LIBRE && $typeLicence !== self::TYPE_LICENCE_DIRIGEANT) {
                 continue;
             }
 
@@ -310,7 +310,7 @@ final class ImportService
             $role = new DirigeantRole();
             $role->setLabel($label);
             $this->em->persist($role);
-            $this->em->flush();
+            // Pas de flush ici — le flush global en fin d'import s'en charge
         }
 
         $this->roleCache[$label] = $role;

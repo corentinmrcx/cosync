@@ -9,7 +9,7 @@ RUN npm ci --no-audit --no-fund
 # Tailwind a besoin des templates pour purger les classes inutilisées
 COPY assets/       ./assets/
 COPY templates/    ./templates/
-COPY tailwind.config.js postcss.config.js webpack.config.js ./
+COPY webpack.config.js ./
 
 RUN npm run build
 

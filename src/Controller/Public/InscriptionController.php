@@ -107,7 +107,7 @@ class InscriptionController extends AbstractController
             return null;
         }
 
-        if (!str_starts_with($signatureData, 'data:image/')) {
+        if (!str_starts_with($signatureData, 'data:image/') || strlen($signatureData) > 2_800_000) {
             return null;
         }
 
