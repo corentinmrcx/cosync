@@ -55,4 +55,4 @@ networks:
     driver: bridge
   npm-network:
     external: true
-    name: npm_network
+    name: npm-network
