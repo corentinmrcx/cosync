@@ -27,6 +27,13 @@ final class MailerService
             if ($user !== null) {
                 return new Address($user->getUserIdentifier());
             }
+            // Pas d'utilisateur authentifié (console, async) : fallback sur DIAG_EMAIL
+            // pour ne jamais laisser partir un mail vers un vrai licencié en beta.
+            $diagEmail = $this->betaModeService->getRedirectEmail();
+            if ($diagEmail !== '') {
+                return new Address($diagEmail);
+            }
+            throw new \RuntimeException('Beta mode actif mais aucun destinataire de secours (DIAG_EMAIL non configuré).');
         }
         return $real;
     }
