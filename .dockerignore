@@ -1,0 +1,10 @@
+.git
+.env.local
+.env.dev
+.env.prod
+node_modules
+var/cache
+var/log
+var/sessions
+docker-compose.yml
+docker-compose.prod.yml
