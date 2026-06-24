@@ -21,6 +21,11 @@ class SeasonRepository extends ServiceEntityRepository
         return $this->findOneBy([], ['createdAt' => 'DESC']);
     }
 
+    public function existsByLabel(string $label): bool
+    {
+        return $this->count(['label' => $label]) > 0;
+    }
+
     /** @return Season[] */
     public function findAllOrdered(): array
     {
