@@ -106,31 +106,31 @@
                 <label>Rôle</label>
                 <input type="hidden" name="roleId" :value="selectedId ?? ''">
 
-                <div class="role-combobox" @click.outside="open = false">
-                    <div class="role-combobox-input-wrap">
+                <div class="combobox" @click.outside="open = false">
+                    <div class="combobox-input-wrap">
                         <input type="text"
-                               class="role-combobox-input"
+                               class="combobox-input"
                                placeholder="Rechercher ou créer un rôle…"
                                x-model="query"
                                @focus="open = true"
                                @input="open = true"
                                autocomplete="off">
                         <button type="button"
-                                class="role-combobox-clear"
+                                class="combobox-clear"
                                 x-show="selectedId !== null"
                                 @click="clear()"
                                 title="Effacer">×</button>
                     </div>
 
-                    <div class="role-combobox-dropdown" x-show="open" x-cloak>
+                    <div class="combobox-dropdown" x-show="open" x-cloak>
                         <template x-if="filtered.length === 0 && !showCreate">
-                            <div class="role-combobox-empty">Aucun rôle trouvé</div>
+                            <div class="combobox-empty">Aucun rôle trouvé</div>
                         </template>
 
                         <template x-for="role in filtered" :key="role.id">
                             <button type="button"
-                                    class="role-combobox-option"
-                                    :class="selectedId === role.id ? 'role-combobox-option-selected' : ''"
+                                    class="combobox-option"
+                                    :class="selectedId === role.id ? 'combobox-option-selected' : ''"
                                     @click="select(role)"
                                     x-text="role.label">
                             </button>
@@ -138,10 +138,10 @@
 
                         <template x-if="showCreate">
                             <button type="button"
-                                    class="role-combobox-create"
+                                    class="combobox-create"
                                     @click="create()"
                                     :disabled="creating">
-                                <span x-show="!creating">Créer « <span x-text="query"></span> »</span>
+                                <span x-show="!creating">+ Créer « <span x-text="query"></span> »</span>
                                 <span x-show="creating">Création…</span>
                             </button>
                         </template>
