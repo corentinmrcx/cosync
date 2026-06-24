@@ -15,6 +15,7 @@ use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\LessThan;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
 class DirigeantType extends AbstractType
@@ -57,10 +58,13 @@ class DirigeantType extends AbstractType
                 'attr'     => ['placeholder' => '06 12 34 56 78'],
             ])
             ->add('dateNaissance', DateType::class, [
-                'label'    => 'Date de naissance',
-                'widget'   => 'single_text',
-                'input'    => 'datetime_immutable',
-                'required' => false,
+                'label'       => 'Date de naissance',
+                'widget'      => 'single_text',
+                'input'       => 'datetime_immutable',
+                'required'    => false,
+                'constraints' => [
+                    new LessThan(value: 'today', message: 'La date de naissance doit être dans le passé.'),
+                ],
             ])
             ->add('team', EntityType::class, [
                 'class'         => Team::class,

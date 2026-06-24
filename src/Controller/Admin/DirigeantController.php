@@ -5,11 +5,13 @@ namespace App\Controller\Admin;
 use App\DTO\DirigeantData;
 use App\Entity\DirigeantRole;
 use App\Entity\Season;
+use App\Entity\Team;
 use App\Form\DirigeantType;
 use App\Repository\DirigeantRepository;
 use App\Repository\DirigeantRoleRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockMovementRepository;
+use App\Repository\TeamRepository;
 use App\Service\DirigeantService;
 use App\Service\Mail\DirigeantLinkService;
 use App\Service\SeasonContext;
@@ -23,16 +25,57 @@ use Symfony\Component\Uid\Uuid;
 class DirigeantController extends AbstractController
 {
     #[Route('', name: 'list')]
-    public function list(DirigeantRepository $dirigeantRepo, SeasonContext $seasonContext): Response
-    {
+    public function list(
+        Request $request,
+        DirigeantRepository $dirigeantRepo,
+        DirigeantRoleRepository $roleRepo,
+        TeamRepository $teamRepo,
+        SeasonContext $seasonContext,
+    ): Response {
         $season = $seasonContext->getCurrentSeason();
         if ($season === null) {
             return $this->redirectToRoute('admin_seasons_new');
         }
 
+        $search      = trim((string) $request->query->get('search', ''));
+        $currentTeam = null;
+        $currentRole = null;
+
+        if ($request->query->has('team') && $request->query->get('team') !== '') {
+            $currentTeam = $teamRepo->find((int) $request->query->get('team'));
+        }
+        if ($request->query->has('role') && $request->query->get('role') !== '') {
+            $currentRole = $roleRepo->find((int) $request->query->get('role'));
+        }
+
+        $filterGroups = [
+            [
+                'name'     => 'team',
+                'label'    => 'Équipe',
+                'allLabel' => 'Toutes',
+                'options'  => array_map(fn(Team $t) => ['value' => $t->getId(), 'label' => $t->getName()], $teamRepo->findBySeason($season)),
+                'current'  => $currentTeam?->getId(),
+            ],
+            [
+                'name'     => 'role',
+                'label'    => 'Rôle',
+                'allLabel' => 'Tous',
+                'options'  => array_map(fn(DirigeantRole $r) => ['value' => $r->getId(), 'label' => $r->getLabel()], $roleRepo->findAllOrdered()),
+                'current'  => $currentRole?->getId(),
+            ],
+        ];
+
         return $this->render('admin/dirigeants/list.html.twig', [
-            'dirigeants' => $dirigeantRepo->findBySeason($season),
-            'season'     => $season,
+            'dirigeants'        => $dirigeantRepo->findBySeasonWithFilters(
+                $season,
+                $search ?: null,
+                $currentTeam?->getId(),
+                $currentRole?->getId(),
+            ),
+            'season'            => $season,
+            'search'            => $search,
+            'filterGroups'      => $filterGroups,
+            'activeFilterCount' => ($currentTeam ? 1 : 0) + ($currentRole ? 1 : 0),
         ]);
     }
 

@@ -13,7 +13,7 @@ class Season
     #[ORM\Column]
     private int $id;
 
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(length: 20, unique: true)]
     private string $label;
 
     /** @var array<string, int> ex: {"jeunes": 85, "seniors": 120} */

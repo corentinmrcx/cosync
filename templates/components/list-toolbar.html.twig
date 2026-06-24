@@ -1,0 +1,101 @@
+{#
+  Barre recherche + filtres partagée.
+
+  Paramètres attendus (via embed ... with {...}) :
+    search (string)              — valeur courante de la recherche
+    searchPlaceholder (string)   — placeholder de l'input search
+    filterGroups (array)         — [{name, label, allLabel, options: [{value, label}], current}]
+    activeCount (int)            — nombre de filtres actifs
+    resetUrl (string)            — URL pour réinitialiser tous les filtres
+    formId (string)              — préfixe unique pour les id des formulaires
+
+  Bloc surchargeable :
+    {% block actions %} — boutons action à droite de la toolbar
+#}
+
+{% set activeCount = activeCount ?? 0 %}
+{% set formId = formId ?? 'list-toolbar' %}
+
+<div class="list-tb-filters">
+
+    {# ── Barre de recherche ── #}
+    <form method="get" id="{{ formId }}-search">
+        {% for group in filterGroups %}
+            <input type="hidden" name="{{ group.name }}" value="{{ group.current ?? '' }}">
+        {% endfor %}
+        <div class="list-tb-search-row">
+            <div class="list-tb-search-wrap">
+                <svg class="list-tb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="search"
+                       name="search"
+                       value="{{ search ?? '' }}"
+                       placeholder="{{ searchPlaceholder ?? 'Rechercher…' }}"
+                       class="list-tb-search-input">
+            </div>
+        </div>
+    </form>
+
+    {# ── Toolbar : filtre + actions ── #}
+    <form method="get" id="{{ formId }}-filters">
+        <input type="hidden" name="search" value="{{ search ?? '' }}">
+        {% for group in filterGroups %}
+            <input type="hidden" name="{{ group.name }}" value="{{ group.current ?? '' }}">
+        {% endfor %}
+
+        <div class="list-tb-toolbar">
+
+            <div class="list-tb-left" x-data="{ open: false }" @click.outside="open = false">
+
+                <button type="button"
+                        class="list-tb-btn-filters {{ activeCount > 0 ? 'list-tb-btn-filters-active' : '' }}"
+                        @click="open = !open">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="6"  x2="20" y2="6"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                        <line x1="11" y1="18" x2="13" y2="18"/>
+                    </svg>
+                    Filtres
+                    {% if activeCount > 0 %}
+                        <span class="list-tb-filters-count">{{ activeCount }}</span>
+                    {% endif %}
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                         :style="open ? 'transform: rotate(180deg)' : ''">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>
+
+                <div class="list-tb-dropdown" x-show="open" x-cloak>
+                    <p class="list-tb-dropdown-title">Filtrer par</p>
+
+                    {% for group in filterGroups %}
+                        <div class="list-tb-filter-group">
+                            <label class="list-tb-filter-label">{{ group.label }}</label>
+                            <select name="{{ group.name }}" class="list-tb-select" onchange="this.form.submit()">
+                                <option value="">{{ group.allLabel ?? 'Tous' }}</option>
+                                {% for option in group.options %}
+                                    <option value="{{ option.value }}"
+                                            {{ group.current is not null and option.value == group.current ? 'selected' : '' }}>
+                                        {{ option.label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endfor %}
+
+                    {% if activeCount > 0 %}
+                        <a href="{{ resetUrl }}" class="list-tb-reset">Réinitialiser les filtres</a>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <div class="list-tb-actions">
+                {% block actions %}{% endblock %}
+            </div>
+
+        </div>
+    </form>
+
+</div>

@@ -17,18 +17,11 @@
 
         <hr class="season-form-divider">
 
-        <div class="season-form-years">
-            <div class="season-form-field">
-                {{ form_label(form.startYear) }}
-                {{ form_widget(form.startYear) }}
-                {{ form_errors(form.startYear) }}
-            </div>
-            <div class="season-form-years-sep">→</div>
-            <div class="season-form-field">
-                {{ form_label(form.endYear) }}
-                {{ form_widget(form.endYear) }}
-                {{ form_errors(form.endYear) }}
-            </div>
+        <div class="season-form-field" x-data="{ year: {{ form.startYear.vars.value }} }">
+            {{ form_label(form.startYear) }}
+            {{ form_widget(form.startYear, { attr: { 'x-model.number': 'year' } }) }}
+            {{ form_errors(form.startYear) }}
+            <p class="season-form-preview" x-text="'Saison ' + year + '–' + (year + 1)"></p>
         </div>
 
         <div class="season-form-field">

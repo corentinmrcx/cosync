@@ -16,12 +16,13 @@ class UserType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('email', EmailType::class, [
-                'label'       => 'Adresse email',
-                'constraints' => [new NotBlank(), new Email()],
-            ])
-            ->add('plainPassword', PasswordType::class, [
+        $builder->add('email', EmailType::class, [
+            'label'       => 'Adresse email',
+            'constraints' => [new NotBlank(), new Email()],
+        ]);
+
+        if ($options['can_change_password']) {
+            $builder->add('plainPassword', PasswordType::class, [
                 'label'       => $options['is_new'] ? 'Mot de passe' : 'Nouveau mot de passe',
                 'mapped'      => false,
                 'required'    => $options['is_new'],
@@ -29,15 +30,18 @@ class UserType extends AbstractType
                     ? [new NotBlank(), new Length(['min' => 8, 'minMessage' => 'Le mot de passe doit faire au moins {{ limit }} caractères.'])]
                     : [],
                 'attr'        => ['placeholder' => $options['is_new'] ? '' : 'Laisser vide pour ne pas changer'],
-            ])
-        ;
+            ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => User::class,
-            'is_new'     => true,
+            'data_class'        => User::class,
+            'is_new'            => true,
+            'can_change_password' => true,
         ]);
+
+        $resolver->setAllowedTypes('can_change_password', 'bool');
     }
 }

@@ -11,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\LessThan;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
 class LicencieIdentityType extends AbstractType
@@ -32,7 +33,10 @@ class LicencieIdentityType extends AbstractType
                 'label'       => 'Date de naissance',
                 'widget'      => 'single_text',
                 'input'       => 'datetime_immutable',
-                'constraints' => [new NotBlank(message: 'La date de naissance est requise.')],
+                'constraints' => [
+                    new NotBlank(message: 'La date de naissance est requise.'),
+                    new LessThan(value: 'today', message: 'La date de naissance doit être dans le passé.'),
+                ],
             ])
             ->add('category', EntityType::class, [
                 'class'        => Category::class,

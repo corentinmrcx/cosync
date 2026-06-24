@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
 use App\Repository\StockItemRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -26,6 +27,9 @@ class StockItem
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $couleur = null;
+
+    #[ORM\Column(length: 20, nullable: true, enumType: StockItemKind::class)]
+    private ?StockItemKind $kind = null;
 
     /** Lien avec DossierClub pour les dotations automatiques */
     #[ORM\Column(nullable: true, enumType: StockItemVetementType::class)]
@@ -99,6 +103,17 @@ class StockItem
     public function setCouleur(?string $couleur): static
     {
         $this->couleur = $couleur;
+        return $this;
+    }
+
+    public function getKind(): ?StockItemKind
+    {
+        return $this->kind;
+    }
+
+    public function setKind(?StockItemKind $kind): static
+    {
+        $this->kind = $kind;
         return $this;
     }
 

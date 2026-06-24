@@ -60,4 +60,38 @@ class DirigeantRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /** @return Dirigeant[] */
+    public function findBySeasonWithFilters(
+        Season $season,
+        ?string $search,
+        ?int $teamId,
+        ?int $roleId,
+    ): array {
+        $qb = $this->createQueryBuilder('d')
+            ->leftJoin('d.role', 'r')
+            ->leftJoin('d.team', 't')
+            ->addSelect('r', 't')
+            ->where('d.season = :season')
+            ->setParameter('season', $season)
+            ->orderBy('d.nom', 'ASC')
+            ->addOrderBy('d.prenom', 'ASC');
+
+        if ($search !== null && $search !== '') {
+            $qb->andWhere('LOWER(d.nom) LIKE :search OR LOWER(d.prenom) LIKE :search')
+                ->setParameter('search', '%' . strtolower($search) . '%');
+        }
+
+        if ($teamId !== null) {
+            $qb->andWhere('t.id = :teamId')
+                ->setParameter('teamId', $teamId);
+        }
+
+        if ($roleId !== null) {
+            $qb->andWhere('r.id = :roleId')
+                ->setParameter('roleId', $roleId);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }
