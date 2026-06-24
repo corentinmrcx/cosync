@@ -1,0 +1,174 @@
+/* Barre de recherche + filtres partagée entre licencies et dirigeants */
+
+.list-tb-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-card);
+}
+
+.list-tb-search-row {
+    display: flex;
+    justify-content: center;
+}
+
+.list-tb-search-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+}
+
+.list-tb-search-icon {
+    position: absolute;
+    left: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+
+.list-tb-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    color: var(--color-text-base);
+    background: var(--color-bg-page);
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.list-tb-search-input:focus {
+    border-color: var(--color-primary);
+}
+
+/* — Toolbar — */
+.list-tb-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.list-tb-left {
+    position: relative;
+}
+
+.list-tb-btn-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-page);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-base);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.list-tb-btn-filters:hover {
+    background: var(--color-bg-subtle);
+}
+
+.list-tb-btn-filters-active {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.list-tb-filters-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* — Actions (right side) — */
+.list-tb-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* — Dropdown filtres — */
+.list-tb-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    min-width: 220px;
+    background: var(--color-bg-page);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    box-shadow: var(--shadow-modal);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.list-tb-dropdown-title {
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.list-tb-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.list-tb-filter-label {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-text-body);
+}
+
+.list-tb-select {
+    padding: 0.5rem 0.75rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    color: var(--color-text-base);
+    background: var(--color-bg-page);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.list-tb-select:focus {
+    border-color: var(--color-primary);
+}
+
+.list-tb-reset {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-danger);
+    text-decoration: none;
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.list-tb-reset:hover {
+    text-decoration: underline;
+}

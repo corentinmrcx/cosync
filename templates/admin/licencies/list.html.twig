@@ -10,115 +10,31 @@
 
 <div class="licencies-page">
 
-    <div class="licencies-filters">
-
-        {% set activeCount = (currentTeam ? 1 : 0) + (currentStatus ? 1 : 0) %}
-
-        <form method="get" id="licencies-form">
-            {# Conserver la page courante sur la recherche #}
-            <input type="hidden" name="team"   value="{{ currentTeam   ? currentTeam.id     : '' }}">
-            <input type="hidden" name="status" value="{{ currentStatus ? currentStatus.value : '' }}">
-
-            <div class="licencies-search-row">
-                <div class="licencies-search-wrap">
-                    <svg class="licencies-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <input type="search"
-                           name="search"
-                           value="{{ search ?? '' }}"
-                           placeholder="Rechercher un licencié…"
-                           class="licencies-search-input">
-                </div>
-            </div>
-        </form>
-
-        <form method="get" id="licencies-filters-form">
-            <input type="hidden" name="search" value="{{ search ?? '' }}">
-            <input type="hidden" name="team"   value="{{ currentTeam   ? currentTeam.id     : '' }}">
-            <input type="hidden" name="status" value="{{ currentStatus ? currentStatus.value : '' }}">
-
-            <div class="licencies-toolbar">
-
-                <div class="licencies-toolbar-left"
-                     x-data="{ open: false }"
-                     @click.outside="open = false">
-
-                    <button type="button"
-                            class="licencies-btn-filters {{ activeCount > 0 ? 'licencies-btn-filters-active' : '' }}"
-                            @click="open = !open">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="4" y1="6"  x2="20" y2="6"/>
-                            <line x1="8" y1="12" x2="16" y2="12"/>
-                            <line x1="11" y1="18" x2="13" y2="18"/>
-                        </svg>
-                        Filtres
-                        {% if activeCount > 0 %}
-                            <span class="licencies-filters-count">{{ activeCount }}</span>
-                        {% endif %}
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                             :style="open ? 'transform: rotate(180deg)' : ''">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
-                    </button>
-
-                    <div class="licencies-filters-dropdown" x-show="open" x-cloak>
-                        <p class="licencies-filters-dropdown-title">Filtrer par</p>
-
-                        <div class="licencies-filter-group">
-                            <label class="licencies-filter-label">Équipe</label>
-                            <select name="team" class="licencies-select" onchange="this.form.submit()">
-                                <option value="">Toutes</option>
-                                {% for team in teams %}
-                                    <option value="{{ team.id }}" {{ currentTeam and currentTeam.id == team.id ? 'selected' : '' }}>
-                                        {{ team.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="licencies-filter-group">
-                            <label class="licencies-filter-label">Statut</label>
-                            <select name="status" class="licencies-select" onchange="this.form.submit()">
-                                <option value="">Tous</option>
-                                {% for s in statuses %}
-                                    <option value="{{ s.value }}" {{ currentStatus and currentStatus.value == s.value ? 'selected' : '' }}>
-                                        {{ s.label() }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        {% if activeCount > 0 %}
-                            <a href="{{ path('admin_licencies_list', {search: search ?? ''}) }}"
-                               class="licencies-filters-reset">
-                                Réinitialiser les filtres
-                            </a>
-                        {% endif %}
-                    </div>
-
-                </div>
-
-                <a href="{{ path('admin_licencies_new') }}" class="licencies-add-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Nouveau
-                </a>
-
-                <a href="{{ path('admin_import_index') }}" class="licencies-import-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="17 8 12 3 7 8"/>
-                        <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                    Importer XLSX
-                </a>
-
-            </div>
-        </form>
-
-    </div>
+    {% embed 'components/list-toolbar.html.twig' with {
+        search: search ?? '',
+        searchPlaceholder: 'Rechercher un licencié…',
+        filterGroups: filterGroups,
+        activeCount: activeFilterCount,
+        resetUrl: path('admin_licencies_list', {search: search ?? ''}),
+        formId: 'licencies'
+    } %}
+        {% block actions %}
+            <a href="{{ path('admin_licencies_new') }}" class="licencies-add-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Nouveau
+            </a>
+            <a href="{{ path('admin_import_index') }}" class="licencies-import-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Importer XLSX
+            </a>
+        {% endblock %}
+    {% endembed %}
 
     {% if licencies is empty %}
         <div class="licencies-empty">

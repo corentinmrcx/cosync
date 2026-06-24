@@ -10,20 +10,32 @@
 
 <div class="dirigeants-page">
 
-    <div class="dirigeants-toolbar">
-        <p class="dirigeants-count">{{ dirigeants|length }} dirigeant{{ dirigeants|length > 1 ? 's' : '' }}</p>
-        <a href="{{ path('admin_dirigeants_new') }}" class="dirigeants-add-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Nouveau dirigeant
-        </a>
-    </div>
+    {% embed 'components/list-toolbar.html.twig' with {
+        search: search ?? '',
+        searchPlaceholder: 'Rechercher un dirigeant…',
+        filterGroups: filterGroups,
+        activeCount: activeFilterCount,
+        resetUrl: path('admin_dirigeants_list', {search: search ?? ''}),
+        formId: 'dirigeants'
+    } %}
+        {% block actions %}
+            <a href="{{ path('admin_dirigeants_new') }}" class="dirigeants-add-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Nouveau dirigeant
+            </a>
+        {% endblock %}
+    {% endembed %}
 
     {% if dirigeants is empty %}
         <div class="dirigeants-empty">
-            <p>Aucun dirigeant pour cette saison.</p>
-            <p>Ajoutez-les manuellement ou importez le fichier FootClubs — les dirigeants sont automatiquement détectés.</p>
+            <p>Aucun dirigeant trouvé.</p>
+            {% if search or activeFilterCount > 0 %}
+                <p><a href="{{ path('admin_dirigeants_list') }}">Réinitialiser la recherche</a></p>
+            {% else %}
+                <p>Ajoutez-les manuellement ou importez le fichier FootClubs — les dirigeants sont automatiquement détectés.</p>
+            {% endif %}
         </div>
     {% else %}
         <div class="dirigeants-table-wrap">
@@ -41,13 +53,17 @@
                         <tr class="dirigeants-row"
                             onclick="window.location='{{ path('admin_dirigeants_show', {uuid: dirigeant.uuid}) }}'">
                             <td class="dirigeants-td-name">{{ dirigeant.nomPrenom }}</td>
-                            <td class="dirigeants-col-role dirigeants-td-muted">{{ dirigeant.role ?? '—' }}</td>
+                            <td class="dirigeants-col-role dirigeants-td-muted">{{ dirigeant.role ? dirigeant.role.label : '—' }}</td>
                             <td class="dirigeants-col-team dirigeants-td-muted">{{ dirigeant.team ? dirigeant.team.name : '—' }}</td>
                             <td class="dirigeants-col-email dirigeants-td-muted">{{ dirigeant.email ?? '—' }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        <div class="dirigeants-footer">
+            <p class="dirigeants-count">{{ dirigeants|length }} dirigeant{{ dirigeants|length > 1 ? 's' : '' }}</p>
         </div>
     {% endif %}
 

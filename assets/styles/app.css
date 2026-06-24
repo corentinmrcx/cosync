@@ -4,6 +4,7 @@
 @import './components/breadcrumb.css';
 @import './components/badge-status.css';
 @import './components/text-combobox.css';
+@import './components/list-toolbar.css';
 @import './components/custom-select.css';
 @import './pages/login.css';
 @import './pages/dashboard.css';
