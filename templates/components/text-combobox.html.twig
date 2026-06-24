@@ -1,0 +1,57 @@
+{#
+  Composant combobox texte : suggestions depuis des valeurs existantes + saisie libre.
+
+  Paramètres :
+    name        (string)       Nom de l'input (soumis dans le form)
+    label       (string)       Label affiché au-dessus
+    suggestions (string[])     Valeurs existantes proposées en autocomplète
+    current     (string|null)  Valeur pré-remplie (édition)
+    placeholder (string)       Placeholder de l'input
+    required    (bool)         Affiche une * et rend le champ requis (défaut : false)
+#}
+<div x-data="textCombobox({{ suggestions|json_encode }}, {{ current is not null ? current|json_encode : 'null' }})"
+     @click.outside="open = false">
+
+    <label class="combobox-label">
+        {{ label }}{% if required is defined and required %} <span aria-hidden="true">*</span>{% endif %}
+    </label>
+
+    <input type="hidden" name="{{ name }}" :value="query">
+
+    <div class="combobox">
+        <div class="combobox-input-wrap">
+            <input type="text"
+                   class="combobox-input"
+                   placeholder="{{ placeholder ?? '' }}"
+                   x-model="query"
+                   @focus="open = filtered.length > 0"
+                   @input="open = true"
+                   autocomplete="off"
+                   {% if required is defined and required %}required{% endif %}>
+            <button type="button"
+                    class="combobox-clear"
+                    x-show="query !== ''"
+                    @click="clear()"
+                    tabindex="-1"
+                    title="Effacer">×</button>
+        </div>
+
+        <div class="combobox-dropdown" x-show="open && (filtered.length > 0 || showCreate)" x-cloak>
+            <template x-for="(item, i) in filtered" :key="i">
+                <button type="button"
+                        class="combobox-option"
+                        :class="query === item ? 'combobox-option-selected' : ''"
+                        @mousedown.prevent="select(item)"
+                        x-text="item">
+                </button>
+            </template>
+            <template x-if="showCreate">
+                <button type="button"
+                        class="combobox-create"
+                        @mousedown.prevent="open = false">
+                    + Créer « <span x-text="query.trim()"></span> »
+                </button>
+            </template>
+        </div>
+    </div>
+</div>

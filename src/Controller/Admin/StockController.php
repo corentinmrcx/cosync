@@ -68,6 +68,7 @@ class StockController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyComboboxFields($item, $request);
             $this->em->persist($item);
             $this->em->flush();
             $this->addFlash('success', sprintf('Article "%s" créé.', $item->getNom()));
@@ -75,9 +76,12 @@ class StockController extends AbstractController
         }
 
         return $this->render('admin/stock/items/form.html.twig', [
-            'form'  => $form,
-            'item'  => null,
-            'title' => 'Nouvel article',
+            'form'     => $form,
+            'item'     => null,
+            'title'    => 'Nouvel article',
+            'marques'  => $this->itemRepository->findDistinctMarques(),
+            'tailles'  => $this->itemRepository->findDistinctTailles(),
+            'couleurs' => $this->itemRepository->findDistinctCouleurs(),
         ]);
     }
 
@@ -88,16 +92,27 @@ class StockController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->applyComboboxFields($item, $request);
             $this->em->flush();
             $this->addFlash('success', sprintf('Article "%s" mis à jour.', $item->getNom()));
             return $this->redirectToRoute('admin_stock_dashboard');
         }
 
         return $this->render('admin/stock/items/form.html.twig', [
-            'form'  => $form,
-            'item'  => $item,
-            'title' => 'Modifier ' . $item->getNom(),
+            'form'     => $form,
+            'item'     => $item,
+            'title'    => 'Modifier ' . $item->getNom(),
+            'marques'  => $this->itemRepository->findDistinctMarques(),
+            'tailles'  => $this->itemRepository->findDistinctTailles(),
+            'couleurs' => $this->itemRepository->findDistinctCouleurs(),
         ]);
+    }
+
+    private function applyComboboxFields(StockItem $item, Request $request): void
+    {
+        $item->setMarque(trim($request->request->get('marque', '')) ?: null);
+        $item->setTaille(trim($request->request->get('taille', '')) ?: null);
+        $item->setCouleur(trim($request->request->get('couleur', '')) ?: null);
     }
 
     #[Route('/items/{id}/mouvement', name: 'items_movement', methods: ['POST'])]

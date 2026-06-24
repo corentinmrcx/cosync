@@ -43,4 +43,36 @@ class StockItemRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /** @return string[] */
+    public function findDistinctMarques(): array
+    {
+        return $this->findDistinctValues('marque');
+    }
+
+    /** @return string[] */
+    public function findDistinctTailles(): array
+    {
+        return $this->findDistinctValues('taille');
+    }
+
+    /** @return string[] */
+    public function findDistinctCouleurs(): array
+    {
+        return $this->findDistinctValues('couleur');
+    }
+
+    /** @return string[] */
+    private function findDistinctValues(string $field): array
+    {
+        $rows = $this->createQueryBuilder('i')
+            ->select("i.{$field}")
+            ->distinct()
+            ->where("i.{$field} IS NOT NULL")
+            ->orderBy("i.{$field}", 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_column($rows, $field);
+    }
 }

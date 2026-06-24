@@ -28,22 +28,7 @@ class StockItemType extends AbstractType
                 'constraints' => [new NotBlank(), new Length(max: 150)],
                 'attr'        => ['placeholder' => 'ex: Maillot domicile, Coca-Cola 33cl'],
             ])
-            ->add('marque', TextType::class, [
-                'label'    => 'Marque / fournisseur',
-                'required' => false,
-                'attr'     => ['placeholder' => 'ex: Nike, Adidas, Coca-Cola'],
-            ])
-            ->add('taille', TextType::class, [
-                'label'    => 'Taille / contenance',
-                'required' => false,
-                'attr'     => ['placeholder' => 'ex: M, L, XL, 33cl, EU42'],
-                'help'     => 'Utilisé pour les dotations automatiques aux licenciés.',
-            ])
-            ->add('couleur', TextType::class, [
-                'label'    => 'Couleur',
-                'required' => false,
-                'attr'     => ['placeholder' => 'ex: Rouge, Blanc, Bleu'],
-            ])
+            // marque, taille, couleur sont gérés via le composant text-combobox dans le template
 
             // — Catégorisation —
             ->add('category', EntityType::class, [

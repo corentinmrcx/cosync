@@ -80,7 +80,8 @@
     border-color: var(--color-primary);
 }
 
-.stock-items-field .help-text {
+.stock-items-field .help-text,
+.stock-items-help {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
 }

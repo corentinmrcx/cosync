@@ -28,17 +28,32 @@
 
             <div class="stock-items-row">
                 <div class="stock-items-field">
-                    {{ form_label(form.marque) }}
-                    {{ form_widget(form.marque, {attr: {class: 'stock-items-input'}}) }}
+                    {% include 'components/text-combobox.html.twig' with {
+                        name: 'marque',
+                        label: 'Marque / fournisseur',
+                        suggestions: marques,
+                        current: item ? item.marque : null,
+                        placeholder: 'ex: Nike, Adidas…'
+                    } %}
                 </div>
                 <div class="stock-items-field">
-                    {{ form_label(form.taille) }}
-                    {{ form_widget(form.taille, {attr: {class: 'stock-items-input'}}) }}
-                    {{ form_help(form.taille) }}
+                    {% include 'components/text-combobox.html.twig' with {
+                        name: 'taille',
+                        label: 'Taille / contenance',
+                        suggestions: tailles,
+                        current: item ? item.taille : null,
+                        placeholder: 'ex: M, L, XL, 33cl…'
+                    } %}
+                    <p class="stock-items-help">Utilisé pour les dotations automatiques aux licenciés.</p>
                 </div>
                 <div class="stock-items-field">
-                    {{ form_label(form.couleur) }}
-                    {{ form_widget(form.couleur, {attr: {class: 'stock-items-input'}}) }}
+                    {% include 'components/text-combobox.html.twig' with {
+                        name: 'couleur',
+                        label: 'Couleur',
+                        suggestions: couleurs,
+                        current: item ? item.couleur : null,
+                        placeholder: 'ex: Rouge, Blanc…'
+                    } %}
                 </div>
             </div>
 
