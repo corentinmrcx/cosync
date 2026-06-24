@@ -4,10 +4,8 @@ namespace App\Form;
 
 use App\Entity\StockCategory;
 use App\Entity\StockItem;
-use App\Enum\StockItemVetementType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -38,16 +36,7 @@ class StockItemType extends AbstractType
                 'placeholder'  => '— Sans catégorie —',
                 'required'     => false,
             ])
-            ->add('typeVetement', ChoiceType::class, [
-                'label'    => 'Type de vêtement',
-                'required' => false,
-                'placeholder' => '— Non applicable —',
-                'choices'  => array_combine(
-                    array_map(fn(StockItemVetementType $t) => $t->label(), StockItemVetementType::cases()),
-                    StockItemVetementType::cases(),
-                ),
-                'help' => 'Renseigner uniquement pour les articles vestimentaires. Permet les dotations automatiques.',
-            ])
+            // kind, typeVetement, marque, taille, couleur gérés manuellement (conditionnels sur kind)
 
             // — Stock & budget —
             ->add('alertSeuil', IntegerType::class, [

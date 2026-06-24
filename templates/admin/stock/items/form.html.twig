@@ -2,6 +2,8 @@
 
 {% block title %}CoSync — {{ title }}{% endblock %}
 
+{% set initialKind = item and item.kind ? item.kind.value : 'equipement' %}
+
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
@@ -16,8 +18,21 @@
             <h1 class="stock-items-card-title">{{ title }}</h1>
         </div>
 
-        {{ form_start(form, {attr: {class: 'stock-items-form'}}) }}
+        {{ form_start(form, {attr: {class: 'stock-items-form', 'x-data': "{ kind: '" ~ initialKind ~ "' }"}}) }}
 
+            {# ── Type d'article ── #}
+            <div class="stock-items-section-title">Type d'article</div>
+
+            <div class="stock-items-field">
+                <label class="stock-items-label">Type</label>
+                <select name="kind" x-model="kind" class="stock-items-select">
+                    {% for kind in kinds %}
+                        <option value="{{ kind.value }}" {{ initialKind == kind.value ? 'selected' }}>{{ kind.label() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {# ── Identification ── #}
             <div class="stock-items-section-title">Identification</div>
 
             <div class="stock-items-field">
@@ -33,47 +48,77 @@
                         label: 'Marque / fournisseur',
                         suggestions: marques,
                         current: item ? item.marque : null,
-                        placeholder: 'ex: Nike, Adidas…'
+                        placeholder: 'ex: Nike, Coca-Cola…'
                     } %}
                 </div>
-                <div class="stock-items-field">
-                    {% include 'components/text-combobox.html.twig' with {
-                        name: 'taille',
-                        label: 'Taille / contenance',
-                        suggestions: tailles,
-                        current: item ? item.taille : null,
-                        placeholder: 'ex: M, L, XL, 33cl…'
-                    } %}
-                    <p class="stock-items-help">Utilisé pour les dotations automatiques aux licenciés.</p>
-                </div>
-                <div class="stock-items-field">
-                    {% include 'components/text-combobox.html.twig' with {
-                        name: 'couleur',
-                        label: 'Couleur',
-                        suggestions: couleurs,
-                        current: item ? item.couleur : null,
-                        placeholder: 'ex: Rouge, Blanc…'
-                    } %}
-                </div>
+
+                {# — Taille : affichée uniquement pour l'équipement — #}
+                <template x-if="kind === 'equipement'">
+                    <div class="stock-items-field">
+                        {% include 'components/text-combobox.html.twig' with {
+                            name: 'taille',
+                            label: 'Taille',
+                            suggestions: taillesEquip,
+                            current: item and item.kind and item.kind.value == 'equipement' ? item.taille : null,
+                            placeholder: 'ex: M, L, XL, 6 ans…'
+                        } %}
+                    </div>
+                </template>
+
+                {# — Contenance : affichée uniquement pour l'épicerie — #}
+                <template x-if="kind === 'epicerie'">
+                    <div class="stock-items-field">
+                        {% include 'components/text-combobox.html.twig' with {
+                            name: 'taille',
+                            label: 'Contenance',
+                            suggestions: contenances,
+                            current: item and item.kind and item.kind.value == 'epicerie' ? item.taille : null,
+                            placeholder: 'ex: 33cl, 50cl, 1L…'
+                        } %}
+                    </div>
+                </template>
             </div>
 
+            {# — Champs spécifiques équipement — #}
+            <template x-if="kind === 'equipement'">
+                <div class="stock-items-row">
+                    <div class="stock-items-field">
+                        {% include 'components/text-combobox.html.twig' with {
+                            name: 'couleur',
+                            label: 'Couleur',
+                            suggestions: couleurs,
+                            current: item ? item.couleur : null,
+                            placeholder: 'ex: Rouge, Blanc…'
+                        } %}
+                    </div>
+                    <div class="stock-items-field">
+                        <label class="stock-items-label">Type de vêtement</label>
+                        <select name="typeVetement" class="stock-items-select">
+                            <option value="">— Non applicable —</option>
+                            {% for type in vetementTypes %}
+                                <option value="{{ type.value }}"
+                                        {{ item and item.typeVetement == type ? 'selected' }}>
+                                    {{ type.label() }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <p class="stock-items-help">Permet les dotations automatiques aux licenciés.</p>
+                    </div>
+                </div>
+            </template>
+
+            {# ── Catégorisation ── #}
             <div class="stock-items-section-title">Catégorisation</div>
 
-            <div class="stock-items-row">
-                <div class="stock-items-field">
-                    <div class="stock-items-label-row">
-                        {{ form_label(form.category) }}
-                        <a href="{{ path('admin_stock_categories_list') }}" class="stock-items-label-link" target="_blank">Gérer ↗</a>
-                    </div>
-                    {{ form_widget(form.category, {attr: {class: 'stock-items-select'}}) }}
+            <div class="stock-items-field">
+                <div class="stock-items-label-row">
+                    {{ form_label(form.category) }}
+                    <a href="{{ path('admin_stock_categories_list') }}" class="stock-items-label-link" target="_blank">Gérer ↗</a>
                 </div>
-                <div class="stock-items-field">
-                    {{ form_label(form.typeVetement) }}
-                    {{ form_widget(form.typeVetement, {attr: {class: 'stock-items-select'}}) }}
-                    {{ form_help(form.typeVetement) }}
-                </div>
+                {{ form_widget(form.category, {attr: {class: 'stock-items-select'}}) }}
             </div>
 
+            {# ── Stock & budget ── #}
             <div class="stock-items-section-title">Stock & budget</div>
 
             <div class="stock-items-row">
@@ -89,6 +134,7 @@
                 </div>
             </div>
 
+            {# ── Référence ── #}
             <div class="stock-items-section-title">Référence</div>
 
             <div class="stock-items-row">

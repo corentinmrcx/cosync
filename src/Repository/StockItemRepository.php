@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Season;
 use App\Entity\StockItem;
+use App\Enum\StockItemKind;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -51,9 +52,19 @@ class StockItemRepository extends ServiceEntityRepository
     }
 
     /** @return string[] */
-    public function findDistinctTailles(): array
+    public function findDistinctTaillesByKind(StockItemKind $kind): array
     {
-        return $this->findDistinctValues('taille');
+        $rows = $this->createQueryBuilder('i')
+            ->select('i.taille')
+            ->distinct()
+            ->where('i.taille IS NOT NULL')
+            ->andWhere('i.kind = :kind')
+            ->setParameter('kind', $kind)
+            ->orderBy('i.taille', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_column($rows, 'taille');
     }
 
     /** @return string[] */

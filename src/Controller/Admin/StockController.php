@@ -5,6 +5,8 @@ namespace App\Controller\Admin;
 use App\Entity\StockCategory;
 use App\Entity\StockItem;
 use App\Enum\LicenceStatus;
+use App\Enum\StockItemKind;
+use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Form\StockCategoryType;
@@ -25,6 +27,9 @@ use Symfony\Component\Routing\Attribute\Route;
 class StockController extends AbstractController
 {
     private const PER_PAGE = 25;
+
+    private const TAILLES_EQUIPEMENT = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'];
+    private const CONTENANCES_EPICERIE = ['25cl', '33cl', '50cl', '75cl', '1L', '1,5L', '2L'];
 
     public function __construct(
         private readonly StockService $stockService,
@@ -68,21 +73,14 @@ class StockController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->applyComboboxFields($item, $request);
+            $this->applyManualFields($item, $request);
             $this->em->persist($item);
             $this->em->flush();
             $this->addFlash('success', sprintf('Article "%s" créé.', $item->getNom()));
             return $this->redirectToRoute('admin_stock_dashboard');
         }
 
-        return $this->render('admin/stock/items/form.html.twig', [
-            'form'     => $form,
-            'item'     => null,
-            'title'    => 'Nouvel article',
-            'marques'  => $this->itemRepository->findDistinctMarques(),
-            'tailles'  => $this->itemRepository->findDistinctTailles(),
-            'couleurs' => $this->itemRepository->findDistinctCouleurs(),
-        ]);
+        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext(null));
     }
 
     #[Route('/items/{id}/modifier', name: 'items_edit', methods: ['GET', 'POST'])]
@@ -92,27 +90,50 @@ class StockController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->applyComboboxFields($item, $request);
+            $this->applyManualFields($item, $request);
             $this->em->flush();
             $this->addFlash('success', sprintf('Article "%s" mis à jour.', $item->getNom()));
             return $this->redirectToRoute('admin_stock_dashboard');
         }
 
-        return $this->render('admin/stock/items/form.html.twig', [
-            'form'     => $form,
-            'item'     => $item,
-            'title'    => 'Modifier ' . $item->getNom(),
-            'marques'  => $this->itemRepository->findDistinctMarques(),
-            'tailles'  => $this->itemRepository->findDistinctTailles(),
-            'couleurs' => $this->itemRepository->findDistinctCouleurs(),
-        ]);
+        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext($item));
     }
 
-    private function applyComboboxFields(StockItem $item, Request $request): void
+    /** @return array<string, mixed> */
+    private function itemFormContext(?StockItem $item): array
     {
+        return [
+            'item'          => $item,
+            'title'         => $item ? 'Modifier ' . $item->getNom() : 'Nouvel article',
+            'kinds'         => StockItemKind::cases(),
+            'vetementTypes' => StockItemVetementType::cases(),
+            'marques'       => $this->itemRepository->findDistinctMarques(),
+            'taillesEquip'  => array_values(array_unique(array_merge(
+                $this->itemRepository->findDistinctTaillesByKind(StockItemKind::EQUIPEMENT),
+                self::TAILLES_EQUIPEMENT,
+            ))),
+            'contenances'   => array_values(array_unique(array_merge(
+                $this->itemRepository->findDistinctTaillesByKind(StockItemKind::EPICERIE),
+                self::CONTENANCES_EPICERIE,
+            ))),
+            'couleurs'      => $this->itemRepository->findDistinctCouleurs(),
+        ];
+    }
+
+    private function applyManualFields(StockItem $item, Request $request): void
+    {
+        $kind = StockItemKind::tryFrom($request->request->get('kind', ''));
+        $item->setKind($kind);
         $item->setMarque(trim($request->request->get('marque', '')) ?: null);
         $item->setTaille(trim($request->request->get('taille', '')) ?: null);
-        $item->setCouleur(trim($request->request->get('couleur', '')) ?: null);
+
+        if ($kind === StockItemKind::EQUIPEMENT) {
+            $item->setCouleur(trim($request->request->get('couleur', '')) ?: null);
+            $item->setTypeVetement(StockItemVetementType::tryFrom($request->request->get('typeVetement', '')));
+        } else {
+            $item->setCouleur(null);
+            $item->setTypeVetement(null);
+        }
     }
 
     #[Route('/items/{id}/mouvement', name: 'items_movement', methods: ['POST'])]
