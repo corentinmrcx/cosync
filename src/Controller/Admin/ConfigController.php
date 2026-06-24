@@ -35,11 +35,10 @@ class ConfigController extends AbstractController
         }
 
         $costs = $season->getBaseCosts();
-        [$startYear, $endYear] = $this->parseSeasonYears($season->getLabel());
+        $startYear = (int) explode('-', $season->getLabel())[0];
 
         $form = $this->createForm(SeasonType::class, $season, [
             'start_year'   => $startYear,
-            'end_year'     => $endYear,
             'cout_jeunes'  => $costs['jeunes'] ?? 85,
             'cout_seniors' => $costs['seniors'] ?? 120,
         ]);
@@ -47,8 +46,7 @@ class ConfigController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $startYear = (int) $form->get('startYear')->getData();
-            $endYear   = (int) $form->get('endYear')->getData();
-            $season->setLabel($startYear . '-' . $endYear);
+            $season->setLabel($startYear . '-' . ($startYear + 1));
             $season->setBaseCosts([
                 'jeunes'  => $form->get('coutJeunes')->getData(),
                 'seniors' => $form->get('coutSeniors')->getData(),
@@ -142,15 +140,4 @@ class ConfigController extends AbstractController
         return $this->redirectToRoute('admin_config_index');
     }
 
-    /** @return array{int, int} */
-    private function parseSeasonYears(string $label): array
-    {
-        $parts = explode('-', $label);
-        $currentYear = (int) date('Y');
-
-        return [
-            (int) ($parts[0] ?? $currentYear),
-            (int) ($parts[1] ?? $currentYear + 1),
-        ];
-    }
 }
