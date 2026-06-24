@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Season;
 use App\Entity\StockItem;
+use App\Enum\StockItemKind;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -42,5 +43,47 @@ class StockItemRepository extends ServiceEntityRepository
             ->addOrderBy('i.nom', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    /** @return string[] */
+    public function findDistinctMarques(): array
+    {
+        return $this->findDistinctValues('marque');
+    }
+
+    /** @return string[] */
+    public function findDistinctTaillesByKind(StockItemKind $kind): array
+    {
+        $rows = $this->createQueryBuilder('i')
+            ->select('i.taille')
+            ->distinct()
+            ->where('i.taille IS NOT NULL')
+            ->andWhere('i.kind = :kind')
+            ->setParameter('kind', $kind)
+            ->orderBy('i.taille', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_column($rows, 'taille');
+    }
+
+    /** @return string[] */
+    public function findDistinctCouleurs(): array
+    {
+        return $this->findDistinctValues('couleur');
+    }
+
+    /** @return string[] */
+    private function findDistinctValues(string $field): array
+    {
+        $rows = $this->createQueryBuilder('i')
+            ->select("i.{$field}")
+            ->distinct()
+            ->where("i.{$field} IS NOT NULL")
+            ->orderBy("i.{$field}", 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_column($rows, $field);
     }
 }

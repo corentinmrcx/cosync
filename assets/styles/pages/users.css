@@ -7,11 +7,16 @@
     gap: 1.25rem;
 }
 
+@media (max-width: 640px) {
+    .users-page { padding: 1rem; gap: 1rem; }
+}
+
 .users-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .users-title {
@@ -44,7 +49,7 @@
     background: var(--color-bg-page);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
-    overflow: hidden;
+    overflow: auto;
     box-shadow: var(--shadow-card);
 }
 
@@ -134,8 +139,12 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 2.5rem 1.5rem;
+    padding: 1rem;
     background-color: var(--color-bg-subtle);
+}
+
+@media (min-width: 640px) {
+    .users-form-page { padding: 2.5rem 1.5rem; }
 }
 
 .users-form-card {
@@ -221,4 +230,26 @@
 
 .users-form-submit:hover {
     background: var(--color-primary-dark);
+}
+
+.users-badge-diag {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    border-radius: var(--radius-xl);
+    vertical-align: middle;
+}
+
+.users-form-password-notice {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    background: var(--color-bg-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.625rem 0.875rem;
+    margin: 0;
 }

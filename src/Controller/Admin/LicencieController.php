@@ -55,17 +55,34 @@ class LicencieController extends AbstractController
         $total = $licencieRepo->countWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null);
         $pages = (int) ceil($total / $perPage);
 
+        $teams = $teamRepo->findBySeason($season);
+
+        $filterGroups = [
+            [
+                'name'     => 'team',
+                'label'    => 'Équipe',
+                'allLabel' => 'Toutes',
+                'options'  => array_map(fn($t) => ['value' => $t->getId(), 'label' => $t->getName()], $teams),
+                'current'  => $currentTeam?->getId(),
+            ],
+            [
+                'name'     => 'status',
+                'label'    => 'Statut',
+                'allLabel' => 'Tous',
+                'options'  => array_map(fn(LicenceStatus $s) => ['value' => $s->value, 'label' => $s->label()], LicenceStatus::cases()),
+                'current'  => $currentStatus?->value,
+            ],
+        ];
+
         return $this->render('admin/licencies/list.html.twig', [
-            'licencies'     => $licencieRepo->findWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $perPage, $offset),
-            'season'        => $season,
-            'teams'         => $teamRepo->findBySeason($season),
-            'statuses'      => LicenceStatus::cases(),
-            'currentTeam'   => $currentTeam,
-            'currentStatus' => $currentStatus,
-            'search'        => $search,
-            'total'         => $total,
-            'page'          => $page,
-            'pages'         => $pages,
+            'licencies'         => $licencieRepo->findWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $perPage, $offset),
+            'season'            => $season,
+            'search'            => $search,
+            'filterGroups'      => $filterGroups,
+            'activeFilterCount' => ($currentTeam ? 1 : 0) + ($currentStatus ? 1 : 0),
+            'total'             => $total,
+            'page'              => $page,
+            'pages'             => $pages,
         ]);
     }
 

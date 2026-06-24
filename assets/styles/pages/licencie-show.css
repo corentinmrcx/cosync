@@ -156,14 +156,22 @@
     font-weight: 500;
 }
 
-@media (max-width: 480px) {
-    .licencie-show-page {
-        padding: 1rem;
+@media (max-width: 640px) {
+    .licencie-show-page { padding: 1rem; gap: 1rem; }
+
+    /* Historique : date en pleine largeur, label + auteur en dessous */
+    .licencie-show-history-item {
+        grid-template-columns: 1fr auto;
+        row-gap: 0.125rem;
     }
 
-    .licencie-show-header {
-        flex-direction: column;
+    .licencie-show-history-date {
+        grid-column: 1 / -1;
     }
+}
+
+@media (max-width: 480px) {
+    .licencie-show-header { flex-direction: column; }
 
     .licencie-show-dl-row {
         flex-direction: column;
