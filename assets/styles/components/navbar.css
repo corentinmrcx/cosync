@@ -1,6 +1,7 @@
 [x-cloak] { display: none !important; }
 
 .navbar {
+    flex-shrink: 0;
     background-color: var(--color-primary);
     height: 64px;
     display: flex;

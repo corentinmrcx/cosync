@@ -1,18 +1,19 @@
 /* — Page globale — */
 .inscription-page {
-    min-height: 100vh;
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     background: var(--color-bg-subtle);
+    overflow: hidden;
 }
 
 /* — Header — */
 .inscription-header {
+    flex-shrink: 0;
     background: var(--color-primary);
     color: var(--color-text-inverse);
     padding: 1rem 1.25rem 0.875rem;
-    position: sticky;
-    top: 0;
     z-index: 10;
 }
 
@@ -64,6 +65,8 @@
 /* — Contenu principal — */
 .inscription-main {
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
