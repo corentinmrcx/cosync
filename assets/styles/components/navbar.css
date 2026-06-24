@@ -3,7 +3,7 @@
 .navbar {
     flex-shrink: 0;
     background-color: var(--color-primary);
-    height: 64px;
+    height: var(--navbar-height);
     display: flex;
     align-items: center;
     justify-content: space-between;

@@ -1,4 +1,5 @@
 import './styles/app.css';
+import './js/loader.js';
 
 import Alpine from 'alpinejs';
 import { inscriptionForm } from './js/inscription-form.js';
