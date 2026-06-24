@@ -15,6 +15,7 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\LessThan;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
 class LicencieCreateType extends AbstractType
@@ -33,10 +34,13 @@ class LicencieCreateType extends AbstractType
                 'attr'        => ['placeholder' => 'Thomas'],
             ])
             ->add('dateNaissance', DateType::class, [
-                'label'  => 'Date de naissance',
-                'widget' => 'single_text',
-                'input'  => 'datetime_immutable',
-                'constraints' => [new NotBlank(message: 'La date de naissance est requise.')],
+                'label'       => 'Date de naissance',
+                'widget'      => 'single_text',
+                'input'       => 'datetime_immutable',
+                'constraints' => [
+                    new NotBlank(message: 'La date de naissance est requise.'),
+                    new LessThan(value: 'today', message: 'La date de naissance doit être dans le passé.'),
+                ],
             ])
             ->add('category', EntityType::class, [
                 'class'        => Category::class,
