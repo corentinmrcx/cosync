@@ -4,29 +4,23 @@ namespace App\Form;
 
 use App\Entity\Season;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Positive;
+use Symfony\Component\Validator\Constraints\Range;
 
 class SeasonType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $currentYear = (int) date('Y');
-        $years = range($currentYear - 2, $currentYear + 10);
-        $yearChoices = array_combine(
-            array_map(static fn(int $y): string => (string) $y, $years),
-            $years
-        );
-
         $builder
-            ->add('startYear', ChoiceType::class, [
-                'label'   => 'Année de début',
-                'choices' => $yearChoices,
-                'data'    => $options['start_year'],
-                'mapped'  => false,
+            ->add('startYear', IntegerType::class, [
+                'label'       => 'Année de début',
+                'mapped'      => false,
+                'data'        => $options['start_year'],
+                'attr'        => ['min' => 2000, 'step' => 1, 'placeholder' => (int) date('Y')],
+                'constraints' => [new Range(min: 2000)],
             ])
             ->add('coutJeunes', IntegerType::class, [
                 'label'       => 'Cotisation jeunes (€)',
@@ -45,11 +39,9 @@ class SeasonType extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $currentYear = (int) date('Y');
-
         $resolver->setDefaults([
             'data_class'   => Season::class,
-            'start_year'   => $currentYear,
+            'start_year'   => (int) date('Y'),
             'cout_jeunes'  => 85,
             'cout_seniors' => 120,
         ]);
