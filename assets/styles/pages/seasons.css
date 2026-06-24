@@ -199,6 +199,13 @@
 
 .season-form-reglement-link:hover { opacity: 0.75; }
 
+.season-form-preview {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
 /* ============================================================
    Page configuration — layout côte à côte
    ============================================================ */

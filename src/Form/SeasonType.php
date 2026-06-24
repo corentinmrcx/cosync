@@ -15,7 +15,7 @@ class SeasonType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $currentYear = (int) date('Y');
-        $years = range($currentYear - 1, $currentYear + 4);
+        $years = range($currentYear - 2, $currentYear + 10);
         $yearChoices = array_combine(
             array_map(static fn(int $y): string => (string) $y, $years),
             $years
@@ -26,12 +26,6 @@ class SeasonType extends AbstractType
                 'label'   => 'Année de début',
                 'choices' => $yearChoices,
                 'data'    => $options['start_year'],
-                'mapped'  => false,
-            ])
-            ->add('endYear', ChoiceType::class, [
-                'label'   => 'Année de fin',
-                'choices' => $yearChoices,
-                'data'    => $options['end_year'],
                 'mapped'  => false,
             ])
             ->add('coutJeunes', IntegerType::class, [
@@ -56,7 +50,6 @@ class SeasonType extends AbstractType
         $resolver->setDefaults([
             'data_class'   => Season::class,
             'start_year'   => $currentYear,
-            'end_year'     => $currentYear + 1,
             'cout_jeunes'  => 85,
             'cout_seniors' => 120,
         ]);

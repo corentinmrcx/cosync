@@ -51,14 +51,7 @@ class SeasonController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $startYear = (int) $form->get('startYear')->getData();
-            $endYear   = (int) $form->get('endYear')->getData();
-
-            if ($endYear !== $startYear + 1) {
-                $this->addFlash('error', 'L\'année de fin doit être l\'année de début + 1 (ex: 2025 → 2026).');
-                return $this->render('admin/seasons/form.html.twig', ['form' => $form, 'title' => 'Nouvelle saison']);
-            }
-
-            $season->setLabel($startYear . '-' . $endYear);
+            $season->setLabel($startYear . '-' . ($startYear + 1));
             $season->setBaseCosts([
                 'jeunes'  => $form->get('coutJeunes')->getData(),
                 'seniors' => $form->get('coutSeniors')->getData(),
