@@ -4,6 +4,9 @@ namespace App\Controller\Admin;
 
 use App\Entity\Season;
 use App\Form\SeasonType;
+use App\Repository\DirigeantRepository;
+use App\Repository\LicencieRepository;
+use App\Repository\SeasonRepository;
 use App\Service\SeasonContext;
 use App\Service\SeasonService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -14,6 +17,31 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin/config/saisons', name: 'admin_seasons_')]
 class SeasonController extends AbstractController
 {
+    #[Route('', name: 'list', methods: ['GET'])]
+    public function list(
+        SeasonRepository $seasonRepo,
+        LicencieRepository $licencieRepo,
+        DirigeantRepository $dirigeantRepo,
+        SeasonContext $seasonContext,
+    ): Response {
+        $seasons = $seasonRepo->findAllOrdered();
+        $current = $seasonContext->getCurrentSeason();
+
+        $stats = [];
+        foreach ($seasons as $season) {
+            $stats[$season->getId()] = [
+                'licencies'  => $licencieRepo->count(['season' => $season]),
+                'dirigeants' => $dirigeantRepo->count(['season' => $season]),
+            ];
+        }
+
+        return $this->render('admin/seasons/list.html.twig', [
+            'seasons' => $seasons,
+            'current' => $current,
+            'stats'   => $stats,
+        ]);
+    }
+
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]
     public function new(Request $request, SeasonService $seasonService): Response
     {
@@ -60,6 +88,46 @@ class SeasonController extends AbstractController
         return $this->render('admin/seasons/reglement.html.twig', [
             'season' => $season,
         ]);
+    }
+
+    #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
+    public function delete(
+        Season $season,
+        Request $request,
+        SeasonService $seasonService,
+        SeasonContext $seasonContext,
+        LicencieRepository $licencieRepo,
+        DirigeantRepository $dirigeantRepo,
+    ): Response {
+        if (!$this->isCsrfTokenValid('season_delete_' . $season->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_seasons_list');
+        }
+
+        $current = $seasonContext->getCurrentSeason();
+        if ($current !== null && $current->getId() === $season->getId()) {
+            $this->addFlash('error', 'Impossible de supprimer la saison active. Activez d\'abord une autre saison.');
+            return $this->redirectToRoute('admin_seasons_list');
+        }
+
+        $licencieCount  = $licencieRepo->count(['season' => $season]);
+        $dirigeantCount = $dirigeantRepo->count(['season' => $season]);
+
+        if ($licencieCount > 0 || $dirigeantCount > 0) {
+            $this->addFlash('error', sprintf(
+                'Impossible de supprimer "%s" : elle contient %d licencié(s) et %d dirigeant(s).',
+                $season->getLabel(),
+                $licencieCount,
+                $dirigeantCount,
+            ));
+            return $this->redirectToRoute('admin_seasons_list');
+        }
+
+        $label = $season->getLabel();
+        $seasonService->delete($season);
+        $this->addFlash('success', sprintf('Saison "%s" supprimée.', $label));
+
+        return $this->redirectToRoute('admin_seasons_list');
     }
 
     #[Route('/{id}/switch', name: 'switch', methods: ['POST'])]

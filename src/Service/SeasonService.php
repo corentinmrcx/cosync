@@ -27,4 +27,10 @@ final class SeasonService
         $season->setReglementText($reglementText);
         $this->em->flush();
     }
+
+    public function delete(Season $season): void
+    {
+        $this->em->remove($season);
+        $this->em->flush();
+    }
 }

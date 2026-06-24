@@ -20,4 +20,13 @@ class SeasonRepository extends ServiceEntityRepository
     {
         return $this->findOneBy([], ['createdAt' => 'DESC']);
     }
+
+    /** @return Season[] */
+    public function findAllOrdered(): array
+    {
+        return $this->createQueryBuilder('s')
+            ->orderBy('s.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }
