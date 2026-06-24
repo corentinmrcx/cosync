@@ -29,25 +29,6 @@
     border-color: var(--color-border-strong);
 }
 
-/* — Bouton import — */
-.licencies-import-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    text-decoration: none;
-    border-radius: var(--radius-md);
-    transition: background 0.15s;
-}
-
-.licencies-import-btn:hover {
-    background: var(--color-primary-dark);
-}
-
 /* — Table — */
 .licencies-table-wrap {
     background: var(--color-bg-page);
@@ -105,6 +86,10 @@
     color: var(--color-text-muted) !important;
 }
 
+@media (max-width: 640px) {
+    .licencies-page { padding: 1rem; gap: 1rem; }
+}
+
 @media (max-width: 768px) {
     .licencies-col-category { display: none; }
     .licencies-col-team     { display: none; }
@@ -113,9 +98,7 @@
 
 @media (max-width: 480px) {
     .licencies-table th,
-    .licencies-table td {
-        padding: 0.75rem 0.75rem;
-    }
+    .licencies-table td { padding: 0.75rem; }
 }
 
 /* — Footer : count + pagination — */

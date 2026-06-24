@@ -7,11 +7,16 @@
     gap: 1.25rem;
 }
 
+@media (max-width: 640px) {
+    .users-page { padding: 1rem; gap: 1rem; }
+}
+
 .users-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .users-title {
@@ -44,7 +49,7 @@
     background: var(--color-bg-page);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
-    overflow: hidden;
+    overflow: auto;
     box-shadow: var(--shadow-card);
 }
 
@@ -134,8 +139,12 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 2.5rem 1.5rem;
+    padding: 1rem;
     background-color: var(--color-bg-subtle);
+}
+
+@media (min-width: 640px) {
+    .users-form-page { padding: 2.5rem 1.5rem; }
 }
 
 .users-form-card {

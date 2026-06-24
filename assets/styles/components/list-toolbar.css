@@ -54,6 +54,11 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .list-tb-filters { padding: 1rem; }
 }
 
 .list-tb-left {

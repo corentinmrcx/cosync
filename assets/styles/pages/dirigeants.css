@@ -88,6 +88,10 @@
 
 .dirigeants-td-muted { color: var(--color-text-muted) !important; }
 
+@media (max-width: 640px) {
+    .dirigeants-page { padding: 1rem; gap: 1rem; }
+}
+
 @media (max-width: 768px) {
     .dirigeants-col-role  { display: none; }
     .dirigeants-col-team  { display: none; }
