@@ -23,11 +23,17 @@
             {{ form_errors(form.email) }}
         </div>
 
-        <div class="users-form-field">
-            {{ form_label(form.plainPassword) }}
-            {{ form_widget(form.plainPassword) }}
-            {{ form_errors(form.plainPassword) }}
-        </div>
+        {% if form.plainPassword is defined %}
+            <div class="users-form-field">
+                {{ form_label(form.plainPassword) }}
+                {{ form_widget(form.plainPassword) }}
+                {{ form_errors(form.plainPassword) }}
+            </div>
+        {% elseif user is not null %}
+            <p class="users-form-password-notice">
+                La modification du mot de passe est réservée au super-admin.
+            </p>
+        {% endif %}
 
         <button type="submit" class="users-form-submit">Enregistrer</button>
 
