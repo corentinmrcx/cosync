@@ -5,7 +5,7 @@ namespace App\Service\Form;
 use App\DTO\InscriptionFormData;
 use App\Entity\Licencie;
 use App\Enum\LicenceStatus;
-use App\Service\Drive\DriveUploaderService;
+use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\PdfGeneratorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -15,7 +15,7 @@ final class InscriptionFormService
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly PdfGeneratorService $pdfGenerator,
-        private readonly DriveUploaderService $driveUploader,
+        private readonly PendingUploadQueue $uploadQueue,
         #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
     ) {}
 
@@ -40,20 +40,16 @@ final class InscriptionFormService
         $dossier->setStatus(LicenceStatus::FORM_COMPLETED);
 
         $pdfPath = $this->pdfGenerator->generateReglementSigne($licencie, $data->signatureData);
-        $dossier->setSignaturePath($pdfPath); // fallback chemin local tant que Drive n'a pas répondu
+        $dossier->setSignaturePath($pdfPath); // chemin local tant que Drive n'a pas répondu
 
         // Le lien n'est plus utilisable après soumission
         $licencie->setFormTokenExpiresAt(null);
 
         $this->em->flush();
 
-        // Upload Drive — ne bloque jamais le formulaire en cas d'échec
-        $driveId = $this->driveUploader->upload($pdfPath, $licencie);
-        if ($driveId !== null) {
-            $dossier->setSignaturePath($driveId);
-            $this->em->flush();
-            @unlink($pdfPath);
-        }
+        // L'upload Drive est différé après l'envoi de la réponse (kernel.terminate)
+        // pour ne pas faire patienter le licencié ni dépendre de l'API Google.
+        $this->uploadQueue->enqueue($dossier->getId());
 
         // Nettoyage de l'ancienne signature temp si elle existe encore
         $this->deleteSignatureTemp((string) $licencie->getUuid());

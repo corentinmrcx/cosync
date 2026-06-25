@@ -11,8 +11,8 @@ final class PurgeService
     ) {}
 
     /**
-     * Supprime toutes les données métier dans l'ordre des FK.
-     * Conserve : User, Season, Category, Team, DirigeantRole.
+     * Supprime toutes les données dans l'ordre des FK.
+     * Conserve uniquement : User, Category (référentiel FFF), StockCategory, DirigeantRole.
      *
      * @return array<string, int> nombre de lignes supprimées par table
      */
@@ -25,6 +25,8 @@ final class PurgeService
             'licencie',
             'dirigeant',
             'stock_item',
+            'team',
+            'season',
         ];
 
         $counts = [];
