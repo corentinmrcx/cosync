@@ -22,6 +22,9 @@ export function inscriptionForm({ isJeune, montant }) {
         // Étape 5
         paymentMode: '',
 
+        // Soumission finale (affiche l'overlay de chargement)
+        submitting: false,
+
         init() {
             // Le canvas est dans un x-show="hasRead" — l'initialiser quand hasRead devient vrai
             this.$watch('hasRead', (value) => {
