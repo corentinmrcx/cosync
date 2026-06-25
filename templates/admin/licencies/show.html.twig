@@ -57,15 +57,14 @@
     </div>
 
     <div class="licencie-show-header">
-        <div>
+        <div class="licencie-show-header-main">
             <h1 class="licencie-show-title">{{ licencie.nomPrenom }}</h1>
-        </div>
-
-        <div class="licencie-show-header-actions">
             {% if licencie.dossierClub %}
                 {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
             {% endif %}
+        </div>
 
+        <div class="licencie-show-header-actions">
             <a href="{{ path('admin_licencies_edit', {uuid: licencie.uuid}) }}" class="licencie-show-edit-btn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -74,19 +73,21 @@
                 Modifier
             </a>
 
-            {% if licencie.email %}
-                <form method="post" action="{{ path('admin_licencies_send_link', {uuid: licencie.uuid}) }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token('send_link_' ~ licencie.uuid) }}">
-                    <button type="submit" class="licencie-show-send-btn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"/>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                        </svg>
-                        Envoyer le lien
-                    </button>
-                </form>
-            {% else %}
-                <span class="licencie-show-no-email">Pas d'email renseigné</span>
+            {% if licencie.dossierClub is null or licencie.dossierClub.status.value == 'link_sent' %}
+                {% if licencie.email %}
+                    <form method="post" action="{{ path('admin_licencies_send_link', {uuid: licencie.uuid}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('send_link_' ~ licencie.uuid) }}">
+                        <button type="submit" class="licencie-show-send-btn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                            Envoyer le lien
+                        </button>
+                    </form>
+                {% else %}
+                    <span class="licencie-show-no-email">Pas d'email renseigné</span>
+                {% endif %}
             {% endif %}
         </div>
     </div>

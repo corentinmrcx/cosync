@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service indisponible – Foyer de Soudron</title>
+    <style>
+        /* Page autonome : aucune dépendance à PHP, au CSS compilé ou à un volume.
+           Servie par Nginx quand le backend est injoignable (502/503/504). */
+        :root {
+            --red: #ff3131;
+            --red-dark: #cc0000;
+            --text: #1f1f1f;
+            --muted: #6b7280;
+            --bg: #f9fafb;
+            --card: #ffffff;
+            --border: #e5e7eb;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .card {
+            width: 100%;
+            max-width: 26rem;
+            padding: 2.5rem 1.75rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            text-align: center;
+        }
+        .icon { font-size: 2.75rem; line-height: 1; margin-bottom: 0.75rem; }
+        h1 { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem; }
+        p { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
+        .btn {
+            display: inline-block;
+            margin-top: 1.25rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--red);
+            color: #ffffff;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn:hover { background: var(--red-dark); }
+        .club { margin-top: 1.5rem; font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">🛠️</div>
+        <h1>Service momentanément indisponible</h1>
+        <p>
+            Le site rencontre un problème technique ou est en cours de maintenance.
+            Merci de réessayer dans quelques instants.
+        </p>
+        <button class="btn" onclick="location.reload()">Réessayer</button>
+        <p class="club">Foyer de Soudron</p>
+    </div>
+</body>
+</html>

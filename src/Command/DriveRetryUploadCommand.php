@@ -3,8 +3,7 @@
 namespace App\Command;
 
 use App\Repository\DossierClubRepository;
-use App\Service\Drive\DriveUploaderService;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\Drive\DossierDriveSync;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -19,8 +18,7 @@ final class DriveRetryUploadCommand extends Command
 {
     public function __construct(
         private readonly DossierClubRepository $dossierRepository,
-        private readonly DriveUploaderService $driveUploader,
-        private readonly EntityManagerInterface $em,
+        private readonly DossierDriveSync $driveSync,
     ) {
         parent::__construct();
     }
@@ -53,13 +51,8 @@ final class DriveRetryUploadCommand extends Command
                 continue;
             }
 
-            $driveId = $this->driveUploader->upload($localPath, $licencie);
-
-            if ($driveId !== null) {
-                $dossier->setSignaturePath($driveId);
-                $this->em->flush();
-                @unlink($localPath);
-                $io->text(sprintf('<info>✓</info> [%s] Uploadé → %s', $label, $driveId));
+            if ($this->driveSync->sync($dossier)) {
+                $io->text(sprintf('<info>✓</info> [%s] Uploadé → %s', $label, $dossier->getSignaturePath()));
                 $success++;
             } else {
                 $io->text(sprintf('<comment>✗</comment> [%s] Échec, conservé en local.', $label));

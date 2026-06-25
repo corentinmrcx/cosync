@@ -1,0 +1,17 @@
+{#
+    Composant générique de page d'erreur.
+    Affiche uniquement ce qu'on lui passe — aucune logique métier.
+    Paramètres : code (int), title (string), text (string).
+#}
+<div class="error-page">
+    <main class="error-main">
+        <div class="error-card">
+            <span class="error-code">{{ code }}</span>
+            <h1 class="error-title">{{ title }}</h1>
+            <p class="error-text">{{ text }}</p>
+            <a href="{{ path('home') }}" class="error-btn">Retour à l'accueil</a>
+        </div>
+    </main>
+
+    {% include 'components/footer.html.twig' %}
+</div>

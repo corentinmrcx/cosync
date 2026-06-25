@@ -32,7 +32,8 @@
     <main class="inscription-main">
         <div class="inscription-container">
 
-            <form method="post" action="{{ path('public_inscription_submit', {uuid: licencie.uuid}) }}">
+            <form method="post" action="{{ path('public_inscription_submit', {uuid: licencie.uuid}) }}"
+                  @submit="submitting = true">
                 <input type="hidden" name="_token" value="{{ csrf_token('inscription_submit') }}">
                 <input type="hidden" name="signature_data" :value="signatureData">
 
@@ -50,7 +51,7 @@
                         </p>
                     {% endif %}
                     <p class="inscription-welcome-text">
-                        Ce formulaire vous prendra environ <strong>3 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations et signerez le règlement intérieur.
+                        Ce formulaire vous prendra environ <strong>2 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations et signerez le règlement intérieur.
                     </p>
                     <button type="button" @click="next" class="inscription-btn-start">
                         Commencer →
@@ -312,7 +313,7 @@
                     </template>
 
                     <template x-if="step === 5">
-                        <button type="submit" :disabled="!canGoNext" class="inscription-btn-submit">
+                        <button type="submit" :disabled="!canGoNext || submitting" class="inscription-btn-submit">
                             Valider mon inscription ✓
                         </button>
                     </template>
@@ -324,6 +325,15 @@
     </main>
 
     {% include 'components/footer.html.twig' %}
+
+    {# — Overlay de chargement pendant la soumission finale — #}
+    <div class="inscription-overlay" x-show="submitting" x-cloak>
+        <div class="inscription-overlay-box">
+            <div class="inscription-overlay-spinner"></div>
+            <p class="inscription-overlay-title">Validation de votre inscription…</p>
+            <p class="inscription-overlay-text">Merci de patienter quelques secondes, ne fermez pas cette page.</p>
+        </div>
+    </div>
 
 </div>
 {% endblock %}

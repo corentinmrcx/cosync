@@ -1,0 +1,30 @@
+{#
+    Page d'erreur par défaut (prod) pour tous les codes HTTP : 404, 403, 500, …
+    Symfony fournit `status_code` et `status_text`. On mappe les codes courants
+    vers un message clair ; les autres retombent sur un message générique.
+#}
+{% extends 'public/layout.html.twig' %}
+
+{% set messages = {
+    400: { title: 'Requête invalide', text: 'La demande envoyée est incorrecte. Vérifiez le lien ou réessayez.' },
+    403: { title: 'Accès refusé', text: "Vous n'avez pas l'autorisation d'accéder à cette page." },
+    404: { title: 'Page introuvable', text: "La page que vous cherchez n'existe pas ou a été déplacée." },
+    419: { title: 'Session expirée', text: 'Votre session a expiré. Rechargez la page et réessayez.' },
+    429: { title: 'Trop de requêtes', text: 'Vous avez effectué trop de requêtes. Patientez un instant avant de réessayer.' },
+    500: { title: 'Erreur interne', text: "Une erreur est survenue de notre côté. L'équipe du club a été notifiée, réessayez plus tard." },
+    503: { title: 'Service indisponible', text: 'Le service est temporairement indisponible. Réessayez dans quelques minutes.' },
+} %}
+{% set info = messages[status_code]|default({
+    title: 'Une erreur est survenue',
+    text: 'Quelque chose a mal tourné. Réessayez, ou contactez le club si le problème persiste.',
+}) %}
+
+{% block title %}Erreur {{ status_code }} – Foyer de Soudron{% endblock %}
+
+{% block body %}
+    {% include 'components/_error.html.twig' with {
+        code: status_code,
+        title: info.title,
+        text: info.text,
+    } only %}
+{% endblock %}
