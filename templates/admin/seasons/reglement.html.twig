@@ -14,33 +14,47 @@
 ] } %}
 
 <div class="reglement-edit-page">
+    <div class="reglement-edit-layout">
 
-    <form method="post" action="{{ path('admin_seasons_reglement', {id: season.id}) }}" class="reglement-edit-card" id="reglement-form">
+        <form method="post" action="{{ path('admin_seasons_reglement', {id: season.id}) }}" class="reglement-edit-card" id="reglement-form">
 
-        <input type="hidden" name="_token" value="{{ csrf_token('reglement_' ~ season.id) }}">
-        <input type="hidden" name="reglement_text" id="reglement_text_input">
+            <input type="hidden" name="_token" value="{{ csrf_token('reglement_' ~ season.id) }}">
+            <input type="hidden" name="reglement_text" id="reglement_text_input">
 
-        <div class="reglement-edit-header">
-            <h1 class="reglement-edit-title">Règlement intérieur — {{ season.label }}</h1>
-            <p class="reglement-edit-hint">Ce texte sera affiché au licencié lors de l'étape de signature, et intégré dans le PDF archivé.</p>
-        </div>
-
-        <hr class="reglement-edit-divider">
-
-        <div class="reglement-edit-field">
-            <label class="reglement-edit-label">Texte du règlement</label>
-            <div class="reglement-edit-editor-wrapper">
-                <div id="quill-editor" class="reglement-edit-editor">{{ season.reglementText|raw }}</div>
+            <div class="reglement-edit-header">
+                <h1 class="reglement-edit-title">Règlement intérieur — {{ season.label }}</h1>
+                <p class="reglement-edit-hint">Ce texte sera affiché au licencié lors de l'étape de signature, et intégré dans le PDF archivé.</p>
             </div>
-        </div>
 
-        <div class="reglement-edit-actions">
-            <a href="{{ path('admin_config_index') }}" class="reglement-edit-cancel">Annuler</a>
-            <button type="submit" class="reglement-edit-submit">Enregistrer</button>
-        </div>
+            <hr class="reglement-edit-divider">
 
-    </form>
+            <div class="reglement-edit-field">
+                <label class="reglement-edit-label">Texte du règlement</label>
+                <div class="reglement-edit-editor-wrapper">
+                    <div id="quill-editor" class="reglement-edit-editor">{{ season.reglementText|raw }}</div>
+                </div>
+            </div>
 
+            <div class="reglement-edit-actions">
+                <a href="{{ path('admin_config_index') }}" class="reglement-edit-cancel">Annuler</a>
+                <a href="{{ path('admin_seasons_reglement_apercu', {id: season.id}) }}" target="_blank" class="reglement-edit-apercu-btn">Aperçu PDF</a>
+                <button type="submit" class="reglement-edit-submit">Enregistrer</button>
+            </div>
+            <p class="reglement-edit-apercu-hint">L'aperçu PDF est basé sur le texte enregistré.</p>
+
+        </form>
+
+        <aside class="reglement-preview-panel">
+            <div class="reglement-preview-header">
+                <span class="reglement-preview-title">Aperçu — rendu licencié</span>
+                <span class="reglement-preview-hint">Mis à jour en direct</span>
+            </div>
+            <div class="reglement-preview-content" id="reglement-preview">
+                {{ season.reglementText|raw }}
+            </div>
+        </aside>
+
+    </div>
 </div>
 
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
@@ -61,5 +75,9 @@
     document.getElementById('reglement-form').addEventListener('submit', function () {
         document.getElementById('reglement_text_input').value = quill.root.innerHTML;
     });
+
+    const preview = document.getElementById('reglement-preview');
+    preview.innerHTML = quill.root.innerHTML;
+    quill.on('text-change', () => { preview.innerHTML = quill.root.innerHTML; });
 </script>
 {% endblock %}

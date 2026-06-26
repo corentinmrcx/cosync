@@ -7,6 +7,7 @@ use App\Form\SeasonType;
 use App\Repository\DirigeantRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\SeasonRepository;
+use App\Service\Pdf\PdfGeneratorService;
 use App\Service\SeasonContext;
 use App\Service\SeasonService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -89,6 +90,17 @@ class SeasonController extends AbstractController
 
         return $this->render('admin/seasons/reglement.html.twig', [
             'season' => $season,
+        ]);
+    }
+
+    #[Route('/{id}/reglement/apercu', name: 'reglement_apercu', methods: ['GET'])]
+    public function reglementApercu(Season $season, PdfGeneratorService $pdfGenerator): Response
+    {
+        $pdfContent = $pdfGenerator->generatePreview($season);
+
+        return new Response($pdfContent, Response::HTTP_OK, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="apercu-reglement-' . $season->getLabel() . '.pdf"',
         ]);
     }
 
