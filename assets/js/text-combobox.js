@@ -1,6 +1,6 @@
 export function textCombobox(suggestions, current) {
     return {
-        suggestions,
+        suggestions: [...suggestions],
         query: current ?? '',
         open: false,
 
@@ -24,6 +24,11 @@ export function textCombobox(suggestions, current) {
         clear() {
             this.query = '';
             this.open = false;
+        },
+
+        removeSuggestion(value) {
+            this.suggestions = this.suggestions.filter(s => s !== value);
+            if (this.query === value) this.query = '';
         },
     };
 }

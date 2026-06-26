@@ -328,4 +328,5 @@ class StockController extends AbstractController
 
         return $this->redirectToRoute('admin_stock_categories_list');
     }
+
 }
