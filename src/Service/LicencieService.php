@@ -58,6 +58,7 @@ final class LicencieService
         $licencie->setPrenom($prenom);
         $licencie->setDateNaissance($data->dateNaissance);
         $licencie->setCategory($data->category);
+        $licencie->setTeam($data->team);
         $licencie->setSeason($season);
         $licencie->setEmail($email);
         $licencie->setTelephone($phone);

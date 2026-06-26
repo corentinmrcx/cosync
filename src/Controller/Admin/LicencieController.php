@@ -99,7 +99,7 @@ class LicencieController extends AbstractController
         }
 
         $data = new LicencieCreateData();
-        $form = $this->createForm(LicencieCreateType::class, $data);
+        $form = $this->createForm(LicencieCreateType::class, $data, ['season' => $season]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
