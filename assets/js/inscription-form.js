@@ -15,6 +15,7 @@ export function inscriptionForm({ isJeune, montant }) {
         autorisationTransportParents: null,
 
         // Étape 4
+        reglementScrolled: false,
         hasRead: false,
         signatureData: '',
         signaturePad: null,
@@ -26,12 +27,33 @@ export function inscriptionForm({ isJeune, montant }) {
         submitting: false,
 
         init() {
-            // Le canvas est dans un x-show="hasRead" — l'initialiser quand hasRead devient vrai
             this.$watch('hasRead', (value) => {
                 if (value === true && this.step === 4) {
                     window.requestAnimationFrame(() => this.initSignaturePad());
                 }
             });
+
+            // Quand on arrive à l'étape 4, vérifier si le règlement nécessite un scroll
+            this.$watch('step', (value) => {
+                if (value === 4) {
+                    this.$nextTick(() => {
+                        const el = this.$refs.reglementEl;
+                        if (!el) return;
+                        // Si le contenu tient sans scroll, on considère qu'il est lu
+                        if (el.scrollHeight <= el.clientHeight) {
+                            this.reglementScrolled = true;
+                        }
+                    });
+                }
+            });
+        },
+
+        onReglementScroll(event) {
+            if (this.reglementScrolled) return;
+            const el = event.target;
+            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+                this.reglementScrolled = true;
+            }
         },
 
         get canGoNext() {

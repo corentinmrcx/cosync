@@ -277,6 +277,21 @@
     font-weight: 500;
 }
 
+.inscription-reglement-scroll-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.inscription-checkbox-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* — Signature — */
 .inscription-signature-wrap {
     border: 1.5px solid var(--color-border);

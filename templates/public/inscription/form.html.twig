@@ -217,7 +217,9 @@
                 <div x-show="step === 4" class="inscription-card">
                     <h2 class="inscription-step-title">Règlement intérieur</h2>
 
-                    <div class="inscription-reglement">
+                    <div class="inscription-reglement"
+                         x-ref="reglementEl"
+                         @scroll="onReglementScroll($event)">
                         {% if licencie.season.reglementText %}
                             {{ licencie.season.reglementText|raw }}
                         {% else %}
@@ -225,8 +227,13 @@
                         {% endif %}
                     </div>
 
-                    <label class="inscription-checkbox-row">
-                        <input type="checkbox" x-model="hasRead">
+                    <p class="inscription-reglement-scroll-hint" x-show="!reglementScrolled">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        Faites défiler le règlement jusqu'en bas pour continuer.
+                    </p>
+
+                    <label class="inscription-checkbox-row" :class="{ 'inscription-checkbox-disabled': !reglementScrolled }">
+                        <input type="checkbox" x-model="hasRead" :disabled="!reglementScrolled">
                         <span class="inscription-checkbox-text">J'ai lu et j'accepte le règlement intérieur du Foyer de Soudron.</span>
                     </label>
 
