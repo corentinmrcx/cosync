@@ -546,6 +546,96 @@
 /* — Modale paiements (élargie) — */
 .licencie-modal-wide {
     max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+    /* — Modale : bottom sheet sur mobile — */
+    .licencie-modal-backdrop {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .licencie-modal,
+    .licencie-modal-wide {
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        max-width: 100%;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* Header collé en haut, ne scroll pas */
+    .licencie-modal-header {
+        flex-shrink: 0;
+    }
+
+    /* Bilan collé sous le header, ne scroll pas */
+    .licencie-payments-bilan {
+        flex-shrink: 0;
+    }
+
+    /* Tout le reste (liste + divider + form) scroll */
+    .licencie-modal-form {
+        overflow-y: auto;
+        padding: 1rem;
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* Champ montant + date : empilé */
+    .licencie-modal-row {
+        flex-direction: column;
+    }
+
+    /* Bilan : texte plus compact */
+    .licencie-payments-bilan-item {
+        padding: 0.625rem 0.25rem;
+    }
+
+    .licencie-payments-bilan-value {
+        font-size: var(--font-size-sm);
+    }
+
+    .licencie-payments-bilan-label {
+        font-size: 0.65rem;
+    }
+
+    /* Liste des paiements : padding réduit */
+    .licencie-payments-list {
+        padding: 0.5rem 1rem;
+        flex-shrink: 0;
+    }
+
+    .licencie-payments-empty {
+        padding: 0.5rem 1rem;
+        flex-shrink: 0;
+    }
+
+    /* Divider : pas de padding vertical */
+    .licencie-modal-divider {
+        flex-shrink: 0;
+    }
+
+    /* Actions : empilées, pleine largeur */
+    .licencie-modal-actions {
+        flex-direction: column-reverse;
+        gap: 0.625rem;
+        padding-top: 0.75rem;
+    }
+
+    .licencie-modal-validate-manual {
+        margin-right: 0;
+        width: 100%;
+        text-align: center;
+    }
+
+    .licencie-modal-submit {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 .licencie-modal-row {
@@ -572,25 +662,69 @@
 .licencie-modal-validate-manual {
     font-size: var(--font-size-sm);
     font-weight: 600;
-    color: var(--color-text-muted);
-    background: none;
-    border: none;
+    color: var(--color-danger);
+    background: transparent;
+    border: 1.5px solid var(--color-danger);
+    border-radius: var(--radius-md);
     cursor: pointer;
+    padding: 0.625rem 1.25rem;
     margin-right: auto;
+    transition: background 0.15s, color 0.15s;
 }
 
 .licencie-modal-validate-manual:hover {
-    color: var(--color-danger);
+    background: var(--color-danger);
+    color: var(--color-text-inverse);
 }
 
 /* Bilan paiements (dans la modale) */
-.licencie-payments-summary {
+.licencie-payments-bilan {
     display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 0.75rem 1.5rem;
+    align-items: stretch;
     background: var(--color-bg-subtle);
-    font-size: var(--font-size-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.licencie-payments-bilan-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 0.875rem 0.5rem;
+    gap: 0.2rem;
+}
+
+.licencie-payments-bilan-sep {
+    width: 1px;
+    background: var(--color-border);
+    align-self: stretch;
+}
+
+.licencie-payments-bilan-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.licencie-payments-bilan-value {
+    font-size: var(--font-size-base);
+    font-weight: 800;
+    color: var(--color-text-base);
+}
+
+.licencie-payments-bilan-paid {
+    color: var(--color-text-body);
+}
+
+.licencie-payments-bilan-remaining {
+    color: var(--color-warning);
+}
+
+.licencie-payments-bilan-ok {
+    color: var(--color-success);
 }
 
 /* Liste des paiements (dans la modale) */
@@ -605,29 +739,48 @@
 
 .licencie-payment-row {
     display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0.625rem;
-    padding: 0.5rem 0;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.625rem 0;
     border-bottom: 1px solid var(--color-border);
-    font-size: var(--font-size-sm);
 }
 
 .licencie-payment-row:last-child {
     border-bottom: none;
 }
 
+.licencie-payment-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: var(--font-size-sm);
+}
+
+.licencie-payment-date {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    min-width: 4.5rem;
+}
+
 .licencie-payment-mode {
+    flex: 1;
     font-weight: 700;
     color: var(--color-text-base);
 }
 
 .licencie-payment-amount {
-    font-weight: 700;
+    font-weight: 800;
     color: var(--color-primary);
+    white-space: nowrap;
 }
 
-.licencie-payment-date,
+.licencie-payment-meta {
+    display: flex;
+    gap: 0.75rem;
+    padding-left: 5.25rem;
+}
+
 .licencie-payment-ref,
 .licencie-payment-note {
     color: var(--color-text-muted);

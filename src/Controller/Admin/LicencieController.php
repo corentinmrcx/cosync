@@ -189,49 +189,53 @@ class LicencieController extends AbstractController
         $transactions = $season ? $transactionRepo->findAllByLicencieAndSeason($licencie, $season) : [];
         $totalPaid    = $season ? $transactionRepo->sumByLicencieAndSeason($licencie, $season) : 0.0;
 
-        $baseCosts = $season?->getBaseCosts() ?? [];
-        $montant   = $licencie->isSeniorTariff()
+        $baseCosts       = $season?->getBaseCosts() ?? [];
+        $montant         = $licencie->isSeniorTariff()
             ? ($baseCosts['seniors'] ?? 0)
             : ($baseCosts['jeunes'] ?? 0);
+        $remainingAmount = max(0, (float) $montant - $totalPaid);
 
         $history = [
             [
-                'date'  => $licencie->getImportedAt(),
-                'label' => $licencie->isCreatedManually()
+                'date'   => $licencie->getImportedAt(),
+                'format' => 'd/m/Y à H:i',
+                'label'  => $licencie->isCreatedManually()
                     ? 'Licencié créé manuellement'
                     : 'Licencié importé depuis FootClubs',
-                'who'   => 'Admin',
+                'who'    => 'Admin',
             ],
         ];
 
         if ($licencie->getEmail() !== null) {
-            $history[] = ['date' => $licencie->getImportedAt(), 'label' => 'Lien d\'inscription envoyé par email', 'who' => 'Système'];
+            $history[] = ['date' => $licencie->getImportedAt(), 'format' => 'd/m/Y à H:i', 'label' => 'Lien d\'inscription envoyé par email', 'who' => 'Système'];
         }
 
         $dossier = $licencie->getDossierClub();
         if ($dossier?->getFormCompletedAt() !== null) {
-            $history[] = ['date' => $dossier->getFormCompletedAt(), 'label' => 'Formulaire complété par le licencié', 'who' => 'Licencié'];
+            $history[] = ['date' => $dossier->getFormCompletedAt(), 'format' => 'd/m/Y à H:i', 'label' => 'Formulaire complété par le licencié', 'who' => 'Licencié'];
         }
 
         foreach ($transactions as $t) {
             $history[] = [
-                'date'  => $t->getDatePaiement(),
-                'label' => sprintf('Paiement enregistré — %s %s €', $t->getMode()->label(), $t->getMontant()),
-                'who'   => $t->getConfirmedBy()?->getEmail() ?? 'Admin',
+                'date'   => $t->getDatePaiement(),
+                'format' => 'd/m/Y',
+                'label'  => sprintf('Paiement enregistré — %s %s €', $t->getMode()->label(), $t->getMontant()),
+                'who'    => $t->getConfirmedBy()?->getEmail() ?? 'Admin',
             ];
         }
 
         usort($history, static fn (array $a, array $b): int => $a['date'] <=> $b['date']);
 
         return $this->render('admin/licencies/show.html.twig', [
-            'licencie'     => $licencie,
-            'transactions' => $transactions,
-            'totalPaid'    => $totalPaid,
-            'season'       => $season,
-            'montant'      => $montant,
-            'paymentModes' => PaymentMode::cases(),
-            'dotations'    => $stockMovementRepo->findDotationsByLicencie($licencie),
-            'history'      => $history,
+            'licencie'        => $licencie,
+            'transactions'    => $transactions,
+            'totalPaid'       => $totalPaid,
+            'remainingAmount' => $remainingAmount,
+            'season'          => $season,
+            'montant'         => $montant,
+            'paymentModes'    => PaymentMode::cases(),
+            'dotations'       => $stockMovementRepo->findDotationsByLicencie($licencie),
+            'history'         => $history,
         ]);
     }
 
@@ -332,7 +336,14 @@ class LicencieController extends AbstractController
         );
 
         $this->addFlash('success', 'Paiement de ' . $licencie->getNomPrenom() . ' enregistré.');
-        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+
+        $isValidated = $licencie->getDossierClub()?->getStatus() === LicenceStatus::VALIDATED;
+        $params = ['uuid' => $uuid];
+        if (!$isValidated) {
+            $params['paymentsModal'] = '1';
+        }
+
+        return $this->redirectToRoute('admin_licencies_show', $params);
     }
 
     #[Route('/{uuid}/valider-manuellement', name: 'validate_manually', methods: ['POST'])]

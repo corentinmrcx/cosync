@@ -463,19 +463,48 @@
     color: var(--color-text-body);
 }
 
-/* Style des checkboxes en mode multi (même look que les radios) */
+/* Checkboxes en mode multi — mêmes visuels que les radios */
 .inscription-payment-option input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.inscription-payment-option input[type="checkbox"] + .inscription-payment-label::before {
+    content: '';
+    display: block;
     width: 1.1rem;
     height: 1.1rem;
-    margin: 0;
-    cursor: pointer;
-    accent-color: var(--color-primary);
-    flex-shrink: 0;
+    min-width: 1.1rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    margin-right: 0.75rem;
+    background: var(--color-bg-page);
+    transition: all 0.15s;
+}
+
+.inscription-payment-option input[type="checkbox"]:checked + .inscription-payment-label::before {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='2 6 5 9 10 3'/%3E%3C/svg%3E");
+    background-size: 70%;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .inscription-payment-option input[type="checkbox"]:checked + .inscription-payment-label {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
     color: var(--color-primary);
     font-weight: 700;
+}
+
+/* Espacement entre les blocs info quand plusieurs modes actifs */
+.inscription-payment-infos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 /* — Navigation — */

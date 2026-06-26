@@ -21,9 +21,9 @@
 
 <div class="licencie-show-page"
      x-data="{
-        paymentsModal: false,
+        paymentsModal: {{ app.request.query.get('paymentsModal') == '1' ? 'true' : 'false' }},
         addMode: '{{ paymentModes[0].value ?? '' }}',
-        addMontant: '{{ montant }}',
+        addMontant: {{ remainingAmount|number_format(2, '.', '') }},
         addDate: '{{ 'now'|date('Y-m-d') }}',
         addReference: '',
         addNote: ''
@@ -33,17 +33,30 @@
     <div x-show="paymentsModal" class="licencie-modal-backdrop" @click.self="paymentsModal = false" x-cloak>
         <div class="licencie-modal licencie-modal-wide">
             <div class="licencie-modal-header">
-                <h2 class="licencie-modal-title">Paiements — {{ licencie.nomPrenom }}</h2>
+                <h2 class="licencie-modal-title">Gestion des paiements</h2>
                 <button type="button" @click="paymentsModal = false" class="licencie-modal-close">✕</button>
             </div>
 
             {# Bilan #}
-            <div class="licencie-payments-summary">
-                <span>Attendu : <strong>{{ montant }} €</strong></span>
-                <span>Payé : <strong>{{ totalPaid|number_format(2, ',', ' ') }} €</strong></span>
-                {% if licencie.dossierClub %}
-                    {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
-                {% endif %}
+            <div class="licencie-payments-bilan">
+                <div class="licencie-payments-bilan-item">
+                    <span class="licencie-payments-bilan-label">Attendu</span>
+                    <span class="licencie-payments-bilan-value">{{ montant }} €</span>
+                </div>
+                <div class="licencie-payments-bilan-sep"></div>
+                <div class="licencie-payments-bilan-item">
+                    <span class="licencie-payments-bilan-label">Payé</span>
+                    <span class="licencie-payments-bilan-value licencie-payments-bilan-paid">{{ totalPaid|number_format(2, ',', ' ') }} €</span>
+                </div>
+                <div class="licencie-payments-bilan-sep"></div>
+                <div class="licencie-payments-bilan-item">
+                    <span class="licencie-payments-bilan-label">Reste</span>
+                    {% if remainingAmount > 0 %}
+                        <span class="licencie-payments-bilan-value licencie-payments-bilan-remaining">{{ remainingAmount|number_format(2, ',', ' ') }} €</span>
+                    {% else %}
+                        <span class="licencie-payments-bilan-value licencie-payments-bilan-ok">Soldé ✓</span>
+                    {% endif %}
+                </div>
             </div>
 
             {# Liste des paiements existants #}
@@ -51,11 +64,17 @@
             <ul class="licencie-payments-list">
                 {% for t in transactions %}
                 <li class="licencie-payment-row">
-                    <span class="licencie-payment-mode">{{ t.mode.label() }}</span>
-                    <span class="licencie-payment-amount">{{ t.montant }} €</span>
-                    <span class="licencie-payment-date">{{ t.datePaiement|date('d/m/Y') }}</span>
-                    {% if t.reference %}<span class="licencie-payment-ref">Réf : {{ t.reference }}</span>{% endif %}
-                    {% if t.note %}<span class="licencie-payment-note">{{ t.note }}</span>{% endif %}
+                    <div class="licencie-payment-main">
+                        <span class="licencie-payment-date">{{ t.datePaiement|date('d/m/Y') }}</span>
+                        <span class="licencie-payment-mode">{{ t.mode.label() }}</span>
+                        <span class="licencie-payment-amount">{{ t.montant }} €</span>
+                    </div>
+                    {% if t.reference or t.note %}
+                    <div class="licencie-payment-meta">
+                        {% if t.reference %}<span class="licencie-payment-ref">Réf : {{ t.reference }}</span>{% endif %}
+                        {% if t.note %}<span class="licencie-payment-note">{{ t.note }}</span>{% endif %}
+                    </div>
+                    {% endif %}
                 </li>
                 {% endfor %}
             </ul>
@@ -108,7 +127,6 @@
                         Valider quand même
                     </button>
                     {% endif %}
-                    <button type="button" @click="paymentsModal = false" class="licencie-modal-cancel">Fermer</button>
                     <button type="submit" class="licencie-modal-submit">Ajouter le paiement</button>
                 </div>
             </form>
@@ -327,9 +345,13 @@
 
                     {# Paiement cotisation #}
                     <li class="licencie-show-check-item">
-                        {% if transactions is not empty %}
+                        {% if d.status.value == 'validated' %}
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             <span class="licencie-show-check-label">Paiement cotisation</span>
+                            <span class="licencie-show-check-date">{{ totalPaid|number_format(2, ',', ' ') }} € / {{ montant }} €</span>
+                        {% elseif transactions is not empty %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span class="licencie-show-check-label licencie-show-check-label-pending">Paiement cotisation</span>
                             <span class="licencie-show-check-date">{{ totalPaid|number_format(2, ',', ' ') }} € / {{ montant }} €</span>
                         {% else %}
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -361,7 +383,7 @@
             <ul class="licencie-show-history">
                 {% for event in history %}
                     <li class="licencie-show-history-item {{ not loop.last ? 'licencie-show-history-item-sep' }}">
-                        <span class="licencie-show-history-date">{{ event.date|date('d/m/Y à H:i') }}</span>
+                        <span class="licencie-show-history-date">{{ event.date|date(event.format ?? 'd/m/Y à H:i') }}</span>
                         <span class="licencie-show-history-label">{{ event.label }}</span>
                         <span class="licencie-show-history-who">{{ event.who }}</span>
                     </li>

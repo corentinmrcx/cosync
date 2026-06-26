@@ -306,24 +306,26 @@
                     </div>
 
                     {# Blocs info — s'affichent selon le mode sélectionné (unique ou multiple) #}
-                    <div x-show="isPaymentModeActive('virement')" class="inscription-payment-info">
-                        <p><strong>Coordonnées bancaires du club</strong></p>
-                        <p>IBAN : <strong>FR76 1020 6000 2020 1001 5900 056</strong></p>
-                        <p>BIC : <strong>AGRIFRPP802</strong></p>
-                        <p>Libellé : <strong>COTISATION {{ licencie.nom }} {{ licencie.prenom }} {{ licencie.season.label }}</strong></p>
-                    </div>
-                    <div x-show="isPaymentModeActive('cheque')" class="inscription-payment-info">
-                        Chèque à l'ordre de <strong>Foyer de Soudron</strong>, à remettre au local à un dirigeant.
-                    </div>
-                    <div x-show="isPaymentModeActive('especes')" class="inscription-payment-info">
-                        Espèces à remettre au local à un dirigeant.
-                    </div>
-                    <div x-show="isPaymentModeActive('cb_online')" class="inscription-payment-info">
-                        <p>Paiement sécurisé par carte bancaire via SumUp.</p>
-                        <p style="color: var(--color-text-muted); font-size: var(--font-size-xs);">Des frais de traitement peuvent s'appliquer (+1,5%). Le lien de paiement vous sera transmis par le club.</p>
-                    </div>
-                    <div x-show="isPaymentModeActive('pass_sport') || isPaymentModeActive('caf') || isPaymentModeActive('ancv')" class="inscription-payment-info">
-                        Document à remettre en main propre à un dirigeant du club.
+                    <div class="inscription-payment-infos">
+                        <div x-show="isPaymentModeActive('virement')" class="inscription-payment-info">
+                            <p><strong>Coordonnées bancaires du club</strong></p>
+                            <p>IBAN : <strong>FR76 1020 6000 2020 1001 5900 056</strong></p>
+                            <p>BIC : <strong>AGRIFRPP802</strong></p>
+                            <p>Libellé : <strong>COTISATION {{ licencie.nom }} {{ licencie.prenom }} {{ licencie.season.label }}</strong></p>
+                        </div>
+                        <div x-show="isPaymentModeActive('cheque')" class="inscription-payment-info">
+                            Chèque à l'ordre de <strong>Foyer de Soudron</strong>, à remettre au local à un dirigeant.
+                        </div>
+                        <div x-show="isPaymentModeActive('especes')" class="inscription-payment-info">
+                            Espèces à remettre au local à un dirigeant.
+                        </div>
+                        <div x-show="isPaymentModeActive('cb_online')" class="inscription-payment-info">
+                            <p>Paiement sécurisé par carte bancaire via SumUp.</p>
+                            <p style="color: var(--color-text-muted); font-size: var(--font-size-xs);">Des frais de traitement peuvent s'appliquer (+1,5%). Le lien de paiement vous sera transmis par le club.</p>
+                        </div>
+                        <div x-show="isPaymentModeActive('pass_sport') || isPaymentModeActive('caf') || isPaymentModeActive('ancv')" class="inscription-payment-info">
+                            Document à remettre en main propre à un dirigeant du club.
+                        </div>
                     </div>
                 </div>
 
