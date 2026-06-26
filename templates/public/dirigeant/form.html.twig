@@ -91,7 +91,7 @@
                                         <li @mousedown.prevent="tailleHaut = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleHaut === '{{ t }}'}" class="cselect-option">{{ t }}</li>
                                     {% endfor %}
                                     <li class="cselect-optgroup-label">Tailles adultes</li>
-                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL'] %}
+                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'] %}
                                         <li @mousedown.prevent="tailleHaut = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleHaut === '{{ t }}'}" class="cselect-option">{{ t }}</li>
                                     {% endfor %}
                                 </ul>
@@ -122,7 +122,7 @@
                                         <li @mousedown.prevent="tailleBas = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleBas === '{{ t }}'}" class="cselect-option">{{ t }}</li>
                                     {% endfor %}
                                     <li class="cselect-optgroup-label">Tailles adultes</li>
-                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL'] %}
+                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'] %}
                                         <li @mousedown.prevent="tailleBas = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleBas === '{{ t }}'}" class="cselect-option">{{ t }}</li>
                                     {% endfor %}
                                 </ul>
@@ -148,7 +148,7 @@
                                     <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                                 </button>
                                 <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
-                                    {% for p in range(28, 48) %}
+                                    {% for p in range(24, 50) %}
                                         <li @mousedown.prevent="pointure = '{{ p }}'; open = false" :class="{'cselect-option-active': pointure === '{{ p }}'}" class="cselect-option">{{ p }}</li>
                                     {% endfor %}
                                 </ul>

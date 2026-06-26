@@ -86,6 +86,10 @@
     color: var(--color-text-muted) !important;
 }
 
+.licencies-col-status {
+    text-align: right;
+}
+
 @media (max-width: 640px) {
     .licencies-page { padding: 1rem; gap: 1rem; }
 }
