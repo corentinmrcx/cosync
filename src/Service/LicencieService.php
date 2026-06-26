@@ -131,37 +131,51 @@ final class LicencieService
         $this->em->flush();
     }
 
-    public function confirmPaiement(
+    public function addPayment(
         Licencie $licencie,
         PaymentMode $mode,
         float $montant,
         ?string $reference,
+        ?string $note,
+        \DateTimeImmutable $datePaiement,
         User $confirmedBy,
         Season $season,
     ): void {
-        $transaction = $this->transactionRepo->findByLicencieAndSeason($licencie, $season);
-        if ($transaction === null) {
-            $transaction = new Transaction();
-            $transaction->setLicencie($licencie);
-            $transaction->setSeason($season);
-            $this->em->persist($transaction);
-        }
-
+        $transaction = new Transaction();
+        $transaction->setLicencie($licencie);
+        $transaction->setSeason($season);
         $transaction->setMode($mode);
         $transaction->setMontant(number_format($montant, 2, '.', ''));
         $transaction->setReference($reference);
-        $transaction->setDatePaiement(new \DateTimeImmutable());
+        $transaction->setNote($note);
+        $transaction->setDatePaiement($datePaiement);
         $transaction->setConfirmedBy($confirmedBy);
-
-        $dossier = $licencie->getDossierClub();
-        if ($dossier !== null) {
-            $dossier->setStatus(LicenceStatus::VALIDATED);
-        }
-
+        $this->em->persist($transaction);
         $this->em->flush();
 
-        if ($licencie->getEmail() !== null) {
-            $this->mailerService->sendValidation($licencie);
+        $baseCosts = $season->getBaseCosts();
+        $expected  = (float) ($licencie->isSeniorTariff() ? ($baseCosts['seniors'] ?? 0) : ($baseCosts['jeunes'] ?? 0));
+        $totalPaid = $this->transactionRepo->sumByLicencieAndSeason($licencie, $season);
+
+        if ($totalPaid >= $expected) {
+            $this->setValidated($licencie);
+        }
+    }
+
+    public function validateManually(Licencie $licencie): void
+    {
+        $this->setValidated($licencie);
+    }
+
+    private function setValidated(Licencie $licencie): void
+    {
+        $dossier = $licencie->getDossierClub();
+        if ($dossier !== null && $dossier->getStatus() !== LicenceStatus::VALIDATED) {
+            $dossier->setStatus(LicenceStatus::VALIDATED);
+            $this->em->flush();
+            if ($licencie->getEmail() !== null) {
+                $this->mailerService->sendValidation($licencie);
+            }
         }
     }
 }

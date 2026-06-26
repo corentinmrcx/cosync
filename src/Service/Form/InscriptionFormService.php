@@ -33,7 +33,7 @@ final class InscriptionFormService
         $dossier->setAutorisationPhoto($data->autorisationPhoto);
         $dossier->setAutorisationTransportDirigeants($data->autorisationTransportDirigeants);
         $dossier->setAutorisationTransportParents($data->autorisationTransportParents);
-        $dossier->setPaymentIntention($data->paymentIntention);
+        $dossier->setPaymentIntentions($data->paymentIntentions);
         $dossier->setIsSigned(true);
         $dossier->setSignatureDate(new \DateTimeImmutable());
         $dossier->setFormCompletedAt(new \DateTimeImmutable());

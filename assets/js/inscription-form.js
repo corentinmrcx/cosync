@@ -22,6 +22,8 @@ export function inscriptionForm({ isJeune, montant }) {
 
         // Étape 5
         paymentMode: '',
+        multiPayment: false,
+        paymentModes: [],
 
         // Soumission finale (affiche l'overlay de chargement)
         submitting: false,
@@ -72,7 +74,7 @@ export function inscriptionForm({ isJeune, montant }) {
                 case 4:
                     return this.hasRead && this.signatureData !== '';
                 case 5:
-                    return this.paymentMode !== '';
+                    return this.multiPayment ? this.paymentModes.length > 0 : this.paymentMode !== '';
                 default:
                     return false;
             }
@@ -110,6 +112,18 @@ export function inscriptionForm({ isJeune, montant }) {
             this.signaturePad.addEventListener('endStroke', () => {
                 this.signatureData = this.signaturePad.toDataURL('image/png');
             });
+        },
+
+        togglePaymentMode(value) {
+            const idx = this.paymentModes.indexOf(value);
+            if (idx === -1) this.paymentModes.push(value);
+            else            this.paymentModes.splice(idx, 1);
+        },
+
+        isPaymentModeActive(value) {
+            return this.multiPayment
+                ? this.paymentModes.includes(value)
+                : this.paymentMode === value;
         },
 
         clearSignature() {

@@ -430,6 +430,54 @@
     margin-top: 0.25rem;
 }
 
+/* Toggle multi-paiement */
+.inscription-multi-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    cursor: pointer;
+    background: var(--color-bg-subtle);
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.inscription-multi-toggle:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.inscription-multi-toggle input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.inscription-multi-toggle-text {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-body);
+}
+
+/* Style des checkboxes en mode multi (même look que les radios) */
+.inscription-payment-option input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.inscription-payment-option input[type="checkbox"]:checked + .inscription-payment-label {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
 /* — Navigation — */
 .inscription-nav {
     display: flex;

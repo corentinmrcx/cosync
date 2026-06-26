@@ -185,8 +185,9 @@ class LicencieController extends AbstractController
             throw $this->createNotFoundException('Licencié introuvable.');
         }
 
-        $season      = $seasonContext->getCurrentSeason();
-        $transaction = $season ? $transactionRepo->findByLicencieAndSeason($licencie, $season) : null;
+        $season       = $seasonContext->getCurrentSeason();
+        $transactions = $season ? $transactionRepo->findAllByLicencieAndSeason($licencie, $season) : [];
+        $totalPaid    = $season ? $transactionRepo->sumByLicencieAndSeason($licencie, $season) : 0.0;
 
         $baseCosts = $season?->getBaseCosts() ?? [];
         $montant   = $licencie->isSeniorTariff()
@@ -212,11 +213,11 @@ class LicencieController extends AbstractController
             $history[] = ['date' => $dossier->getFormCompletedAt(), 'label' => 'Formulaire complété par le licencié', 'who' => 'Licencié'];
         }
 
-        if ($transaction !== null) {
+        foreach ($transactions as $t) {
             $history[] = [
-                'date'  => $transaction->getDatePaiement(),
-                'label' => 'Paiement confirmé',
-                'who'   => $transaction->getConfirmedBy()?->getEmail() ?? 'Admin',
+                'date'  => $t->getDatePaiement(),
+                'label' => sprintf('Paiement enregistré — %s %s €', $t->getMode()->label(), $t->getMontant()),
+                'who'   => $t->getConfirmedBy()?->getEmail() ?? 'Admin',
             ];
         }
 
@@ -224,7 +225,8 @@ class LicencieController extends AbstractController
 
         return $this->render('admin/licencies/show.html.twig', [
             'licencie'     => $licencie,
-            'transaction'  => $transaction,
+            'transactions' => $transactions,
+            'totalPaid'    => $totalPaid,
             'season'       => $season,
             'montant'      => $montant,
             'paymentModes' => PaymentMode::cases(),
@@ -279,15 +281,15 @@ class LicencieController extends AbstractController
         ]);
     }
 
-    #[Route('/{uuid}/confirmer-paiement', name: 'confirm_payment', methods: ['POST'])]
-    public function confirmPayment(
+    #[Route('/{uuid}/ajouter-paiement', name: 'add_payment', methods: ['POST'])]
+    public function addPayment(
         string $uuid,
         Request $request,
         LicencieRepository $licencieRepo,
         SeasonContext $seasonContext,
         LicencieService $licencieService,
     ): Response {
-        if (!$this->isCsrfTokenValid('confirm_payment_' . $uuid, $request->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('add_payment_' . $uuid, $request->request->get('_token'))) {
             throw $this->createAccessDeniedException('Token CSRF invalide.');
         }
 
@@ -304,22 +306,54 @@ class LicencieController extends AbstractController
 
         $mode    = PaymentMode::tryFrom($request->request->get('mode', ''));
         $montant = (float) str_replace(',', '.', $request->request->get('montant', '0'));
+        $dateRaw = $request->request->get('date_paiement', '');
 
-        if ($mode === null || $montant <= 0) {
-            $this->addFlash('error', 'Mode de paiement ou montant invalide.');
+        if ($mode === null || $montant <= 0 || $dateRaw === '') {
+            $this->addFlash('error', 'Mode, montant ou date invalide.');
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
         }
 
-        $licencieService->confirmPaiement(
+        try {
+            $date = new \DateTimeImmutable($dateRaw);
+        } catch (\Exception) {
+            $this->addFlash('error', 'Date invalide.');
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+        }
+
+        $licencieService->addPayment(
             $licencie,
             $mode,
             $montant,
             $request->request->get('reference') ?: null,
+            $request->request->get('note') ?: null,
+            $date,
             $this->getUser(),
             $season,
         );
 
-        $this->addFlash('success', 'Paiement de ' . $licencie->getNomPrenom() . ' confirmé.');
+        $this->addFlash('success', 'Paiement de ' . $licencie->getNomPrenom() . ' enregistré.');
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+    }
+
+    #[Route('/{uuid}/valider-manuellement', name: 'validate_manually', methods: ['POST'])]
+    public function validateManually(
+        string $uuid,
+        Request $request,
+        LicencieRepository $licencieRepo,
+        LicencieService $licencieService,
+    ): Response {
+        if (!$this->isCsrfTokenValid('validate_manually_' . $uuid, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        if ($licencie === null) {
+            throw $this->createNotFoundException('Licencié introuvable.');
+        }
+
+        $licencieService->validateManually($licencie);
+
+        $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' validée manuellement.');
         return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
     }
 

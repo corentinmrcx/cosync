@@ -14,6 +14,7 @@ final class InscriptionFormData
         public readonly ?bool $autorisationTransportDirigeants,
         public readonly ?bool $autorisationTransportParents,
         public readonly string $signatureData,
-        public readonly PaymentMode $paymentIntention,
+        /** @var PaymentMode[] */
+        public readonly array $paymentIntentions,
     ) {}
 }

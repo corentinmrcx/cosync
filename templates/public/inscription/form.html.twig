@@ -266,16 +266,25 @@
                         Votre inscription ne sera validée qu'à réception du paiement.
                     </p>
 
-                    <div class="inscription-payment-options">
-                        {% set modes = [
-                            { value: 'virement',   label: 'Virement bancaire' },
-                            { value: 'cheque',     label: 'Chèque' },
-                            { value: 'especes',    label: 'Espèces' },
-                            { value: 'cb_online',  label: 'Carte bancaire en ligne (SumUp)' },
-                            { value: 'pass_sport', label: "Pass'Sport" },
-                            { value: 'caf',        label: 'Chèque CAF' },
-                            { value: 'ancv',       label: 'ANCV / Chèques Vacances' },
-                        ] %}
+                    {# Toggle plusieurs moyens de paiement #}
+                    <label class="inscription-multi-toggle">
+                        <input type="checkbox" name="multi_payment" value="1" x-model="multiPayment"
+                               @change="paymentMode = ''; paymentModes = [];">
+                        <span class="inscription-multi-toggle-text">Je souhaite régler avec plusieurs moyens de paiement</span>
+                    </label>
+
+                    {% set modes = [
+                        { value: 'virement',   label: 'Virement bancaire' },
+                        { value: 'cheque',     label: 'Chèque' },
+                        { value: 'especes',    label: 'Espèces' },
+                        { value: 'cb_online',  label: 'Carte bancaire en ligne (SumUp)' },
+                        { value: 'pass_sport', label: "Pass'Sport" },
+                        { value: 'caf',        label: 'Chèque CAF' },
+                        { value: 'ancv',       label: 'ANCV / Chèques Vacances' },
+                    ] %}
+
+                    {# Paiement unique → radios #}
+                    <div x-show="!multiPayment" class="inscription-payment-options">
                         {% for mode in modes %}
                             <label class="inscription-payment-option">
                                 <input type="radio" name="payment_intention" value="{{ mode.value }}" x-model="paymentMode">
@@ -284,23 +293,36 @@
                         {% endfor %}
                     </div>
 
-                    <div x-show="paymentMode === 'virement'" class="inscription-payment-info">
+                    {# Paiement multiple → checkboxes #}
+                    <div x-show="multiPayment" class="inscription-payment-options">
+                        {% for mode in modes %}
+                            <label class="inscription-payment-option">
+                                <input type="checkbox" name="payment_intentions[]" value="{{ mode.value }}"
+                                       :checked="paymentModes.includes('{{ mode.value }}')"
+                                       @change="togglePaymentMode('{{ mode.value }}')">
+                                <span class="inscription-payment-label">{{ mode.label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+
+                    {# Blocs info — s'affichent selon le mode sélectionné (unique ou multiple) #}
+                    <div x-show="isPaymentModeActive('virement')" class="inscription-payment-info">
                         <p><strong>Coordonnées bancaires du club</strong></p>
                         <p>IBAN : <strong>FR76 1020 6000 2020 1001 5900 056</strong></p>
                         <p>BIC : <strong>AGRIFRPP802</strong></p>
                         <p>Libellé : <strong>COTISATION {{ licencie.nom }} {{ licencie.prenom }} {{ licencie.season.label }}</strong></p>
                     </div>
-                    <div x-show="paymentMode === 'cheque'" class="inscription-payment-info">
+                    <div x-show="isPaymentModeActive('cheque')" class="inscription-payment-info">
                         Chèque à l'ordre de <strong>Foyer de Soudron</strong>, à remettre au local à un dirigeant.
                     </div>
-                    <div x-show="paymentMode === 'especes'" class="inscription-payment-info">
+                    <div x-show="isPaymentModeActive('especes')" class="inscription-payment-info">
                         Espèces à remettre au local à un dirigeant.
                     </div>
-                    <div x-show="paymentMode === 'cb_online'" class="inscription-payment-info">
+                    <div x-show="isPaymentModeActive('cb_online')" class="inscription-payment-info">
                         <p>Paiement sécurisé par carte bancaire via SumUp.</p>
                         <p style="color: var(--color-text-muted); font-size: var(--font-size-xs);">Des frais de traitement peuvent s'appliquer (+1,5%). Le lien de paiement vous sera transmis par le club.</p>
                     </div>
-                    <div x-show="['pass_sport', 'caf', 'ancv'].includes(paymentMode)" class="inscription-payment-info">
+                    <div x-show="isPaymentModeActive('pass_sport') || isPaymentModeActive('caf') || isPaymentModeActive('ancv')" class="inscription-payment-info">
                         Document à remettre en main propre à un dirigeant du club.
                     </div>
                 </div>

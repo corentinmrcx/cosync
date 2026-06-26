@@ -100,10 +100,9 @@ class InscriptionController extends AbstractController
         $pointure      = $request->request->get('pointure', '');
         $photoRaw      = $request->request->get('autorisation_photo');
         $signatureData = $request->request->get('signature_data', '');
-        $paymentRaw    = $request->request->get('payment_intention', '');
 
         if ($tailleHaut === '' || $tailleBas === '' || $pointure === ''
-            || $photoRaw === null || $signatureData === '' || $paymentRaw === '') {
+            || $photoRaw === null || $signatureData === '') {
             return null;
         }
 
@@ -111,9 +110,28 @@ class InscriptionController extends AbstractController
             return null;
         }
 
-        $paymentMode = PaymentMode::tryFrom($paymentRaw);
-        if ($paymentMode === null) {
-            return null;
+        $multiPayment = $request->request->get('multi_payment') === '1';
+
+        if ($multiPayment) {
+            $rawModes = (array) ($request->request->all()['payment_intentions'] ?? []);
+            $modes    = [];
+            foreach ($rawModes as $raw) {
+                $m = PaymentMode::tryFrom((string) $raw);
+                if ($m === null) {
+                    return null;
+                }
+                $modes[] = $m;
+            }
+            if (count($modes) === 0) {
+                return null;
+            }
+        } else {
+            $rawMode = $request->request->get('payment_intention', '');
+            $single  = PaymentMode::tryFrom($rawMode);
+            if ($single === null) {
+                return null;
+            }
+            $modes = [$single];
         }
 
         $transportDirig  = null;
@@ -139,7 +157,7 @@ class InscriptionController extends AbstractController
             autorisationTransportDirigeants:  $transportDirig,
             autorisationTransportParents:     $transportParent,
             signatureData:                    $signatureData,
-            paymentIntention:                 $paymentMode,
+            paymentIntentions:                $modes,
         );
     }
 }
