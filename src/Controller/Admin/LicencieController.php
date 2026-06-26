@@ -189,9 +189,9 @@ class LicencieController extends AbstractController
         $transaction = $season ? $transactionRepo->findByLicencieAndSeason($licencie, $season) : null;
 
         $baseCosts = $season?->getBaseCosts() ?? [];
-        $montant   = $licencie->getCategory()->isEcoleFoot()
-            ? ($baseCosts['jeunes'] ?? 0)
-            : ($baseCosts['seniors'] ?? 0);
+        $montant   = $licencie->isSeniorTariff()
+            ? ($baseCosts['seniors'] ?? 0)
+            : ($baseCosts['jeunes'] ?? 0);
 
         $history = [
             [

@@ -36,9 +36,9 @@ class InscriptionController extends AbstractController
         }
 
         $baseCosts = $licencie->getSeason()->getBaseCosts();
-        $montant   = $licencie->getCategory()->isEcoleFoot()
-            ? ($baseCosts['jeunes'] ?? 0)
-            : ($baseCosts['seniors'] ?? 0);
+        $montant   = $licencie->isSeniorTariff()
+            ? ($baseCosts['seniors'] ?? 0)
+            : ($baseCosts['jeunes'] ?? 0);
 
         return $this->render('public/inscription/form.html.twig', [
             'licencie' => $licencie,
@@ -82,9 +82,9 @@ class InscriptionController extends AbstractController
         }
 
         $baseCosts = $licencie->getSeason()->getBaseCosts();
-        $montant   = $licencie->getCategory()->isEcoleFoot()
-            ? ($baseCosts['jeunes'] ?? 0)
-            : ($baseCosts['seniors'] ?? 0);
+        $montant   = $licencie->isSeniorTariff()
+            ? ($baseCosts['seniors'] ?? 0)
+            : ($baseCosts['jeunes'] ?? 0);
 
         return $this->render('public/inscription/confirmation.html.twig', [
             'licencie' => $licencie,
