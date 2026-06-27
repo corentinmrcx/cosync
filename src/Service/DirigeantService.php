@@ -27,8 +27,8 @@ final class DirigeantService
         ['nom' => $nom, 'prenom' => $prenom] = $this->normalize($data);
         $numLicence = $this->normalizeNumLicence($data->numLicence);
 
-        if ($numLicence !== null && $this->dirigeantRepo->findByNumLicence($numLicence) !== null) {
-            throw new \DomainException(sprintf('Un dirigeant avec le numéro FootClubs "%s" existe déjà.', $numLicence));
+        if ($numLicence !== null && $this->dirigeantRepo->findByNumLicence($numLicence, $season) !== null) {
+            throw new \DomainException(sprintf('Un dirigeant avec le numéro FootClubs "%s" existe déjà dans cette saison.', $numLicence));
         }
 
         if ($this->dirigeantRepo->findByNomPrenomSaison($nom, $prenom, $season) !== null) {
@@ -58,9 +58,9 @@ final class DirigeantService
         $numLicence = $this->normalizeNumLicence($data->numLicence);
 
         if ($numLicence !== null && $numLicence !== $dirigeant->getNumLicence()) {
-            $other = $this->dirigeantRepo->findByNumLicence($numLicence);
+            $other = $this->dirigeantRepo->findByNumLicence($numLicence, $dirigeant->getSeason());
             if ($other !== null && !$other->getUuid()->equals($dirigeant->getUuid())) {
-                throw new \DomainException(sprintf('Le numéro FootClubs "%s" est déjà utilisé par %s.', $numLicence, $other->getNomPrenom()));
+                throw new \DomainException(sprintf('Le numéro FootClubs "%s" est déjà utilisé par %s dans cette saison.', $numLicence, $other->getNomPrenom()));
             }
         }
 

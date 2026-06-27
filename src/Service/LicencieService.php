@@ -42,14 +42,14 @@ final class LicencieService
             ? $this->sanitizer->sanitizeNumLicence($data->numLicence)
             : null;
 
-        if ($numLicence !== null && $this->licencieRepo->findByNumLicence($numLicence) !== null) {
-            throw new \DomainException(sprintf('Un licencié avec le numéro FootClubs "%s" existe déjà.', $numLicence));
+        if ($numLicence !== null && $this->licencieRepo->findByNumLicence($numLicence, $season) !== null) {
+            throw new \DomainException(sprintf('Un licencié avec le numéro FootClubs "%s" existe déjà dans cette saison.', $numLicence));
         }
 
-        $existing = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance);
+        $existing = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance, $season);
         if ($existing !== null) {
             throw new \DomainException(sprintf(
-                '%s %s (né(e) le %s) existe déjà dans la base.',
+                '%s %s (né(e) le %s) existe déjà dans cette saison.',
                 $nom, $prenom,
                 $data->dateNaissance->format('d/m/Y'),
             ));
@@ -93,17 +93,19 @@ final class LicencieService
             ? $this->sanitizer->sanitizeNumLicence($data->numLicence)
             : null;
 
+        $season = $licencie->getSeason();
+
         if ($numLicence !== null && $numLicence !== $licencie->getNumLicence()) {
-            $other = $this->licencieRepo->findByNumLicence($numLicence);
+            $other = $this->licencieRepo->findByNumLicence($numLicence, $season);
             if ($other !== null && !$other->getUuid()->equals($licencie->getUuid())) {
-                throw new \DomainException(sprintf('Le numéro FootClubs "%s" est déjà utilisé par %s.', $numLicence, $other->getNomPrenom()));
+                throw new \DomainException(sprintf('Le numéro FootClubs "%s" est déjà utilisé par %s dans cette saison.', $numLicence, $other->getNomPrenom()));
             }
         }
 
         if ($nom !== $licencie->getNom() || $prenom !== $licencie->getPrenom() || $data->dateNaissance != $licencie->getDateNaissance()) {
-            $other = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance);
+            $other = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance, $season);
             if ($other !== null && !$other->getUuid()->equals($licencie->getUuid())) {
-                throw new \DomainException(sprintf('%s %s (né(e) le %s) existe déjà dans la base.', $nom, $prenom, $data->dateNaissance->format('d/m/Y')));
+                throw new \DomainException(sprintf('%s %s (né(e) le %s) existe déjà dans cette saison.', $nom, $prenom, $data->dateNaissance->format('d/m/Y')));
             }
         }
 

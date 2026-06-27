@@ -185,8 +185,8 @@ final class ImportService
         $ville      = $this->colValue($row, $colIndexes, self::COL_BUREAU_DISTRIBUTEUR);
         $ville      = $ville !== null ? trim($ville) ?: null : null;
 
-        $licencie = $this->licencieRepository->findByNumLicence($numLicence)
-            ?? $this->licencieRepository->findByNomPrenomNaissance($nom, $prenom, $dateNaissance);
+        $licencie = $this->licencieRepository->findByNumLicence($numLicence, $season)
+            ?? $this->licencieRepository->findByNomPrenomNaissance($nom, $prenom, $dateNaissance, $season);
 
         $pendingNumLicences[$numLicence] = true;
 
@@ -265,7 +265,7 @@ final class ImportService
         $rawRole    = trim((string) ($row[$colIndexes[self::COL_SOUS_CATEGORIE]] ?? ''));
         $role       = $rawRole !== '' ? $this->findOrCreateRole(mb_convert_case($rawRole, MB_CASE_TITLE, 'UTF-8')) : null;
 
-        $dirigeant = ($numLicence !== null ? $this->dirigeantRepository->findByNumLicence($numLicence) : null)
+        $dirigeant = ($numLicence !== null ? $this->dirigeantRepository->findByNumLicence($numLicence, $season) : null)
             ?? $this->dirigeantRepository->findByNomPrenomSaison($nom, $prenom, $season);
 
         if ($numLicence !== null) {

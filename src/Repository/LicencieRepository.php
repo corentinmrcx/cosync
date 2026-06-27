@@ -21,9 +21,9 @@ class LicencieRepository extends ServiceEntityRepository
         parent::__construct($registry, Licencie::class);
     }
 
-    public function findByNumLicence(string $numLicence): ?Licencie
+    public function findByNumLicence(string $numLicence, Season $season): ?Licencie
     {
-        return $this->findOneBy(['numLicence' => $numLicence]);
+        return $this->findOneBy(['numLicence' => $numLicence, 'season' => $season]);
     }
 
     /** Licenciés dont le paiement est confirmé — éligibles aux dotations */
@@ -41,15 +41,17 @@ class LicencieRepository extends ServiceEntityRepository
     }
 
     /** Fallback pour les licenciés importés avant l'ajout du num_licence */
-    public function findByNomPrenomNaissance(string $nom, string $prenom, \DateTimeImmutable $dateNaissance): ?Licencie
+    public function findByNomPrenomNaissance(string $nom, string $prenom, \DateTimeImmutable $dateNaissance, Season $season): ?Licencie
     {
         return $this->createQueryBuilder('l')
             ->where('l.nom = :nom')
             ->andWhere('l.prenom = :prenom')
             ->andWhere('l.dateNaissance = :dateNaissance')
+            ->andWhere('l.season = :season')
             ->setParameter('nom', $nom)
             ->setParameter('prenom', $prenom)
             ->setParameter('dateNaissance', $dateNaissance)
+            ->setParameter('season', $season)
             ->getQuery()
             ->getOneOrNullResult();
     }
