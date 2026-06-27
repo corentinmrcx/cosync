@@ -40,7 +40,7 @@ class LicencieIdentityType extends AbstractType
             ])
             ->add('category', EntityType::class, [
                 'class'        => Category::class,
-                'choice_label' => fn(Category $c): string => $c->getCode() . ' — ' . $c->getLabel(),
+                'choice_label' => fn(Category $c): string => $c->getCode(),
                 'label'        => 'Catégorie',
                 'placeholder'  => '— Sélectionner —',
                 'constraints'  => [new NotBlank(message: 'La catégorie est requise.')],

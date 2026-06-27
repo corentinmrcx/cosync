@@ -31,6 +31,17 @@ class TeamRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @return Team[] */
+    public function findByCategory(Category $category): array
+    {
+        return $this->createQueryBuilder('t')
+            ->join('t.categories', 'c')
+            ->where('c = :category')
+            ->setParameter('category', $category)
+            ->getQuery()
+            ->getResult();
+    }
+
     /**
      * Retourne l'équipe unique ayant cette catégorie dans la saison.
      * Si plusieurs équipes la partagent, retourne null (ambiguïté).

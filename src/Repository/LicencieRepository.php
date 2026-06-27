@@ -61,6 +61,16 @@ class LicencieRepository extends ServiceEntityRepository
         return $this->find($uuid);
     }
 
+    public function countByCategory(Category $category): int
+    {
+        return (int) $this->createQueryBuilder('l')
+            ->select('COUNT(l.uuid)')
+            ->where('l.category = :category')
+            ->setParameter('category', $category)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /** @return Licencie[] */
     public function findBySeason(Season $season): array
     {

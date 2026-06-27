@@ -21,6 +21,7 @@
 @import './pages/stock-items.css';
 @import './pages/diag.css';
 @import './pages/dirigeants.css';
+@import './pages/categories.css';
 @import './pages/error.css';
 
 :root {
