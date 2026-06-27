@@ -23,6 +23,9 @@
 
     {% else %}
 
+    {# Options partagées entre formulaire de création et formulaires d'édition #}
+    {% set ms_opts = categories|map(c => {value: c.id, label: c.code}) %}
+
     <div class="config-row">
 
         {# — Paramètres saison — #}
@@ -73,9 +76,6 @@
                             <div class="config-teams-row" x-show="editingTeam !== {{ team.id }}">
                                 <div class="config-teams-info">
                                     <span class="config-teams-name">{{ team.name }}</span>
-                                    {% for cat in team.categories %}
-                                        <span class="config-teams-badge">{{ cat.code }}</span>
-                                    {% endfor %}
                                 </div>
                                 <div class="config-teams-btns">
                                     <button type="button" class="config-teams-btn-edit" @click="editingTeam = {{ team.id }}">Modifier</button>
@@ -98,15 +98,12 @@
                                 </div>
                                 <div class="season-form-field" style="margin:0">
                                     <label class="season-form-label" style="font-size:var(--font-size-xs)">Catégories FFF</label>
-                                    <div class="config-teams-checks">
-                                        {% for cat in categories %}
-                                            <label class="config-teams-check">
-                                                <input type="checkbox" name="team[categories][]" value="{{ cat.id }}"{% if team.categories.contains(cat) %} checked{% endif %}>
-                                                <span>{{ cat.code }}</span>
-                                            </label>
-                                        {% endfor %}
-                                    </div>
-                                    <p class="config-teams-hint" style="margin-top:0.25rem">Laissez vide si non applicable (ex : Loisirs).</p>
+                                    {% include 'components/multi-select.html.twig' with {
+                                        ms_name: 'team[categories][]',
+                                        ms_options: ms_opts,
+                                        ms_selected: team.categories|map(c => c.id),
+                                        ms_placeholder: '— Aucune (ex : Loisirs) —'
+                                    } %}
                                 </div>
                                 <div class="config-teams-edit-actions">
                                     <button type="submit" class="season-form-submit" style="padding:0.4rem 0.875rem;font-size:var(--font-size-xs)">Enregistrer</button>
@@ -131,15 +128,15 @@
                 </div>
                 <div class="season-form-field">
                     {{ form_label(newTeamForm.categories) }}
-                    <div class="config-teams-checks">
-                        {% for choice in newTeamForm.categories %}
-                            <label class="config-teams-check">
-                                {{ form_widget(choice) }}
-                                <span>{{ choice.vars.label }}</span>
-                            </label>
-                        {% endfor %}
-                    </div>
-                    <p class="config-teams-hint">Assignation automatique à l'import pour ces catégories. Laissez vide si non applicable.</p>
+                    {# Widget Symfony rendu caché — les coches sont gérées par le composant Alpine ci-dessous #}
+                    <div style="display:none">{{ form_widget(newTeamForm.categories) }}</div>
+                    {% include 'components/multi-select.html.twig' with {
+                        ms_name: 'team_setup[categories][]',
+                        ms_options: ms_opts,
+                        ms_selected: [],
+                        ms_placeholder: '— Aucune (ex : Loisirs) —'
+                    } %}
+                    <p class="config-teams-hint" style="margin-top:0.375rem">Assignation automatique à l'import. Laissez vide si non applicable.</p>
                     {{ form_errors(newTeamForm.categories) }}
                 </div>
                 <button type="submit" class="season-form-submit">Ajouter l'équipe</button>

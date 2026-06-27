@@ -1,0 +1,86 @@
+{#
+  Composant multi-select dropdown : trigger fermé style cselect, dropdown avec coches.
+
+  Paramètres :
+    ms_name        (string)       Attribut name des inputs soumis, ex: "team[categories][]"
+    ms_options     (array)        [{value: int, label: string}]
+    ms_selected    (array)        IDs entiers pré-sélectionnés, ex: [5, 7]
+    ms_placeholder (string|null)  Texte affiché quand rien n'est sélectionné
+#}
+<script>
+if (!window.multiSelectWidget) {
+    window.multiSelectWidget = function(opts, sel, placeholder) {
+        return {
+            open: false,
+            top: 0, left: 0, width: 0,
+            options: opts,
+            selected: (sel || []).map(Number),
+            placeholder: placeholder || '— Choisir —',
+            toggle() {
+                if (!this.open) {
+                    const r = this.$refs.trigger.getBoundingClientRect();
+                    this.top  = (window.innerHeight - r.bottom < 260) ? r.top - 260 - 4 : r.bottom + 4;
+                    this.left = r.left;
+                    this.width = r.width;
+                }
+                this.open = !this.open;
+            },
+            isSelected(v) { return this.selected.includes(Number(v)); },
+            pick(v) {
+                v = Number(v);
+                const i = this.selected.indexOf(v);
+                i === -1 ? this.selected.push(v) : this.selected.splice(i, 1);
+            },
+            label() {
+                if (!this.selected.length) return this.placeholder;
+                const names = this.options
+                    .filter(o => this.selected.includes(Number(o.value)))
+                    .map(o => o.label);
+                return names.length > 2 ? names.length + ' catégories' : names.join(', ');
+            }
+        };
+    };
+}
+</script>
+
+<div class="cselect"
+     x-data="multiSelectWidget({{ ms_options|json_encode }}, {{ ms_selected|json_encode }}, {{ (ms_placeholder ?? '— Choisir —')|json_encode }})"
+     @click.outside="open = false">
+
+    <button type="button"
+            x-ref="trigger"
+            class="cselect-trigger"
+            :class="{'cselect-trigger-open': open}"
+            @click="toggle()">
+        <span x-text="label()" :class="{'cselect-placeholder': !selected.length}"></span>
+        <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}"
+             width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+        </svg>
+    </button>
+
+    <ul class="cselect-dropdown"
+        x-show="open"
+        x-cloak
+        :style="`top:${top}px;left:${left}px;width:${width}px`"
+        @mousedown.prevent>
+        {% for opt in ms_options %}
+        <li class="cselect-option cselect-option-check"
+            :class="{'cselect-option-active': isSelected({{ opt.value }})}"
+            @click="pick({{ opt.value }})">
+            <input type="checkbox"
+                   :checked="isSelected({{ opt.value }})"
+                   style="accent-color:var(--color-primary);width:13px;height:13px;flex-shrink:0"
+                   tabindex="-1"
+                   @click.stop>
+            {{ opt.label }}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <template x-for="v in selected" :key="v">
+        <input type="hidden" name="{{ ms_name }}" :value="v">
+    </template>
+</div>

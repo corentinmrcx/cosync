@@ -277,15 +277,6 @@
     white-space: nowrap;
 }
 
-.config-teams-badge {
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    padding: 0.1rem 0.4rem;
-    background: var(--color-info-bg);
-    color: var(--color-info);
-    border-radius: var(--radius-xl);
-    white-space: nowrap;
-}
 
 .config-teams-btns {
     display: flex;
@@ -323,39 +314,6 @@
     background: var(--color-bg-page);
 }
 
-.config-teams-checks {
-    display: flex;
-    flex-direction: column;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    background: var(--color-bg-page);
-}
-
-.config-teams-check {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.375rem 0.625rem;
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--color-text-body);
-    cursor: pointer;
-    border-bottom: 1px solid var(--color-border);
-    transition: background 0.1s;
-}
-
-.config-teams-check:last-child { border-bottom: none; }
-
-.config-teams-check:hover { background: var(--color-bg-subtle); }
-
-.config-teams-check input[type="checkbox"] {
-    accent-color: var(--color-primary);
-    width: 14px;
-    height: 14px;
-    cursor: pointer;
-    flex-shrink: 0;
-}
 
 .config-teams-edit-actions {
     display: flex;
