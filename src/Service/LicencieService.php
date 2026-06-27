@@ -12,6 +12,7 @@ use App\Entity\User;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
+use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
 use App\Service\Import\DataSanitizer;
 use App\Service\Mail\MailerService;
@@ -23,6 +24,7 @@ final class LicencieService
         private readonly EntityManagerInterface $em,
         private readonly TransactionRepository $transactionRepo,
         private readonly LicencieRepository $licencieRepo,
+        private readonly TeamRepository $teamRepo,
         private readonly DataSanitizer $sanitizer,
         private readonly MailerService $mailerService,
     ) {}
@@ -58,7 +60,8 @@ final class LicencieService
         $licencie->setPrenom($prenom);
         $licencie->setDateNaissance($data->dateNaissance);
         $licencie->setCategory($data->category);
-        $licencie->setTeam($data->team);
+        $team = $data->team ?? $this->teamRepo->findForCategory($data->category, $season);
+        $licencie->setTeam($team);
         $licencie->setSeason($season);
         $licencie->setEmail($email);
         $licencie->setTelephone($phone);

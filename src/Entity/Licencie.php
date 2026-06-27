@@ -256,15 +256,10 @@ class Licencie
 
     /**
      * Détermine si le licencié est au tarif sénior (120€) ou jeune (85€).
-     * Priorité : catégorie de l'équipe assignée > catégorie FFF du licencié.
-     * Tarif sénior = toute catégorie qui n'est pas une catégorie jeune (U*).
+     * Basé sur la catégorie FFF du licencié : jeune = U*, senior = tout le reste.
      */
     public function isSeniorTariff(): bool
     {
-        if ($this->team !== null && $this->team->getDefaultCategory() !== null) {
-            return !$this->team->getDefaultCategory()->isJeune();
-        }
-
         return !$this->category->isJeune();
     }
 }

@@ -220,8 +220,8 @@ final class ImportService
             $licencie->setVille($ville);
             $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
 
-            // Auto-assignation d'équipe si une équipe par défaut est configurée
-            $defaultTeam = $this->teamRepository->findDefaultForCategory($category, $season);
+            // Auto-assignation si une seule équipe couvre cette catégorie
+            $defaultTeam = $this->teamRepository->findForCategory($category, $season);
             if ($defaultTeam !== null) {
                 $licencie->setTeam($defaultTeam);
             }
