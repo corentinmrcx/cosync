@@ -3,6 +3,7 @@
 namespace App\EventListener;
 
 use App\Repository\DossierClubRepository;
+use App\Service\Drive\AttestationDriveSync;
 use App\Service\Drive\DossierDriveSync;
 use App\Service\Drive\PendingUploadQueue;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -22,6 +23,7 @@ final class DriveUploadTerminateListener
         private readonly PendingUploadQueue $queue,
         private readonly DossierClubRepository $dossierRepository,
         private readonly DossierDriveSync $driveSync,
+        private readonly AttestationDriveSync $attestationDriveSync,
     ) {}
 
     public function __invoke(TerminateEvent $event): void
@@ -31,6 +33,14 @@ final class DriveUploadTerminateListener
 
             if ($dossier !== null) {
                 $this->driveSync->sync($dossier);
+            }
+        }
+
+        foreach ($this->queue->flushAttestations() as $dossierId) {
+            $dossier = $this->dossierRepository->find($dossierId);
+
+            if ($dossier !== null) {
+                $this->attestationDriveSync->sync($dossier);
             }
         }
     }

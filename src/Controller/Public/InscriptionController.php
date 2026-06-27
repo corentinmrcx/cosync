@@ -2,6 +2,7 @@
 
 namespace App\Controller\Public;
 
+use App\DTO\AttestationTransportData;
 use App\DTO\InscriptionFormData;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
@@ -93,7 +94,7 @@ class InscriptionController extends AbstractController
         ]);
     }
 
-    private function buildFormData(Request $request, bool $isEcoleFoot): ?InscriptionFormData
+    private function buildFormData(Request $request, bool $isJeune): ?InscriptionFormData
     {
         $tailleHaut    = $request->request->get('taille_haut', '');
         $tailleBas     = $request->request->get('taille_bas', '');
@@ -134,30 +135,80 @@ class InscriptionController extends AbstractController
             $modes = [$single];
         }
 
-        $transportDirig  = null;
-        $transportParent = null;
+        $transportDirig     = null;
+        $transportParent    = null;
+        $autorisationAccident = null;
+        $volontaireTransport  = null;
+        $attestationData      = null;
 
-        if ($isEcoleFoot) {
-            $dirigRaw  = $request->request->get('autorisation_transport_dirigeants');
-            $parentRaw = $request->request->get('autorisation_transport_parents');
+        if ($isJeune) {
+            $dirigRaw    = $request->request->get('autorisation_transport_dirigeants');
+            $parentRaw   = $request->request->get('autorisation_transport_parents');
+            $accidentRaw = $request->request->get('autorisation_accident');
+            $volRaw      = $request->request->get('volontaire_transport');
 
-            if ($dirigRaw === null || $parentRaw === null) {
+            if ($dirigRaw === null || $parentRaw === null || $accidentRaw === null || $volRaw === null) {
                 return null;
             }
 
-            $transportDirig  = $dirigRaw === '1';
-            $transportParent = $parentRaw === '1';
+            $transportDirig      = $dirigRaw === '1';
+            $transportParent     = $parentRaw === '1';
+            $autorisationAccident = $accidentRaw === '1';
+            $volontaireTransport  = $volRaw === '1';
+
+            if ($volontaireTransport) {
+                $nomConducteur    = trim($request->request->get('attestation_nom_conducteur', ''));
+                $prenomConducteur = trim($request->request->get('attestation_prenom_conducteur', ''));
+                $numPermis        = $request->request->get('attestation_num_permis', '');
+                $assurance        = $request->request->get('attestation_assurance', '');
+                $dateCTRaw        = $request->request->get('attestation_date_ct', '');
+                $sigAttest        = $request->request->get('attestation_signature_data', '');
+                $engagement       = $request->request->get('attestation_engagement') === '1';
+
+                if ($nomConducteur === '' || $prenomConducteur === ''
+                    || $numPermis === '' || $assurance === '' || $dateCTRaw === '' || $sigAttest === '') {
+                    return null;
+                }
+
+                if (!str_starts_with($sigAttest, 'data:image/') || strlen($sigAttest) > 2_800_000) {
+                    return null;
+                }
+
+                try {
+                    $dateCT = new \DateTimeImmutable($dateCTRaw);
+                } catch (\Exception) {
+                    return null;
+                }
+
+                // Refuser une date de contrôle technique dans le futur
+                if ($dateCT > new \DateTimeImmutable('today')) {
+                    return null;
+                }
+
+                $attestationData = new AttestationTransportData(
+                    nomConducteur:       $nomConducteur,
+                    prenomConducteur:    $prenomConducteur,
+                    numPermis:           $numPermis,
+                    assuranceNomAdresse: $assurance,
+                    dateCT:              $dateCT,
+                    engagementPris:      $engagement,
+                    signatureData:       $sigAttest,
+                );
+            }
         }
 
         return new InscriptionFormData(
-            tailleHaut:                       $tailleHaut,
-            tailleBas:                        $tailleBas,
-            pointure:                         $pointure,
-            autorisationPhoto:                $photoRaw === '1',
-            autorisationTransportDirigeants:  $transportDirig,
-            autorisationTransportParents:     $transportParent,
-            signatureData:                    $signatureData,
-            paymentIntentions:                $modes,
+            tailleHaut:                      $tailleHaut,
+            tailleBas:                       $tailleBas,
+            pointure:                        $pointure,
+            autorisationPhoto:               $photoRaw === '1',
+            autorisationTransportDirigeants: $transportDirig,
+            autorisationTransportParents:    $transportParent,
+            autorisationAccident:            $autorisationAccident,
+            volontaireTransport:             $volontaireTransport,
+            signatureData:                   $signatureData,
+            paymentIntentions:               $modes,
+            attestationTransport:            $attestationData,
         );
     }
 }

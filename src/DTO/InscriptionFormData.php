@@ -13,8 +13,11 @@ final class InscriptionFormData
         public readonly bool $autorisationPhoto,
         public readonly ?bool $autorisationTransportDirigeants,
         public readonly ?bool $autorisationTransportParents,
+        public readonly ?bool $autorisationAccident,
+        public readonly ?bool $volontaireTransport,
         public readonly string $signatureData,
         /** @var PaymentMode[] */
         public readonly array $paymentIntentions,
+        public readonly ?AttestationTransportData $attestationTransport = null,
     ) {}
 }

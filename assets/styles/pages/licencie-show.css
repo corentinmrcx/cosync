@@ -307,6 +307,21 @@
     flex-shrink: 0;
 }
 
+.licencie-show-check-badge-neutral {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    background: var(--color-bg-muted);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+/* Ligne enfant (sous-item) : légèrement indenté */
+.licencie-show-check-item-sub {
+    padding-left: 1.75rem;
+}
+
 /* — Bouton confirmer paiement (dans la carte) — */
 .licencie-show-confirm-full {
     display: flex;

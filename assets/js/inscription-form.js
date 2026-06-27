@@ -9,39 +9,89 @@ export function inscriptionForm({ isJeune, montant }) {
         tailleBas: '',
         pointure: '',
 
-        // Étape 3
+        // Étape 3 — autorisations
         autorisationPhoto: null,
         autorisationTransportDirigeants: null,
         autorisationTransportParents: null,
+        autorisationAccident: null,
+        volontaireTransport: null,
 
-        // Étape 4
+        // Étape 4 — attestation transport (uniquement si volontaireTransport === '1')
+        nomConducteur: '',
+        prenomConducteur: '',
+        numPermis: '',
+        assuranceNomAdresse: '',
+        dateCT: '',
+        engagementAttestation: false,
+        signatureDataAttestation: '',
+        signaturePadAttestation: null,
+
+        // Étape 5 — règlement + signature
         reglementScrolled: false,
         hasRead: false,
         signatureData: '',
         signaturePad: null,
 
-        // Étape 5
+        // Étape 6 — paiement
         paymentMode: '',
         multiPayment: false,
         paymentModes: [],
 
-        // Soumission finale (affiche l'overlay de chargement)
         submitting: false,
 
+        // Séquence des étapes réellement accessibles (5 ou 6 selon volontaireTransport)
+        get steps() {
+            const s = [1, 2, 3];
+            if (this.isJeune && this.volontaireTransport === '1') s.push(4);
+            s.push(5, 6);
+            return s;
+        },
+
+        get totalSteps() {
+            return this.steps.length;
+        },
+
+        get displayStep() {
+            const idx = this.steps.indexOf(this.step);
+            return idx === -1 ? 1 : idx + 1;
+        },
+
+        get isLastStep() {
+            return this.step === this.steps[this.steps.length - 1];
+        },
+
+        // Vrai si l'utilisateur a saisi une date de CT strictement dans le futur (aujourd'hui autorisé)
+        get dateCTFuture() {
+            if (this.dateCT === '') return false;
+            const d = new Date();
+            const todayStr = d.getFullYear() + '-'
+                + String(d.getMonth() + 1).padStart(2, '0') + '-'
+                + String(d.getDate()).padStart(2, '0');
+            return this.dateCT > todayStr;
+        },
+
         init() {
+            // Si volontaireTransport passe à non et qu'on est sur l'étape attestation → reculer
+            this.$watch('volontaireTransport', (val) => {
+                if (val !== '1' && this.step === 4) {
+                    this.step = 3;
+                }
+            });
+
             this.$watch('hasRead', (value) => {
-                if (value === true && this.step === 4) {
+                if (value === true && this.step === 5) {
                     window.requestAnimationFrame(() => this.initSignaturePad());
                 }
             });
 
-            // Quand on arrive à l'étape 4, vérifier si le règlement nécessite un scroll
             this.$watch('step', (value) => {
                 if (value === 4) {
+                    this.$nextTick(() => this.initAttestationSignaturePad());
+                }
+                if (value === 5) {
                     this.$nextTick(() => {
                         const el = this.$refs.reglementEl;
                         if (!el) return;
-                        // Si le contenu tient sans scroll, on considère qu'il est lu
                         if (el.scrollHeight <= el.clientHeight) {
                             this.reglementScrolled = true;
                         }
@@ -67,13 +117,24 @@ export function inscriptionForm({ isJeune, montant }) {
                 case 3:
                     if (this.autorisationPhoto === null) return false;
                     if (this.isJeune) {
-                        return this.autorisationTransportDirigeants !== null
-                            && this.autorisationTransportParents !== null;
+                        return this.autorisationAccident !== null
+                            && this.autorisationTransportDirigeants !== null
+                            && this.autorisationTransportParents !== null
+                            && this.volontaireTransport !== null;
                     }
                     return true;
-                case 4:
+                case 4: // attestation transport
+                    return this.nomConducteur !== ''
+                        && this.prenomConducteur !== ''
+                        && this.numPermis !== ''
+                        && this.assuranceNomAdresse !== ''
+                        && this.dateCT !== ''
+                        && !this.dateCTFuture
+                        && this.engagementAttestation
+                        && this.signatureDataAttestation !== '';
+                case 5: // règlement
                     return this.hasRead && this.signatureData !== '';
-                case 5:
+                case 6: // paiement
                     return this.multiPayment ? this.paymentModes.length > 0 : this.paymentMode !== '';
                 default:
                     return false;
@@ -81,15 +142,18 @@ export function inscriptionForm({ isJeune, montant }) {
         },
 
         next() {
-            if (this.canGoNext && this.step < 5) {
-                this.step++;
+            if (!this.canGoNext) return;
+            const idx = this.steps.indexOf(this.step);
+            if (idx < this.steps.length - 1) {
+                this.step = this.steps[idx + 1];
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         },
 
         prev() {
-            if (this.step > 1) {
-                this.step--;
+            const idx = this.steps.indexOf(this.step);
+            if (idx > 0) {
+                this.step = this.steps[idx - 1];
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         },
@@ -98,7 +162,6 @@ export function inscriptionForm({ isJeune, montant }) {
             const canvas = this.$refs.signatureCanvas;
             if (!canvas || this.signaturePad) return;
 
-            // Scaling pour les écrans Retina / haute densité
             const ratio = Math.max(window.devicePixelRatio || 1, 1);
             canvas.width  = canvas.offsetWidth  * ratio;
             canvas.height = canvas.offsetHeight * ratio;
@@ -112,6 +175,32 @@ export function inscriptionForm({ isJeune, montant }) {
             this.signaturePad.addEventListener('endStroke', () => {
                 this.signatureData = this.signaturePad.toDataURL('image/png');
             });
+        },
+
+        initAttestationSignaturePad() {
+            const canvas = this.$refs.signatureCanvasAttestation;
+            if (!canvas || this.signaturePadAttestation) return;
+
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width  = canvas.offsetWidth  * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext('2d').scale(ratio, ratio);
+
+            this.signaturePadAttestation = new SignaturePad(canvas, {
+                backgroundColor: 'rgb(255, 255, 255)',
+                penColor: 'rgb(0, 0, 0)',
+            });
+
+            this.signaturePadAttestation.addEventListener('endStroke', () => {
+                this.signatureDataAttestation = this.signaturePadAttestation.toDataURL('image/png');
+            });
+        },
+
+        clearAttestationSignature() {
+            if (this.signaturePadAttestation) {
+                this.signaturePadAttestation.clear();
+                this.signatureDataAttestation = '';
+            }
         },
 
         togglePaymentMode(value) {

@@ -307,7 +307,24 @@
                         {% endif %}
                     </li>
 
-                    {% if licencie.category.isEcoleFoot %}
+                    {% if licencie.category.isJeune %}
+                        {# Autorisation accident #}
+                        <li class="licencie-show-check-item">
+                            {% if d.autorisationAccident is null %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span class="licencie-show-check-label licencie-show-check-label-pending">Autorisation accident</span>
+                                <span class="licencie-show-check-badge-pending">En attente</span>
+                            {% elseif d.autorisationAccident %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span class="licencie-show-check-label">Autorisation accident</span>
+                                <span class="licencie-show-check-badge-yes">Accordé</span>
+                            {% else %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span class="licencie-show-check-label">Autorisation accident</span>
+                                <span class="licencie-show-check-badge-no">Refusé</span>
+                            {% endif %}
+                        </li>
+
                         {# Transport dirigeants #}
                         <li class="licencie-show-check-item">
                             {% if d.autorisationTransportDirigeants is null %}
@@ -341,6 +358,38 @@
                                 <span class="licencie-show-check-badge-no">Refusé</span>
                             {% endif %}
                         </li>
+
+                        {# Volontaire transport #}
+                        <li class="licencie-show-check-item">
+                            {% if d.volontaireTransport is null %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span class="licencie-show-check-label licencie-show-check-label-pending">Volontaire transport</span>
+                                <span class="licencie-show-check-badge-pending">En attente</span>
+                            {% elseif d.volontaireTransport %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span class="licencie-show-check-label">Volontaire transport</span>
+                                <span class="licencie-show-check-badge-yes">Oui</span>
+                            {% else %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span class="licencie-show-check-label">Volontaire transport</span>
+                                <span class="licencie-show-check-badge-neutral">Non</span>
+                            {% endif %}
+                        </li>
+
+                        {# Attestation transport — uniquement si le parent est volontaire #}
+                        {% if d.volontaireTransport %}
+                        <li class="licencie-show-check-item licencie-show-check-item-sub">
+                            {% if d.attestationTransportDriveId is not null and not (d.attestationTransportDriveId starts with '/') %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span class="licencie-show-check-label">Attestation transport</span>
+                                <span class="licencie-show-check-badge-yes">Archivée sur Drive</span>
+                            {% else %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span class="licencie-show-check-label licencie-show-check-label-pending">Attestation transport</span>
+                                <span class="licencie-show-check-badge-pending">Upload en attente</span>
+                            {% endif %}
+                        </li>
+                        {% endif %}
                     {% endif %}
 
                     {# Paiement cotisation #}
