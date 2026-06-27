@@ -7,6 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: LicencieRepository::class)]
+#[ORM\UniqueConstraint(name: 'uniq_licencie_num_licence_season', columns: ['num_licence', 'season_id'])]
 class Licencie
 {
     /** Clé publique utilisée dans l'URL /inscription/{uuid} */
@@ -14,7 +15,7 @@ class Licencie
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $uuid;
 
-    #[ORM\Column(length: 50, unique: true, nullable: true)]
+    #[ORM\Column(length: 50, nullable: true)]
     private ?string $numLicence = null;
 
     #[ORM\Column(length: 100)]

@@ -7,13 +7,14 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: DirigeantRepository::class)]
+#[ORM\UniqueConstraint(name: 'uniq_dirigeant_num_licence_season', columns: ['num_licence', 'season_id'])]
 class Dirigeant
 {
     #[ORM\Id]
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $uuid;
 
-    #[ORM\Column(length: 50, unique: true, nullable: true)]
+    #[ORM\Column(length: 50, nullable: true)]
     private ?string $numLicence = null;
 
     #[ORM\Column(length: 100)]
