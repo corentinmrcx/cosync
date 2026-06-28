@@ -7,6 +7,7 @@ use App\DTO\InscriptionFormData;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Service\Form\InscriptionFormService;
+use App\Service\Stock\DotationResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +18,7 @@ use Symfony\Component\Uid\Uuid;
 class InscriptionController extends AbstractController
 {
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
-    public function show(string $uuid, LicencieRepository $licencieRepo): Response
+    public function show(string $uuid, LicencieRepository $licencieRepo, DotationResolver $resolver): Response
     {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
@@ -42,13 +43,14 @@ class InscriptionController extends AbstractController
             : ($baseCosts['jeunes'] ?? 0);
 
         return $this->render('public/inscription/form.html.twig', [
-            'licencie' => $licencie,
-            'montant'  => $montant,
+            'licencie'        => $licencie,
+            'montant'         => $montant,
+            'dotationGroupes' => $resolver->getChoiceGroups($licencie),
         ]);
     }
 
     #[Route('/{uuid}', name: 'submit', methods: ['POST'])]
-    public function submit(string $uuid, Request $request, LicencieRepository $licencieRepo, InscriptionFormService $formService): Response
+    public function submit(string $uuid, Request $request, LicencieRepository $licencieRepo, InscriptionFormService $formService, DotationResolver $resolver): Response
     {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
@@ -61,7 +63,8 @@ class InscriptionController extends AbstractController
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
-        $data = $this->buildFormData($request, $licencie->getCategory()->isJeune());
+        $choiceGroupKeys = array_map(static fn (array $g): string => $g['groupe'], $resolver->getChoiceGroups($licencie));
+        $data = $this->buildFormData($request, $licencie->getCategory()->isJeune(), $choiceGroupKeys);
 
         if ($data === null) {
             $this->addFlash('error', 'Formulaire incomplet, veuillez remplir tous les champs.');
@@ -94,7 +97,8 @@ class InscriptionController extends AbstractController
         ]);
     }
 
-    private function buildFormData(Request $request, bool $isJeune): ?InscriptionFormData
+    /** @param string[] $choiceGroupKeys */
+    private function buildFormData(Request $request, bool $isJeune, array $choiceGroupKeys = []): ?InscriptionFormData
     {
         $tailleHaut    = $request->request->get('taille_haut', '');
         $tailleBas     = $request->request->get('taille_bas', '');
@@ -105,6 +109,19 @@ class InscriptionController extends AbstractController
         if ($tailleHaut === '' || $tailleBas === '' || $pointure === ''
             || $photoRaw === null || $signatureData === '') {
             return null;
+        }
+
+        // Choix de dotation : un par groupe configuré
+        $dotationChoix = [];
+        if ($choiceGroupKeys !== []) {
+            $rawChoix = (array) ($request->request->all()['dotation_choix'] ?? []);
+            foreach ($choiceGroupKeys as $groupe) {
+                $valeur = (int) ($rawChoix[$groupe] ?? 0);
+                if ($valeur <= 0) {
+                    return null;
+                }
+                $dotationChoix[$groupe] = $valeur;
+            }
         }
 
         if (!str_starts_with($signatureData, 'data:image/') || strlen($signatureData) > 2_800_000) {
@@ -209,6 +226,7 @@ class InscriptionController extends AbstractController
             signatureData:                   $signatureData,
             paymentIntentions:               $modes,
             attestationTransport:            $attestationData,
+            dotationChoix:                   $dotationChoix,
         );
     }
 }

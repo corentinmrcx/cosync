@@ -8,7 +8,7 @@
 
 {% block body %}
 <div class="inscription-page"
-     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })">
+     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}, dotationGroupes: {{ (dotationGroupes|default([]))|map(g => g.groupe)|json_encode }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })">
 
     {% if demo|default(false) %}
         <div class="inscription-demo-banner">
@@ -157,6 +157,24 @@
                                 <input type="hidden" name="pointure" :value="pointure">
                             </div>
                         </div>
+
+                        {% if dotationGroupes|default([]) is not empty %}
+                            {% for grp in dotationGroupes %}
+                                <hr class="inscription-question-divider">
+                                <div class="inscription-question-block">
+                                    <span class="inscription-question-label">{{ grp.groupe }} *</span>
+                                    <span class="inscription-question-hint">Choisissez l'article souhaité pour votre dotation.</span>
+                                    <div class="inscription-radio-group">
+                                        {% for opt in grp.options %}
+                                            <label class="inscription-radio-option">
+                                                <input type="radio" name="dotation_choix[{{ grp.groupe }}]" value="{{ opt.id }}" x-model="dotationChoix['{{ grp.groupe }}']">
+                                                <span class="inscription-radio-label">{{ opt.nom }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
 
                     </div>
                 </div>

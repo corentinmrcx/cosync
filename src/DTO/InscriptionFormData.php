@@ -19,5 +19,7 @@ final class InscriptionFormData
         /** @var PaymentMode[] */
         public readonly array $paymentIntentions,
         public readonly ?AttestationTransportData $attestationTransport = null,
+        /** @var array<string, int> { groupeChoix: stockItemId } */
+        public readonly array $dotationChoix = [],
     ) {}
 }
