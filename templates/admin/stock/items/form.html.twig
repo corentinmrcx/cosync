@@ -118,6 +118,15 @@
                 {{ form_widget(form.category, {attr: {class: 'stock-items-select'}}) }}
             </div>
 
+            <div class="stock-items-field">
+                <div class="stock-items-label-row">
+                    {{ form_label(form.fournisseur) }}
+                    <a href="{{ path('admin_stock_fournisseurs_list') }}" class="stock-items-label-link" target="_blank">Gérer ↗</a>
+                </div>
+                {{ form_widget(form.fournisseur, {attr: {class: 'stock-items-select'}}) }}
+                {{ form_help(form.fournisseur) }}
+            </div>
+
             {# ── Stock & budget ── #}
             <div class="stock-items-section-title">Stock & budget</div>
 

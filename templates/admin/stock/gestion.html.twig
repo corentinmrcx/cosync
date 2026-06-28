@@ -22,6 +22,10 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                 Catégories
             </a>
+            <a href="{{ path('admin_stock_fournisseurs_list') }}" class="stock-dashboard-btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-5h16l1 5"/><path d="M5 9v11h14V9"/><path d="M9 13h6"/></svg>
+                Fournisseurs
+            </a>
             <a href="{{ path('admin_stock_items_new') }}" class="stock-dashboard-btn-primary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nouvel article
@@ -136,6 +140,14 @@
                     <span class="stock-modal-hint" x-text="'Stock actuel : ' + stockActuel"></span>
                 </div>
 
+                <div class="stock-modal-field">
+                    <label class="stock-modal-label">Taille <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(optionnel)</span></label>
+                    <select name="taille" x-model="taille" class="stock-modal-select">
+                        <option value="">— Sans taille —</option>
+                        {% for t in taillesConnues %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                    </select>
+                </div>
+
                 <div class="stock-modal-field" x-show="action === 'dotation'" x-transition>
                     <label class="stock-modal-label">Licencié <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(paiement confirmé uniquement)</span></label>
                     <select name="licencie_uuid" class="stock-modal-select">
@@ -177,6 +189,7 @@ function stockMovementModal() {
         stockActuel: 0,
         action: 'entree',
         quantite: 1,
+        taille: '',
         get formAction() {
             return `/admin/stock/items/${this.itemId}/mouvement`;
         },
@@ -189,6 +202,7 @@ function stockMovementModal() {
             this.stockActuel = stock;
             this.action    = 'entree';
             this.quantite  = 1;
+            this.taille    = '';
             this.open      = true;
         },
         closeModal() {

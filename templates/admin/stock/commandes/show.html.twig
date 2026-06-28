@@ -1,0 +1,88 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Commande CMD-{{ commande.id }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: 'Commandes', route: 'admin_stock_commandes_index' },
+    { label: 'CMD-' ~ commande.id }
+] } %}
+
+<div class="dot-page">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Commande CMD-{{ commande.id }}</h1>
+            <p class="dot-subtitle">
+                {{ commande.fournisseurLabel }} ·
+                <span class="cmd-badge cmd-badge-{{ commande.statut.value }}">{{ commande.statut.label }}</span>
+                {% if commande.dateCommande %} · commandée le {{ commande.dateCommande|date('d/m/Y') }}{% endif %}
+            </p>
+        </div>
+        <a href="{{ path('admin_stock_commandes_index') }}" class="dot-back">← Commandes</a>
+    </div>
+
+    <div class="dot-card">
+        <div class="dot-header-actions">
+            <a href="{{ path('admin_stock_commandes_pdf', {id: commande.id}) }}" class="dot-btn-secondary">⬇ Télécharger le PDF</a>
+
+            {% if commande.statut.value == 'brouillon' %}
+                <form method="post" action="{{ path('admin_stock_commandes_commander', {id: commande.id}) }}" class="cmd-inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('commande_commander_' ~ commande.id) }}">
+                    <input type="date" name="date_commande" class="dot-input" value="{{ 'now'|date('Y-m-d') }}" max="{{ 'now'|date('Y-m-d') }}">
+                    <button type="submit" class="dot-btn-primary">Marquer commandée</button>
+                </form>
+                <form method="post" action="{{ path('admin_stock_commandes_delete', {id: commande.id}) }}" onsubmit="return confirm('Supprimer ce brouillon ?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('commande_delete_' ~ commande.id) }}">
+                    <button type="submit" class="dot-action-delete">Supprimer le brouillon</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dot-card">
+        <h2 class="dot-card-title">Lignes</h2>
+        <div class="dot-table-wrapper">
+            <table class="dot-table">
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Taille</th>
+                        <th>Commandé</th>
+                        <th>Reçu</th>
+                        <th>Restant</th>
+                        {% if commande.statut.value != 'brouillon' %}<th>Réception</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in commande.lignes %}
+                        <tr>
+                            <td><span class="dot-item-nom">{{ ligne.stockItem.nom }}</span></td>
+                            <td>{% if ligne.taille %}<span class="dot-item-taille">{{ ligne.taille }}</span>{% else %}—{% endif %}</td>
+                            <td>{{ ligne.quantite }}</td>
+                            <td>{{ ligne.quantiteRecue }}</td>
+                            <td>{{ ligne.restant }}</td>
+                            {% if commande.statut.value != 'brouillon' %}
+                                <td class="dot-table-action">
+                                    {% if ligne.restant > 0 %}
+                                        <form method="post" action="{{ path('admin_stock_commandes_ligne_recevoir', {id: ligne.id}) }}" class="cmd-inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('commande_ligne_recevoir_' ~ ligne.id) }}">
+                                            <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" max="{{ ligne.restant }}" value="{{ ligne.restant }}">
+                                            <button type="submit" class="dot-btn-sm">Recevoir</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="cmd-badge cmd-badge-recue">Complète</span>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

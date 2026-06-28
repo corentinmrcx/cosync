@@ -41,6 +41,14 @@
             <span class="stock-home-tile-value">{{ data.nbRuptures }}</span>
             <span class="stock-home-tile-label">En rupture</span>
         </div>
+        <div class="stock-home-tile {{ aCommanderCount > 0 ? 'stock-home-tile-warning' }}">
+            <span class="stock-home-tile-value">{{ aCommanderCount }}</span>
+            <span class="stock-home-tile-label">À commander</span>
+        </div>
+        <div class="stock-home-tile">
+            <span class="stock-home-tile-value">{{ commandesEnAttente }}</span>
+            <span class="stock-home-tile-label">Commande{{ commandesEnAttente > 1 ? 's' : '' }} en attente</span>
+        </div>
         {% if data.valeurStock > 0 %}
         <div class="stock-home-tile">
             <span class="stock-home-tile-value">{{ data.valeurStock|number_format(0, ',', ' ') }} €</span>
@@ -114,6 +122,10 @@
             <a href="{{ path('admin_stock_dotations_index') }}" class="stock-home-link-card">
                 <span class="stock-home-link-title">Dotations</span>
                 <span class="stock-home-link-text">Modèles, affectations et suivi des remises</span>
+            </a>
+            <a href="{{ path('admin_stock_commandes_index') }}" class="stock-home-link-card">
+                <span class="stock-home-link-title">Commandes</span>
+                <span class="stock-home-link-text">À commander, bons par fournisseur, réceptions</span>
             </a>
             <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-home-link-card">
                 <span class="stock-home-link-title">Historique des mouvements</span>

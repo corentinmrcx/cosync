@@ -108,7 +108,7 @@ class DotationController extends AbstractController
 
         return $this->render('admin/stock/dotations/form.html.twig', [
             'modele'   => $modele,
-            'articles' => $this->itemRepository->findBySeason($modele->getSeason()),
+            'articles' => $this->itemRepository->findAllOrdered(),
         ]);
     }
 

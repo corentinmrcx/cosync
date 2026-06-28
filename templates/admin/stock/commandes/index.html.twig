@@ -1,0 +1,111 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Commandes{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: 'Commandes' }
+] } %}
+
+<div class="dot-page">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Commandes</h1>
+            <p class="dot-subtitle">À commander = besoins « à donner » − stock − commandes en attente.</p>
+        </div>
+        <a href="{{ path('admin_stock_dashboard') }}" class="dot-back">← Stock</a>
+    </div>
+
+    {# — À commander — #}
+    <div class="dot-card">
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">À commander</h2>
+            {% if aCommander is not empty %}
+                <form method="post" action="{{ path('admin_stock_commandes_generer') }}" style="margin-left:auto">
+                    <input type="hidden" name="_token" value="{{ csrf_token('commande_generer') }}">
+                    <button type="submit" class="dot-btn-primary">Générer les bons de commande</button>
+                </form>
+            {% endif %}
+        </div>
+
+        {% if aCommander is empty %}
+            <p class="dot-empty">Rien à commander : tous les besoins sont couverts par le stock ou des commandes en attente.</p>
+        {% else %}
+            {% for groupe in aCommander %}
+                <div class="cmd-fourn-block">
+                    <h3 class="cmd-fourn-title">{{ groupe.fournisseurNom }}</h3>
+                    <div class="dot-table-wrapper">
+                        <table class="dot-table">
+                            <thead>
+                                <tr>
+                                    <th>Article</th>
+                                    <th>Taille</th>
+                                    <th>Besoin</th>
+                                    <th>Stock</th>
+                                    <th>En attente</th>
+                                    <th>À commander</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ligne in groupe.lignes %}
+                                    <tr>
+                                        <td><span class="dot-item-nom">{{ ligne.stockItem.nom }}</span></td>
+                                        <td>{% if ligne.taille %}<span class="dot-item-taille">{{ ligne.taille }}</span>{% else %}—{% endif %}</td>
+                                        <td>{{ ligne.besoin }}</td>
+                                        <td>{{ ligne.stock }}</td>
+                                        <td>{{ ligne.enAttente }}</td>
+                                        <td><strong>{{ ligne.aCommander }}</strong></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    {# — Commandes — #}
+    <div class="dot-card">
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">Bons de commande</h2>
+            <span class="dot-card-count">{{ commandes|length }}</span>
+        </div>
+
+        {% if commandes is empty %}
+            <p class="dot-empty">Aucune commande pour cette saison.</p>
+        {% else %}
+            <div class="dot-table-wrapper">
+                <table class="dot-table">
+                    <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Fournisseur</th>
+                            <th>Articles</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for commande in commandes %}
+                            <tr>
+                                <td><span class="dot-item-nom">CMD-{{ commande.id }}</span></td>
+                                <td>{{ commande.fournisseurLabel }}</td>
+                                <td>{{ commande.quantiteTotale }}</td>
+                                <td><span class="cmd-badge cmd-badge-{{ commande.statut.value }}">{{ commande.statut.label }}</span></td>
+                                <td>{{ commande.dateCommande ? commande.dateCommande|date('d/m/Y') : '—' }}</td>
+                                <td class="dot-table-action"><a href="{{ path('admin_stock_commandes_show', {id: commande.id}) }}" class="dot-action-edit">Ouvrir</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

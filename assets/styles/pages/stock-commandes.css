@@ -1,0 +1,47 @@
+/* — Commandes (réutilise les classes .dot-* pour la mise en page) — */
+
+.cmd-fourn-block {
+    margin-top: 0.75rem;
+}
+
+.cmd-fourn-title {
+    margin: 0 0 0.4rem;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-primary-dark);
+}
+
+.cmd-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* — Badges de statut — */
+.cmd-badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.cmd-badge-brouillon {
+    background: var(--color-bg-muted);
+    color: var(--color-text-muted);
+}
+
+.cmd-badge-commandee {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+.cmd-badge-recue_partielle {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.cmd-badge-recue {
+    background: var(--color-status-validated-bg);
+    color: var(--color-status-validated);
+}

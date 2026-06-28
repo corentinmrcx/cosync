@@ -1,0 +1,74 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Fournisseurs{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: 'Gestion', route: 'admin_stock_gestion' },
+    { label: 'Fournisseurs' }
+] } %}
+
+<div class="dot-page" x-data="{ editingId: null }">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Fournisseurs</h1>
+            <p class="dot-subtitle">Les articles sont regroupés par fournisseur dans les bons de commande.</p>
+        </div>
+        <a href="{{ path('admin_stock_gestion') }}" class="dot-back">← Gestion</a>
+    </div>
+
+    <div class="dot-card">
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">Liste</h2>
+            <span class="dot-card-count">{{ fournisseurs|length }}</span>
+        </div>
+
+        {% if fournisseurs is empty %}
+            <p class="dot-empty">Aucun fournisseur.</p>
+        {% else %}
+            <ul class="dot-list">
+                {% for f in fournisseurs %}
+                    <li class="dot-list-item">
+                        <div x-show="editingId !== {{ f.id }}" class="dot-list-main">
+                            <span class="dot-list-name">{{ f.nom }}</span>
+                            {% if not f.actif %}<span class="dot-badge dot-badge-off">Inactif</span>{% endif %}
+                            <span class="dot-list-meta">
+                                {{ f.contact ?: '' }}{% if f.contact and f.email %} · {% endif %}{{ f.email ?: '' }}
+                            </span>
+                        </div>
+                        <div x-show="editingId !== {{ f.id }}" class="dot-list-actions">
+                            <button type="button" class="dot-action-edit" @click="editingId = {{ f.id }}">Modifier</button>
+                            <form method="post" action="{{ path('admin_stock_fournisseurs_delete', {id: f.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce fournisseur ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('fournisseur_delete_' ~ f.id) }}">
+                                <button type="submit" class="dot-action-delete">Supprimer</button>
+                            </form>
+                        </div>
+
+                        <form x-show="editingId === {{ f.id }}" x-cloak method="post" action="{{ path('admin_stock_fournisseurs_edit', {id: f.id}) }}" class="dot-affect-form">
+                            <input type="hidden" name="_token" value="{{ csrf_token('fournisseur_edit_' ~ f.id) }}">
+                            <input type="text" name="nom" class="dot-input" value="{{ f.nom }}" required>
+                            <input type="text" name="contact" class="dot-input" value="{{ f.contact }}" placeholder="Contact">
+                            <input type="email" name="email" class="dot-input" value="{{ f.email }}" placeholder="Email">
+                            <label class="dot-check"><input type="checkbox" name="actif" value="1" {{ f.actif ? 'checked' : '' }}> Actif</label>
+                            <button type="submit" class="dot-btn-primary">Enregistrer</button>
+                            <button type="button" class="dot-action-delete" @click="editingId = null">Annuler</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form method="post" action="{{ path('admin_stock_fournisseurs_new') }}" class="dot-affect-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('fournisseur_new') }}">
+            <input type="text" name="nom" class="dot-input" placeholder="Nom du fournisseur" required>
+            <input type="text" name="contact" class="dot-input" placeholder="Contact (option.)">
+            <input type="email" name="email" class="dot-input" placeholder="Email (option.)">
+            <button type="submit" class="dot-btn-primary">+ Ajouter</button>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
