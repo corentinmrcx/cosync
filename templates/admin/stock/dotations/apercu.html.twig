@@ -1,0 +1,79 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Aperçu des dotations{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: 'Dotations', route: 'admin_stock_dotations_index' },
+    { label: 'Aperçu' }
+] } %}
+
+<div class="dot-page">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Aperçu des dotations</h1>
+            <p class="dot-subtitle">Ce que chaque personne validée doit recevoir, à sa taille — saison {{ season.label }}.</p>
+        </div>
+        <a href="{{ path('admin_stock_dotations_index') }}" class="dot-back">← Dotations</a>
+    </div>
+
+    {% if groupes is empty %}
+        <div class="dot-card">
+            <p class="dot-empty">
+                Aucune dotation résolue. Vérifiez qu'il existe des modèles affectés, et des licenciés validés
+                (paiement confirmé) ou des dirigeants à dossier complet.
+            </p>
+        </div>
+    {% endif %}
+
+    {% for equipe, personnes in groupes %}
+        <div class="dot-card">
+            <div class="dot-card-header">
+                <h2 class="dot-card-title">{{ equipe }}</h2>
+                <span class="dot-card-count">{{ personnes|length }}</span>
+            </div>
+
+            <div class="dot-table-wrapper">
+                <table class="dot-table">
+                    <thead>
+                        <tr>
+                            <th>Personne</th>
+                            <th>Dotation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for personne in personnes %}
+                            <tr>
+                                <td>
+                                    <span class="dot-person-name">{{ personne.nomPrenom }}</span>
+                                    <span class="dot-person-role">{{ personne.role }}</span>
+                                </td>
+                                <td>
+                                    <ul class="dot-items">
+                                        {% for ligne in personne.lignes %}
+                                            <li class="dot-item">
+                                                <span class="dot-item-nom">{{ ligne.stockItem.nom }}</span>
+                                                {% if ligne.quantite > 1 %}<span class="dot-item-qty">×{{ ligne.quantite }}</span>{% endif %}
+                                                {% if ligne.taille %}
+                                                    <span class="dot-item-taille">{{ ligne.taille }}</span>
+                                                {% elseif ligne.stockItem.typeVetement %}
+                                                    <span class="dot-item-taille-missing">taille manquante</span>
+                                                {% endif %}
+                                                {% if not ligne.obligatoire %}<span class="dot-item-opt">option.</span>{% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

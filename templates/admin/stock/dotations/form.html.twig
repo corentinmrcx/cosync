@@ -1,0 +1,83 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — {{ modele.nom }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: 'Dotations', route: 'admin_stock_dotations_index' },
+    { label: modele.nom }
+] } %}
+
+<div class="dot-page">
+
+    <div class="dot-header">
+        <h1 class="dot-title">{{ modele.nom }}</h1>
+        <a href="{{ path('admin_stock_dotations_index') }}" class="dot-back">← Dotations</a>
+    </div>
+
+    {# — Réglages du modèle — #}
+    <div class="dot-card">
+        <h2 class="dot-card-title">Réglages</h2>
+        <form method="post" action="{{ path('admin_stock_dotations_edit', {id: modele.id}) }}" class="dot-inline-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_edit_' ~ modele.id) }}">
+            <input type="text" name="nom" class="dot-input" value="{{ modele.nom }}" required>
+            <label class="dot-check">
+                <input type="checkbox" name="actif" value="1" {{ modele.actif ? 'checked' : '' }}> Actif
+            </label>
+            <button type="submit" class="dot-btn-primary">Enregistrer</button>
+        </form>
+    </div>
+
+    {# — Articles du modèle — #}
+    <div class="dot-card">
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">Articles à recevoir</h2>
+            <span class="dot-card-count">{{ modele.lignes|length }}</span>
+        </div>
+
+        {% if modele.lignes is empty %}
+            <p class="dot-empty">Aucun article. Ajoutez ce que cette dotation doit contenir.</p>
+        {% else %}
+            <ul class="dot-list">
+                {% for ligne in modele.lignes %}
+                    <li class="dot-list-item">
+                        <div class="dot-list-main">
+                            <span class="dot-list-name">{{ ligne.stockItem.nom }}</span>
+                            <span class="dot-list-meta">
+                                ×{{ ligne.quantite }}
+                                {% if ligne.stockItem.typeVetement %} · {{ ligne.stockItem.typeVetement.label }}{% endif %}
+                                {% if not ligne.obligatoire %} · optionnel{% endif %}
+                                {% if ligne.groupeChoix %} · choix « {{ ligne.groupeChoix }} »{% endif %}
+                            </span>
+                        </div>
+                        <form method="post" action="{{ path('admin_stock_dotations_ligne_delete', {id: ligne.id}) }}" style="display:inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_delete_' ~ ligne.id) }}">
+                            <button type="submit" class="dot-action-delete">Retirer</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form method="post" action="{{ path('admin_stock_dotations_ligne_add', {id: modele.id}) }}" class="dot-affect-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_add_' ~ modele.id) }}">
+            <select name="stock_item_id" class="dot-input" required>
+                <option value="">— Article —</option>
+                {% for item in articles %}
+                    <option value="{{ item.id }}">
+                        {{ item.nom }}{% if item.typeVetement %} ({{ item.typeVetement.label }}){% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+            <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" value="1" title="Quantité">
+            <label class="dot-check"><input type="checkbox" name="obligatoire" value="1" checked> Obligatoire</label>
+            <input type="text" name="groupe_choix" class="dot-input dot-input-grp" placeholder="Groupe de choix (option.)">
+            <button type="submit" class="dot-btn-primary">+ Ajouter</button>
+        </form>
+        <p class="dot-hint">Astuce : pour proposer « 1 parmi N » au licencié (livraison à venir), donnez le même « groupe de choix » à plusieurs articles.</p>
+    </div>
+
+</div>
+{% endblock %}
