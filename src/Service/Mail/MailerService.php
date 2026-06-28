@@ -90,7 +90,7 @@ final class MailerService
         );
 
         $realEmail = $dirigeant->getEmail();
-        $subject   = 'Complétez votre fiche — Foyer de Soudron, saison ' . $dirigeant->getSeason()->getLabel();
+        $subject   = 'Finalisez votre dossier dirigeant — Foyer de Soudron, saison ' . $dirigeant->getSeason()->getLabel();
 
         $email = (new TemplatedEmail())
             ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
