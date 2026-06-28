@@ -217,12 +217,14 @@ Aucune valeur métier (catégories, dotations, fournisseurs) codée en dur.
     `DossierClub.dotationChoix`, appliquée à la génération du besoin.
   - ⏳ Reliquat optionnel : **édition manuelle de la taille** d'un besoin (l'« ajustable » n'est pas encore en UI).
 
-- **⏭️ Phase 3 — Commandes & bon de commande** *(à faire)*
-  Calcul « à commander » = besoins « à donner » − stock − commandes en attente, agrégé par (article, taille)
-  puis fournisseur. Entités `Fournisseur`, `Commande`/`CommandeLigne`, statuts, **réception partielle**
-  → mouvements `ENTREE` (source `COMMANDE`). **Bon de commande PDF** par fournisseur (DomPDF), quantités seules.
-  Enregistrement du **coût** (→ Finance). Inclut le **décrochage `StockItem.season`** (catalogue partagé)
-  et le **stock par (article, taille)** (cf. §12). *Réutilise* `StockItemVetementType::dossierField()`.
+- **✅ Phase 3 — Commandes & bon de commande** *(livrée)*
+  `Fournisseur` (+ CRUD) ; **décrochage `StockItem.season`** (catalogue partagé) ; **stock par (article, taille)**
+  via `StockMovement.taille` (`getStockGroupedByTaille`). `Commande`/`CommandeLigne` + `CommandeStatut`
+  (brouillon → commandée → reçue partielle → reçue). `AchatService::computeACommander` =
+  besoins « à donner » − stock − commandes en attente, regroupé par fournisseur. `CommandeService`
+  (génération des bons, réception partielle → `ENTREE` source `COMMANDE`). **Bon de commande PDF** par
+  fournisseur (`BonCommandePdfService`, quantités seules ; coût `prixUnitaire` stocké pour Finance).
+  Page `/admin/stock/commandes` + tuiles dashboard.
 
 - **Phase 4 — Compléments**
   Liaison **module Finance** (coûts des commandes), exports/historique, nettoyage de l'auto-dotation SKU
