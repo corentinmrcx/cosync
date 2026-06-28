@@ -8,7 +8,13 @@
 
 {% block body %}
 <div class="inscription-page"
-     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }} })">
+     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })">
+
+    {% if demo|default(false) %}
+        <div class="inscription-demo-banner">
+            Mode démonstration — aucune donnée ne sera enregistrée.
+        </div>
+    {% endif %}
 
     {# — Header — #}
     <header class="inscription-header">
@@ -32,8 +38,8 @@
     <main class="inscription-main">
         <div class="inscription-container">
 
-            <form method="post" action="{{ path('public_inscription_submit', {uuid: licencie.uuid}) }}"
-                  @submit="submitting = true">
+            <form method="post"
+                  {% if demo|default(false) %}@submit.prevent="demoSubmit()"{% else %}action="{{ path('public_inscription_submit', {uuid: licencie.uuid}) }}" @submit="submitting = true"{% endif %}>
                 <input type="hidden" name="_token" value="{{ csrf_token('inscription_submit') }}">
                 <input type="hidden" name="signature_data" :value="signatureData">
                 <input type="hidden" name="attestation_signature_data" :value="signatureDataAttestation">
@@ -459,7 +465,7 @@
     <div class="inscription-overlay" x-show="submitting" x-cloak>
         <div class="inscription-overlay-box">
             <div class="inscription-overlay-spinner"></div>
-            <p class="inscription-overlay-title">Validation de votre inscription…</p>
+            <p class="inscription-overlay-title">{% if demo|default(false) %}Enregistrement dans le Drive…{% else %}Validation de votre inscription…{% endif %}</p>
             <p class="inscription-overlay-text">Merci de patienter quelques secondes, ne fermez pas cette page.</p>
         </div>
     </div>

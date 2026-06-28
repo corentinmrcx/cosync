@@ -1,8 +1,12 @@
-export function inscriptionForm({ isJeune, montant }) {
+export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '' }) {
     return {
         step: 1,
         isJeune,
         montant,
+
+        // Mode démonstration — n'enregistre rien, faux loader avant la confirmation
+        demo,
+        demoUrl,
 
         // Étape 2
         tailleHaut: '',
@@ -220,6 +224,15 @@ export function inscriptionForm({ isJeune, montant }) {
                 this.signaturePad.clear();
                 this.signatureData = '';
             }
+        },
+
+        // Soumission en mode démo : faux loader puis redirection, aucun enregistrement
+        demoSubmit() {
+            if (this.submitting) return;
+            this.submitting = true;
+            window.setTimeout(() => {
+                window.location.href = this.demoUrl;
+            }, 3500);
         },
     };
 }
