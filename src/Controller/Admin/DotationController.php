@@ -3,18 +3,20 @@
 namespace App\Controller\Admin;
 
 use App\Entity\DotationAffectation;
+use App\Entity\DotationBesoin;
 use App\Entity\DotationModele;
 use App\Entity\DotationModeleLigne;
 use App\Repository\CategoryRepository;
 use App\Repository\DirigeantRepository;
 use App\Repository\DotationAffectationRepository;
+use App\Repository\DotationBesoinRepository;
 use App\Repository\DotationModeleLigneRepository;
 use App\Repository\DotationModeleRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockItemRepository;
 use App\Repository\TeamRepository;
 use App\Service\SeasonContext;
-use App\Service\Stock\DotationResolver;
+use App\Service\Stock\DotationBesoinService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,7 +37,8 @@ class DotationController extends AbstractController
         private readonly CategoryRepository $categoryRepository,
         private readonly LicencieRepository $licencieRepository,
         private readonly DirigeantRepository $dirigeantRepository,
-        private readonly DotationResolver $resolver,
+        private readonly DotationBesoinRepository $besoinRepository,
+        private readonly DotationBesoinService $besoinService,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -233,51 +236,70 @@ class DotationController extends AbstractController
         return $this->redirectToRoute('admin_stock_dotations_index');
     }
 
-    #[Route('/apercu', name: 'apercu', methods: ['GET'])]
-    public function apercu(): Response
+    #[Route('/suivi', name: 'suivi', methods: ['GET'])]
+    public function suivi(): Response
     {
         $season = $this->seasonContext->getCurrentSeason();
         if ($season === null) {
             return $this->redirectToRoute('admin_seasons_new');
         }
 
-        /** @var array<string, array<int, array{nomPrenom: string, role: string, lignes: array}>> */
+        /** @var array<string, DotationBesoin[]> $groupes */
         $groupes = [];
-
-        foreach ($this->licencieRepository->findValidatedBySeason($season) as $licencie) {
-            $lignes = $this->resolver->resolveDotation($licencie);
-            if ($lignes === []) {
-                continue;
-            }
-            $equipe = $licencie->getTeam()?->getName() ?? 'Sans équipe';
-            $groupes[$equipe][] = [
-                'nomPrenom' => $licencie->getNomPrenom(),
-                'role'      => 'Licencié',
-                'lignes'    => $lignes,
-            ];
+        foreach ($this->besoinRepository->findBySeason($season) as $besoin) {
+            $groupes[$besoin->getTeamName() ?? 'Sans équipe'][] = $besoin;
         }
-
-        foreach ($this->dirigeantRepository->findBySeason($season) as $dirigeant) {
-            if (!$dirigeant->isPublicFormComplete()) {
-                continue;
-            }
-            $lignes = $this->resolver->resolveDotation($dirigeant);
-            if ($lignes === []) {
-                continue;
-            }
-            $equipe = $dirigeant->getTeam()?->getName() ?? 'Sans équipe';
-            $groupes[$equipe][] = [
-                'nomPrenom' => $dirigeant->getNomPrenom(),
-                'role'      => 'Dirigeant',
-                'lignes'    => $lignes,
-            ];
-        }
-
         ksort($groupes);
 
-        return $this->render('admin/stock/dotations/apercu.html.twig', [
+        return $this->render('admin/stock/dotations/suivi.html.twig', [
             'season'  => $season,
             'groupes' => $groupes,
         ]);
+    }
+
+    #[Route('/recalculer', name: 'recalculer', methods: ['POST'])]
+    public function recalculer(Request $request): Response
+    {
+        $season = $this->seasonContext->getCurrentSeason();
+        if ($season === null) {
+            return $this->redirectToRoute('admin_seasons_new');
+        }
+        if (!$this->isCsrfTokenValid('dotation_recalculer', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_suivi');
+        }
+
+        $count = $this->besoinService->recomputeAll($season);
+        $this->addFlash('success', sprintf('Besoins recalculés pour %d personne%s.', $count, $count > 1 ? 's' : ''));
+
+        return $this->redirectToRoute('admin_stock_dotations_suivi');
+    }
+
+    #[Route('/besoins/{id}/remise', name: 'besoin_remise', methods: ['POST'])]
+    public function besoinRemise(DotationBesoin $besoin, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('dotation_besoin_remise_' . $besoin->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_suivi');
+        }
+
+        $this->besoinService->markGiven($besoin, $this->getUser());
+        $this->addFlash('success', sprintf('Dotation remise à %s.', $besoin->getNomPrenom()));
+
+        return $this->redirectToRoute('admin_stock_dotations_suivi');
+    }
+
+    #[Route('/besoins/{id}/annuler', name: 'besoin_annuler', methods: ['POST'])]
+    public function besoinAnnuler(DotationBesoin $besoin, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('dotation_besoin_annuler_' . $besoin->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_suivi');
+        }
+
+        $this->besoinService->cancelGiven($besoin);
+        $this->addFlash('success', 'Remise annulée.');
+
+        return $this->redirectToRoute('admin_stock_dotations_suivi');
     }
 }

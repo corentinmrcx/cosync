@@ -47,6 +47,53 @@
 
 .dot-btn-primary:hover { background: var(--color-primary-dark); }
 
+.dot-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dot-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-page);
+    color: var(--color-text-body);
+    border: 1px solid var(--color-border-strong);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dot-btn-secondary:hover { background: var(--color-bg-muted); }
+
+.dot-btn-sm {
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border: none;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dot-btn-sm:hover { background: var(--color-primary-dark); }
+
+.dot-badge-todo {
+    background: var(--color-status-completed-bg);
+    color: var(--color-status-completed);
+}
+
+.dot-badge-done {
+    background: var(--color-status-validated-bg);
+    color: var(--color-status-validated);
+}
+
 .dot-back {
     color: var(--color-text-muted);
     text-decoration: none;
