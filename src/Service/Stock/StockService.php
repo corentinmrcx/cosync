@@ -95,6 +95,60 @@ final class StockService
         return $summary;
     }
 
+    /**
+     * Données de synthèse pour le tableau de bord stock : compteurs + articles en alerte.
+     *
+     * @return array{
+     *   nbArticles: int,
+     *   nbAlertes: int,
+     *   nbRuptures: int,
+     *   valeurStock: float,
+     *   alertes: array<int, array{item: StockItem, stock: int, status: string}>
+     * }
+     */
+    public function getDashboardData(Season $season): array
+    {
+        $items = $this->itemRepository->findBySeason($season);
+
+        $alertes     = [];
+        $nbRuptures  = 0;
+        $valeurStock = 0.0;
+
+        foreach ($items as $item) {
+            $stock = $this->movementRepository->getCurrentStock($item);
+
+            if ($item->getPrixAchat() !== null && $stock > 0) {
+                $valeurStock += $stock * $item->getPrixAchat();
+            }
+
+            $seuil = $item->getAlertSeuil();
+            if ($seuil === null) {
+                continue;
+            }
+
+            if ($stock <= 0) {
+                $alertes[] = ['item' => $item, 'stock' => $stock, 'status' => 'danger'];
+                $nbRuptures++;
+            } elseif ($stock <= $seuil) {
+                $alertes[] = ['item' => $item, 'stock' => $stock, 'status' => 'warning'];
+            }
+        }
+
+        // Ruptures (danger) en tête, puis stock bas
+        usort(
+            $alertes,
+            static fn (array $a, array $b): int => ($a['status'] === 'danger' ? 0 : 1) <=> ($b['status'] === 'danger' ? 0 : 1),
+        );
+
+        return [
+            'nbArticles'  => count($items),
+            'nbAlertes'   => count($alertes),
+            'nbRuptures'  => $nbRuptures,
+            'valeurStock' => $valeurStock,
+            'alertes'     => $alertes,
+        ];
+    }
+
     /** @return array{item: StockItem, stock: int, status: string} */
     private function buildItemRow(StockItem $item): array
     {

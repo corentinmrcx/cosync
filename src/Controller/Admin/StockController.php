@@ -51,11 +51,26 @@ class StockController extends AbstractController
         }
 
         return $this->render('admin/stock/dashboard.html.twig', [
-            'summary'              => $this->stockService->getStockSummary($season),
-            'season'               => $season,
-            'licenciesValides'     => $this->licencieRepository->findValidatedBySeason($season),
-            'types'                => StockMovementType::cases(),
-            'sources'              => StockMovementSource::cases(),
+            'data'   => $this->stockService->getDashboardData($season),
+            'season' => $season,
+        ]);
+    }
+
+    #[Route('/gestion', name: 'gestion', methods: ['GET'])]
+    public function gestion(): Response
+    {
+        $season = $this->seasonContext->getCurrentSeason();
+        if ($season === null) {
+            $this->addFlash('warning', 'Créez une saison avant d\'accéder au stock.');
+            return $this->redirectToRoute('admin_seasons_new');
+        }
+
+        return $this->render('admin/stock/gestion.html.twig', [
+            'summary'          => $this->stockService->getStockSummary($season),
+            'season'           => $season,
+            'licenciesValides' => $this->licencieRepository->findValidatedBySeason($season),
+            'types'            => StockMovementType::cases(),
+            'sources'          => StockMovementSource::cases(),
         ]);
     }
 
@@ -77,7 +92,7 @@ class StockController extends AbstractController
             $this->em->persist($item);
             $this->em->flush();
             $this->addFlash('success', sprintf('Article "%s" créé.', $item->getNom()));
-            return $this->redirectToRoute('admin_stock_dashboard');
+            return $this->redirectToRoute('admin_stock_gestion');
         }
 
         return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext(null));
@@ -93,7 +108,7 @@ class StockController extends AbstractController
             $this->applyManualFields($item, $request);
             $this->em->flush();
             $this->addFlash('success', sprintf('Article "%s" mis à jour.', $item->getNom()));
-            return $this->redirectToRoute('admin_stock_dashboard');
+            return $this->redirectToRoute('admin_stock_gestion');
         }
 
         return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext($item));
@@ -141,7 +156,7 @@ class StockController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('stock_movement_' . $item->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_dashboard');
+            return $this->redirectToRoute('admin_stock_gestion');
         }
 
         $action   = $request->request->get('action');
@@ -158,7 +173,7 @@ class StockController extends AbstractController
 
         if (!isset($typeMap[$action])) {
             $this->addFlash('error', 'Action invalide.');
-            return $this->redirectToRoute('admin_stock_dashboard');
+            return $this->redirectToRoute('admin_stock_gestion');
         }
 
         [$type, $source] = $typeMap[$action];
@@ -167,14 +182,14 @@ class StockController extends AbstractController
         if ($source === StockMovementSource::DOTATION) {
             if ($licencieUuid === null) {
                 $this->addFlash('error', 'Veuillez sélectionner un licencié pour une dotation.');
-                return $this->redirectToRoute('admin_stock_dashboard');
+                return $this->redirectToRoute('admin_stock_gestion');
             }
 
             $licencie = $this->licencieRepository->findOneBy(['uuid' => $licencieUuid]);
 
             if ($licencie === null) {
                 $this->addFlash('error', 'Licencié introuvable.');
-                return $this->redirectToRoute('admin_stock_dashboard');
+                return $this->redirectToRoute('admin_stock_gestion');
             }
 
             $dossier = $licencie->getDossierClub();
@@ -183,7 +198,7 @@ class StockController extends AbstractController
                     'La dotation ne peut être enregistrée qu\'après confirmation du paiement de %s.',
                     $licencie->getNomPrenom(),
                 ));
-                return $this->redirectToRoute('admin_stock_dashboard');
+                return $this->redirectToRoute('admin_stock_gestion');
             }
         }
 
@@ -213,7 +228,7 @@ class StockController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_stock_dashboard');
+        return $this->redirectToRoute('admin_stock_gestion');
     }
 
     #[Route('/items/{id}/supprimer', name: 'items_delete', methods: ['POST'])]
@@ -221,7 +236,7 @@ class StockController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('delete_stock_item_' . $item->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_dashboard');
+            return $this->redirectToRoute('admin_stock_gestion');
         }
 
         $nom = $item->getNom();
@@ -229,7 +244,7 @@ class StockController extends AbstractController
         $this->em->flush();
         $this->addFlash('success', sprintf('Article "%s" supprimé.', $nom));
 
-        return $this->redirectToRoute('admin_stock_dashboard');
+        return $this->redirectToRoute('admin_stock_gestion');
     }
 
     #[Route('/mouvements', name: 'mouvements_list', methods: ['GET'])]
