@@ -45,6 +45,17 @@ class Dirigeant
     #[ORM\Column(length: 5, nullable: true)]
     private ?string $pointure = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $autorisationPhoto = null;
+
+    /** « Transport des licenciés » — le dirigeant accepte de transporter des licenciés */
+    #[ORM\Column(nullable: true)]
+    private ?bool $volontaireTransport = null;
+
+    /** Chemin local temporaire puis ID Drive de l'attestation de transport signée */
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $attestationTransportDriveId = null;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Team $team = null;
@@ -112,6 +123,15 @@ class Dirigeant
     public function getPointure(): ?string { return $this->pointure; }
     public function setPointure(?string $pointure): static { $this->pointure = $pointure; return $this; }
 
+    public function getAutorisationPhoto(): ?bool { return $this->autorisationPhoto; }
+    public function setAutorisationPhoto(?bool $autorisationPhoto): static { $this->autorisationPhoto = $autorisationPhoto; return $this; }
+
+    public function getVolontaireTransport(): ?bool { return $this->volontaireTransport; }
+    public function setVolontaireTransport(?bool $volontaireTransport): static { $this->volontaireTransport = $volontaireTransport; return $this; }
+
+    public function getAttestationTransportDriveId(): ?string { return $this->attestationTransportDriveId; }
+    public function setAttestationTransportDriveId(?string $attestationTransportDriveId): static { $this->attestationTransportDriveId = $attestationTransportDriveId; return $this; }
+
     public function getTeam(): ?Team { return $this->team; }
     public function setTeam(?Team $team): static { $this->team = $team; return $this; }
 
@@ -136,5 +156,28 @@ class Dirigeant
     {
         return $this->formTokenExpiresAt !== null
             && $this->formTokenExpiresAt > new \DateTimeImmutable();
+    }
+
+    /**
+     * Source de vérité de la complétude du dossier public dirigeant.
+     * - Transport : requis pour tous ; attestation requise si volontaire.
+     * - Dirigeant-joueur (lié à un licencié) : taille + droit image proviennent
+     *   du dossier licencié → non requis ici.
+     */
+    public function isPublicFormComplete(): bool
+    {
+        if ($this->volontaireTransport === null) {
+            return false;
+        }
+        if ($this->volontaireTransport === true && $this->attestationTransportDriveId === null) {
+            return false;
+        }
+
+        if ($this->licencie !== null) {
+            return true;
+        }
+
+        return $this->tailleHaut !== null && $this->tailleBas !== null
+            && $this->pointure !== null && $this->autorisationPhoto !== null;
     }
 }
