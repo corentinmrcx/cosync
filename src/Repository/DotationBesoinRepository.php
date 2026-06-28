@@ -33,6 +33,20 @@ class DotationBesoinRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @return DotationBesoin[] Besoins « à donner » de la saison, article + fournisseur préchargés. */
+    public function findADonnerBySeason(Season $season): array
+    {
+        return $this->createQueryBuilder('b')
+            ->leftJoin('b.stockItem', 'i')->addSelect('i')
+            ->leftJoin('i.fournisseur', 'f')->addSelect('f')
+            ->where('b.season = :season')
+            ->andWhere('b.statut = :statut')
+            ->setParameter('season', $season)
+            ->setParameter('statut', \App\Enum\DotationBesoinStatut::A_DONNER)
+            ->getQuery()
+            ->getResult();
+    }
+
     /** @return DotationBesoin[] */
     public function findForLicencie(Licencie $licencie): array
     {

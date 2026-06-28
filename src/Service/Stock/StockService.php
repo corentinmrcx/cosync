@@ -2,7 +2,6 @@
 
 namespace App\Service\Stock;
 
-use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
 use App\Entity\User;
@@ -35,6 +34,7 @@ final class StockService
         ?User $createdBy,
         ?string $note,
         ?string $sumupTransactionId = null,
+        ?string $taille = null,
     ): StockMovement {
         if ($quantite <= 0) {
             throw new \InvalidArgumentException('La quantité doit être supérieure à zéro.');
@@ -51,6 +51,7 @@ final class StockService
         $movement->setNote($note ?: null);
         $movement->setCreatedBy($createdBy);
         $movement->setSumupTransactionId($sumupTransactionId);
+        $movement->setTaille(trim((string) $taille) ?: null);
 
         $this->em->persist($movement);
         $this->em->flush();
@@ -61,9 +62,9 @@ final class StockService
     /**
      * @return array<int, array{category: \App\Entity\StockCategory|null, items: array<int, array{item: StockItem, stock: int, status: string}>}>
      */
-    public function getStockSummary(Season $season): array
+    public function getStockSummary(): array
     {
-        $items      = $this->itemRepository->findBySeason($season);
+        $items      = $this->itemRepository->findAllOrdered();
         $categories = $this->categoryRepository->findAllOrderedByPosition();
 
         $byCategory = [];
@@ -106,9 +107,9 @@ final class StockService
      *   alertes: array<int, array{item: StockItem, stock: int, status: string}>
      * }
      */
-    public function getDashboardData(Season $season): array
+    public function getDashboardData(): array
     {
-        $items = $this->itemRepository->findBySeason($season);
+        $items = $this->itemRepository->findAllOrdered();
 
         $alertes     = [];
         $nbRuptures  = 0;

@@ -144,6 +144,7 @@ final class DotationBesoinService
             StockMovementSource::DOTATION,
             $user,
             $note,
+            taille: $besoin->getTaille(),
         );
 
         $movement->setLicencie($besoin->getLicencie());

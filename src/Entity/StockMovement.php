@@ -26,6 +26,10 @@ class StockMovement
     #[ORM\Column(enumType: StockMovementType::class)]
     private StockMovementType $type;
 
+    /** Taille concernée (null pour épicerie / objet sans taille) — stock suivi par (article, taille) */
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $taille = null;
+
     /** Renseigné pour les sorties liées à un joueur */
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, referencedColumnName: 'uuid')]
@@ -95,6 +99,17 @@ class StockMovement
     public function setType(StockMovementType $type): static
     {
         $this->type = $type;
+        return $this;
+    }
+
+    public function getTaille(): ?string
+    {
+        return $this->taille;
+    }
+
+    public function setTaille(?string $taille): static
+    {
+        $this->taille = $taille;
         return $this;
     }
 

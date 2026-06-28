@@ -46,8 +46,8 @@ class StockItem
     private ?string $lienAchat = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
-    private Season $season;
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Fournisseur $fournisseur = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -161,14 +161,14 @@ class StockItem
         return $this;
     }
 
-    public function getSeason(): Season
+    public function getFournisseur(): ?Fournisseur
     {
-        return $this->season;
+        return $this->fournisseur;
     }
 
-    public function setSeason(Season $season): static
+    public function setFournisseur(?Fournisseur $fournisseur): static
     {
-        $this->season = $season;
+        $this->fournisseur = $fournisseur;
         return $this;
     }
 
