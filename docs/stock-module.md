@@ -200,25 +200,33 @@ Aucune valeur métier (catégories, dotations, fournisseurs) codée en dur.
 
 ## 10. Découpage en phases (roadmap)
 
-- **Phase 1 — Restructuration des pages** *(priorité, faible risque)*
-  Séparer `/stock` (dashboard synthèse + tuiles + alertes seuil) de `/stock/gestion` (CRUD + mouvements
-  actuels). Ajouter l'entrée navbar. *Réutilise* `StockService::getStockSummary()`, `getCurrentStock()`.
-  Inclure la gestion des **fournisseurs** (entité + CRUD) et le décrochage de `StockItem.season`.
+- **✅ Phase 1 — Restructuration des pages** *(livrée)*
+  `/stock` = dashboard synthèse (tuiles + section « à réapprovisionner » sur `alertSeuil`) ;
+  `/stock/gestion` = CRUD articles + mouvements. Entrée navbar ajoutée.
+  *Réutilise* `StockService::getStockSummary()`, `getCurrentStock()` + nouveau `getDashboardData()`.
+  ⚠️ La gestion des **fournisseurs** et le **décrochage de `StockItem.season`** ont été **reportés en Phase 3**
+  (ils ne sont nécessaires qu'aux commandes ; le décrochage dépend de la reprise de données — cf. §12).
 
-- **Phase 2 — Dotations configurables + besoin + suivi « qui a reçu »**
-  Entités `DotationModele`, `DotationModeleLigne`, `DotationAffectation`, `DotationBesoin`.
-  Résolution du modèle par personne, génération du besoin à `VALIDATED` / dossier dirigeant complet,
-  taille auto (ajustable), statut donné/à donner. **Étape conditionnelle de choix** dans le formulaire public.
+- **✅ Phase 2 — Dotations configurables + besoin + suivi « qui a reçu »** *(livrée, en 3 sous-livraisons A/B/C)*
+  - **A** : `DotationModele`, `DotationModeleLigne`, `DotationAffectation` + `DotationResolver`
+    (résolution individu > équipe > catégorie > défaut ; taille auto via `dossierField()`).
+  - **B** : `DotationBesoin` (statut à donner / donné) + génération auto à `VALIDATED`
+    (`LicencieService::setValidated`) et dossier dirigeant complet (`DirigeantFormService::submit`)
+    + page **Suivi** (recalcul global, remise → mouvement `SORTIE/DOTATION`, annulation).
+  - **C** : **étape de choix « 1 parmi N »** dans le formulaire public (conditionnelle), stockée sur
+    `DossierClub.dotationChoix`, appliquée à la génération du besoin.
+  - ⏳ Reliquat optionnel : **édition manuelle de la taille** d'un besoin (l'« ajustable » n'est pas encore en UI).
 
-- **Phase 3 — Commandes & bon de commande**
-  Calcul « à commander » = besoins − stock − commandes en attente, agrégé par (article, taille) puis fournisseur.
-  Entités `Commande`/`CommandeLigne`, statuts, **réception partielle** → mouvements `ENTREE` (source `COMMANDE`).
-  **Bon de commande PDF** par fournisseur (DomPDF), quantités seules. Enregistrement du **coût** (→ Finance).
-  *Réutilise* `StockItemVetementType::dossierField()`, tailles `DossierClub`/`Dirigeant`.
+- **⏭️ Phase 3 — Commandes & bon de commande** *(à faire)*
+  Calcul « à commander » = besoins « à donner » − stock − commandes en attente, agrégé par (article, taille)
+  puis fournisseur. Entités `Fournisseur`, `Commande`/`CommandeLigne`, statuts, **réception partielle**
+  → mouvements `ENTREE` (source `COMMANDE`). **Bon de commande PDF** par fournisseur (DomPDF), quantités seules.
+  Enregistrement du **coût** (→ Finance). Inclut le **décrochage `StockItem.season`** (catalogue partagé)
+  et le **stock par (article, taille)** (cf. §12). *Réutilise* `StockItemVetementType::dossierField()`.
 
 - **Phase 4 — Compléments**
-  Liaison **module Finance** (coûts des commandes), finalisation de l'auto-dotation par taille
-  (`templates/admin/stock/dotations/auto.html.twig`, route d'application manquante), exports/historique.
+  Liaison **module Finance** (coûts des commandes), exports/historique, nettoyage de l'auto-dotation SKU
+  obsolète (`templates/admin/stock/dotations/auto.html.twig`).
 
 ---
 
@@ -237,14 +245,17 @@ Aucune valeur métier (catégories, dotations, fournisseurs) codée en dur.
 
 ## 12. À préciser au moment d'implémenter (détails ouverts)
 
-1. **Stockage exact du choix de dotation** côté formulaire public (champ dédié sur `DossierClub` vs petite table).
-2. **Reprise de données** lors du décrochage de `StockItem.season` (catalogue partagé) : fusion des doublons
-   d'articles existants entre saisons.
-3. **Champs Fournisseur** (contact/email) — utiles pour Finance, à confirmer.
-4. **Granularité Finance** : ce que le module Finance attend exactement (coût par commande, par fournisseur,
+1. ~~**Stockage du choix de dotation**~~ → **acté** : `DossierClub.dotationChoix` (JSON `{groupeChoix: stockItemId}`).
+2. **Stock par (article, taille)** *(Phase 3, décision structurante)* : les besoins sont par taille (Veste L),
+   mais le stock d'un vêtement (fiche « garment ») est aujourd'hui **sans taille**. Pour calculer « à commander »
+   par taille et suivre les réceptions, il faut un **stock par (article, taille)** → ajouter une **`taille` sur
+   `StockMovement`** (et `getCurrentStock` par taille). À trancher avant la Phase 3.
+3. **Reprise de données** lors du décrochage de `StockItem.season` (catalogue partagé) : fusion des doublons
+   d'articles existants entre saisons, ou repart-on d'un catalogue propre ?
+4. **Champs Fournisseur** (contact/email) — utiles pour Finance, à confirmer.
+5. **Granularité Finance** : ce que le module Finance attend exactement (coût par commande, par fournisseur,
    par saison) — à caler quand Finance sera spécifié.
-5. **Épicerie / matériel collectif** : confirmer que le réapprovisionnement reste purement basé sur `alertSeuil`
-   (pas de besoin/commande piloté).
+6. **Épicerie / matériel collectif** : le réapprovisionnement reste basé sur `alertSeuil` (hors moteur besoin/commande).
 
 ---
 
