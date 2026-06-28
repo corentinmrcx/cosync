@@ -8,56 +8,73 @@
     { label: 'Stock' }
 ] } %}
 
-<div class="stock-dashboard-page" x-data="stockMovementModal()">
+<div class="stock-home-page">
 
-    <div class="stock-dashboard-header">
-        <h1 class="stock-dashboard-title">Gestion du stock</h1>
-        <div class="stock-dashboard-actions">
-            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-dashboard-btn-secondary">
+    <div class="stock-home-header">
+        <div>
+            <h1 class="stock-home-title">Stock</h1>
+            <p class="stock-home-subtitle">Saison {{ season.label }}</p>
+        </div>
+        <div class="stock-home-actions">
+            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-home-btn-secondary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                 Historique
             </a>
-            <a href="{{ path('admin_stock_items_new') }}" class="stock-dashboard-btn-primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Nouvel article
+            <a href="{{ path('admin_stock_gestion') }}" class="stock-home-btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Gérer le stock
             </a>
         </div>
     </div>
 
-    {% if summary is empty %}
-        <div class="stock-dashboard-empty">
-            <p>Aucun article de stock pour cette saison.</p>
-            <a href="{{ path('admin_stock_items_new') }}" class="stock-dashboard-btn-primary">Créer un article</a>
+    {# — Tuiles de synthèse — #}
+    <div class="stock-home-tiles">
+        <div class="stock-home-tile">
+            <span class="stock-home-tile-value">{{ data.nbArticles }}</span>
+            <span class="stock-home-tile-label">Article{{ data.nbArticles > 1 ? 's' : '' }} au catalogue</span>
         </div>
-    {% endif %}
+        <div class="stock-home-tile {{ data.nbAlertes > 0 ? 'stock-home-tile-warning' }}">
+            <span class="stock-home-tile-value">{{ data.nbAlertes }}</span>
+            <span class="stock-home-tile-label">En alerte</span>
+        </div>
+        <div class="stock-home-tile {{ data.nbRuptures > 0 ? 'stock-home-tile-danger' }}">
+            <span class="stock-home-tile-value">{{ data.nbRuptures }}</span>
+            <span class="stock-home-tile-label">En rupture</span>
+        </div>
+        {% if data.valeurStock > 0 %}
+        <div class="stock-home-tile">
+            <span class="stock-home-tile-value">{{ data.valeurStock|number_format(0, ',', ' ') }} €</span>
+            <span class="stock-home-tile-label">Valeur du stock</span>
+        </div>
+        {% endif %}
+    </div>
 
-    {% for section in summary %}
-        <div class="stock-dashboard-section">
-            <div class="stock-dashboard-section-header">
-                {% if section.category %}
-                    <h2 class="stock-dashboard-section-title">{{ section.category.name }}</h2>
-                {% else %}
-                    <h2 class="stock-dashboard-section-title">Sans catégorie</h2>
-                {% endif %}
-                <span class="stock-dashboard-section-count">{{ section.items|length }} article{{ section.items|length > 1 ? 's' : '' }}</span>
-            </div>
+    {# — À réapprovisionner — #}
+    <div class="stock-home-section">
+        <div class="stock-home-section-header">
+            <h2 class="stock-home-section-title">À réapprovisionner</h2>
+            <span class="stock-home-section-count">{{ data.alertes|length }}</span>
+        </div>
 
-            <div class="stock-dashboard-table-wrapper">
-                <table class="stock-dashboard-table">
+        {% if data.alertes is empty %}
+            <p class="stock-home-empty">Aucune alerte — tout est au vert ✅</p>
+        {% else %}
+            <div class="stock-home-table-wrapper">
+                <table class="stock-home-table">
                     <thead>
                         <tr>
-                            <th class="stock-col-nom">Article</th>
-                            <th class="stock-col-stock">Stock actuel</th>
-                            <th class="stock-col-seuil">Seuil alerte</th>
-                            <th class="stock-col-actions">Actions</th>
+                            <th>Article</th>
+                            <th>Stock</th>
+                            <th>Seuil</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for row in section.items %}
+                        {% for row in data.alertes %}
                             <tr>
-                                <td class="stock-col-nom">
-                                    <span class="stock-item-nom">{{ row.item.nom }}</span>
-                                    <span class="stock-item-meta">
+                                <td>
+                                    <span class="stock-home-item-nom">{{ row.item.nom }}</span>
+                                    <span class="stock-home-item-meta">
                                         {% if row.item.marque %}{{ row.item.marque }}{% endif %}
                                         {% if row.item.marque and row.item.taille %} · {% endif %}
                                         {% if row.item.taille %}{{ row.item.taille }}{% endif %}
@@ -65,139 +82,45 @@
                                         {% if row.item.couleur %}{{ row.item.couleur }}{% endif %}
                                     </span>
                                 </td>
-                                <td class="stock-col-stock">
+                                <td>
                                     <span class="stock-badge stock-badge-{{ row.status }}">
-                                        {{ row.stock }}
-                                        {% if row.stock <= 0 %}Rupture{% elseif row.status == 'warning' %}Stock bas{% endif %}
+                                        {{ row.stock }} {% if row.stock <= 0 %}Rupture{% else %}Stock bas{% endif %}
                                     </span>
                                 </td>
-                                <td class="stock-col-seuil">
-                                    {{ row.item.alertSeuil ?? '—' }}
-                                </td>
-                                <td class="stock-col-actions">
-                                    <button
-                                        type="button"
-                                        class="stock-action-mouvement"
-                                        @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
-                                    >
-                                        + / − Mouvement
-                                    </button>
-                                    <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="stock-action-edit">Modifier</a>
-                                    <form method="post" action="{{ path('admin_stock_items_delete', {id: row.item.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cet article et tous ses mouvements ?')">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_item_' ~ row.item.id) }}">
-                                        <button type="submit" class="stock-action-delete">Supprimer</button>
-                                    </form>
+                                <td>{{ row.item.alertSeuil ?? '—' }}</td>
+                                <td class="stock-home-table-action">
+                                    {% if row.item.lienAchat %}
+                                        <a href="{{ row.item.lienAchat }}" target="_blank" rel="noopener" class="stock-home-buy">Commander ↗</a>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+        {% endif %}
+    </div>
+
+    {# — Accès rapides — #}
+    <div class="stock-home-section">
+        <div class="stock-home-section-header">
+            <h2 class="stock-home-section-title">Accès rapides</h2>
         </div>
-    {% endfor %}
-
-    {# Modale mouvement #}
-    <div class="stock-modal-backdrop" x-show="open" x-transition.opacity style="display:none">
-        <div class="stock-modal" @click.outside="closeModal()">
-            <div class="stock-modal-header">
-                <h3 class="stock-modal-title" x-text="'Mouvement — ' + itemNom"></h3>
-                <button type="button" class="stock-modal-close" @click="closeModal()">✕</button>
-            </div>
-
-            <form :action="formAction" method="post" class="stock-modal-form">
-                <input type="hidden" name="_token" :value="csrfToken">
-
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label">Action</label>
-                    <div class="stock-modal-actions-grid">
-                        <label class="stock-modal-radio" :class="{ active: action === 'entree' }">
-                            <input type="radio" name="action" value="entree" x-model="action"> Entrée (réassort)
-                        </label>
-                        <label class="stock-modal-radio" :class="{ active: action === 'sortie' }">
-                            <input type="radio" name="action" value="sortie" x-model="action"> Sortie
-                        </label>
-                        <label class="stock-modal-radio" :class="{ active: action === 'dotation' }">
-                            <input type="radio" name="action" value="dotation" x-model="action"> Dotation joueur
-                        </label>
-                        <label class="stock-modal-radio" :class="{ active: action === 'rebut' }">
-                            <input type="radio" name="action" value="rebut" x-model="action"> Rebut / perte
-                        </label>
-                    </div>
-                </div>
-
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label">Quantité</label>
-                    <input type="number" name="quantite" min="1" x-model="quantite" class="stock-modal-input" required>
-                    <span class="stock-modal-hint" x-text="'Stock actuel : ' + stockActuel"></span>
-                </div>
-
-                <div class="stock-modal-field" x-show="action === 'dotation'" x-transition>
-                    <label class="stock-modal-label">Licencié <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(paiement confirmé uniquement)</span></label>
-                    <select name="licencie_uuid" class="stock-modal-select">
-                        <option value="">— Sélectionner un licencié —</option>
-                        {% if licenciesValides is empty %}
-                            <option disabled>Aucun licencié avec paiement confirmé</option>
-                        {% else %}
-                            {% for licencie in licenciesValides %}
-                                <option value="{{ licencie.uuid }}">{{ licencie.nom }} {{ licencie.prenom }}</option>
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                </div>
-
-                <div class="stock-modal-field" x-show="action === 'rebut' || action === 'sortie' || action === 'dotation'" x-transition>
-                    <label class="stock-modal-label">
-                        Note / justification
-                        <span x-show="action === 'rebut'" style="color: var(--color-danger)">*</span>
-                    </label>
-                    <textarea name="note" class="stock-modal-textarea" :required="action === 'rebut'" rows="2" placeholder="Raison, contexte…"></textarea>
-                </div>
-
-                <div class="stock-modal-footer">
-                    <button type="button" class="stock-modal-cancel" @click="closeModal()">Annuler</button>
-                    <button type="submit" class="stock-modal-submit" :disabled="!action || quantite < 1">Enregistrer</button>
-                </div>
-            </form>
+        <div class="stock-home-links">
+            <a href="{{ path('admin_stock_gestion') }}" class="stock-home-link-card">
+                <span class="stock-home-link-title">Gérer les articles</span>
+                <span class="stock-home-link-text">Liste détaillée, mouvements, création/édition</span>
+            </a>
+            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-home-link-card">
+                <span class="stock-home-link-title">Historique des mouvements</span>
+                <span class="stock-home-link-text">Entrées, sorties, dotations, rebuts</span>
+            </a>
+            <a href="{{ path('admin_stock_categories_list') }}" class="stock-home-link-card">
+                <span class="stock-home-link-title">Catégories</span>
+                <span class="stock-home-link-text">Organiser les articles par catégorie</span>
+            </a>
         </div>
     </div>
 
 </div>
-
-<script>
-function stockMovementModal() {
-    return {
-        open: false,
-        itemId: null,
-        itemNom: '',
-        stockActuel: 0,
-        action: 'entree',
-        quantite: 1,
-        get formAction() {
-            return `/admin/stock/items/${this.itemId}/mouvement`;
-        },
-        get csrfToken() {
-            return document.getElementById('csrf-' + this.itemId)?.value ?? '';
-        },
-        openModal(id, nom, stock) {
-            this.itemId    = id;
-            this.itemNom   = nom;
-            this.stockActuel = stock;
-            this.action    = 'entree';
-            this.quantite  = 1;
-            this.open      = true;
-        },
-        closeModal() {
-            this.open = false;
-        },
-    };
-}
-</script>
-
-{# Tokens CSRF cachés pour chaque item #}
-{% for section in summary %}
-    {% for row in section.items %}
-        <input type="hidden" id="csrf-{{ row.item.id }}" value="{{ csrf_token('stock_movement_' ~ row.item.id) }}">
-    {% endfor %}
-{% endfor %}
-
 {% endblock %}
