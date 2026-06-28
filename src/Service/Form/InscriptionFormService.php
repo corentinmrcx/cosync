@@ -6,6 +6,7 @@ use App\DTO\InscriptionFormData;
 use App\Entity\Licencie;
 use App\Enum\LicenceStatus;
 use App\Service\Drive\PendingUploadQueue;
+use App\Service\Pdf\AttestationTransportPdfService;
 use App\Service\Pdf\PdfGeneratorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -15,6 +16,7 @@ final class InscriptionFormService
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly PdfGeneratorService $pdfGenerator,
+        private readonly AttestationTransportPdfService $attestationPdfService,
         private readonly PendingUploadQueue $uploadQueue,
         #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
     ) {}
@@ -33,25 +35,40 @@ final class InscriptionFormService
         $dossier->setAutorisationPhoto($data->autorisationPhoto);
         $dossier->setAutorisationTransportDirigeants($data->autorisationTransportDirigeants);
         $dossier->setAutorisationTransportParents($data->autorisationTransportParents);
-        $dossier->setPaymentIntention($data->paymentIntention);
+        $dossier->setAutorisationAccident($data->autorisationAccident);
+        $dossier->setVolontaireTransport($data->volontaireTransport);
+        $dossier->setPaymentIntentions($data->paymentIntentions);
         $dossier->setIsSigned(true);
         $dossier->setSignatureDate(new \DateTimeImmutable());
         $dossier->setFormCompletedAt(new \DateTimeImmutable());
         $dossier->setStatus(LicenceStatus::FORM_COMPLETED);
 
         $pdfPath = $this->pdfGenerator->generateReglementSigne($licencie, $data->signatureData);
-        $dossier->setSignaturePath($pdfPath); // chemin local tant que Drive n'a pas répondu
+        $dossier->setSignaturePath($pdfPath);
+
+        // Si le licencié est volontaire pour transporter des enfants → générer l'attestation
+        if ($data->attestationTransport !== null) {
+            $attestationPath = $this->attestationPdfService->generate(
+                $data->attestationTransport,
+                $licencie->getNom(),
+                $licencie->getPrenom(),
+                $licencie->getSeason()->getLabel(),
+            );
+            // Stocke le chemin local temporairement — l'upload Drive est différé
+            $dossier->setAttestationTransportDriveId($attestationPath);
+        }
 
         // Le lien n'est plus utilisable après soumission
         $licencie->setFormTokenExpiresAt(null);
 
         $this->em->flush();
 
-        // L'upload Drive est différé après l'envoi de la réponse (kernel.terminate)
-        // pour ne pas faire patienter le licencié ni dépendre de l'API Google.
+        // Uploads Drive différés (kernel.terminate)
         $this->uploadQueue->enqueue($dossier->getId());
+        if ($data->attestationTransport !== null) {
+            $this->uploadQueue->enqueueAttestation($dossier->getId());
+        }
 
-        // Nettoyage de l'ancienne signature temp si elle existe encore
         $this->deleteSignatureTemp((string) $licencie->getUuid());
     }
 

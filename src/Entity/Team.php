@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TeamRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TeamRepository::class)]
@@ -22,13 +24,17 @@ class Team
     private Season $season;
 
     /**
-     * Catégorie FFF par défaut pour cette équipe.
-     * Utilisé pour l'auto-assignation à l'import XLSX.
-     * Null = équipe spéciale (loisirs, dirigeants…) sans auto-assignation.
+     * Catégories FFF jouant dans cette équipe.
+     * Utilisé pour l'auto-assignation à l'import et le filtrage du dashboard.
      */
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?Category $defaultCategory = null;
+    #[ORM\ManyToMany(targetEntity: Category::class)]
+    #[ORM\JoinTable(name: 'team_category')]
+    private Collection $categories;
+
+    public function __construct()
+    {
+        $this->categories = new ArrayCollection();
+    }
 
     public function getId(): int
     {
@@ -57,14 +63,23 @@ class Team
         return $this;
     }
 
-    public function getDefaultCategory(): ?Category
+    /** @return Collection<int, Category> */
+    public function getCategories(): Collection
     {
-        return $this->defaultCategory;
+        return $this->categories;
     }
 
-    public function setDefaultCategory(?Category $defaultCategory): static
+    public function addCategory(Category $category): static
     {
-        $this->defaultCategory = $defaultCategory;
+        if (!$this->categories->contains($category)) {
+            $this->categories->add($category);
+        }
+        return $this;
+    }
+
+    public function removeCategory(Category $category): static
+    {
+        $this->categories->removeElement($category);
         return $this;
     }
 }

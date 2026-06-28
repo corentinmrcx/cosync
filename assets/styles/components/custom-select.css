@@ -82,3 +82,10 @@
     color: var(--color-primary-dark);
     font-weight: 600;
 }
+
+/* Variante multi-select : option avec coche à gauche */
+.cselect-option-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}

@@ -1,0 +1,49 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Démonstration terminée – Foyer de Soudron{% endblock %}
+
+{% block body %}
+<div class="inscription-page">
+
+    <div class="inscription-demo-banner">
+        Mode démonstration — aucune donnée n'a été enregistrée.
+    </div>
+
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+        </div>
+        <div class="inscription-progress">
+            {% for i in 1..5 %}
+                <div class="inscription-progress-segment inscription-progress-segment-done"></div>
+            {% endfor %}
+        </div>
+    </header>
+
+    <main class="inscription-main">
+        <div class="inscription-container">
+
+            <div class="inscription-card">
+                <div class="inscription-confirm-icon">✅</div>
+                <h1 class="inscription-confirm-title">Démonstration terminée !</h1>
+                <p class="inscription-confirm-text">
+                    Voici à quoi ressemble la fin du parcours d'inscription.
+                    Dans la vraie inscription, le formulaire serait enregistré et le règlement
+                    signé archivé sur le Drive du club.
+                </p>
+                <p class="inscription-confirm-text">
+                    Ici, <strong>rien n'a été enregistré</strong> : ni en base de données, ni sur le Drive.
+                </p>
+
+                <a href="{{ path('public_inscription_demo_show') }}" class="inscription-btn-start" style="margin-top: 1.5rem; text-align: center;">
+                    Recommencer la démo
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    {% include 'components/footer.html.twig' %}
+
+</div>
+{% endblock %}

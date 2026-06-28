@@ -1,0 +1,112 @@
+.cat-card {
+    max-width: 720px;
+}
+
+.cat-intro {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.cat-table-wrap {
+    overflow-x: auto;
+    margin: 0 -0.25rem;
+}
+
+.cat-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.cat-table th {
+    text-align: left;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.375rem 0.625rem;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.cat-table td {
+    padding: 0.5rem 0.625rem;
+    color: var(--color-text-body);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.cat-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.cat-table tbody tr:nth-child(even) {
+    background: var(--color-bg-subtle);
+}
+
+.cat-code {
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-base);
+    background: var(--color-bg-muted);
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-sm);
+}
+
+.cat-cell-center {
+    text-align: center;
+}
+
+.cat-cell-action {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.cat-count-active {
+    color: var(--color-text-body);
+    font-weight: 600;
+}
+
+.cat-count-zero {
+    color: var(--color-text-disabled);
+}
+
+.cat-btn-delete {
+    padding: 0.2rem 0.5rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-danger);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+}
+
+.cat-btn-delete-disabled {
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+}
+
+.cat-add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.cat-add-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.cat-add-row .season-form-field:first-child {
+    width: 120px;
+    flex-shrink: 0;
+}
+
+.cat-add-label-field {
+    flex: 1;
+}

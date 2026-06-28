@@ -133,6 +133,12 @@
 </head>
 <body>
 
+{% if previewMode is defined and previewMode %}
+<div style="background:#ff3131;color:#fff;text-align:center;padding:5px 0;font-size:12px;font-weight:700;letter-spacing:0.1em;margin-bottom:8mm;">
+    APERÇU — NON OFFICIEL
+</div>
+{% endif %}
+
 {# ── Header ── #}
 <table class="header" cellpadding="0" cellspacing="0">
     <tr>
@@ -164,7 +170,11 @@
         Je soussigné·e <span class="highlight">{{ licencie.prenom }} {{ licencie.nom }}</span>, reconnais avoir lu et accepté le règlement intérieur du Foyer de Soudron pour la saison <span class="highlight">{{ season.label }}</span>.
     </p>
     <div class="sign-label">Signature :</div>
-    <img class="sign-img" src="{{ signatureDataUrl }}" alt="Signature">
+    {% if previewMode is defined and previewMode %}
+        <p style="font-size:11px;color:#888;font-style:italic;">(Emplacement de la signature)</p>
+    {% else %}
+        <img class="sign-img" src="{{ signatureDataUrl }}" alt="Signature">
+    {% endif %}
 </div>
 
 </body>

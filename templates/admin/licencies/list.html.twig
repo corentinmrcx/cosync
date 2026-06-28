@@ -40,7 +40,7 @@
                         <th>Nom / Prénom</th>
                         <th class="licencies-col-team">Équipe</th>
                         <th class="licencies-col-email">Email</th>
-                        <th>Statut</th>
+                        <th class="licencies-col-status">Statut</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -50,7 +50,7 @@
                             <td class="licencies-td-name">{{ licencie.nomPrenom }}</td>
                             <td class="licencies-col-team">{{ licencie.team ? licencie.team.name : '—' }}</td>
                             <td class="licencies-col-email licencies-td-muted">{{ licencie.email ?? '—' }}</td>
-                            <td>
+                            <td class="licencies-col-status">
                                 {% if licencie.dossierClub %}
                                     {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
                                 {% else %}
