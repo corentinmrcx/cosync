@@ -56,6 +56,10 @@ class DossierClub
     #[ORM\Column(type: 'json')]
     private array $paymentIntentions = [];
 
+    /** Choix de dotation faits au formulaire : { groupeChoix: stockItemId }. Null si aucun choix proposé. */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $dotationChoix = null;
+
     #[ORM\Column]
     private bool $isSigned = false;
 
@@ -167,6 +171,19 @@ class DossierClub
     public function setPaymentIntentions(array $modes): static
     {
         $this->paymentIntentions = array_map(fn(PaymentMode $m) => $m->value, $modes);
+        return $this;
+    }
+
+    /** @return array<string, int>|null */
+    public function getDotationChoix(): ?array
+    {
+        return $this->dotationChoix;
+    }
+
+    /** @param array<string, int>|null $dotationChoix */
+    public function setDotationChoix(?array $dotationChoix): static
+    {
+        $this->dotationChoix = $dotationChoix ?: null;
         return $this;
     }
 

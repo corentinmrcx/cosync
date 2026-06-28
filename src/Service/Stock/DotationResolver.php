@@ -51,10 +51,37 @@ final class DotationResolver
             return [];
         }
 
-        $lignes = [];
+        $choix = $this->storedChoices($person);
+
+        // Sépare les lignes simples des groupes de choix « 1 parmi N »
+        $simples = [];
+        $groupes = [];
         foreach ($modele->getLignes() as $ligne) {
+            if ($ligne->getGroupeChoix() !== null) {
+                $groupes[$ligne->getGroupeChoix()][] = $ligne;
+            } else {
+                $simples[] = $ligne;
+            }
+        }
+
+        // Pour chaque groupe : la ligne choisie (sinon la première par défaut)
+        $retenues = $simples;
+        foreach ($groupes as $groupe => $lignes) {
+            $voulu = isset($choix[$groupe]) ? (int) $choix[$groupe] : null;
+            $choisie = null;
+            foreach ($lignes as $ligne) {
+                if ($voulu !== null && $ligne->getStockItem()->getId() === $voulu) {
+                    $choisie = $ligne;
+                    break;
+                }
+            }
+            $retenues[] = $choisie ?? $lignes[0];
+        }
+
+        $out = [];
+        foreach ($retenues as $ligne) {
             $item = $ligne->getStockItem();
-            $lignes[] = [
+            $out[] = [
                 'stockItem'   => $item,
                 'quantite'    => $ligne->getQuantite(),
                 'obligatoire' => $ligne->isObligatoire(),
@@ -63,7 +90,44 @@ final class DotationResolver
             ];
         }
 
-        return $lignes;
+        return $out;
+    }
+
+    /**
+     * Groupes de choix « 1 parmi N » du modèle résolu, pour proposer un choix dans le formulaire public.
+     *
+     * @return array<int, array{groupe: string, options: \App\Entity\StockItem[]}>
+     */
+    public function getChoiceGroups(Licencie|Dirigeant $person): array
+    {
+        $modele = $this->resolveModele($person);
+        if ($modele === null) {
+            return [];
+        }
+
+        $groupes = [];
+        foreach ($modele->getLignes() as $ligne) {
+            if ($ligne->getGroupeChoix() !== null) {
+                $groupes[$ligne->getGroupeChoix()][] = $ligne->getStockItem();
+            }
+        }
+
+        $out = [];
+        foreach ($groupes as $groupe => $options) {
+            $out[] = ['groupe' => $groupe, 'options' => $options];
+        }
+
+        return $out;
+    }
+
+    /** @return array<string, int> */
+    private function storedChoices(Licencie|Dirigeant $person): array
+    {
+        if ($person instanceof Licencie) {
+            return $person->getDossierClub()?->getDotationChoix() ?? [];
+        }
+
+        return [];
     }
 
     /** @return DotationAffectation[] */
