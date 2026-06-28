@@ -16,6 +16,7 @@ use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
 use App\Service\Import\DataSanitizer;
 use App\Service\Mail\MailerService;
+use App\Service\Stock\DotationBesoinService;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class LicencieService
@@ -27,6 +28,7 @@ final class LicencieService
         private readonly TeamRepository $teamRepo,
         private readonly DataSanitizer $sanitizer,
         private readonly MailerService $mailerService,
+        private readonly DotationBesoinService $dotationBesoinService,
     ) {}
 
     /**
@@ -178,6 +180,7 @@ final class LicencieService
         if ($dossier !== null && $dossier->getStatus() !== LicenceStatus::VALIDATED) {
             $dossier->setStatus(LicenceStatus::VALIDATED);
             $this->em->flush();
+            $this->dotationBesoinService->recomputeForLicencie($licencie);
             if ($licencie->getEmail() !== null) {
                 $this->mailerService->sendValidation($licencie);
             }

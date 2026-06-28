@@ -6,6 +6,7 @@ use App\DTO\DirigeantPublicFormData;
 use App\Entity\Dirigeant;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationTransportPdfService;
+use App\Service\Stock\DotationBesoinService;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class DirigeantFormService
@@ -14,6 +15,7 @@ final class DirigeantFormService
         private readonly EntityManagerInterface $em,
         private readonly AttestationTransportPdfService $attestationPdfService,
         private readonly PendingUploadQueue $uploadQueue,
+        private readonly DotationBesoinService $dotationBesoinService,
     ) {}
 
     public function submit(Dirigeant $dirigeant, DirigeantPublicFormData $data): void
@@ -51,6 +53,10 @@ final class DirigeantFormService
         }
 
         $this->em->flush();
+
+        if ($dirigeant->isPublicFormComplete()) {
+            $this->dotationBesoinService->recomputeForDirigeant($dirigeant);
+        }
 
         if ($data->attestationTransport !== null) {
             $this->uploadQueue->enqueueDirigeantAttestation($dirigeant->getUuid()->toRfc4122());
