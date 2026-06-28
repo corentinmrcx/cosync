@@ -40,9 +40,21 @@ class DossierClub
     #[ORM\Column(nullable: true)]
     private ?bool $autorisationTransportParents = null;
 
-    /** Mode de paiement déclaré par le licencié dans le formulaire */
-    #[ORM\Column(nullable: true, enumType: PaymentMode::class)]
-    private ?PaymentMode $paymentIntention = null;
+    /** null si majeur — autorisation d'intervenir en cas d'accident */
+    #[ORM\Column(nullable: true)]
+    private ?bool $autorisationAccident = null;
+
+    /** null si majeur — le parent accepte de transporter d'autres enfants */
+    #[ORM\Column(nullable: true)]
+    private ?bool $volontaireTransport = null;
+
+    /** Chemin local temporaire puis ID Drive de l'attestation transport bénévole */
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $attestationTransportDriveId = null;
+
+    /** Modes de paiement déclarés par le licencié dans le formulaire (stockés comme tableau de valeurs string) */
+    #[ORM\Column(type: 'json')]
+    private array $paymentIntentions = [];
 
     #[ORM\Column]
     private bool $isSigned = false;
@@ -142,14 +154,19 @@ class DossierClub
         return $this;
     }
 
-    public function getPaymentIntention(): ?PaymentMode
+    /** @return PaymentMode[] */
+    public function getPaymentIntentions(): array
     {
-        return $this->paymentIntention;
+        return array_map(
+            fn(string $v) => PaymentMode::from($v),
+            $this->paymentIntentions,
+        );
     }
 
-    public function setPaymentIntention(?PaymentMode $paymentIntention): static
+    /** @param PaymentMode[] $modes */
+    public function setPaymentIntentions(array $modes): static
     {
-        $this->paymentIntention = $paymentIntention;
+        $this->paymentIntentions = array_map(fn(PaymentMode $m) => $m->value, $modes);
         return $this;
     }
 
@@ -194,6 +211,39 @@ class DossierClub
     public function setFormCompletedAt(?\DateTimeImmutable $formCompletedAt): static
     {
         $this->formCompletedAt = $formCompletedAt;
+        return $this;
+    }
+
+    public function getAutorisationAccident(): ?bool
+    {
+        return $this->autorisationAccident;
+    }
+
+    public function setAutorisationAccident(?bool $autorisationAccident): static
+    {
+        $this->autorisationAccident = $autorisationAccident;
+        return $this;
+    }
+
+    public function getVolontaireTransport(): ?bool
+    {
+        return $this->volontaireTransport;
+    }
+
+    public function setVolontaireTransport(?bool $volontaireTransport): static
+    {
+        $this->volontaireTransport = $volontaireTransport;
+        return $this;
+    }
+
+    public function getAttestationTransportDriveId(): ?string
+    {
+        return $this->attestationTransportDriveId;
+    }
+
+    public function setAttestationTransportDriveId(?string $attestationTransportDriveId): static
+    {
+        $this->attestationTransportDriveId = $attestationTransportDriveId;
         return $this;
     }
 

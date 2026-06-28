@@ -4,6 +4,8 @@ namespace App\Form;
 
 use App\DTO\LicencieCreateData;
 use App\Entity\Category;
+use App\Entity\Team;
+use App\Repository\TeamRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -44,10 +46,21 @@ class LicencieCreateType extends AbstractType
             ])
             ->add('category', EntityType::class, [
                 'class'        => Category::class,
-                'choice_label' => fn(Category $c): string => $c->getCode() . ' — ' . $c->getLabel(),
+                'choice_label' => fn(Category $c): string => $c->getCode(),
                 'label'        => 'Catégorie',
                 'placeholder'  => '— Sélectionner —',
                 'constraints'  => [new NotBlank(message: 'La catégorie est requise.')],
+            ])
+            ->add('team', EntityType::class, [
+                'class'         => Team::class,
+                'choice_label'  => 'name',
+                'label'         => 'Équipe',
+                'required'      => false,
+                'placeholder'   => '— Aucune équipe —',
+                'query_builder' => static fn(TeamRepository $repo) => $repo->createQueryBuilder('t')
+                    ->where('t.season = :season')
+                    ->setParameter('season', $options['season'])
+                    ->orderBy('t.name', 'ASC'),
             ])
             ->add('email', EmailType::class, [
                 'label'    => 'Email',
@@ -84,6 +97,9 @@ class LicencieCreateType extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults(['data_class' => LicencieCreateData::class]);
+        $resolver->setDefaults([
+            'data_class' => LicencieCreateData::class,
+            'season'     => null,
+        ]);
     }
 }

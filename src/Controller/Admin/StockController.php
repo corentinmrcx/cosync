@@ -28,7 +28,7 @@ class StockController extends AbstractController
 {
     private const PER_PAGE = 25;
 
-    private const TAILLES_EQUIPEMENT = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'];
+    private const TAILLES_EQUIPEMENT = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'];
     private const CONTENANCES_EPICERIE = ['25cl', '33cl', '50cl', '75cl', '1L', '1,5L', '2L'];
 
     public function __construct(
@@ -328,4 +328,5 @@ class StockController extends AbstractController
 
         return $this->redirectToRoute('admin_stock_categories_list');
     }
+
 }

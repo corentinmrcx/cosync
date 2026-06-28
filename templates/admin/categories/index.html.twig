@@ -1,0 +1,84 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Catégories FFF{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Catégories FFF' }
+] } %}
+
+<div class="season-form-page">
+    <div class="season-form-card cat-card">
+
+        <h1 class="season-form-header">Catégories FFF</h1>
+        <p class="cat-intro">Les codes doivent correspondre exactement à ce que FootClubs exporte dans la colonne "Sous catégorie". Une catégorie utilisée par des licenciés ne peut pas être supprimée.</p>
+        <hr class="season-form-divider">
+
+        {% if categories is empty %}
+            <p class="season-form-empty">Aucune catégorie. Lancez <code>php bin/console app:seed-referential</code> pour initialiser le référentiel.</p>
+        {% else %}
+            <div class="cat-table-wrap">
+                <table class="cat-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Libellé</th>
+                            <th>École de foot</th>
+                            <th>Licenciés</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        {% set nb = counts[category.id] %}
+                        <tr>
+                            <td><code class="cat-code">{{ category.code }}</code></td>
+                            <td>{{ category.label }}</td>
+                            <td class="cat-cell-center">{{ category.isEcoleFoot ? '✓' : '—' }}</td>
+                            <td class="cat-cell-center {{ nb > 0 ? 'cat-count-active' : 'cat-count-zero' }}">{{ nb }}</td>
+                            <td class="cat-cell-action">
+                                {% if nb > 0 %}
+                                    <span class="cat-btn-delete cat-btn-delete-disabled" title="{{ nb }} licencié(s) — suppression impossible">Supprimer</span>
+                                {% else %}
+                                    <form method="post" action="{{ path('admin_categories_delete', {id: category.id}) }}"
+                                          onsubmit="return confirm('Supprimer la catégorie {{ category.code }} ?')">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_category_' ~ category.id) }}">
+                                        <button type="submit" class="cat-btn-delete">Supprimer</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        <hr class="season-form-divider">
+
+        <p class="season-form-header" style="font-size:var(--font-size-sm);font-weight:700;color:var(--color-text-body)">Ajouter une catégorie</p>
+
+        {{ form_start(form, {attr: {class: 'cat-add-form'}}) }}
+            <div class="cat-add-row">
+                <div class="season-form-field">
+                    {{ form_label(form.code) }}
+                    {{ form_widget(form.code) }}
+                    {{ form_errors(form.code) }}
+                </div>
+                <div class="season-form-field cat-add-label-field">
+                    {{ form_label(form.label) }}
+                    {{ form_widget(form.label) }}
+                    {{ form_errors(form.label) }}
+                </div>
+            </div>
+            <div class="season-form-checkbox">
+                {{ form_widget(form.isEcoleFoot) }}
+                {{ form_label(form.isEcoleFoot) }}
+            </div>
+            <button type="submit" class="season-form-submit">Ajouter</button>
+        {{ form_end(form) }}
+
+    </div>
+</div>
+{% endblock %}

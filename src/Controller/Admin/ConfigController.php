@@ -83,43 +83,52 @@ class ConfigController extends AbstractController
         $form = $this->createForm(TeamSetupType::class, $data);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid() && $data->category !== null) {
-            $name = $data->category->getCode();
-            if ($data->suffix !== null && $data->suffix !== '') {
-                $name .= ' ' . trim($data->suffix);
-            }
-
+        if ($form->isSubmitted() && $form->isValid() && trim($data->name) !== '') {
             $team = new Team();
-            $team->setName($name);
+            $team->setName(trim($data->name));
             $team->setSeason($season);
-            $team->setDefaultCategory($data->category);
+            foreach ($data->categories as $category) {
+                $team->addCategory($category);
+            }
             $em->persist($team);
             $em->flush();
-            $this->addFlash('success', sprintf('Équipe "%s" créée.', $name));
+            $this->addFlash('success', sprintf('Équipe "%s" créée.', $team->getName()));
         } else {
-            $this->addFlash('error', 'Sélectionnez une catégorie FFF.');
+            $this->addFlash('error', 'Le nom de l\'équipe est obligatoire.');
         }
 
         return $this->redirectToRoute('admin_config_index');
     }
 
     #[Route('/equipes/{id}/modifier', name: 'teams_edit', methods: ['POST'])]
-    public function teamEdit(Team $team, Request $request, EntityManagerInterface $em): Response
+    public function teamEdit(Team $team, Request $request, EntityManagerInterface $em, CategoryRepository $categoryRepo): Response
     {
         if (!$this->isCsrfTokenValid('edit_team_' . $team->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
             return $this->redirectToRoute('admin_config_index');
         }
 
-        $name = trim($request->request->all('team')['name'] ?? '');
+        $teamData    = $request->request->all('team');
+        $name        = trim($teamData['name'] ?? '');
+        $categoryIds = $teamData['categories'] ?? [];
 
-        if ($name !== '') {
-            $team->setName($name);
-            $em->flush();
-            $this->addFlash('success', sprintf('Équipe "%s" mise à jour.', $team->getName()));
-        } else {
+        if ($name === '') {
             $this->addFlash('error', 'Le nom ne peut pas être vide.');
+            return $this->redirectToRoute('admin_config_index');
         }
+
+        $team->setName($name);
+
+        $team->getCategories()->clear();
+        foreach ($categoryIds as $catId) {
+            $cat = $categoryRepo->find((int) $catId);
+            if ($cat !== null) {
+                $team->addCategory($cat);
+            }
+        }
+
+        $em->flush();
+        $this->addFlash('success', sprintf('Équipe "%s" mise à jour.', $team->getName()));
 
         return $this->redirectToRoute('admin_config_index');
     }
@@ -139,5 +148,4 @@ class ConfigController extends AbstractController
 
         return $this->redirectToRoute('admin_config_index');
     }
-
 }

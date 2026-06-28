@@ -46,6 +46,14 @@
             </div>
         </div>
 
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.team) }}
+                {{ form_widget(form.team, { attr: { class: 'season-form-input' } }) }}
+                {{ form_errors(form.team) }}
+            </div>
+        </div>
+
         <div class="season-form-field">
             {{ form_label(form.numLicence) }}
             {{ form_widget(form.numLicence, { attr: { class: 'season-form-input' } }) }}

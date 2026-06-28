@@ -12,6 +12,7 @@ use App\Entity\User;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
+use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
 use App\Service\Import\DataSanitizer;
 use App\Service\Mail\MailerService;
@@ -23,6 +24,7 @@ final class LicencieService
         private readonly EntityManagerInterface $em,
         private readonly TransactionRepository $transactionRepo,
         private readonly LicencieRepository $licencieRepo,
+        private readonly TeamRepository $teamRepo,
         private readonly DataSanitizer $sanitizer,
         private readonly MailerService $mailerService,
     ) {}
@@ -40,14 +42,14 @@ final class LicencieService
             ? $this->sanitizer->sanitizeNumLicence($data->numLicence)
             : null;
 
-        if ($numLicence !== null && $this->licencieRepo->findByNumLicence($numLicence) !== null) {
-            throw new \DomainException(sprintf('Un licencié avec le numéro FootClubs "%s" existe déjà.', $numLicence));
+        if ($numLicence !== null && $this->licencieRepo->findByNumLicence($numLicence, $season) !== null) {
+            throw new \DomainException(sprintf('Un licencié avec le numéro FootClubs "%s" existe déjà dans cette saison.', $numLicence));
         }
 
-        $existing = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance);
+        $existing = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance, $season);
         if ($existing !== null) {
             throw new \DomainException(sprintf(
-                '%s %s (né(e) le %s) existe déjà dans la base.',
+                '%s %s (né(e) le %s) existe déjà dans cette saison.',
                 $nom, $prenom,
                 $data->dateNaissance->format('d/m/Y'),
             ));
@@ -58,6 +60,8 @@ final class LicencieService
         $licencie->setPrenom($prenom);
         $licencie->setDateNaissance($data->dateNaissance);
         $licencie->setCategory($data->category);
+        $team = $data->team ?? $this->teamRepo->findForCategory($data->category, $season);
+        $licencie->setTeam($team);
         $licencie->setSeason($season);
         $licencie->setEmail($email);
         $licencie->setTelephone($phone);
@@ -89,17 +93,19 @@ final class LicencieService
             ? $this->sanitizer->sanitizeNumLicence($data->numLicence)
             : null;
 
+        $season = $licencie->getSeason();
+
         if ($numLicence !== null && $numLicence !== $licencie->getNumLicence()) {
-            $other = $this->licencieRepo->findByNumLicence($numLicence);
+            $other = $this->licencieRepo->findByNumLicence($numLicence, $season);
             if ($other !== null && !$other->getUuid()->equals($licencie->getUuid())) {
-                throw new \DomainException(sprintf('Le numéro FootClubs "%s" est déjà utilisé par %s.', $numLicence, $other->getNomPrenom()));
+                throw new \DomainException(sprintf('Le numéro FootClubs "%s" est déjà utilisé par %s dans cette saison.', $numLicence, $other->getNomPrenom()));
             }
         }
 
         if ($nom !== $licencie->getNom() || $prenom !== $licencie->getPrenom() || $data->dateNaissance != $licencie->getDateNaissance()) {
-            $other = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance);
+            $other = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance, $season);
             if ($other !== null && !$other->getUuid()->equals($licencie->getUuid())) {
-                throw new \DomainException(sprintf('%s %s (né(e) le %s) existe déjà dans la base.', $nom, $prenom, $data->dateNaissance->format('d/m/Y')));
+                throw new \DomainException(sprintf('%s %s (né(e) le %s) existe déjà dans cette saison.', $nom, $prenom, $data->dateNaissance->format('d/m/Y')));
             }
         }
 
@@ -130,37 +136,51 @@ final class LicencieService
         $this->em->flush();
     }
 
-    public function confirmPaiement(
+    public function addPayment(
         Licencie $licencie,
         PaymentMode $mode,
         float $montant,
         ?string $reference,
+        ?string $note,
+        \DateTimeImmutable $datePaiement,
         User $confirmedBy,
         Season $season,
     ): void {
-        $transaction = $this->transactionRepo->findByLicencieAndSeason($licencie, $season);
-        if ($transaction === null) {
-            $transaction = new Transaction();
-            $transaction->setLicencie($licencie);
-            $transaction->setSeason($season);
-            $this->em->persist($transaction);
-        }
-
+        $transaction = new Transaction();
+        $transaction->setLicencie($licencie);
+        $transaction->setSeason($season);
         $transaction->setMode($mode);
         $transaction->setMontant(number_format($montant, 2, '.', ''));
         $transaction->setReference($reference);
-        $transaction->setDatePaiement(new \DateTimeImmutable());
+        $transaction->setNote($note);
+        $transaction->setDatePaiement($datePaiement);
         $transaction->setConfirmedBy($confirmedBy);
-
-        $dossier = $licencie->getDossierClub();
-        if ($dossier !== null) {
-            $dossier->setStatus(LicenceStatus::VALIDATED);
-        }
-
+        $this->em->persist($transaction);
         $this->em->flush();
 
-        if ($licencie->getEmail() !== null) {
-            $this->mailerService->sendValidation($licencie);
+        $baseCosts = $season->getBaseCosts();
+        $expected  = (float) ($licencie->isSeniorTariff() ? ($baseCosts['seniors'] ?? 0) : ($baseCosts['jeunes'] ?? 0));
+        $totalPaid = $this->transactionRepo->sumByLicencieAndSeason($licencie, $season);
+
+        if ($totalPaid >= $expected) {
+            $this->setValidated($licencie);
+        }
+    }
+
+    public function validateManually(Licencie $licencie): void
+    {
+        $this->setValidated($licencie);
+    }
+
+    private function setValidated(Licencie $licencie): void
+    {
+        $dossier = $licencie->getDossierClub();
+        if ($dossier !== null && $dossier->getStatus() !== LicenceStatus::VALIDATED) {
+            $dossier->setStatus(LicenceStatus::VALIDATED);
+            $this->em->flush();
+            if ($licencie->getEmail() !== null) {
+                $this->mailerService->sendValidation($licencie);
+            }
         }
     }
 }

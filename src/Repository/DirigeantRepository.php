@@ -16,9 +16,9 @@ class DirigeantRepository extends ServiceEntityRepository
         parent::__construct($registry, Dirigeant::class);
     }
 
-    public function findByNumLicence(string $numLicence): ?Dirigeant
+    public function findByNumLicence(string $numLicence, Season $season): ?Dirigeant
     {
-        return $this->findOneBy(['numLicence' => $numLicence]);
+        return $this->findOneBy(['numLicence' => $numLicence, 'season' => $season]);
     }
 
     public function findByNomPrenomSaison(string $nom, string $prenom, Season $season): ?Dirigeant

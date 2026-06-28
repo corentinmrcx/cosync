@@ -28,6 +28,9 @@ class Transaction
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $reference = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $note = null;
+
     #[ORM\Column(type: 'date_immutable')]
     private \DateTimeImmutable $datePaiement;
 
@@ -85,6 +88,17 @@ class Transaction
     public function setReference(?string $reference): static
     {
         $this->reference = $reference;
+        return $this;
+    }
+
+    public function getNote(): ?string
+    {
+        return $this->note;
+    }
+
+    public function setNote(?string $note): static
+    {
+        $this->note = $note;
         return $this;
     }
 

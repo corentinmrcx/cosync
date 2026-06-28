@@ -38,12 +38,18 @@
 
         <div class="combobox-dropdown" x-show="open && (filtered.length > 0 || showCreate)" x-cloak>
             <template x-for="(item, i) in filtered" :key="i">
-                <button type="button"
-                        class="combobox-option"
-                        :class="query === item ? 'combobox-option-selected' : ''"
-                        @mousedown.prevent="select(item)"
-                        x-text="item">
-                </button>
+                <div class="combobox-option-row">
+                    <button type="button"
+                            class="combobox-option"
+                            :class="query === item ? 'combobox-option-selected' : ''"
+                            @mousedown.prevent="select(item)"
+                            x-text="item">
+                    </button>
+                    <button type="button"
+                            class="combobox-option-delete"
+                            @mousedown.prevent="removeSuggestion(item)"
+                            title="Supprimer cette suggestion">×</button>
+                </div>
             </template>
             <template x-if="showCreate">
                 <button type="button"

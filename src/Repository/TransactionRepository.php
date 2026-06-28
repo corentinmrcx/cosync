@@ -28,4 +28,31 @@ class TransactionRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['licencie' => $licencie, 'season' => $season]);
     }
+
+    /** @return Transaction[] */
+    public function findAllByLicencieAndSeason(Licencie $licencie, Season $season): array
+    {
+        return $this->createQueryBuilder('t')
+            ->where('t.licencie = :licencie')
+            ->andWhere('t.season = :season')
+            ->setParameter('licencie', $licencie)
+            ->setParameter('season', $season)
+            ->orderBy('t.datePaiement', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function sumByLicencieAndSeason(Licencie $licencie, Season $season): float
+    {
+        $result = $this->createQueryBuilder('t')
+            ->select('SUM(t.montant)')
+            ->where('t.licencie = :licencie')
+            ->andWhere('t.season = :season')
+            ->setParameter('licencie', $licencie)
+            ->setParameter('season', $season)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (float) ($result ?? 0);
+    }
 }

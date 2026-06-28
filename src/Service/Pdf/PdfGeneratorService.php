@@ -3,6 +3,7 @@
 namespace App\Service\Pdf;
 
 use App\Entity\Licencie;
+use App\Entity\Season;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -51,5 +52,32 @@ final class PdfGeneratorService
         file_put_contents($path, $dompdf->output());
 
         return $path;
+    }
+
+    public function generatePreview(Season $season): string
+    {
+        $encode = fn(string $path): string => 'data:image/png;base64,' . base64_encode(file_get_contents($path));
+
+        $html = $this->twig->render('pdf/reglement_signe.html.twig', [
+            'licencie'         => ['prenom' => 'Prénom', 'nom' => 'NOM'],
+            'season'           => $season,
+            'signatureDataUrl' => '',
+            'signedAt'         => new \DateTimeImmutable(),
+            'logoDataUrl'      => $encode($this->projectDir . '/public/images/logo/logo.png'),
+            'foyerLogoDataUrl' => $encode($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
+            'previewMode'      => true,
+        ]);
+
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', false);
+        $options->set('defaultFont', 'Arial');
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->output();
     }
 }

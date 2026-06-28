@@ -8,6 +8,18 @@
     overflow: hidden;
 }
 
+/* — Bandeau mode démonstration — */
+.inscription-demo-banner {
+    flex-shrink: 0;
+    padding: 0.5rem 1rem;
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    border-bottom: 1px solid var(--color-warning);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-align: center;
+}
+
 /* — Header — */
 .inscription-header {
     flex-shrink: 0;
@@ -277,6 +289,21 @@
     font-weight: 500;
 }
 
+.inscription-reglement-scroll-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.inscription-checkbox-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* — Signature — */
 .inscription-signature-wrap {
     border: 1.5px solid var(--color-border);
@@ -413,6 +440,83 @@
 
 .inscription-payment-info p + p {
     margin-top: 0.25rem;
+}
+
+/* Toggle multi-paiement */
+.inscription-multi-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    cursor: pointer;
+    background: var(--color-bg-subtle);
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.inscription-multi-toggle:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.inscription-multi-toggle input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.inscription-multi-toggle-text {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-body);
+}
+
+/* Checkboxes en mode multi — mêmes visuels que les radios */
+.inscription-payment-option input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.inscription-payment-option input[type="checkbox"] + .inscription-payment-label::before {
+    content: '';
+    display: block;
+    width: 1.1rem;
+    height: 1.1rem;
+    min-width: 1.1rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    margin-right: 0.75rem;
+    background: var(--color-bg-page);
+    transition: all 0.15s;
+}
+
+.inscription-payment-option input[type="checkbox"]:checked + .inscription-payment-label::before {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='2 6 5 9 10 3'/%3E%3C/svg%3E");
+    background-size: 70%;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.inscription-payment-option input[type="checkbox"]:checked + .inscription-payment-label {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+/* Espacement entre les blocs info quand plusieurs modes actifs */
+.inscription-payment-infos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 /* — Navigation — */
@@ -604,4 +708,60 @@
     color: var(--color-text-muted);
     line-height: 1.5;
     margin: 0;
+}
+
+/* — Étape attestation transport — */
+
+.inscription-attestation-intro {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    line-height: 1.55;
+    margin: 0 0 1.25rem;
+}
+
+.inscription-input {
+    padding: 0.75rem 0.875rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    color: var(--color-text-base);
+    background: var(--color-bg-page);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+}
+
+.inscription-input:focus {
+    border-color: var(--color-primary);
+}
+
+.inscription-input-error {
+    border-color: var(--color-danger);
+}
+
+.inscription-field-error {
+    font-size: var(--font-size-xs);
+    color: var(--color-danger);
+    font-weight: 600;
+    margin-top: 0.25rem;
+}
+
+.inscription-textarea {
+    padding: 0.75rem 0.875rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    color: var(--color-text-base);
+    background: var(--color-bg-page);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+    resize: vertical;
+    min-height: 5rem;
+}
+
+.inscription-textarea:focus {
+    border-color: var(--color-primary);
 }

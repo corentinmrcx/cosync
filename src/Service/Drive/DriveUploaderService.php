@@ -23,20 +23,35 @@ final class DriveUploaderService
      */
     public function upload(string $localPdfPath, Licencie $licencie): ?string
     {
+        return $this->uploadToSubFolder(
+            $localPdfPath,
+            $licencie->getSeason()->getLabel(),
+            'Règlements intérieurs signés',
+            $this->buildFilename($licencie),
+            (string) $licencie->getUuid(),
+        );
+    }
+
+    /**
+     * Upload générique vers n'importe quel sous-dossier de la saison.
+     * Réutilisable pour les attestations transport, documents dirigeants, etc.
+     * Retourne l'ID Drive du fichier créé, ou null en cas d'échec.
+     */
+    public function uploadToSubFolder(string $localPdfPath, string $seasonLabel, string $subFolder, string $filename, string $logRef = ''): ?string
+    {
         if ($this->credentialsPath === '' || $this->rootFolderId === '') {
             $this->logger->warning('Google Drive non configuré (variables d\'env manquantes). PDF conservé en local.');
             return null;
         }
 
         try {
-            $service  = $this->buildDriveService();
-            $folder   = $this->resolveFolder($service, $licencie->getSeason()->getLabel());
-            $filename = $this->buildFilename($licencie);
+            $service = $this->buildDriveService();
+            $folder  = $this->resolveSubFolder($service, $seasonLabel, $subFolder);
 
             return $this->uploadFile($service, $localPdfPath, $folder, $filename);
         } catch (\Throwable $e) {
-            $this->logger->error('Échec upload Drive pour {uuid} : {message}', [
-                'uuid'    => (string) $licencie->getUuid(),
+            $this->logger->error('Échec upload Drive ({ref}) : {message}', [
+                'ref'     => $logRef ?: $filename,
                 'message' => $e->getMessage(),
             ]);
             return null;
@@ -56,11 +71,11 @@ final class DriveUploaderService
         return new Drive($client);
     }
 
-    private function resolveFolder(Drive $service, string $seasonLabel): string
+    private function resolveSubFolder(Drive $service, string $seasonLabel, string $subFolder): string
     {
         $seasonFolderId = $this->findOrCreateFolder($service, $seasonLabel, $this->rootFolderId);
 
-        return $this->findOrCreateFolder($service, 'Règlements intérieurs signés', $seasonFolderId);
+        return $this->findOrCreateFolder($service, $subFolder, $seasonFolderId);
     }
 
     private function findOrCreateFolder(Drive $service, string $name, string $parentId): string
