@@ -366,7 +366,11 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    cursor: pointer;
+}
+
+.dot-taille-none {
+    color: var(--color-text-disabled);
+    font-size: var(--font-size-xs);
 }
 
 .dot-taille-pen {
@@ -376,9 +380,16 @@
     cursor: pointer;
     color: var(--color-text-disabled);
     font-size: var(--font-size-xs);
+    opacity: 0;
+    transition: opacity 0.1s;
 }
 
-.dot-taille-display:hover .dot-taille-pen { color: var(--color-primary); }
+/* Crayon visible au survol quand la taille est renseignée */
+.dot-taille-display:hover .dot-taille-pen { opacity: 1; color: var(--color-primary); }
+
+/* Crayon toujours visible quand la taille est manquante */
+.dot-taille-display.is-missing { cursor: default; }
+.dot-taille-display.is-missing .dot-taille-pen { opacity: 1; }
 
 .dot-taille-form {
     display: flex;

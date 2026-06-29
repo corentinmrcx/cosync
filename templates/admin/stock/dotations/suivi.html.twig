@@ -67,13 +67,17 @@
                                         {% if besoin.taille %}<span class="dot-item-taille">{{ besoin.taille }}</span>{% else %}—{% endif %}
                                     {% else %}
                                         <div x-data="{ editing: false }" class="dot-taille-edit">
-                                            <div x-show="!editing" @click="editing = true" class="dot-taille-display">
+                                            <div x-show="!editing" class="dot-taille-display{% if not besoin.taille and besoin.stockItem.typeVetement %} is-missing{% endif %}">
                                                 {% if besoin.taille %}
                                                     <span class="dot-item-taille">{{ besoin.taille }}</span>
                                                 {% elseif besoin.stockItem.typeVetement %}
                                                     <span class="dot-item-taille-missing">manquante</span>
-                                                {% else %}<span class="dot-item-taille-missing">—</span>{% endif %}
-                                                <button type="button" class="dot-taille-pen" title="Modifier la taille">✎</button>
+                                                {% else %}
+                                                    <span class="dot-item-taille-none">—</span>
+                                                {% endif %}
+                                                {% if besoin.stockItem.typeVetement %}
+                                                    <button type="button" class="dot-taille-pen" @click="editing = true" title="Modifier la taille">✎</button>
+                                                {% endif %}
                                             </div>
                                             <form x-show="editing" x-cloak method="post"
                                                   action="{{ path('admin_stock_dotations_besoin_taille', {id: besoin.id}) }}"

@@ -244,6 +244,8 @@ class DotationController extends AbstractController
             return $this->redirectToRoute('admin_seasons_new');
         }
 
+        $this->besoinService->syncTaillesFromDossiers($season);
+
         /** @var array<string, DotationBesoin[]> $groupes */
         $groupes = [];
         foreach ($this->besoinRepository->findBySeason($season) as $besoin) {

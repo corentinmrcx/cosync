@@ -132,6 +132,37 @@ final class DotationBesoinService
     }
 
     /**
+     * Met à jour silencieusement les tailles depuis le dossier en cours pour tous les besoins
+     * « à donner » non verrouillés manuellement. Appelé à l'affichage du suivi.
+     */
+    public function syncTaillesFromDossiers(Season $season): void
+    {
+        $changed = false;
+        foreach ($this->besoinRepository->findBySeason($season) as $besoin) {
+            if ($besoin->getStatut() !== DotationBesoinStatut::A_DONNER) {
+                continue;
+            }
+            if ($besoin->isTailleManuelle()) {
+                continue;
+            }
+
+            $person   = $besoin->getLicencie() ?? $besoin->getDirigeant();
+            $resolved = $person !== null
+                ? $this->resolver->sizeFor($person, $besoin->getStockItem()->getTypeVetement())
+                : null;
+
+            if ($resolved !== $besoin->getTaille()) {
+                $besoin->setTaille($resolved);
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            $this->em->flush();
+        }
+    }
+
+    /**
      * Fixe (ou réinitialise) à la main la taille d'un besoin encore « à donner ».
      * Une taille vide repasse le besoin en mode automatique (déduit du dossier au prochain recalcul).
      */

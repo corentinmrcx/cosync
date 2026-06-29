@@ -164,7 +164,7 @@ final class DotationResolver
         return true;
     }
 
-    private function sizeFor(Licencie|Dirigeant $person, ?StockItemVetementType $type): ?string
+    public function sizeFor(Licencie|Dirigeant $person, ?StockItemVetementType $type): ?string
     {
         if ($type === null) {
             return null;
