@@ -78,6 +78,25 @@
             </div>
         </div>
 
+        <div class="season-form-field">
+            {{ form_label(form.voieRue) }}
+            {{ form_widget(form.voieRue, { attr: { class: 'season-form-input' } }) }}
+            {{ form_errors(form.voieRue) }}
+        </div>
+
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.codePostal) }}
+                {{ form_widget(form.codePostal, { attr: { class: 'season-form-input' } }) }}
+                {{ form_errors(form.codePostal) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.ville) }}
+                {{ form_widget(form.ville, { attr: { class: 'season-form-input' } }) }}
+                {{ form_errors(form.ville) }}
+            </div>
+        </div>
+
         <hr class="season-form-divider">
 
         <div class="licencie-new-checkbox">

@@ -67,6 +67,9 @@ final class LicencieService
         $licencie->setSeason($season);
         $licencie->setEmail($email);
         $licencie->setTelephone($phone);
+        $licencie->setVoieRue($data->voieRue !== null && trim($data->voieRue) !== '' ? trim($data->voieRue) : null);
+        $licencie->setCodePostal($data->codePostal !== null && trim($data->codePostal) !== '' ? trim($data->codePostal) : null);
+        $licencie->setVille($data->ville !== null && trim($data->ville) !== '' ? trim($data->ville) : null);
         $licencie->setNumLicence($numLicence);
         $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
         $licencie->setCreatedManually(true);
@@ -117,6 +120,9 @@ final class LicencieService
         $licencie->setCategory($data->category);
         $licencie->setEmail($email);
         $licencie->setTelephone($phone);
+        $licencie->setVoieRue($data->voieRue !== null && trim($data->voieRue) !== '' ? trim($data->voieRue) : null);
+        $licencie->setCodePostal($data->codePostal !== null && trim($data->codePostal) !== '' ? trim($data->codePostal) : null);
+        $licencie->setVille($data->ville !== null && trim($data->ville) !== '' ? trim($data->ville) : null);
         $licencie->setNumLicence($numLicence);
 
         $this->em->flush();

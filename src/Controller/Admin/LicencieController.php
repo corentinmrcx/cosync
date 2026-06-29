@@ -150,6 +150,9 @@ class LicencieController extends AbstractController
         $data->category     = $licencie->getCategory();
         $data->email        = $licencie->getEmail();
         $data->telephone    = $licencie->getTelephone();
+        $data->voieRue      = $licencie->getVoieRue();
+        $data->codePostal   = $licencie->getCodePostal();
+        $data->ville        = $licencie->getVille();
         $data->numLicence   = $licencie->getNumLicence();
 
         $form = $this->createForm(LicencieIdentityType::class, $data);

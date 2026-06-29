@@ -73,6 +73,25 @@
             </div>
         </div>
 
+        <div class="season-form-field">
+            {{ form_label(form.voieRue) }}
+            {{ form_widget(form.voieRue) }}
+            {{ form_errors(form.voieRue) }}
+        </div>
+
+        <div class="season-form-row">
+            <div class="season-form-field">
+                {{ form_label(form.codePostal) }}
+                {{ form_widget(form.codePostal) }}
+                {{ form_errors(form.codePostal) }}
+            </div>
+            <div class="season-form-field">
+                {{ form_label(form.ville) }}
+                {{ form_widget(form.ville) }}
+                {{ form_errors(form.ville) }}
+            </div>
+        </div>
+
         <div class="season-form-actions">
             <a href="{{ path('admin_licencies_show', { uuid: licencie.uuid }) }}" class="season-form-cancel">Annuler</a>
             <button type="submit" class="season-form-submit">Enregistrer</button>

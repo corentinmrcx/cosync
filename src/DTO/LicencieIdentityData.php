@@ -21,5 +21,8 @@ final class LicencieIdentityData
     )]
     public ?string $telephone = null;
 
+    public ?string $voieRue = null;
+    public ?string $codePostal = null;
+    public ?string $ville = null;
     public ?string $numLicence = null;
 }
