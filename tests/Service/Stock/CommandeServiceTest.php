@@ -40,6 +40,42 @@ final class CommandeServiceTest extends StockIntegrationTestCase
         self::assertSame(20.0, $ligne->getPrixUnitaire());
     }
 
+    public function testGenererBonsDeuxFoisNeCreePasDeDoublon(): void
+    {
+        $season = $this->makeSeason();
+        $f      = $this->makeFournisseur('Sport2000');
+        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
+        $this->makeBesoin($season, $veste, 'L', 4);
+        $this->em->flush();
+
+        $this->commandeService()->genererBons($season);
+        $this->commandeService()->genererBons($season); // re-génération sans avoir marqué « commandée »
+
+        $brouillons = $this->em->getRepository(Commande::class)->findBy([
+            'season' => $season,
+            'statut' => CommandeStatut::BROUILLON,
+        ]);
+        self::assertCount(1, $brouillons, 'Les brouillons sont régénérés, pas dupliqués.');
+    }
+
+    public function testGenererBonsNeTouchePasUneCommandePassee(): void
+    {
+        $season = $this->makeSeason();
+        $f      = $this->makeFournisseur('Sport2000');
+        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
+        // Une commande déjà passée couvre 2 sur un besoin de 5 → reste 3 à commander.
+        $this->makeBesoin($season, $veste, 'L', 5);
+        $this->makeCommandeEnAttente($season, $veste, 'L', 2, $f);
+        $this->em->flush();
+
+        $bons = $this->commandeService()->genererBons($season);
+
+        self::assertCount(1, $bons);
+        self::assertSame(3, $bons[0]->getLignes()->first()->getQuantite(), '5 − 2 déjà en commande.');
+        // La commande passée existe toujours (1 passée + 1 brouillon).
+        self::assertCount(2, $this->em->getRepository(Commande::class)->findBy(['season' => $season]));
+    }
+
     public function testReceptionPartiellePuisComplete(): void
     {
         $season = $this->makeSeason();

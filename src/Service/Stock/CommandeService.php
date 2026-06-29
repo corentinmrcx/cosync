@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Enum\CommandeStatut;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
+use App\Repository\CommandeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class CommandeService
@@ -16,16 +17,25 @@ final class CommandeService
     public function __construct(
         private readonly AchatService $achatService,
         private readonly StockService $stockService,
+        private readonly CommandeRepository $commandeRepository,
         private readonly EntityManagerInterface $em,
     ) {}
 
     /**
      * Crée un brouillon de commande par fournisseur depuis le « à commander ».
+     * Les brouillons existants de la saison sont d'abord purgés : régénérer reflète
+     * toujours l'état courant du « à commander » sans créer de doublons. Les commandes
+     * déjà passées (commandée / reçue) ne sont jamais touchées.
      *
      * @return Commande[]
      */
     public function genererBons(Season $season): array
     {
+        foreach ($this->commandeRepository->findBrouillonsBySeason($season) as $brouillon) {
+            $this->em->remove($brouillon);
+        }
+        $this->em->flush();
+
         $created = [];
 
         foreach ($this->achatService->computeACommander($season) as $groupe) {

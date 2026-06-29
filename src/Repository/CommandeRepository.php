@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Commande;
 use App\Entity\Season;
+use App\Enum\CommandeStatut;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -27,5 +28,14 @@ class CommandeRepository extends ServiceEntityRepository
             ->orderBy('c.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+    }
+
+    /** @return Commande[] */
+    public function findBrouillonsBySeason(Season $season): array
+    {
+        return $this->findBy([
+            'season' => $season,
+            'statut' => CommandeStatut::BROUILLON,
+        ]);
     }
 }
