@@ -18,7 +18,7 @@
             <p class="dot-subtitle">
                 {{ commande.fournisseurLabel }} ·
                 <span class="cmd-badge cmd-badge-{{ commande.statut.value }}">{{ commande.statut.label }}</span>
-                {% if commande.dateCommande %} · commandée le {{ commande.dateCommande|date('d/m/Y') }}{% endif %}
+                {% if commande.dateCommande %} · passée le {{ commande.dateCommande|date('d/m/Y') }}{% endif %}
             </p>
         </div>
         <a href="{{ path('admin_stock_commandes_index') }}" class="dot-back">← Commandes</a>

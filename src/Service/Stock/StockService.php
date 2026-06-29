@@ -35,12 +35,26 @@ final class StockService
         ?string $note,
         ?string $sumupTransactionId = null,
         ?string $taille = null,
+        bool $preventNegative = false,
     ): StockMovement {
         if ($quantite <= 0) {
             throw new \InvalidArgumentException('La quantité doit être supérieure à zéro.');
         }
         if ($type === StockMovementType::REBUT && empty(trim($note ?? ''))) {
             throw new \InvalidArgumentException('Une justification est obligatoire pour un rebut.');
+        }
+
+        if ($preventNegative && in_array($type, [StockMovementType::SORTIE, StockMovementType::REBUT], true)) {
+            $tailleNorm = trim((string) $taille) ?: null;
+            $disponible = $this->movementRepository->getCurrentStockByTaille($item, $tailleNorm);
+            if ($quantite > $disponible) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Stock insuffisant : %d en stock%s, impossible d\'en sortir %d.',
+                    $disponible,
+                    $tailleNorm !== null ? ' (taille ' . $tailleNorm . ')' : '',
+                    $quantite,
+                ));
+            }
         }
 
         $movement = new StockMovement();
@@ -143,11 +157,65 @@ final class StockService
 
         return [
             'nbArticles'  => count($items),
-            'nbAlertes'   => count($alertes),
+            'nbAlertes'   => count($alertes) - $nbRuptures, // stock bas uniquement (une rupture n'est pas aussi une alerte)
             'nbRuptures'  => $nbRuptures,
             'valeurStock' => $valeurStock,
             'alertes'     => $alertes,
         ];
+    }
+
+    /**
+     * État complet du stock pour la feuille d'inventaire : par catégorie, chaque article
+     * avec sa ventilation par taille et son total. Une ligne par taille présente en stock
+     * (ou une seule ligne « — » pour les articles sans taille / sans mouvement).
+     *
+     * @return array<int, array{
+     *   category: \App\Entity\StockCategory|null,
+     *   items: array<int, array{
+     *     item: StockItem, total: int, status: string,
+     *     tailles: array<int, array{taille: string, stock: int}>
+     *   }>
+     * }>
+     */
+    public function getInventaireData(): array
+    {
+        $items      = $this->itemRepository->findAllOrdered();
+        $categories = $this->categoryRepository->findAllOrderedByPosition();
+
+        $byCategory = [];
+        foreach ($items as $item) {
+            $byCategory[$item->getCategory()?->getId() ?? 0][] = $item;
+        }
+
+        $build = function (StockItem $item): array {
+            $parTaille = $this->movementRepository->getStockGroupedByTaille($item);
+            ksort($parTaille);
+
+            $tailles = [];
+            foreach ($parTaille as $taille => $stock) {
+                $tailles[] = ['taille' => $taille === '' ? '—' : $taille, 'stock' => $stock];
+            }
+            if ($tailles === []) {
+                $tailles[] = ['taille' => '—', 'stock' => 0];
+            }
+
+            $row = $this->buildItemRow($item);
+
+            return ['item' => $item, 'total' => $row['stock'], 'status' => $row['status'], 'tailles' => $tailles];
+        };
+
+        $inventaire = [];
+        foreach ($categories as $category) {
+            $catItems = $byCategory[$category->getId()] ?? [];
+            if ($catItems !== []) {
+                $inventaire[] = ['category' => $category, 'items' => array_map($build, $catItems)];
+            }
+        }
+        if (!empty($byCategory[0])) {
+            $inventaire[] = ['category' => null, 'items' => array_map($build, $byCategory[0])];
+        }
+
+        return $inventaire;
     }
 
     /** @return array{item: StockItem, stock: int, status: string} */

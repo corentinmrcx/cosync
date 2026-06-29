@@ -18,9 +18,11 @@ use App\Repository\LicencieRepository;
 use App\Repository\StockCategoryRepository;
 use App\Repository\StockItemRepository;
 use App\Repository\StockMovementRepository;
+use App\Service\Pdf\InventairePdfService;
 use App\Service\SeasonContext;
 use App\Service\Stock\AchatService;
 use App\Service\Stock\StockService;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -88,6 +90,18 @@ class StockController extends AbstractController
             'taillesConnues'   => self::TAILLES_EQUIPEMENT,
             'types'            => StockMovementType::cases(),
             'sources'          => StockMovementSource::cases(),
+        ]);
+    }
+
+    #[Route('/inventaire.pdf', name: 'inventaire_pdf', methods: ['GET'])]
+    public function inventairePdf(InventairePdfService $pdfService): Response
+    {
+        $season = $this->seasonContext->getCurrentSeason();
+        $pdf    = $pdfService->generate($this->stockService->getInventaireData(), $season?->getLabel());
+
+        return new Response($pdf, Response::HTTP_OK, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => sprintf('attachment; filename="inventaire_%s.pdf"', (new \DateTimeImmutable())->format('Y-m-d')),
         ]);
     }
 
@@ -227,6 +241,9 @@ class StockController extends AbstractController
                 $this->getUser(),
                 $note,
                 taille: $taille,
+                // On bloque une sortie/rebut manuel au-delà du stock réel ; la dotation reste libre
+                // (équipement souvent fabriqué à la commande, stock à zéro légitime).
+                preventNegative: in_array($action, ['sortie', 'rebut'], true),
             );
 
             if ($licencie !== null) {
@@ -257,9 +274,28 @@ class StockController extends AbstractController
         }
 
         $nom = $item->getNom();
-        $this->em->remove($item);
-        $this->em->flush();
-        $this->addFlash('success', sprintf('Article "%s" supprimé.', $nom));
+
+        // Un article tracé (mouvements, dotations, commandes) ne peut pas être supprimé :
+        // cela effacerait l'historique. On le bloque proprement plutôt que de planter sur la FK.
+        if ($this->movementRepository->count(['item' => $item]) > 0) {
+            $this->addFlash('error', sprintf(
+                'Impossible de supprimer "%s" : des mouvements de stock y sont rattachés. '
+                . 'Faites une sortie/un rebut pour solder le stock, l\'historique reste conservé.',
+                $nom,
+            ));
+            return $this->redirectToRoute('admin_stock_gestion');
+        }
+
+        try {
+            $this->em->remove($item);
+            $this->em->flush();
+            $this->addFlash('success', sprintf('Article "%s" supprimé.', $nom));
+        } catch (ForeignKeyConstraintViolationException) {
+            $this->addFlash('error', sprintf(
+                'Impossible de supprimer "%s" : il est utilisé par une dotation ou une commande.',
+                $nom,
+            ));
+        }
 
         return $this->redirectToRoute('admin_stock_gestion');
     }

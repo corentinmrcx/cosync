@@ -13,9 +13,12 @@
     <div class="stock-home-header">
         <div>
             <h1 class="stock-home-title">Stock</h1>
-            <p class="stock-home-subtitle">Saison {{ season.label }}</p>
         </div>
         <div class="stock-home-actions">
+            <a href="{{ path('admin_stock_inventaire_pdf') }}" class="stock-home-btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                Inventaire PDF
+            </a>
             <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-home-btn-secondary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                 Historique
@@ -35,7 +38,7 @@
         </div>
         <div class="stock-home-tile {{ data.nbAlertes > 0 ? 'stock-home-tile-warning' }}">
             <span class="stock-home-tile-value">{{ data.nbAlertes }}</span>
-            <span class="stock-home-tile-label">En alerte</span>
+            <span class="stock-home-tile-label">Stock bas</span>
         </div>
         <div class="stock-home-tile {{ data.nbRuptures > 0 ? 'stock-home-tile-danger' }}">
             <span class="stock-home-tile-value">{{ data.nbRuptures }}</span>
@@ -65,7 +68,7 @@
         </div>
 
         {% if data.alertes is empty %}
-            <p class="stock-home-empty">Aucune alerte — tout est au vert ✅</p>
+            <p class="stock-home-empty">Aucun réapprovisionnement à prévoir</p>
         {% else %}
             <div class="stock-home-table-wrapper">
                 <table class="stock-home-table">
@@ -92,7 +95,7 @@
                                 </td>
                                 <td>
                                     <span class="stock-badge stock-badge-{{ row.status }}">
-                                        {{ row.stock }} {% if row.stock <= 0 %}Rupture{% else %}Stock bas{% endif %}
+                                        {% if row.stock <= 0 %}Rupture{% else %}{{ row.stock }} · stock bas{% endif %}
                                     </span>
                                 </td>
                                 <td>{{ row.item.alertSeuil ?? '—' }}</td>
@@ -115,10 +118,6 @@
             <h2 class="stock-home-section-title">Accès rapides</h2>
         </div>
         <div class="stock-home-links">
-            <a href="{{ path('admin_stock_gestion') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Gérer les articles</span>
-                <span class="stock-home-link-text">Liste détaillée, mouvements, création/édition</span>
-            </a>
             <a href="{{ path('admin_stock_dotations_index') }}" class="stock-home-link-card">
                 <span class="stock-home-link-title">Dotations</span>
                 <span class="stock-home-link-text">Modèles, affectations et suivi des remises</span>
@@ -127,9 +126,9 @@
                 <span class="stock-home-link-title">Commandes</span>
                 <span class="stock-home-link-text">À commander, bons par fournisseur, réceptions</span>
             </a>
-            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Historique des mouvements</span>
-                <span class="stock-home-link-text">Entrées, sorties, dotations, rebuts</span>
+            <a href="{{ path('admin_stock_fournisseurs_list') }}" class="stock-home-link-card">
+                <span class="stock-home-link-title">Fournisseurs</span>
+                <span class="stock-home-link-text">Carnet d'adresses des fournisseurs d'équipement</span>
             </a>
             <a href="{{ path('admin_stock_categories_list') }}" class="stock-home-link-card">
                 <span class="stock-home-link-title">Catégories</span>
