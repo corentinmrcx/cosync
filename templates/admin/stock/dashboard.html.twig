@@ -118,9 +118,13 @@
             <h2 class="stock-home-section-title">Accès rapides</h2>
         </div>
         <div class="stock-home-links">
+            <a href="{{ path('admin_stock_dotations_suivi') }}" class="stock-home-link-card">
+                <span class="stock-home-link-title">Suivi des dotations</span>
+                <span class="stock-home-link-text">Ce que chaque joueur doit recevoir et ce qui a été remis</span>
+            </a>
             <a href="{{ path('admin_stock_dotations_index') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Dotations</span>
-                <span class="stock-home-link-text">Modèles, affectations et suivi des remises</span>
+                <span class="stock-home-link-title">Modèles de dotation</span>
+                <span class="stock-home-link-text">Configurer les articles attribués par équipe ou catégorie</span>
             </a>
             <a href="{{ path('admin_stock_commandes_index') }}" class="stock-home-link-card">
                 <span class="stock-home-link-title">Commandes</span>
