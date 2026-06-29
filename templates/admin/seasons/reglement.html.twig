@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}CoSync — Règlement {{ season.label }}{% endblock %}
+{% block title %}CoSync — Règlement{% endblock %}
 
 {% block head %}
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
@@ -10,7 +10,7 @@
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
     { label: 'Configuration', route: 'admin_config_index' },
-    { label: 'Règlement ' ~ season.label }
+    { label: 'Règlement' }
 ] } %}
 
 <div class="reglement-edit-page">
@@ -22,7 +22,7 @@
             <input type="hidden" name="reglement_text" id="reglement_text_input">
 
             <div class="reglement-edit-header">
-                <h1 class="reglement-edit-title">Règlement intérieur — {{ season.label }}</h1>
+                <h1 class="reglement-edit-title">Règlement intérieur</h1>
                 <p class="reglement-edit-hint">Ce texte sera affiché au licencié lors de l'étape de signature, et intégré dans le PDF archivé.</p>
             </div>
 
