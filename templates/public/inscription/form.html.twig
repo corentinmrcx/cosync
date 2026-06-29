@@ -58,7 +58,7 @@
                         </p>
                     {% endif %}
                     <p class="inscription-welcome-text">
-                        Ce formulaire vous prendra environ <strong>2 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations et signerez le règlement intérieur.
+                        Ce formulaire vous prendra moins de <strong>5 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations et signerez le règlement intérieur.
                     </p>
                     <button type="button" @click="next" class="inscription-btn-start">
                         Commencer →
@@ -436,10 +436,10 @@
                             <p>Libellé : <strong>COTISATION {{ licencie.nom }} {{ licencie.prenom }} {{ licencie.season.label }}</strong></p>
                         </div>
                         <div x-show="isPaymentModeActive('cheque')" class="inscription-payment-info">
-                            Chèque à l'ordre de <strong>Foyer de Soudron</strong>, à remettre au local à un dirigeant.
+                            Chèque à l'ordre de <strong>Foyer de Soudron</strong>, à remettre à un dirigeant.
                         </div>
                         <div x-show="isPaymentModeActive('especes')" class="inscription-payment-info">
-                            Espèces à remettre au local à un dirigeant.
+                            Espèces à remettre à un dirigeant.
                         </div>
                         <div x-show="isPaymentModeActive('cb_online')" class="inscription-payment-info">
                             <p>Paiement sécurisé par carte bancaire via SumUp.</p>
