@@ -37,10 +37,8 @@
 
             <div class="reglement-edit-actions">
                 <a href="{{ path('admin_config_index') }}" class="reglement-edit-cancel">Annuler</a>
-                <a href="{{ path('admin_seasons_reglement_apercu', {id: season.id}) }}" target="_blank" class="reglement-edit-apercu-btn">Aperçu PDF</a>
                 <button type="submit" class="reglement-edit-submit">Enregistrer</button>
             </div>
-            <p class="reglement-edit-apercu-hint">L'aperçu PDF est basé sur le texte enregistré.</p>
 
         </form>
 
@@ -51,6 +49,10 @@
             </div>
             <div class="reglement-preview-content" id="reglement-preview">
                 {{ season.reglementText|raw }}
+            </div>
+            <div class="reglement-preview-footer">
+                <a href="{{ path('admin_seasons_reglement_apercu', {id: season.id}) }}" target="_blank" class="reglement-edit-apercu-btn">Aperçu PDF</a>
+                <span class="reglement-edit-apercu-hint">L'aperçu PDF est basé sur le texte enregistré.</span>
             </div>
         </aside>
 
