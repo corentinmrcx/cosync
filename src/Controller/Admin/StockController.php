@@ -151,12 +151,16 @@ class StockController extends AbstractController
         $kind = StockItemKind::tryFrom($request->request->get('kind', ''));
         $item->setKind($kind);
         $item->setMarque(trim($request->request->get('marque', '')) ?: null);
-        $item->setTaille(trim($request->request->get('taille', '')) ?: null);
 
         if ($kind === StockItemKind::EQUIPEMENT) {
+            // Pas de taille figée sur un vêtement : les tailles sont des déclinaisons de stock,
+            // et la dotation résout la bonne taille par joueur depuis sa fiche.
+            $item->setTaille(null);
             $item->setCouleur(trim($request->request->get('couleur', '')) ?: null);
             $item->setTypeVetement(StockItemVetementType::tryFrom($request->request->get('typeVetement', '')));
         } else {
+            // Épicerie : la « taille » porte la contenance (33cl, 1L…), intrinsèque à l'article.
+            $item->setTaille(trim($request->request->get('taille', '')) ?: null);
             $item->setCouleur(null);
             $item->setTypeVetement(null);
         }

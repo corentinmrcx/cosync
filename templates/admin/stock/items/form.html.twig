@@ -45,25 +45,12 @@
                 <div class="stock-items-field">
                     {% include 'components/text-combobox.html.twig' with {
                         name: 'marque',
-                        label: 'Marque / fournisseur',
+                        label: 'Marque',
                         suggestions: marques,
                         current: item ? item.marque : null,
                         placeholder: 'ex: Nike, Coca-Cola…'
                     } %}
                 </div>
-
-                {# — Taille : affichée uniquement pour l'équipement — #}
-                <template x-if="kind === 'equipement'">
-                    <div class="stock-items-field">
-                        {% include 'components/text-combobox.html.twig' with {
-                            name: 'taille',
-                            label: 'Taille',
-                            suggestions: taillesEquip,
-                            current: item and item.kind and item.kind.value == 'equipement' ? item.taille : null,
-                            placeholder: 'ex: M, L, XL, 6 ans…'
-                        } %}
-                    </div>
-                </template>
 
                 {# — Contenance : affichée uniquement pour l'épicerie — #}
                 <template x-if="kind === 'epicerie'">
@@ -102,7 +89,7 @@
                                 </option>
                             {% endfor %}
                         </select>
-                        <p class="stock-items-help">Permet les dotations automatiques aux licenciés.</p>
+                        <p class="stock-items-help">Un article = un modèle (sans taille figée). Les tailles sont gérées comme déclinaisons de stock à l'entrée, et la dotation choisit automatiquement la bonne taille selon la fiche du joueur.</p>
                     </div>
                 </div>
             </template>
