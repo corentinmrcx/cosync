@@ -16,9 +16,9 @@ class Season
     #[ORM\Column(length: 20, unique: true)]
     private string $label;
 
-    /** @var array<string, int> ex: {"jeunes": 85, "seniors": 120} */
-    #[ORM\Column(type: 'json')]
-    private array $baseCosts = [];
+    /** Cotisation appliquée par défaut (€), pour un licencié sans équipe ou une équipe sans cotisation définie. */
+    #[ORM\Column(options: ['default' => 0])]
+    private int $cotisationDefaut = 0;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $reglementText = null;
@@ -47,14 +47,14 @@ class Season
         return $this;
     }
 
-    public function getBaseCosts(): array
+    public function getCotisationDefaut(): int
     {
-        return $this->baseCosts;
+        return $this->cotisationDefaut;
     }
 
-    public function setBaseCosts(array $baseCosts): static
+    public function setCotisationDefaut(int $cotisationDefaut): static
     {
-        $this->baseCosts = $baseCosts;
+        $this->cotisationDefaut = $cotisationDefaut;
         return $this;
     }
 

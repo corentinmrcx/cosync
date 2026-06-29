@@ -49,7 +49,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
 
     protected function makeSeason(string $label = '2025-2026'): Season
     {
-        $season = (new Season())->setLabel($label)->setBaseCosts(['jeunes' => 85, 'seniors' => 120]);
+        $season = (new Season())->setLabel($label)->setCotisationDefaut(85);
         $this->em->persist($season);
         return $season;
     }

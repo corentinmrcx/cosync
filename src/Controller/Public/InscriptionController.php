@@ -6,6 +6,7 @@ use App\DTO\AttestationTransportData;
 use App\DTO\InscriptionFormData;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
+use App\Service\CotisationResolver;
 use App\Service\Form\InscriptionFormService;
 use App\Service\Stock\DotationResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,7 +19,7 @@ use Symfony\Component\Uid\Uuid;
 class InscriptionController extends AbstractController
 {
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
-    public function show(string $uuid, LicencieRepository $licencieRepo, DotationResolver $resolver): Response
+    public function show(string $uuid, LicencieRepository $licencieRepo, DotationResolver $resolver, CotisationResolver $cotisationResolver): Response
     {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
@@ -37,14 +38,9 @@ class InscriptionController extends AbstractController
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        $baseCosts = $licencie->getSeason()->getBaseCosts();
-        $montant   = $licencie->isSeniorTariff()
-            ? ($baseCosts['seniors'] ?? 0)
-            : ($baseCosts['jeunes'] ?? 0);
-
         return $this->render('public/inscription/form.html.twig', [
             'licencie'        => $licencie,
-            'montant'         => $montant,
+            'montant'         => $cotisationResolver->resolve($licencie),
             'dotationGroupes' => $resolver->getChoiceGroups($licencie),
         ]);
     }
@@ -77,7 +73,7 @@ class InscriptionController extends AbstractController
     }
 
     #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'])]
-    public function confirmation(string $uuid, LicencieRepository $licencieRepo): Response
+    public function confirmation(string $uuid, LicencieRepository $licencieRepo, CotisationResolver $cotisationResolver): Response
     {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
@@ -85,15 +81,10 @@ class InscriptionController extends AbstractController
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        $baseCosts = $licencie->getSeason()->getBaseCosts();
-        $montant   = $licencie->isSeniorTariff()
-            ? ($baseCosts['seniors'] ?? 0)
-            : ($baseCosts['jeunes'] ?? 0);
-
         return $this->render('public/inscription/confirmation.html.twig', [
             'licencie' => $licencie,
             'dossier'  => $licencie->getDossierClub(),
-            'montant'  => $montant,
+            'montant'  => $cotisationResolver->resolve($licencie),
         ]);
     }
 

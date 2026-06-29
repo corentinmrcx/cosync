@@ -14,6 +14,7 @@ use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
+use App\Service\CotisationResolver;
 use App\Service\Import\DataSanitizer;
 use App\Service\Mail\MailerService;
 use App\Service\Stock\DotationBesoinService;
@@ -29,6 +30,7 @@ final class LicencieService
         private readonly DataSanitizer $sanitizer,
         private readonly MailerService $mailerService,
         private readonly DotationBesoinService $dotationBesoinService,
+        private readonly CotisationResolver $cotisationResolver,
     ) {}
 
     /**
@@ -166,8 +168,7 @@ final class LicencieService
         $this->em->persist($transaction);
         $this->em->flush();
 
-        $baseCosts = $season->getBaseCosts();
-        $expected  = (float) ($licencie->isSeniorTariff() ? ($baseCosts['seniors'] ?? 0) : ($baseCosts['jeunes'] ?? 0));
+        $expected  = (float) $this->cotisationResolver->resolve($licencie);
         $totalPaid = $this->transactionRepo->sumByLicencieAndSeason($licencie, $season);
 
         if ($totalPaid >= $expected) {

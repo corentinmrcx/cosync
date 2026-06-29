@@ -41,13 +41,10 @@
             </div>
 
             <div class="season-form-field">
-                {{ form_label(form.coutJeunes) }}
-                {{ form_widget(form.coutJeunes, { attr: { placeholder: '85' } }) }}
-            </div>
-
-            <div class="season-form-field">
-                {{ form_label(form.coutSeniors) }}
-                {{ form_widget(form.coutSeniors, { attr: { placeholder: '120' } }) }}
+                {{ form_label(form.cotisationDefaut) }}
+                {{ form_widget(form.cotisationDefaut) }}
+                {{ form_help(form.cotisationDefaut) }}
+                {{ form_errors(form.cotisationDefaut) }}
             </div>
 
             <button type="submit" class="season-form-submit">Enregistrer</button>
@@ -76,6 +73,9 @@
                             <div class="config-teams-row" x-show="editingTeam !== {{ team.id }}">
                                 <div class="config-teams-info">
                                     <span class="config-teams-name">{{ team.name }}</span>
+                                    <span class="config-teams-cotisation">
+                                        {% if team.cotisation is not null %}{{ team.cotisation }} €{% else %}Cotisation par défaut{% endif %}
+                                    </span>
                                 </div>
                                 <div class="config-teams-btns">
                                     <button type="button" class="config-teams-btn-edit" @click="editingTeam = {{ team.id }}">Modifier</button>
@@ -95,6 +95,10 @@
                                 <div class="season-form-field" style="margin:0">
                                     <label class="season-form-label" style="font-size:var(--font-size-xs)">Nom</label>
                                     <input type="text" name="team[name]" value="{{ team.name }}" class="season-form-input" required>
+                                </div>
+                                <div class="season-form-field" style="margin:0">
+                                    <label class="season-form-label" style="font-size:var(--font-size-xs)">Cotisation (€)</label>
+                                    <input type="number" min="0" step="1" name="team[cotisation]" value="{{ team.cotisation }}" class="season-form-input" placeholder="Cotisation par défaut">
                                 </div>
                                 <div class="season-form-field" style="margin:0">
                                     <label class="season-form-label" style="font-size:var(--font-size-xs)">Catégories FFF</label>
@@ -125,6 +129,12 @@
                     {{ form_label(newTeamForm.name) }}
                     {{ form_widget(newTeamForm.name) }}
                     {{ form_errors(newTeamForm.name) }}
+                </div>
+                <div class="season-form-field">
+                    {{ form_label(newTeamForm.cotisation) }}
+                    {{ form_widget(newTeamForm.cotisation) }}
+                    {{ form_help(newTeamForm.cotisation) }}
+                    {{ form_errors(newTeamForm.cotisation) }}
                 </div>
                 <div class="season-form-field">
                     {{ form_label(newTeamForm.categories) }}

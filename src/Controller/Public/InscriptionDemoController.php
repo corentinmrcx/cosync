@@ -27,7 +27,7 @@ class InscriptionDemoController extends AbstractController
         if ($season === null) {
             $season = (new Season())
                 ->setLabel('Saison démo')
-                ->setBaseCosts(['jeunes' => 85, 'seniors' => 120]);
+                ->setCotisationDefaut(85);
         }
 
         // Catégorie jeune → le parcours montre toutes les étapes (autorisations, attestation)
@@ -42,7 +42,7 @@ class InscriptionDemoController extends AbstractController
             ->setCategory($category)
             ->setSeason($season);
 
-        $montant = $season->getBaseCosts()['jeunes'] ?? 85;
+        $montant = $season->getCotisationDefaut();
 
         return $this->render('public/inscription/form.html.twig', [
             'licencie' => $licencie,

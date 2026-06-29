@@ -99,6 +99,12 @@
     border-color: var(--color-primary);
 }
 
+.season-form-field .help-text {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
 .season-form-field ul {
     list-style: none;
     padding: 0;
@@ -274,6 +280,16 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--color-text-base);
+    white-space: nowrap;
+}
+
+.config-teams-cotisation {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: var(--color-bg-muted);
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-xl);
     white-space: nowrap;
 }
 

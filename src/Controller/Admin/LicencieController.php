@@ -181,6 +181,7 @@ class LicencieController extends AbstractController
         TransactionRepository $transactionRepo,
         \App\Repository\StockMovementRepository $stockMovementRepo,
         SeasonContext $seasonContext,
+        \App\Service\CotisationResolver $cotisationResolver,
     ): Response {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
@@ -192,10 +193,7 @@ class LicencieController extends AbstractController
         $transactions = $season ? $transactionRepo->findAllByLicencieAndSeason($licencie, $season) : [];
         $totalPaid    = $season ? $transactionRepo->sumByLicencieAndSeason($licencie, $season) : 0.0;
 
-        $baseCosts       = $season?->getBaseCosts() ?? [];
-        $montant         = $licencie->isSeniorTariff()
-            ? ($baseCosts['seniors'] ?? 0)
-            : ($baseCosts['jeunes'] ?? 0);
+        $montant         = $cotisationResolver->resolve($licencie);
         $remainingAmount = max(0, (float) $montant - $totalPaid);
 
         $history = [
