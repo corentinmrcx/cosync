@@ -75,9 +75,7 @@
                                                 {% else %}
                                                     <span class="dot-item-taille-none">—</span>
                                                 {% endif %}
-                                                {% if besoin.stockItem.typeVetement %}
-                                                    <button type="button" class="dot-taille-pen" @click="editing = true" title="Modifier la taille">✎</button>
-                                                {% endif %}
+                                                <button type="button" class="dot-taille-pen" @click="editing = true" title="Modifier la taille">✎</button>
                                             </div>
                                             <form x-show="editing" x-cloak method="post"
                                                   action="{{ path('admin_stock_dotations_besoin_taille', {id: besoin.id}) }}"
