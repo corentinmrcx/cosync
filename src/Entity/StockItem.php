@@ -57,6 +57,9 @@ class StockItem
     #[ORM\Column(nullable: true)]
     private ?int $alertSeuil = null;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $actif = true;
+
     public function getId(): int
     {
         return $this->id;
@@ -191,6 +194,17 @@ class StockItem
     public function setAlertSeuil(?int $alertSeuil): static
     {
         $this->alertSeuil = $alertSeuil;
+        return $this;
+    }
+
+    public function isActif(): bool
+    {
+        return $this->actif;
+    }
+
+    public function setActif(bool $actif): static
+    {
+        $this->actif = $actif;
         return $this;
     }
 }

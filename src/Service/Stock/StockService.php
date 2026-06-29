@@ -76,9 +76,9 @@ final class StockService
     /**
      * @return array<int, array{category: \App\Entity\StockCategory|null, items: array<int, array{item: StockItem, stock: int, status: string}>}>
      */
-    public function getStockSummary(): array
+    public function getStockSummary(bool $includeArchived = false): array
     {
-        $items      = $this->itemRepository->findAllOrdered();
+        $items      = $this->itemRepository->findAllOrdered($includeArchived);
         $categories = $this->categoryRepository->findAllOrderedByPosition();
 
         $byCategory = [];

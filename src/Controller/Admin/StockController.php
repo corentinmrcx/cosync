@@ -79,12 +79,14 @@ class StockController extends AbstractController
     }
 
     #[Route('/gestion', name: 'gestion', methods: ['GET'])]
-    public function gestion(): Response
+    public function gestion(Request $request): Response
     {
-        $season = $this->seasonContext->getCurrentSeason();
+        $season          = $this->seasonContext->getCurrentSeason();
+        $showArchived    = $request->query->getBoolean('archivés', false);
 
         return $this->render('admin/stock/gestion.html.twig', [
-            'summary'          => $this->stockService->getStockSummary(),
+            'summary'          => $this->stockService->getStockSummary($showArchived),
+            'showArchived'     => $showArchived,
             'season'           => $season,
             'licenciesValides' => $season !== null ? $this->licencieRepository->findValidatedBySeason($season) : [],
             'taillesConnues'   => self::TAILLES_EQUIPEMENT,
@@ -275,12 +277,11 @@ class StockController extends AbstractController
 
         $nom = $item->getNom();
 
-        // Un article tracé (mouvements, dotations, commandes) ne peut pas être supprimé :
-        // cela effacerait l'historique. On le bloque proprement plutôt que de planter sur la FK.
         if ($this->movementRepository->count(['item' => $item]) > 0) {
-            $this->addFlash('error', sprintf(
-                'Impossible de supprimer "%s" : des mouvements de stock y sont rattachés. '
-                . 'Faites une sortie/un rebut pour solder le stock, l\'historique reste conservé.',
+            $item->setActif(false);
+            $this->em->flush();
+            $this->addFlash('info', sprintf(
+                '"%s" archivé — il disparaît des listes, mais l\'historique des mouvements est conservé.',
                 $nom,
             ));
             return $this->redirectToRoute('admin_stock_gestion');
@@ -292,12 +293,27 @@ class StockController extends AbstractController
             $this->addFlash('success', sprintf('Article "%s" supprimé.', $nom));
         } catch (ForeignKeyConstraintViolationException) {
             $this->addFlash('error', sprintf(
-                'Impossible de supprimer "%s" : il est utilisé par une dotation ou une commande.',
+                'Impossible de supprimer "%s" : il est référencé par une dotation ou une commande.',
                 $nom,
             ));
         }
 
         return $this->redirectToRoute('admin_stock_gestion');
+    }
+
+    #[Route('/items/{id}/restaurer', name: 'items_restore', methods: ['POST'])]
+    public function itemRestore(StockItem $item, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('restore_stock_item_' . $item->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_gestion', ['archivés' => '1']);
+        }
+
+        $item->setActif(true);
+        $this->em->flush();
+        $this->addFlash('success', sprintf('Article "%s" restauré dans le catalogue actif.', $item->getNom()));
+
+        return $this->redirectToRoute('admin_stock_gestion', ['archivés' => '1']);
     }
 
     #[Route('/mouvements', name: 'mouvements_list', methods: ['GET'])]

@@ -17,16 +17,20 @@ class StockItemRepository extends ServiceEntityRepository
         parent::__construct($registry, StockItem::class);
     }
 
-    /** @return StockItem[] Catalogue partagé (non cloisonné par saison), trié par catégorie puis nom. */
-    public function findAllOrdered(): array
+    /** @return StockItem[] Catalogue actif (actif = true), trié par catégorie puis nom. */
+    public function findAllOrdered(bool $includeArchived = false): array
     {
-        return $this->createQueryBuilder('i')
+        $qb = $this->createQueryBuilder('i')
             ->leftJoin('i.category', 'c')
             ->addSelect('c')
             ->orderBy('c.position', 'ASC')
-            ->addOrderBy('i.nom', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->addOrderBy('i.nom', 'ASC');
+
+        if (!$includeArchived) {
+            $qb->andWhere('i.actif = true');
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     /** @return string[] */
@@ -43,6 +47,7 @@ class StockItemRepository extends ServiceEntityRepository
             ->distinct()
             ->where('i.taille IS NOT NULL')
             ->andWhere('i.kind = :kind')
+            ->andWhere('i.actif = true')
             ->setParameter('kind', $kind)
             ->orderBy('i.taille', 'ASC')
             ->getQuery()
@@ -64,6 +69,7 @@ class StockItemRepository extends ServiceEntityRepository
             ->select("i.{$field}")
             ->distinct()
             ->where("i.{$field} IS NOT NULL")
+            ->andWhere('i.actif = true')
             ->orderBy("i.{$field}", 'ASC')
             ->getQuery()
             ->getScalarResult();

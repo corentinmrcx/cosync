@@ -26,6 +26,10 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-5h16l1 5"/><path d="M5 9v11h14V9"/><path d="M9 13h6"/></svg>
                 Fournisseurs
             </a>
+            <a href="{{ showArchived ? path('admin_stock_gestion') : path('admin_stock_gestion', {archivés: 1}) }}" class="stock-dashboard-btn-secondary{% if showArchived %} stock-btn-archived-active{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                {{ showArchived ? 'Masquer les archivés' : 'Voir les archivés' }}
+            </a>
             <a href="{{ path('admin_stock_items_new') }}" class="stock-dashboard-btn-primary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nouvel article
@@ -63,10 +67,11 @@
                     </thead>
                     <tbody>
                         {% for row in section.items %}
-                            <tr>
+                            <tr{% if not row.item.actif %} class="stock-row-archived"{% endif %}>
                                 <td class="stock-col-nom">
                                     <span class="stock-item-nom">{{ row.item.nom }}</span>
                                     <span class="stock-item-meta">
+                                        {% if not row.item.actif %}<span class="stock-badge-archived-label">Archivé</span>{% endif %}
                                         {% if row.item.marque %}{{ row.item.marque }}{% endif %}
                                         {% if row.item.marque and row.item.taille %} · {% endif %}
                                         {% if row.item.taille %}{{ row.item.taille }}{% endif %}
@@ -84,18 +89,25 @@
                                     {{ row.item.alertSeuil ?? '—' }}
                                 </td>
                                 <td class="stock-col-actions">
-                                    <button
-                                        type="button"
-                                        class="stock-action-mouvement"
-                                        @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
-                                    >
-                                        + / − Mouvement
-                                    </button>
-                                    <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="stock-action-edit">Modifier</a>
-                                    <form method="post" action="{{ path('admin_stock_items_delete', {id: row.item.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cet article et tous ses mouvements ?')">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_item_' ~ row.item.id) }}">
-                                        <button type="submit" class="stock-action-delete">Supprimer</button>
-                                    </form>
+                                    {% if row.item.actif %}
+                                        <button
+                                            type="button"
+                                            class="stock-action-mouvement"
+                                            @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
+                                        >
+                                            + / − Mouvement
+                                        </button>
+                                        <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="stock-action-edit">Modifier</a>
+                                        <form method="post" action="{{ path('admin_stock_items_delete', {id: row.item.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cet article ?')">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_item_' ~ row.item.id) }}">
+                                            <button type="submit" class="stock-action-delete">Supprimer</button>
+                                        </form>
+                                    {% else %}
+                                        <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}" style="display:inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">
+                                            <button type="submit" class="stock-action-restore">Désarchiver</button>
+                                        </form>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}
