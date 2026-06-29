@@ -95,8 +95,11 @@ final class DotationBesoinService
             if ($aMettreAJour !== null) {
                 $aMettreAJour
                     ->setQuantite($ligne['quantite'])
-                    ->setTaille($ligne['taille'])
                     ->setGroupeChoix($ligne['groupeChoix']);
+                // La taille saisie à la main par l'admin prime sur celle déduite du dossier.
+                if (!$aMettreAJour->isTailleManuelle()) {
+                    $aMettreAJour->setTaille($ligne['taille']);
+                }
             } elseif ($besoinsItem === []) {
                 // Aucun besoin pour cet article → en créer un
                 $besoin = (new DotationBesoin())
@@ -125,6 +128,21 @@ final class DotationBesoinService
             }
         }
 
+        $this->em->flush();
+    }
+
+    /**
+     * Fixe (ou réinitialise) à la main la taille d'un besoin encore « à donner ».
+     * Une taille vide repasse le besoin en mode automatique (déduit du dossier au prochain recalcul).
+     */
+    public function updateTaille(DotationBesoin $besoin, ?string $taille): void
+    {
+        if ($besoin->getStatut() !== DotationBesoinStatut::A_DONNER) {
+            return;
+        }
+
+        $taille = trim((string) $taille) ?: null;
+        $besoin->setTaille($taille)->setTailleManuelle($taille !== null);
         $this->em->flush();
     }
 

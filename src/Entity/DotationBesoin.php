@@ -41,6 +41,10 @@ class DotationBesoin
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $taille = null;
 
+    /** Vrai si la taille a été fixée à la main par l'admin → le recalcul ne l'écrase plus. */
+    #[ORM\Column]
+    private bool $tailleManuelle = false;
+
     #[ORM\Column(length: 20, enumType: DotationBesoinStatut::class)]
     private DotationBesoinStatut $statut = DotationBesoinStatut::A_DONNER;
 
@@ -79,6 +83,9 @@ class DotationBesoin
 
     public function getTaille(): ?string { return $this->taille; }
     public function setTaille(?string $taille): static { $this->taille = $taille; return $this; }
+
+    public function isTailleManuelle(): bool { return $this->tailleManuelle; }
+    public function setTailleManuelle(bool $tailleManuelle): static { $this->tailleManuelle = $tailleManuelle; return $this; }
 
     public function getStatut(): DotationBesoinStatut { return $this->statut; }
     public function setStatut(DotationBesoinStatut $statut): static { $this->statut = $statut; return $this; }

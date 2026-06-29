@@ -63,11 +63,30 @@
                                 </td>
                                 <td><span class="dot-item-nom">{{ besoin.stockItem.nom }}</span></td>
                                 <td>
-                                    {% if besoin.taille %}
-                                        <span class="dot-item-taille">{{ besoin.taille }}</span>
-                                    {% elseif besoin.stockItem.typeVetement %}
-                                        <span class="dot-item-taille-missing">manquante</span>
-                                    {% else %}—{% endif %}
+                                    {% if besoin.statut.value == 'donne' %}
+                                        {% if besoin.taille %}<span class="dot-item-taille">{{ besoin.taille }}</span>{% else %}—{% endif %}
+                                    {% else %}
+                                        <div x-data="{ editing: false }" class="dot-taille-edit">
+                                            <div x-show="!editing" @click="editing = true" class="dot-taille-display">
+                                                {% if besoin.taille %}
+                                                    <span class="dot-item-taille">{{ besoin.taille }}</span>
+                                                {% elseif besoin.stockItem.typeVetement %}
+                                                    <span class="dot-item-taille-missing">manquante</span>
+                                                {% else %}<span class="dot-item-taille-missing">—</span>{% endif %}
+                                                <button type="button" class="dot-taille-pen" title="Modifier la taille">✎</button>
+                                            </div>
+                                            <form x-show="editing" x-cloak method="post"
+                                                  action="{{ path('admin_stock_dotations_besoin_taille', {id: besoin.id}) }}"
+                                                  class="dot-taille-form">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_taille_' ~ besoin.id) }}">
+                                                <input type="text" name="taille" value="{{ besoin.taille }}"
+                                                       list="dot-tailles-list" class="dot-taille-input"
+                                                       placeholder="taille" x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
+                                                <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
+                                                <button type="button" class="dot-taille-cancel" @click="editing = false" title="Annuler">✕</button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
                                 </td>
                                 <td>{{ besoin.quantite }}</td>
                                 <td>
@@ -97,6 +116,10 @@
             </div>
         </div>
     {% endfor %}
+
+    <datalist id="dot-tailles-list">
+        {% for t in taillesConnues %}<option value="{{ t }}">{% endfor %}
+    </datalist>
 
 </div>
 {% endblock %}

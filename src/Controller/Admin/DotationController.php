@@ -252,8 +252,9 @@ class DotationController extends AbstractController
         ksort($groupes);
 
         return $this->render('admin/stock/dotations/suivi.html.twig', [
-            'season'  => $season,
-            'groupes' => $groupes,
+            'season'         => $season,
+            'groupes'        => $groupes,
+            'taillesConnues' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'],
         ]);
     }
 
@@ -271,6 +272,20 @@ class DotationController extends AbstractController
 
         $count = $this->besoinService->recomputeAll($season);
         $this->addFlash('success', sprintf('Besoins recalculés pour %d personne%s.', $count, $count > 1 ? 's' : ''));
+
+        return $this->redirectToRoute('admin_stock_dotations_suivi');
+    }
+
+    #[Route('/besoins/{id}/taille', name: 'besoin_taille', methods: ['POST'])]
+    public function besoinTaille(DotationBesoin $besoin, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('dotation_besoin_taille_' . $besoin->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_suivi');
+        }
+
+        $this->besoinService->updateTaille($besoin, (string) $request->request->get('taille', ''));
+        $this->addFlash('success', sprintf('Taille mise à jour pour %s.', $besoin->getNomPrenom()));
 
         return $this->redirectToRoute('admin_stock_dotations_suivi');
     }

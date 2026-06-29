@@ -88,6 +88,40 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         self::assertSame(DotationBesoinStatut::DONNE, $besoins[0]->getStatut());
     }
 
+    public function testTailleManuellePreserveeAuRecalcul(): void
+    {
+        $season = $this->makeSeason();
+        $cat    = $this->makeCategory('SENIOR');
+        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $modele = $this->makeModele($season);
+        $this->addLigne($modele, $item, 1);
+        $this->affecterCategorie($season, $modele, $cat);
+        $licencie = $this->makeLicencie($season, $cat, null, 'L'); // dossier → taille L
+
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+        $this->besoinService()->recomputeForLicencie($licencie);
+
+        $besoin = $this->besoinRepo()->findForLicencie($licencie)[0];
+        self::assertSame('L', $besoin->getTaille());
+
+        // L'admin force XXL à la main, puis on recalcule.
+        $this->besoinService()->updateTaille($besoin, 'XXL');
+        $this->besoinService()->recomputeForLicencie($licencie);
+
+        $besoin = $this->besoinRepo()->findForLicencie($licencie)[0];
+        self::assertSame('XXL', $besoin->getTaille(), 'La taille manuelle survit au recalcul.');
+        self::assertTrue($besoin->isTailleManuelle());
+
+        // Vider la taille repasse en automatique → le dossier (L) reprend la main.
+        $this->besoinService()->updateTaille($besoin, '');
+        $this->besoinService()->recomputeForLicencie($licencie);
+
+        $besoin = $this->besoinRepo()->findForLicencie($licencie)[0];
+        self::assertSame('L', $besoin->getTaille(), 'Taille vidée → retour à la déduction automatique.');
+        self::assertFalse($besoin->isTailleManuelle());
+    }
+
     public function testRemiseCreeUnMouvementEtDecrementeLeStock(): void
     {
         $season = $this->makeSeason();
