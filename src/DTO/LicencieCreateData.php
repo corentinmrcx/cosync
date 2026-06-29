@@ -4,6 +4,7 @@ namespace App\DTO;
 
 use App\Entity\Category;
 use App\Entity\Team;
+use Symfony\Component\Validator\Constraints as Assert;
 
 final class LicencieCreateData
 {
@@ -12,7 +13,15 @@ final class LicencieCreateData
     public ?\DateTimeImmutable $dateNaissance = null;
     public ?Category $category = null;
     public ?Team $team = null;
+
+    #[Assert\Email(message: 'Cet email n\'est pas valide.')]
     public ?string $email = null;
+
+    #[Assert\Regex(
+        pattern: '/^(?:(?:\+|00)33[\s.\-]?|0)[1-9](?:[\s.\-]?\d{2}){4}$/',
+        message: 'Numéro de téléphone invalide (ex : 06 12 34 56 78).'
+    )]
     public ?string $telephone = null;
+
     public ?string $numLicence = null;
 }
