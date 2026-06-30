@@ -182,6 +182,7 @@ class LicencieController extends AbstractController
         \App\Repository\StockMovementRepository $stockMovementRepo,
         SeasonContext $seasonContext,
         \App\Service\CotisationResolver $cotisationResolver,
+        \App\Service\Stock\DotationBesoinService $dotationBesoinService,
     ): Response {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
@@ -236,6 +237,7 @@ class LicencieController extends AbstractController
             'montant'         => $montant,
             'paymentModes'    => PaymentMode::cases(),
             'dotations'       => $stockMovementRepo->findDotationsByLicencie($licencie),
+            'dotationStatut'  => $dotationBesoinService->statutFicheLicencie($licencie),
             'history'         => $history,
         ]);
     }

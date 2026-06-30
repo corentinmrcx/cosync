@@ -64,6 +64,43 @@ final class DotationBesoinService
     }
 
     /**
+     * Statut synthétique de la dotation d'un licencié, pour un badge sur sa fiche.
+     * Retourne null si aucune dotation ne le concerne (pas de kit pour son équipe/catégorie).
+     *
+     * @return array{statut: string, donnes: int, total: int}|null
+     *         statut ∈ remise | partielle | attente | a_preparer
+     */
+    public function statutFicheLicencie(Licencie $licencie): ?array
+    {
+        $seasonId = $licencie->getSeason()->getId();
+        $besoins = array_filter(
+            $this->besoinRepository->findForLicencie($licencie),
+            static fn (DotationBesoin $b): bool => $b->getSeason()->getId() === $seasonId,
+        );
+
+        // Besoins pas encore matérialisés (licencié non validé) : on regarde si un kit s'applique.
+        if ($besoins === []) {
+            return $this->resolver->resolveDotation($licencie) !== []
+                ? ['statut' => 'a_preparer', 'donnes' => 0, 'total' => 0]
+                : null;
+        }
+
+        $total  = count($besoins);
+        $donnes = count(array_filter(
+            $besoins,
+            static fn (DotationBesoin $b): bool => $b->getStatut() === DotationBesoinStatut::DONNE,
+        ));
+
+        $statut = match (true) {
+            $donnes === $total => 'remise',
+            $donnes === 0      => 'attente',
+            default            => 'partielle',
+        };
+
+        return ['statut' => $statut, 'donnes' => $donnes, 'total' => $total];
+    }
+
+    /**
      * @param DotationBesoin[] $existants
      * @return bool true si la personne est concernée par au moins une dotation (modèle résolu non vide).
      */

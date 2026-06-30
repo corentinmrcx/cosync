@@ -195,6 +195,47 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         self::assertSame('ZULU', $besoins[1]->getLicencie()->getNom());
     }
 
+    public function testStatutFicheLicencie(): void
+    {
+        $season = $this->makeSeason();
+        $cat    = $this->makeCategory('SENIOR');
+        $itemA  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $itemB  = $this->makeItem('Short', StockItemVetementType::BAS);
+        $modele = $this->makeModele($season);
+        $this->addLigne($modele, $itemA, 1);
+        $this->addLigne($modele, $itemB, 1);
+        $this->affecterCategorie($season, $modele, $cat);
+
+        $autreCat = $this->makeCategory('U11');
+        $sansKit  = $this->makeLicencie($season, $autreCat, null, 'M');
+        $prevu    = $this->makeLicencie($season, $cat, null, 'L');
+        $this->em->flush();
+
+        // Sans kit applicable → null
+        self::assertNull($this->besoinService()->statutFicheLicencie($sansKit));
+
+        // Kit applicable mais pas encore matérialisé → a_preparer
+        self::assertSame('a_preparer', $this->besoinService()->statutFicheLicencie($prevu)['statut']);
+
+        // Besoins matérialisés, rien donné → attente
+        $this->besoinService()->recomputeForLicencie($prevu);
+        $statut = $this->besoinService()->statutFicheLicencie($prevu);
+        self::assertSame('attente', $statut['statut']);
+        self::assertSame(0, $statut['donnes']);
+        self::assertSame(2, $statut['total']);
+
+        // Une partie donnée → partielle
+        $besoins = $this->besoinRepo()->findForLicencie($prevu);
+        $this->besoinService()->markGiven($besoins[0], null);
+        $statut = $this->besoinService()->statutFicheLicencie($prevu);
+        self::assertSame('partielle', $statut['statut']);
+        self::assertSame(1, $statut['donnes']);
+
+        // Tout donné → remise
+        $this->besoinService()->markGiven($besoins[1], null);
+        self::assertSame('remise', $this->besoinService()->statutFicheLicencie($prevu)['statut']);
+    }
+
     public function testChangerTailleApresRemiseAjusteLeStock(): void
     {
         $season = $this->makeSeason();

@@ -147,6 +147,7 @@
             {% if licencie.dossierClub %}
                 {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
             {% endif %}
+            {% include 'components/_badge_dotation.html.twig' with { dotation: dotationStatut } only %}
         </div>
 
         <div class="licencie-show-header-actions">
