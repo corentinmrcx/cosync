@@ -122,6 +122,38 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         self::assertFalse($besoin->isTailleManuelle());
     }
 
+    public function testGroupeChoixDonnePuisChangementDeChoixNeDuplique(): void
+    {
+        $season = $this->makeSeason();
+        $cat    = $this->makeCategory('SENIOR');
+        $itemA  = $this->makeItem('Veste rouge', StockItemVetementType::HAUT);
+        $itemB  = $this->makeItem('Veste bleue', StockItemVetementType::HAUT);
+        $modele = $this->makeModele($season);
+        $this->addLigne($modele, $itemA, 1, 'haut');
+        $this->addLigne($modele, $itemB, 1, 'haut');
+        $this->affecterCategorie($season, $modele, $cat);
+        $licencie = $this->makeLicencie($season, $cat, null, 'L');
+
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+        $this->besoinService()->recomputeForLicencie($licencie);
+
+        $besoins = $this->besoinRepo()->findForLicencie($licencie);
+        self::assertCount(1, $besoins, 'Groupe de choix → 1 besoin (option par défaut).');
+
+        // L'option par défaut est remise, puis le choix change vers l'autre option.
+        $this->besoinService()->markGiven($besoins[0], null);
+        $licencie->getDossierClub()->setDotationChoix(['haut' => $itemB->getId()]);
+        $this->em->flush();
+        $this->besoinService()->recomputeForLicencie($licencie);
+
+        self::assertCount(
+            1,
+            $this->besoinRepo()->findForLicencie($licencie),
+            'Un groupe de choix déjà donné ne doit pas produire une ligne en doublon au changement de choix.',
+        );
+    }
+
     public function testRemiseCreeUnMouvementEtDecrementeLeStock(): void
     {
         $season = $this->makeSeason();
@@ -141,6 +173,52 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         self::assertSame(StockMovementType::SORTIE, $movement->getType());
         self::assertSame(StockMovementSource::DOTATION, $movement->getSource());
         self::assertSame('L', $movement->getTaille());
+    }
+
+    public function testFindBySeasonTriePersonneSansErreurDql(): void
+    {
+        $season = $this->makeSeason();
+        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat    = $this->makeCategory('SENIOR');
+        $zoe    = $this->makeLicencie($season, $cat, null, 'L');
+        $zoe->setNom('ZULU')->setPrenom('Zoe');
+        $amir   = $this->makeLicencie($season, $cat, null, 'M');
+        $amir->setNom('ALPHA')->setPrenom('Amir');
+        $this->makeBesoin($season, $item, 'L', 1)->setLicencie($zoe);
+        $this->makeBesoin($season, $item, 'M', 1)->setLicencie($amir);
+        $this->em->flush();
+
+        $besoins = $this->besoinRepo()->findBySeason($season);
+
+        self::assertCount(2, $besoins);
+        self::assertSame('ALPHA', $besoins[0]->getLicencie()->getNom(), 'Trié par nom : ALPHA avant ZULU.');
+        self::assertSame('ZULU', $besoins[1]->getLicencie()->getNom());
+    }
+
+    public function testChangerTailleApresRemiseAjusteLeStock(): void
+    {
+        $season = $this->makeSeason();
+        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $this->makeMovement($item, 2, StockMovementType::ENTREE, 'L'); // stock L = 2
+        $this->makeMovement($item, 2, StockMovementType::ENTREE, 'M'); // stock M = 2
+        $besoin = $this->makeBesoin($season, $item, 'L', 1);
+        $this->em->flush();
+
+        $this->besoinService()->markGiven($besoin, null);
+
+        $movRepo = $this->service(StockMovementRepository::class);
+        self::assertSame(1, $movRepo->getCurrentStockByTaille($item, 'L'), 'L = 2 − 1 après remise.');
+        self::assertSame(2, $movRepo->getCurrentStockByTaille($item, 'M'));
+
+        // Le licencié avait pris du L mais il lui faut finalement du M.
+        $this->besoinService()->updateTaille($besoin, 'M', null);
+
+        self::assertSame(DotationBesoinStatut::DONNE, $besoin->getStatut(), 'Reste « donné ».');
+        self::assertSame('M', $besoin->getTaille());
+        self::assertSame(2, $movRepo->getCurrentStockByTaille($item, 'L'), 'Stock L restitué.');
+        self::assertSame(1, $movRepo->getCurrentStockByTaille($item, 'M'), 'Stock M décrémenté.');
+        self::assertNotNull($besoin->getMouvementSortie());
+        self::assertSame('M', $besoin->getMouvementSortie()->getTaille(), 'Le mouvement pointe la nouvelle taille.');
     }
 
     public function testAnnulationRemiseRetablitLeStock(): void

@@ -71,24 +71,28 @@ final class DotationBesoinService
     {
         $resolved = $this->resolver->resolveDotation($person);
 
-        /** @var array<int, DotationBesoin[]> $existantsParItem */
-        $existantsParItem = [];
+        // Indexe les besoins existants par « emplacement » : un groupe de choix « 1 parmi N »
+        // compte pour un seul emplacement, quelle que soit l'option retenue. Sans groupe,
+        // l'emplacement est l'article lui-même. Évite les doublons quand le choix change
+        // après qu'une option a déjà été donnée.
+        /** @var array<string, DotationBesoin[]> $existantsParSlot */
+        $existantsParSlot = [];
         foreach ($existants as $besoin) {
-            $existantsParItem[$besoin->getStockItem()->getId()][] = $besoin;
+            $existantsParSlot[$this->slotKey($besoin->getGroupeChoix(), $besoin->getStockItem()->getId())][] = $besoin;
         }
 
-        $itemsResolus = [];
+        $slotsResolus = [];
 
         foreach ($resolved as $ligne) {
-            $item   = $ligne['stockItem'];
-            $itemId = $item->getId();
-            $itemsResolus[$itemId] = true;
+            $item = $ligne['stockItem'];
+            $slot = $this->slotKey($ligne['groupeChoix'], $item->getId());
+            $slotsResolus[$slot] = true;
 
-            $besoinsItem = $existantsParItem[$itemId] ?? [];
+            $besoinsSlot = $existantsParSlot[$slot] ?? [];
 
             // Cherche un besoin « à donner » à mettre à jour
             $aMettreAJour = null;
-            foreach ($besoinsItem as $besoin) {
+            foreach ($besoinsSlot as $besoin) {
                 if ($besoin->getStatut() === DotationBesoinStatut::A_DONNER) {
                     $aMettreAJour = $besoin;
                     break;
@@ -96,15 +100,17 @@ final class DotationBesoinService
             }
 
             if ($aMettreAJour !== null) {
+                // Le choix a pu changer → on réaligne l'article sur l'option retenue.
                 $aMettreAJour
+                    ->setStockItem($item)
                     ->setQuantite($ligne['quantite'])
                     ->setGroupeChoix($ligne['groupeChoix']);
                 // La taille saisie à la main par l'admin prime sur celle déduite du dossier.
                 if (!$aMettreAJour->isTailleManuelle()) {
                     $aMettreAJour->setTaille($ligne['taille']);
                 }
-            } elseif ($besoinsItem === []) {
-                // Aucun besoin pour cet article → en créer un
+            } elseif ($besoinsSlot === []) {
+                // Aucun besoin pour cet emplacement → en créer un
                 $besoin = (new DotationBesoin())
                     ->setSeason($person->getSeason())
                     ->setStockItem($item)
@@ -120,13 +126,13 @@ final class DotationBesoinService
 
                 $this->em->persist($besoin);
             }
-            // S'il n'existe que des besoins « donnés » pour cet article → on les laisse (déjà remis).
+            // S'il n'existe que des besoins « donnés » pour cet emplacement → on les laisse (déjà remis).
         }
 
-        // Retire les besoins « à donner » qui ne sont plus dans le modèle résolu
+        // Retire les besoins « à donner » dont l'emplacement n'est plus dans le modèle résolu
         foreach ($existants as $besoin) {
-            if ($besoin->getStatut() === DotationBesoinStatut::A_DONNER
-                && !isset($itemsResolus[$besoin->getStockItem()->getId()])) {
+            $slot = $this->slotKey($besoin->getGroupeChoix(), $besoin->getStockItem()->getId());
+            if ($besoin->getStatut() === DotationBesoinStatut::A_DONNER && !isset($slotsResolus[$slot])) {
                 $this->em->remove($besoin);
             }
         }
@@ -134,6 +140,12 @@ final class DotationBesoinService
         $this->em->flush();
 
         return $resolved !== [];
+    }
+
+    /** Clé d'emplacement : un groupe de choix = un emplacement unique, sinon l'article. */
+    private function slotKey(?string $groupeChoix, int $itemId): string
+    {
+        return $groupeChoix !== null ? 'g:' . $groupeChoix : 'i:' . $itemId;
     }
 
     /**
@@ -168,18 +180,54 @@ final class DotationBesoinService
     }
 
     /**
-     * Fixe (ou réinitialise) à la main la taille d'un besoin encore « à donner ».
-     * Une taille vide repasse le besoin en mode automatique (déduit du dossier au prochain recalcul).
+     * Fixe (ou réinitialise) à la main la taille d'un besoin.
+     * - « à donner » : une taille vide repasse en mode automatique (déduit du dossier au recalcul).
+     * - « donné » : si la taille change, le mouvement de stock est rejoué (restitution à
+     *   l'ancienne taille puis sortie à la nouvelle) pour rester cohérent avec le stock réel.
      */
-    public function updateTaille(DotationBesoin $besoin, ?string $taille): void
+    public function updateTaille(DotationBesoin $besoin, ?string $taille, ?User $user = null): void
     {
-        if ($besoin->getStatut() !== DotationBesoinStatut::A_DONNER) {
+        $taille = trim((string) $taille) ?: null;
+
+        if ($besoin->getStatut() === DotationBesoinStatut::DONNE) {
+            if ($taille !== $besoin->getTaille()) {
+                $this->rejoueMouvementTaille($besoin, $taille, $user);
+            }
+            $besoin->setTaille($taille)->setTailleManuelle($taille !== null);
+            $this->em->flush();
             return;
         }
 
-        $taille = trim((string) $taille) ?: null;
         $besoin->setTaille($taille)->setTailleManuelle($taille !== null);
         $this->em->flush();
+    }
+
+    /**
+     * Rejoue le mouvement de sortie d'un besoin déjà donné à une nouvelle taille :
+     * supprime l'ancien (le stock de l'ancienne taille est restitué) et en crée un nouveau.
+     */
+    private function rejoueMouvementTaille(DotationBesoin $besoin, ?string $taille, ?User $user): void
+    {
+        $ancien = $besoin->getMouvementSortie();
+        $besoin->setMouvementSortie(null);
+        if ($ancien !== null) {
+            $this->em->remove($ancien);
+        }
+
+        $note = 'Dotation' . ($taille !== null ? ' — taille ' . $taille : '');
+        $movement = $this->stockService->recordMovement(
+            $besoin->getStockItem(),
+            $besoin->getQuantite(),
+            StockMovementType::SORTIE,
+            StockMovementSource::DOTATION,
+            $user,
+            $note,
+            taille: $taille,
+        );
+        $movement->setLicencie($besoin->getLicencie());
+        $movement->setDirigeant($besoin->getDirigeant());
+
+        $besoin->setMouvementSortie($movement);
     }
 
     /** Marque un besoin comme remis : crée le mouvement de sortie et passe le statut à « donné ». */

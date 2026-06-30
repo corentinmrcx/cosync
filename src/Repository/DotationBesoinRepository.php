@@ -22,13 +22,20 @@ class DotationBesoinRepository extends ServiceEntityRepository
     /** @return DotationBesoin[] */
     public function findBySeason(Season $season): array
     {
+        // COALESCE n'est pas autorisé directement dans ORDER BY en DQL → on l'expose en
+        // champ HIDDEN (exclu de l'hydratation) pour pouvoir trier dessus.
         return $this->createQueryBuilder('b')
             ->leftJoin('b.stockItem', 'i')->addSelect('i')
             ->leftJoin('b.licencie', 'l')->addSelect('l')
             ->leftJoin('b.dirigeant', 'd')->addSelect('d')
+            ->addSelect('COALESCE(l.nom, d.nom) AS HIDDEN personneNom')
+            ->addSelect('COALESCE(l.prenom, d.prenom) AS HIDDEN personnePrenom')
             ->where('b.season = :season')
             ->setParameter('season', $season)
-            ->orderBy('b.id', 'ASC')
+            // Regroupe les lignes d'une même personne (licencié ou dirigeant), puis ordre stable.
+            ->orderBy('personneNom', 'ASC')
+            ->addOrderBy('personnePrenom', 'ASC')
+            ->addOrderBy('b.id', 'ASC')
             ->getQuery()
             ->getResult();
     }
