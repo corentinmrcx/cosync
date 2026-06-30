@@ -31,29 +31,31 @@ final class DotationBesoinService
         private readonly EntityManagerInterface $em,
     ) {}
 
-    public function recomputeForLicencie(Licencie $licencie): void
+    /** @return bool true si la personne est concernée par au moins une dotation. */
+    public function recomputeForLicencie(Licencie $licencie): bool
     {
-        $this->recompute($licencie, $this->besoinRepository->findForLicencie($licencie));
+        return $this->recompute($licencie, $this->besoinRepository->findForLicencie($licencie));
     }
 
-    public function recomputeForDirigeant(Dirigeant $dirigeant): void
+    /** @return bool true si la personne est concernée par au moins une dotation. */
+    public function recomputeForDirigeant(Dirigeant $dirigeant): bool
     {
-        $this->recompute($dirigeant, $this->besoinRepository->findForDirigeant($dirigeant));
+        return $this->recompute($dirigeant, $this->besoinRepository->findForDirigeant($dirigeant));
     }
 
-    /** Recalcule pour toute la saison. Retourne le nombre de personnes traitées. */
+    /** Recalcule pour toute la saison. Retourne le nombre de personnes ayant une dotation. */
     public function recomputeAll(Season $season): int
     {
         $count = 0;
 
         foreach ($this->licencieRepository->findValidatedBySeason($season) as $licencie) {
-            $this->recomputeForLicencie($licencie);
-            $count++;
+            if ($this->recomputeForLicencie($licencie)) {
+                $count++;
+            }
         }
 
         foreach ($this->dirigeantRepository->findBySeason($season) as $dirigeant) {
-            if ($dirigeant->isPublicFormComplete()) {
-                $this->recomputeForDirigeant($dirigeant);
+            if ($dirigeant->isPublicFormComplete() && $this->recomputeForDirigeant($dirigeant)) {
                 $count++;
             }
         }
@@ -63,8 +65,9 @@ final class DotationBesoinService
 
     /**
      * @param DotationBesoin[] $existants
+     * @return bool true si la personne est concernée par au moins une dotation (modèle résolu non vide).
      */
-    private function recompute(Licencie|Dirigeant $person, array $existants): void
+    private function recompute(Licencie|Dirigeant $person, array $existants): bool
     {
         $resolved = $this->resolver->resolveDotation($person);
 
@@ -129,6 +132,8 @@ final class DotationBesoinService
         }
 
         $this->em->flush();
+
+        return $resolved !== [];
     }
 
     /**
