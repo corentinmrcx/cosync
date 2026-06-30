@@ -17,6 +17,28 @@
     gap: 0.4rem;
 }
 
+.cmd-recept-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.cmd-annuler-recept {
+    padding: 0.25rem 0.5rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-danger);
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.cmd-annuler-recept:hover { background: var(--color-danger-bg); border-color: var(--color-danger); }
+
 /* — Badges de statut — */
 .cmd-badge {
     display: inline-block;

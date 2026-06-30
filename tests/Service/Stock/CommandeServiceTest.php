@@ -113,6 +113,26 @@ final class CommandeServiceTest extends StockIntegrationTestCase
         self::assertSame(CommandeStatut::RECUE, $ligne->getCommande()->getStatut());
     }
 
+    public function testAnnulerReceptionRevientStockEtStatut(): void
+    {
+        $season = $this->makeSeason();
+        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $ligne  = $this->makeCommandeEnAttente($season, $veste, 'L', 3);
+        $this->em->flush();
+
+        $movRepo = $this->service(StockMovementRepository::class);
+
+        $this->commandeService()->recevoirLigne($ligne, 2, null);
+        self::assertSame(2, $movRepo->getCurrentStockByTaille($veste, 'L'));
+        self::assertSame(CommandeStatut::RECUE_PARTIELLE, $ligne->getCommande()->getStatut());
+
+        $this->commandeService()->annulerReception($ligne, null);
+
+        self::assertSame(0, $ligne->getQuantiteRecue(), 'Reçu remis à zéro.');
+        self::assertSame(0, $movRepo->getCurrentStockByTaille($veste, 'L'), 'Stock réversé par mouvement compensatoire.');
+        self::assertSame(CommandeStatut::COMMANDEE, $ligne->getCommande()->getStatut(), 'Retour au statut commandée.');
+    }
+
     public function testMarquerCommandeePoseLaDate(): void
     {
         $season   = $this->makeSeason();

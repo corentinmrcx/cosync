@@ -112,6 +112,21 @@ class CommandeController extends AbstractController
         return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $commandeId]);
     }
 
+    #[Route('/lignes/{id}/annuler-reception', name: 'ligne_annuler_reception', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function ligneAnnulerReception(CommandeLigne $ligne, Request $request): Response
+    {
+        $commandeId = $ligne->getCommande()->getId();
+        if (!$this->isCsrfTokenValid('commande_ligne_annuler_' . $ligne->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $commandeId]);
+        }
+
+        $this->commandeService->annulerReception($ligne, $this->getUser());
+        $this->addFlash('success', 'Réception annulée, stock recalculé.');
+
+        return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $commandeId]);
+    }
+
     #[Route('/{id}/pdf', name: 'pdf', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function pdf(Commande $commande): Response
     {

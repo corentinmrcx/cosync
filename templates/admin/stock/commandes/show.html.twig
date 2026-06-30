@@ -65,15 +65,24 @@
                             <td>{{ ligne.restant }}</td>
                             {% if commande.statut.value != 'brouillon' %}
                                 <td class="dot-table-action">
-                                    {% if ligne.restant > 0 %}
-                                        <form method="post" action="{{ path('admin_stock_commandes_ligne_recevoir', {id: ligne.id}) }}" class="cmd-inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('commande_ligne_recevoir_' ~ ligne.id) }}">
-                                            <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" max="{{ ligne.restant }}" value="{{ ligne.restant }}">
-                                            <button type="submit" class="dot-btn-sm">Recevoir</button>
-                                        </form>
-                                    {% else %}
-                                        <span class="cmd-badge cmd-badge-recue">Complète</span>
-                                    {% endif %}
+                                    <div class="cmd-recept-actions">
+                                        {% if ligne.restant > 0 %}
+                                            <form method="post" action="{{ path('admin_stock_commandes_ligne_recevoir', {id: ligne.id}) }}" class="cmd-inline">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('commande_ligne_recevoir_' ~ ligne.id) }}">
+                                                <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" max="{{ ligne.restant }}" value="{{ ligne.restant }}">
+                                                <button type="submit" class="dot-btn-sm">Recevoir</button>
+                                            </form>
+                                        {% else %}
+                                            <span class="cmd-badge cmd-badge-recue">Complète</span>
+                                        {% endif %}
+                                        {% if ligne.quantiteRecue > 0 %}
+                                            <form method="post" action="{{ path('admin_stock_commandes_ligne_annuler_reception', {id: ligne.id}) }}"
+                                                  onsubmit="return confirm('Annuler la réception de cette ligne ? Le stock sera recalculé.')">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('commande_ligne_annuler_' ~ ligne.id) }}">
+                                                <button type="submit" class="cmd-annuler-recept" title="Annuler la réception">Annuler réception</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             {% endif %}
                         </tr>

@@ -91,6 +91,32 @@ final class CommandeService
         $this->em->flush();
     }
 
+    /**
+     * Annule la réception d'une ligne : réverse le stock par un mouvement compensatoire (SORTIE,
+     * source COMMANDE), remet la quantité reçue à zéro et recalcule le statut de la commande.
+     */
+    public function annulerReception(CommandeLigne $ligne, ?User $user): void
+    {
+        $recu = $ligne->getQuantiteRecue();
+        if ($recu <= 0) {
+            return;
+        }
+
+        $this->stockService->recordMovement(
+            $ligne->getStockItem(),
+            $recu,
+            StockMovementType::SORTIE,
+            StockMovementSource::COMMANDE,
+            $user,
+            'Annulation réception CMD-' . $ligne->getCommande()->getId(),
+            taille: $ligne->getTaille(),
+        );
+
+        $ligne->setQuantiteRecue(0);
+        $this->recomputeStatut($ligne->getCommande());
+        $this->em->flush();
+    }
+
     private function recomputeStatut(Commande $commande): void
     {
         $restant = 0;
@@ -104,6 +130,9 @@ final class CommandeService
             $commande->setStatut(CommandeStatut::RECUE);
         } elseif ($recu > 0) {
             $commande->setStatut(CommandeStatut::RECUE_PARTIELLE);
+        } else {
+            // Plus rien de reçu → la commande redevient simplement « commandée ».
+            $commande->setStatut(CommandeStatut::COMMANDEE);
         }
     }
 }
