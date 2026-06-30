@@ -535,4 +535,27 @@
 
 @media (max-width: 640px) {
     .dot-page { padding: 1rem; }
+
+    /* En-tête : titre puis actions empilées, boutons pleine largeur */
+    .dot-header { flex-direction: column; align-items: stretch; }
+    .dot-header-actions { width: 100%; flex-direction: column; align-items: stretch; }
+    .dot-header-actions > *,
+    .dot-header-actions form,
+    .dot-header-actions a,
+    .dot-header-actions button { width: 100%; }
+    .dot-header-actions a,
+    .dot-header-actions button { justify-content: center; }
+
+    /* Formulaires inline (ajout d'article, affectation, choix) en colonne */
+    .dot-inline-form,
+    .dot-affect-form,
+    .dot-choix-row { flex-direction: column; align-items: stretch; }
+    .dot-inline-form > .dot-input,
+    .dot-inline-form > .dot-btn-primary,
+    .dot-affect-form > .dot-input,
+    .dot-affect-form > .dot-btn-primary,
+    .dot-choix-row > .dot-input,
+    .dot-choix-form > .dot-btn-primary { width: 100%; }
+    .dot-input-qty { flex-basis: auto; }
+    .dot-add-tab { flex: 1 1 auto; text-align: center; }
 }
