@@ -94,15 +94,6 @@
     color: var(--color-status-validated);
 }
 
-.dot-back {
-    color: var(--color-text-muted);
-    text-decoration: none;
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-}
-
-.dot-back:hover { color: var(--color-text-body); }
-
 /* — Cartes — */
 .dot-card {
     display: flex;
