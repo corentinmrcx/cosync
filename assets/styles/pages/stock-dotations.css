@@ -254,7 +254,6 @@
 }
 
 .dot-input-qty { flex: 0 0 5rem; }
-.dot-input-grp { flex: 0 1 14rem; }
 
 .dot-check {
     display: inline-flex;
@@ -264,6 +263,100 @@
     color: var(--color-text-body);
     white-space: nowrap;
 }
+
+/* — Bloc de choix (1 parmi N) dans la liste — */
+.dot-list-item-choix {
+    border-left: 3px solid var(--color-primary-light);
+    padding-left: 0.625rem;
+}
+
+.dot-choix-tag {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    margin-right: 0.35rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* — Ajout : onglets article fixe / choix — */
+.dot-add {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.dot-add-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.dot-add-tab {
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-page);
+    color: var(--color-text-body);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dot-add-tab.is-active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.dot-add .dot-affect-form {
+    padding-top: 0;
+    border-top: none;
+}
+
+/* — Formulaire de choix — */
+.dot-choix-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.dot-choix-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.dot-choix-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    max-height: 14rem;
+    overflow-y: auto;
+    padding: 0.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+}
+
+.dot-choix-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.4rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    cursor: pointer;
+}
+
+.dot-choix-option:hover { background: var(--color-bg-muted); }
+
+.dot-choix-form .dot-btn-primary { align-self: flex-start; }
 
 /* — Tableau aperçu — */
 .dot-table-wrapper { overflow-x: auto; }
