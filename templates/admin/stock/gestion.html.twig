@@ -134,7 +134,7 @@
     {% endfor %}
 
     {# Modale mouvement #}
-    <div class="stock-modal-backdrop" x-show="open" x-transition.opacity style="display:none">
+    <div class="stock-modal-backdrop" x-show="modalOpen" x-transition.opacity style="display:none">
         <div class="stock-modal" @click.outside="closeModal()">
             <div class="stock-modal-header">
                 <h3 class="stock-modal-title" x-text="'Mouvement — ' + itemNom"></h3>
@@ -165,8 +165,18 @@
                 <div class="stock-modal-field">
                     <label class="stock-modal-label">Quantité</label>
                     <input type="number" name="quantite" min="1" x-model="quantite" class="stock-modal-input" required>
-                    <span class="stock-modal-hint" x-text="'Stock actuel : ' + stockActuel"></span>
-                    <span class="stock-modal-tailles" x-show="taillesLabel" x-text="'En stock — ' + taillesLabel"></span>
+                    <span class="stock-modal-hint" x-text="'Stock total : ' + stockActuel"></span>
+                    <div class="stock-modal-stocklist" x-show="taillesEntries.length">
+                        <span class="stock-modal-stocklist-label">En stock par taille</span>
+                        <div class="stock-modal-chips">
+                            <template x-for="[t, q] in taillesEntries" :key="t">
+                                <span class="stock-modal-chip" :class="{ 'is-empty': q <= 0 }">
+                                    <span class="stock-modal-chip-taille" x-text="t"></span>
+                                    <span class="stock-modal-chip-qty" x-text="q"></span>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="stock-modal-field">
@@ -216,7 +226,7 @@
 <script>
 function stockMovementModal() {
     return {
-        open: false,
+        modalOpen: false,
         itemId: null,
         itemNom: '',
         stockActuel: 0,
@@ -230,10 +240,15 @@ function stockMovementModal() {
         get csrfToken() {
             return document.getElementById('csrf-' + this.itemId)?.value ?? '';
         },
-        get taillesLabel() {
-            const entries = Object.entries(this.taillesStock);
-            if (entries.length === 0) return '';
-            return entries.map(([t, q]) => `${t} ${q}`).join(' · ');
+        get taillesEntries() {
+            const order = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL',
+                           '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'];
+            const rank = (t) => {
+                const i = order.indexOf(t);
+                return i === -1 ? order.length : i;
+            };
+            return Object.entries(this.taillesStock)
+                .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b));
         },
         get dispoTaille() {
             return this.taillesStock[this.taille] ?? 0;
@@ -247,10 +262,10 @@ function stockMovementModal() {
             this.action    = 'entree';
             this.quantite  = 1;
             this.taille    = '';
-            this.open      = true;
+            this.modalOpen = true;
         },
         closeModal() {
-            this.open = false;
+            this.modalOpen = false;
         },
     };
 }
