@@ -2,10 +2,11 @@
 
 namespace App\Controller\Admin;
 
+use App\DTO\ManualMovementData;
 use App\Entity\Fournisseur;
 use App\Entity\StockCategory;
 use App\Entity\StockItem;
-use App\Enum\LicenceStatus;
+use App\Entity\StockMovement;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
@@ -115,7 +116,7 @@ class StockController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->applyManualFields($item, $request);
+            $this->applyEditableFields($item, $request);
             $this->em->persist($item);
             $this->em->flush();
             $this->addFlash('success', sprintf('Article "%s" créé.', $item->getNom()));
@@ -132,7 +133,7 @@ class StockController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->applyManualFields($item, $request);
+            $this->applyEditableFields($item, $request);
             $this->em->flush();
             $this->addFlash('success', sprintf('Article "%s" mis à jour.', $item->getNom()));
             return $this->redirectToRoute('admin_stock_gestion');
@@ -162,24 +163,17 @@ class StockController extends AbstractController
         ];
     }
 
-    private function applyManualFields(StockItem $item, Request $request): void
+    /** Lit les champs conditionnels du formulaire article et délègue l'application au service. */
+    private function applyEditableFields(StockItem $item, Request $request): void
     {
-        $kind = StockItemKind::tryFrom($request->request->get('kind', ''));
-        $item->setKind($kind);
-        $item->setMarque(trim($request->request->get('marque', '')) ?: null);
-
-        if ($kind === StockItemKind::EQUIPEMENT) {
-            // Pas de taille figée sur un vêtement : les tailles sont des déclinaisons de stock,
-            // et la dotation résout la bonne taille par joueur depuis sa fiche.
-            $item->setTaille(null);
-            $item->setCouleur(trim($request->request->get('couleur', '')) ?: null);
-            $item->setTypeVetement(StockItemVetementType::tryFrom($request->request->get('typeVetement', '')));
-        } else {
-            // Épicerie : la « taille » porte la contenance (33cl, 1L…), intrinsèque à l'article.
-            $item->setTaille(trim($request->request->get('taille', '')) ?: null);
-            $item->setCouleur(null);
-            $item->setTypeVetement(null);
-        }
+        $this->stockService->applyEditableFields(
+            $item,
+            StockItemKind::tryFrom((string) $request->request->get('kind', '')),
+            trim((string) $request->request->get('marque', '')) ?: null,
+            trim((string) $request->request->get('couleur', '')) ?: null,
+            trim((string) $request->request->get('taille', '')) ?: null,
+            StockItemVetementType::tryFrom((string) $request->request->get('typeVetement', '')),
+        );
     }
 
     #[Route('/items/{id}/mouvement', name: 'items_movement', methods: ['POST'])]
@@ -190,81 +184,46 @@ class StockController extends AbstractController
             return $this->redirectToRoute('admin_stock_gestion');
         }
 
-        $action   = $request->request->get('action');
-        $quantite = (int) $request->request->get('quantite', 0);
-        $note     = trim((string) $request->request->get('note', '')) ?: null;
-        $taille   = trim((string) $request->request->get('taille', '')) ?: null;
-        $licencieUuid = $request->request->get('licencie_uuid') ?: null;
-
-        $typeMap = [
-            'entree'   => [StockMovementType::ENTREE, StockMovementSource::MANUEL],
-            'sortie'   => [StockMovementType::SORTIE, StockMovementSource::MANUEL],
-            'dotation' => [StockMovementType::SORTIE, StockMovementSource::DOTATION],
-            'rebut'    => [StockMovementType::REBUT,  StockMovementSource::MANUEL],
-        ];
-
-        if (!isset($typeMap[$action])) {
-            $this->addFlash('error', 'Action invalide.');
-            return $this->redirectToRoute('admin_stock_gestion');
-        }
-
-        [$type, $source] = $typeMap[$action];
-
-        $licencie = null;
-        if ($source === StockMovementSource::DOTATION) {
-            if ($licencieUuid === null) {
-                $this->addFlash('error', 'Veuillez sélectionner un licencié pour une dotation.');
-                return $this->redirectToRoute('admin_stock_gestion');
-            }
-
-            $licencie = $this->licencieRepository->findOneBy(['uuid' => $licencieUuid]);
-
-            if ($licencie === null) {
-                $this->addFlash('error', 'Licencié introuvable.');
-                return $this->redirectToRoute('admin_stock_gestion');
-            }
-
-            $dossier = $licencie->getDossierClub();
-            if ($dossier === null || $dossier->getStatus() !== LicenceStatus::VALIDATED) {
-                $this->addFlash('error', sprintf(
-                    'La dotation ne peut être enregistrée qu\'après confirmation du paiement de %s.',
-                    $licencie->getNomPrenom(),
-                ));
-                return $this->redirectToRoute('admin_stock_gestion');
-            }
-        }
+        $data = new ManualMovementData(
+            action: (string) $request->request->get('action', ''),
+            quantite: (int) $request->request->get('quantite', 0),
+            taille: trim((string) $request->request->get('taille', '')) ?: null,
+            note: trim((string) $request->request->get('note', '')) ?: null,
+            licencieUuid: $request->request->get('licencie_uuid') ?: null,
+        );
 
         try {
-            $movement = $this->stockService->recordMovement(
-                $item,
-                $quantite,
-                $type,
-                $source,
-                $this->getUser(),
-                $note,
-                taille: $taille,
-                // On bloque une sortie/rebut manuel au-delà du stock réel ; la dotation reste libre
-                // (équipement souvent fabriqué à la commande, stock à zéro légitime).
-                preventNegative: in_array($action, ['sortie', 'rebut'], true),
-            );
-
-            if ($licencie !== null) {
-                $movement->setLicencie($licencie);
-                $this->em->flush();
-            }
-
+            $movement = $this->stockService->recordManualMovement($item, $data, $this->getUser());
             $this->addFlash('success', sprintf(
                 '%s de %d "%s" enregistrée%s.',
-                $type->label(),
-                $quantite,
+                $movement->getType()->label(),
+                $movement->getQuantite(),
                 $item->getNom(),
-                $licencie !== null ? ' → ' . $licencie->getNomPrenom() : '',
+                $movement->getLicencie() !== null ? ' → ' . $movement->getLicencie()->getNomPrenom() : '',
             ));
         } catch (\InvalidArgumentException $e) {
             $this->addFlash('error', $e->getMessage());
         }
 
         return $this->redirectToRoute('admin_stock_gestion');
+    }
+
+    #[Route('/mouvements/{id}/supprimer', name: 'mouvements_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function mouvementDelete(StockMovement $movement, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('delete_stock_movement_' . $movement->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_mouvements_list');
+        }
+
+        try {
+            $this->stockService->deleteManualMovement($movement);
+            $this->addFlash('success', 'Mouvement supprimé, stock recalculé.');
+        } catch (\InvalidArgumentException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_stock_mouvements_list');
     }
 
     #[Route('/items/{id}/supprimer', name: 'items_delete', methods: ['POST'])]

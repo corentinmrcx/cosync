@@ -478,6 +478,24 @@
     color: var(--color-text-muted);
 }
 
+.stock-modal-tailles {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-body);
+}
+
+.stock-modal-dispo {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-success);
+}
+
+.stock-modal-dispo.is-empty { color: var(--color-danger); }
+
 .stock-modal-textarea { resize: vertical; min-height: 60px; }
 
 .stock-modal-footer {

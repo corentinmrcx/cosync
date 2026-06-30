@@ -166,6 +166,7 @@
                     <label class="stock-modal-label">Quantité</label>
                     <input type="number" name="quantite" min="1" x-model="quantite" class="stock-modal-input" required>
                     <span class="stock-modal-hint" x-text="'Stock actuel : ' + stockActuel"></span>
+                    <span class="stock-modal-tailles" x-show="taillesLabel" x-text="'En stock — ' + taillesLabel"></span>
                 </div>
 
                 <div class="stock-modal-field">
@@ -174,6 +175,10 @@
                         <option value="">— Sans taille —</option>
                         {% for t in taillesConnues %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
                     </select>
+                    <span class="stock-modal-dispo"
+                          x-show="taille && action !== 'entree'"
+                          :class="{ 'is-empty': dispoTaille <= 0 }"
+                          x-text="'Disponible en ' + taille + ' : ' + dispoTaille"></span>
                 </div>
 
                 <div class="stock-modal-field" x-show="action === 'dotation'" x-transition>
@@ -215,6 +220,7 @@ function stockMovementModal() {
         itemId: null,
         itemNom: '',
         stockActuel: 0,
+        taillesStock: {},
         action: 'entree',
         quantite: 1,
         taille: '',
@@ -224,10 +230,20 @@ function stockMovementModal() {
         get csrfToken() {
             return document.getElementById('csrf-' + this.itemId)?.value ?? '';
         },
+        get taillesLabel() {
+            const entries = Object.entries(this.taillesStock);
+            if (entries.length === 0) return '';
+            return entries.map(([t, q]) => `${t} ${q}`).join(' · ');
+        },
+        get dispoTaille() {
+            return this.taillesStock[this.taille] ?? 0;
+        },
         openModal(id, nom, stock) {
             this.itemId    = id;
             this.itemNom   = nom;
             this.stockActuel = stock;
+            const raw = document.getElementById('tailles-' + id)?.value;
+            this.taillesStock = raw ? JSON.parse(raw) : {};
             this.action    = 'entree';
             this.quantite  = 1;
             this.taille    = '';
@@ -240,10 +256,11 @@ function stockMovementModal() {
 }
 </script>
 
-{# Tokens CSRF cachés pour chaque item #}
+{# Tokens CSRF + stock par taille (JSON) cachés pour chaque item, lus par la modale #}
 {% for section in summary %}
     {% for row in section.items %}
         <input type="hidden" id="csrf-{{ row.item.id }}" value="{{ csrf_token('stock_movement_' ~ row.item.id) }}">
+        <input type="hidden" id="tailles-{{ row.item.id }}" value="{{ row.taillesMap|json_encode }}">
     {% endfor %}
 {% endfor %}
 
