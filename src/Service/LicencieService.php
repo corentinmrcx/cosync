@@ -176,6 +176,16 @@ final class LicencieService
         }
     }
 
+    /**
+     * Supprime un paiement saisi par erreur. Le total payé est recalculé à l'affichage ;
+     * le statut de la licence n'est pas modifié (une licence validée le reste).
+     */
+    public function deletePayment(Transaction $transaction): void
+    {
+        $this->em->remove($transaction);
+        $this->em->flush();
+    }
+
     public function validateManually(Licencie $licencie): void
     {
         $this->setValidated($licencie);

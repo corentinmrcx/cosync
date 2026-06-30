@@ -68,6 +68,14 @@
                         <span class="licencie-payment-date">{{ t.datePaiement|date('d/m/Y') }}</span>
                         <span class="licencie-payment-mode">{{ t.mode.label() }}</span>
                         <span class="licencie-payment-amount">{{ t.montant }} €</span>
+                        <form method="post" action="{{ path('admin_licencies_delete_payment', {uuid: licencie.uuid, id: t.id}) }}"
+                              class="licencie-payment-delete-form"
+                              onsubmit="return confirm('Supprimer ce paiement de {{ t.montant }} € ?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_payment_' ~ t.id) }}">
+                            <button type="submit" class="licencie-payment-delete" title="Supprimer ce paiement" aria-label="Supprimer ce paiement">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                        </form>
                     </div>
                     {% if t.reference or t.note %}
                     <div class="licencie-payment-meta">

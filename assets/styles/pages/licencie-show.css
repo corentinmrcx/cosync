@@ -790,6 +790,29 @@
     white-space: nowrap;
 }
 
+.licencie-payment-delete-form { display: flex; }
+
+.licencie-payment-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    padding: 0;
+    color: var(--color-text-muted);
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+
+.licencie-payment-delete:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+    border-color: var(--color-danger);
+}
+
 .licencie-payment-meta {
     display: flex;
     gap: 0.75rem;
