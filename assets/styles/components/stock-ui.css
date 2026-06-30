@@ -1,0 +1,134 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Système UI partagé du module stock : cartes de stats, cartes de navigation,
+   et pattern « tableau → cartes empilées » sur mobile. Réutilisable sur tous
+   les écrans stock (cf. templates/admin/stock/* et la macro components/_icon).
+   ────────────────────────────────────────────────────────────────────────── */
+
+.icon { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+
+/* — Grille + cartes de statistiques — */
+.stat-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.stat-card {
+    flex: 1 1 200px;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+.stat-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-muted);
+    color: var(--color-text-muted);
+}
+
+.stat-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.stat-card-value {
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    line-height: 1.05;
+    color: var(--color-text-base);
+}
+
+.stat-card-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+}
+
+/* Accents : on teinte la pastille d'icône + la valeur */
+.stat-card-warning { border-color: var(--color-status-completed); }
+.stat-card-warning .stat-card-icon { background: var(--color-status-completed-bg); color: var(--color-status-completed); }
+.stat-card-warning .stat-card-value { color: var(--color-status-completed); }
+
+.stat-card-danger { border-color: var(--color-danger); }
+.stat-card-danger .stat-card-icon { background: var(--color-danger-bg); color: var(--color-danger); }
+.stat-card-danger .stat-card-value { color: var(--color-danger); }
+
+.stat-card-ok .stat-card-icon { background: var(--color-status-validated-bg); color: var(--color-status-validated); }
+
+.stat-card-primary .stat-card-icon { background: var(--color-primary-light); color: var(--color-primary); }
+
+/* — Grille + cartes de navigation (accès rapides) — */
+.quicklink-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.quicklink {
+    flex: 1 1 260px;
+    max-width: 420px;
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem 1.1rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.quicklink:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-card);
+    transform: translateY(-1px);
+}
+
+.quicklink-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.quicklink-body { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.quicklink-title { font-weight: 700; color: var(--color-text-base); }
+.quicklink-text { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+
+.quicklink-arrow {
+    margin-left: auto;
+    color: var(--color-text-disabled);
+    flex-shrink: 0;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+.quicklink:hover .quicklink-arrow { color: var(--color-primary); transform: translateX(2px); }
+
+/* — Tableaux : défilement horizontal sur petit écran plutôt qu'un passage en cartes
+     (plus lisible pour des tableaux denses). Le conteneur .*-table-wrapper porte
+     overflow-x:auto ; sur mobile on impose une largeur mini pour éviter que les
+     colonnes ne s'écrasent — le tableau défile alors horizontalement. — */
+@media (max-width: 720px) {
+    .resp-table { min-width: 36rem; }
+}
