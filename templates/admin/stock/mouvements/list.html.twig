@@ -62,6 +62,7 @@
                     <tr>
                         <th>Date</th>
                         <th>Article</th>
+                        <th>Taille</th>
                         <th>Type</th>
                         <th>Source</th>
                         <th>Quantité</th>
@@ -76,6 +77,9 @@
                             <td>
                                 <span class="stock-mouvements-item-nom">{{ m.item.nom }}</span>
                                 {% if m.item.couleur %}<span class="stock-mouvements-item-couleur">{{ m.item.couleur }}</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if m.taille %}<span class="stock-mouvements-taille">{{ m.taille }}</span>{% else %}—{% endif %}
                             </td>
                             <td>
                                 <span class="stock-badge-type stock-badge-type-{{ m.type.value }}">

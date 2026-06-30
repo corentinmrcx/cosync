@@ -14,18 +14,6 @@
     <div class="stock-dashboard-header">
         <h1 class="stock-dashboard-title">Gestion du stock</h1>
         <div class="stock-dashboard-actions">
-            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-dashboard-btn-secondary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                Historique
-            </a>
-            <a href="{{ path('admin_stock_categories_list') }}" class="stock-dashboard-btn-secondary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                Catégories
-            </a>
-            <a href="{{ path('admin_stock_fournisseurs_list') }}" class="stock-dashboard-btn-secondary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-5h16l1 5"/><path d="M5 9v11h14V9"/><path d="M9 13h6"/></svg>
-                Fournisseurs
-            </a>
             <a href="{{ showArchived ? path('admin_stock_gestion') : path('admin_stock_gestion', {archivés: 1}) }}" class="stock-dashboard-btn-secondary{% if showArchived %} stock-btn-archived-active{% endif %}">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
                 {{ showArchived ? 'Masquer les archivés' : 'Voir les archivés' }}
@@ -65,19 +53,28 @@
                             <th class="stock-col-actions">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
                         {% for row in section.items %}
+                        <tbody x-data="{ open: false }">
                             <tr{% if not row.item.actif %} class="stock-row-archived"{% endif %}>
                                 <td class="stock-col-nom">
-                                    <span class="stock-item-nom">{{ row.item.nom }}</span>
-                                    <span class="stock-item-meta">
-                                        {% if not row.item.actif %}<span class="stock-badge-archived-label">Archivé</span>{% endif %}
-                                        {% if row.item.marque %}{{ row.item.marque }}{% endif %}
-                                        {% if row.item.marque and row.item.taille %} · {% endif %}
-                                        {% if row.item.taille %}{{ row.item.taille }}{% endif %}
-                                        {% if (row.item.marque or row.item.taille) and row.item.couleur %} · {% endif %}
-                                        {% if row.item.couleur %}{{ row.item.couleur }}{% endif %}
-                                    </span>
+                                    <div class="stock-nom-wrap{% if row.hasTailles %} stock-nom-clickable{% endif %}"{% if row.hasTailles %} @click="open = !open" title="Voir le détail par taille"{% endif %}>
+                                        {% if row.hasTailles %}
+                                            <span class="stock-row-toggle" :class="{ 'is-open': open }">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                                            </span>
+                                        {% endif %}
+                                        <div class="stock-nom-texts">
+                                            <span class="stock-item-nom">{{ row.item.nom }}</span>
+                                            <span class="stock-item-meta">
+                                                {% if not row.item.actif %}<span class="stock-badge-archived-label">Archivé</span>{% endif %}
+                                                {% if row.item.marque %}{{ row.item.marque }}{% endif %}
+                                                {% if row.item.marque and row.item.taille %} · {% endif %}
+                                                {% if row.item.taille %}{{ row.item.taille }}{% endif %}
+                                                {% if (row.item.marque or row.item.taille) and row.item.couleur %} · {% endif %}
+                                                {% if row.item.couleur %}{{ row.item.couleur }}{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="stock-col-stock">
                                     <span class="stock-badge stock-badge-{{ row.status }}">
@@ -110,8 +107,27 @@
                                     {% endif %}
                                 </td>
                             </tr>
+                            {% if row.hasTailles %}
+                                <tr class="stock-taille-detail" x-show="open" x-cloak>
+                                    <td colspan="4">
+                                        <table class="stock-taille-table">
+                                            <thead>
+                                                <tr><th>Taille</th><th>Stock</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for t in row.tailles %}
+                                                    <tr>
+                                                        <td>{{ t.taille }}</td>
+                                                        <td class="stock-taille-table-stock">{{ t.stock }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
                         {% endfor %}
-                    </tbody>
                 </table>
             </div>
         </div>

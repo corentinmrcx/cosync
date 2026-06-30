@@ -15,14 +15,6 @@
             <h1 class="stock-home-title">Stock</h1>
         </div>
         <div class="stock-home-actions">
-            <a href="{{ path('admin_stock_inventaire_pdf') }}" class="stock-home-btn-secondary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                Inventaire PDF
-            </a>
-            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-home-btn-secondary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                Historique
-            </a>
             <a href="{{ path('admin_stock_gestion') }}" class="stock-home-btn-primary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                 Gérer le stock
@@ -129,6 +121,14 @@
             <a href="{{ path('admin_stock_commandes_index') }}" class="stock-home-link-card">
                 <span class="stock-home-link-title">Commandes</span>
                 <span class="stock-home-link-text">À commander, bons par fournisseur, réceptions</span>
+            </a>
+            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-home-link-card">
+                <span class="stock-home-link-title">Historique des mouvements</span>
+                <span class="stock-home-link-text">Entrées, sorties et rebuts, filtrables par article et taille</span>
+            </a>
+            <a href="{{ path('admin_stock_inventaire_pdf') }}" class="stock-home-link-card">
+                <span class="stock-home-link-title">Inventaire PDF</span>
+                <span class="stock-home-link-text">Feuille d'inventaire complète, ventilée par taille</span>
             </a>
             <a href="{{ path('admin_stock_fournisseurs_list') }}" class="stock-home-link-card">
                 <span class="stock-home-link-title">Fournisseurs</span>

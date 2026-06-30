@@ -188,6 +188,79 @@
     display: block;
 }
 
+/* Cellule article : chevron à gauche, centré verticalement entre le nom et la marque/couleur */
+.stock-nom-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Toute la zone du nom est cliquable quand l'article a un détail par taille */
+.stock-nom-clickable {
+    cursor: pointer;
+    margin: -0.4rem -0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: var(--radius-md);
+    transition: background 0.12s;
+}
+
+.stock-nom-clickable:hover { background: var(--color-bg-muted); }
+.stock-nom-clickable:hover .stock-row-toggle { color: var(--color-primary); }
+
+.stock-nom-texts {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* Chevron de dépliage du détail par taille (indicateur visuel) */
+.stock-row-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+    transition: transform 0.15s, color 0.15s;
+}
+
+.stock-row-toggle.is-open { transform: rotate(90deg); color: var(--color-primary); }
+
+/* Ligne dépliée : ventilation par taille, étalée sur toute la largeur */
+.stock-taille-detail > td {
+    background: var(--color-bg-subtle);
+    padding: 0.5rem 1rem 0.75rem 2.25rem;
+}
+
+.stock-taille-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.stock-taille-table th {
+    text-align: left;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-muted);
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.stock-taille-table th:last-child,
+.stock-taille-table td:last-child { text-align: right; }
+
+.stock-taille-table td {
+    padding: 0.3rem 0.5rem;
+    color: var(--color-text-body);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.stock-taille-table tr:last-child td { border-bottom: none; }
+
+.stock-taille-table-stock { font-weight: 700; color: var(--color-text-base); }
+
 .stock-item-meta {
     display: block;
     font-size: var(--font-size-xs);

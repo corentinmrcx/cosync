@@ -74,7 +74,7 @@ final class StockService
     }
 
     /**
-     * @return array<int, array{category: \App\Entity\StockCategory|null, items: array<int, array{item: StockItem, stock: int, status: string}>}>
+     * @return array<int, array{category: \App\Entity\StockCategory|null, items: array<int, array{item: StockItem, stock: int, status: string, tailles: array<int, array{taille: string, stock: int}>, hasTailles: bool}>}>
      */
     public function getStockSummary(bool $includeArchived = false): array
     {
@@ -96,14 +96,14 @@ final class StockService
             }
             $summary[] = [
                 'category' => $category,
-                'items'    => array_map($this->buildItemRow(...), $catItems),
+                'items'    => array_map($this->buildItemRowWithTailles(...), $catItems),
             ];
         }
 
         if (!empty($byCategory[0])) {
             $summary[] = [
                 'category' => null,
-                'items'    => array_map($this->buildItemRow(...), $byCategory[0]),
+                'items'    => array_map($this->buildItemRowWithTailles(...), $byCategory[0]),
             ];
         }
 
@@ -188,13 +188,7 @@ final class StockService
         }
 
         $build = function (StockItem $item): array {
-            $parTaille = $this->movementRepository->getStockGroupedByTaille($item);
-            ksort($parTaille);
-
-            $tailles = [];
-            foreach ($parTaille as $taille => $stock) {
-                $tailles[] = ['taille' => $taille === '' ? '—' : $taille, 'stock' => $stock];
-            }
+            $tailles = $this->buildTailleRows($item);
             if ($tailles === []) {
                 $tailles[] = ['taille' => '—', 'stock' => 0];
             }
@@ -216,6 +210,43 @@ final class StockService
         }
 
         return $inventaire;
+    }
+
+    /**
+     * Ventilation du stock par taille pour un article, triée. Clé '' (sans taille) → '—'.
+     *
+     * @return array<int, array{taille: string, stock: int}>
+     */
+    private function buildTailleRows(StockItem $item): array
+    {
+        $parTaille = $this->movementRepository->getStockGroupedByTaille($item);
+        ksort($parTaille);
+
+        $tailles = [];
+        foreach ($parTaille as $taille => $stock) {
+            $tailles[] = ['taille' => $taille === '' ? '—' : $taille, 'stock' => $stock];
+        }
+
+        return $tailles;
+    }
+
+    /**
+     * Ligne d'article enrichie de sa ventilation par taille, pour le tableau de gestion.
+     *
+     * @return array{item: StockItem, stock: int, status: string, tailles: array<int, array{taille: string, stock: int}>, hasTailles: bool}
+     */
+    private function buildItemRowWithTailles(StockItem $item): array
+    {
+        $tailles    = $this->buildTailleRows($item);
+        $hasTailles = false;
+        foreach ($tailles as $row) {
+            if ($row['taille'] !== '—') {
+                $hasTailles = true;
+                break;
+            }
+        }
+
+        return $this->buildItemRow($item) + ['tailles' => $tailles, 'hasTailles' => $hasTailles];
     }
 
     /** @return array{item: StockItem, stock: int, status: string} */
