@@ -150,6 +150,9 @@ class LicencieController extends AbstractController
         $data->category     = $licencie->getCategory();
         $data->email        = $licencie->getEmail();
         $data->telephone    = $licencie->getTelephone();
+        $data->voieRue      = $licencie->getVoieRue();
+        $data->codePostal   = $licencie->getCodePostal();
+        $data->ville        = $licencie->getVille();
         $data->numLicence   = $licencie->getNumLicence();
 
         $form = $this->createForm(LicencieIdentityType::class, $data);
@@ -178,6 +181,7 @@ class LicencieController extends AbstractController
         TransactionRepository $transactionRepo,
         \App\Repository\StockMovementRepository $stockMovementRepo,
         SeasonContext $seasonContext,
+        \App\Service\CotisationResolver $cotisationResolver,
     ): Response {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
@@ -189,10 +193,7 @@ class LicencieController extends AbstractController
         $transactions = $season ? $transactionRepo->findAllByLicencieAndSeason($licencie, $season) : [];
         $totalPaid    = $season ? $transactionRepo->sumByLicencieAndSeason($licencie, $season) : 0.0;
 
-        $baseCosts       = $season?->getBaseCosts() ?? [];
-        $montant         = $licencie->isSeniorTariff()
-            ? ($baseCosts['seniors'] ?? 0)
-            : ($baseCosts['jeunes'] ?? 0);
+        $montant         = $cotisationResolver->resolve($licencie);
         $remainingAmount = max(0, (float) $montant - $totalPaid);
 
         $history = [
@@ -344,6 +345,29 @@ class LicencieController extends AbstractController
         }
 
         return $this->redirectToRoute('admin_licencies_show', $params);
+    }
+
+    #[Route('/{uuid}/paiements/{id}/supprimer', name: 'delete_payment', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function deletePayment(
+        string $uuid,
+        int $id,
+        Request $request,
+        TransactionRepository $transactionRepo,
+        LicencieService $licencieService,
+    ): Response {
+        if (!$this->isCsrfTokenValid('delete_payment_' . $id, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        $transaction = $transactionRepo->find($id);
+        if ($transaction === null || (string) $transaction->getLicencie()->getUuid() !== $uuid) {
+            throw $this->createNotFoundException('Paiement introuvable.');
+        }
+
+        $licencieService->deletePayment($transaction);
+        $this->addFlash('success', 'Paiement supprimé.');
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid, 'paymentsModal' => '1']);
     }
 
     #[Route('/{uuid}/valider-manuellement', name: 'validate_manually', methods: ['POST'])]

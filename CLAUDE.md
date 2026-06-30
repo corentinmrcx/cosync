@@ -682,3 +682,63 @@ Exemples :
 - ❌ Commiter directement sur `main` ou `production`
 - ❌ Proposer un `git push --force` sur une branche protégée
 - ❌ Grouper plusieurs features sans rapport dans un seul commit
+
+## 13. Évolution du Schéma en Production
+
+> À partir du moment où la prod contient des données réelles, **toute évolution doit transformer
+> l'existant sans le perdre**. La logique métier (services, contrôleurs, formulaires, front) se code
+> exactement pareil — seule la **façon de faire évoluer le schéma** se ritualise.
+
+### Règle centrale
+La migration Doctrine est le **contrat** entre deux états de la base. Elle doit toujours savoir
+migrer les **données déjà présentes**, pas seulement créer des tables vides.
+
+### Les 5 règles d'or
+
+1. **Toute modification d'entité → une migration** (`php bin/console make:migration`).
+   **Jamais** `doctrine:schema:update --force` en prod.
+2. **Ne jamais ré-éditer une migration déjà déployée.** Une erreur se corrige par une *nouvelle*
+   migration. Modifier une migration appliquée fait diverger les bases.
+3. **Toujours relire le SQL généré** avant d'appliquer. L'auto-génération propose parfois des
+   `DROP` dangereux à retoucher.
+4. **Dump de la base avant chaque migration prod.** PostgreSQL exécute le DDL en transaction
+   (une migration qui plante est annulée), mais le backup reste le vrai parachute.
+5. **Tester la migration sur une copie des données prod**, pas sur une base vide
+   (`dump prod → restore local → migrate`). C'est le test qui change avec la prod.
+
+### Piège n°1 — colonne obligatoire sur une table déjà remplie
+
+`ADD COLUMN … NOT NULL` sur une table contenant des lignes **échoue**. Pattern **expand / backfill / contract** :
+
+```
+1. Expand   : ajouter la colonne nullable (ou avec DEFAULT)
+2. Backfill : remplir les lignes existantes (UPDATE dans la migration)
+3. Contract : passer en NOT NULL une fois rempli
+```
+
+Exemple déjà appliqué dans le projet : `Version20260622180000` (création `dirigeant_role` + INSERT des
+rôles + UPDATE de backfill + contrainte FK ensuite).
+
+### Renommer / supprimer = destructif
+
+`DROP COLUMN` / `DROP TABLE` perd les données, **irréversiblement**. Pour un renommage critique :
+`add new → copy (UPDATE) → drop old`, au besoin sur deux déploiements. Réfléchir avant tout `DROP`.
+
+### Workflow par changement (avec données en prod)
+
+1. Modifier l'entité
+2. `make:migration` → **relire le SQL**
+3. Restaurer un dump prod en local → `doctrine:migrations:migrate` → vérifier que les données survivent
+4. `vendor/bin/phpunit` (les tests tournent sur base migrée)
+5. Déployer : **backup** → `doctrine:migrations:migrate` → contrôle
+
+### Référentiels & seeds
+Peupler les référentiels (catégories FFF, rôles dirigeants) via migration **ou** la commande
+`SeedReferentialCommand` (idempotente). Ne jamais en dépendre d'une purge — la purge (`PurgeService`)
+les **conserve** et reste réservée au **mode beta**.
+
+### Ce que Claude Code ne doit jamais faire (schéma)
+- ❌ `doctrine:schema:update --force` sur une base contenant des données
+- ❌ Modifier une migration déjà appliquée en prod
+- ❌ `ADD COLUMN NOT NULL` sans DEFAULT ni backfill sur une table non vide
+- ❌ Proposer un `DROP` de colonne/table sans avoir signalé la perte de données

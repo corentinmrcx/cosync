@@ -25,15 +25,10 @@
         </div>
 
         <div class="season-form-field">
-            {{ form_label(form.coutJeunes) }}
-            {{ form_widget(form.coutJeunes, { attr: { placeholder: '85' } }) }}
-            {{ form_errors(form.coutJeunes) }}
-        </div>
-
-        <div class="season-form-field">
-            {{ form_label(form.coutSeniors) }}
-            {{ form_widget(form.coutSeniors, { attr: { placeholder: '120' } }) }}
-            {{ form_errors(form.coutSeniors) }}
+            {{ form_label(form.cotisationDefaut) }}
+            {{ form_widget(form.cotisationDefaut) }}
+            {{ form_help(form.cotisationDefaut) }}
+            {{ form_errors(form.cotisationDefaut) }}
         </div>
 
         <button type="submit" class="season-form-submit">Enregistrer</button>

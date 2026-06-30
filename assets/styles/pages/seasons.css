@@ -99,6 +99,12 @@
     border-color: var(--color-primary);
 }
 
+.season-form-field .help-text {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
 .season-form-field ul {
     list-style: none;
     padding: 0;
@@ -187,17 +193,26 @@
     margin: 0;
 }
 
-.season-form-reglement-link {
-    display: block;
-    text-align: center;
+.season-form-reglement-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    align-self: center;
+    padding: 0.5rem 1rem;
     font-size: var(--font-size-sm);
     font-weight: 600;
-    color: var(--color-info);
+    color: var(--color-text-body);
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
     text-decoration: none;
-    padding-top: 0.5rem;
+    transition: background 0.15s, border-color 0.15s;
 }
 
-.season-form-reglement-link:hover { opacity: 0.75; }
+.season-form-reglement-btn:hover {
+    background: var(--color-bg-muted);
+    border-color: var(--color-text-muted);
+}
 
 .season-form-preview {
     margin: 0;
@@ -277,6 +292,16 @@
     white-space: nowrap;
 }
 
+.config-teams-cotisation {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: var(--color-bg-muted);
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-xl);
+    white-space: nowrap;
+}
+
 
 .config-teams-btns {
     display: flex;
@@ -331,6 +356,25 @@
     font-family: var(--font-sans);
     color: var(--color-text-muted);
 }
+
+.config-teams-add-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    align-self: center;
+    padding: 0.5rem 1rem;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: background 0.15s;
+}
+
+.config-teams-add-toggle:hover { background: var(--color-primary); color: var(--color-text-inverse); }
 
 .config-teams-add-form {
     display: flex;

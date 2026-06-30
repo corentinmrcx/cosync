@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { font-family: Arial, sans-serif; }
+        body { margin: 0; color: #1f1f1f; font-size: 12px; }
+        .header { border-bottom: 2px solid #ff3131; padding-bottom: 12px; margin-bottom: 18px; }
+        .header table { width: 100%; }
+        .club { font-size: 20px; font-weight: bold; color: #ff3131; }
+        .meta { font-size: 11px; color: #555; }
+        h1 { font-size: 18px; margin: 0 0 4px; }
+        .infos { margin-bottom: 16px; font-size: 12px; }
+        .infos strong { display: inline-block; width: 110px; color: #555; font-weight: normal; }
+        table.lignes { width: 100%; border-collapse: collapse; }
+        table.lignes th { background: #f3f4f6; text-align: left; padding: 7px 9px; font-size: 11px; border-bottom: 1px solid #d1d5db; }
+        table.lignes td { padding: 7px 9px; border-bottom: 1px solid #e5e7eb; }
+        .qty { text-align: center; font-weight: bold; width: 60px; }
+        .taille { text-align: center; width: 70px; }
+        .footer { margin-top: 24px; font-size: 10px; color: #9aa1aa; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <table>
+            <tr>
+                <td style="vertical-align: middle;">
+                    <span class="club">Foyer de Soudron</span><br>
+                    <span class="meta">Stade municipal · 51320 Soudron</span>
+                </td>
+                <td style="text-align: right; vertical-align: middle;">
+                    {% if logoDataUrl %}<img src="{{ logoDataUrl }}" width="56" height="56" style="object-fit: contain;">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Bon de commande</h1>
+
+    <div class="infos">
+        <p style="margin:4px 0;"><strong>Fournisseur</strong> {{ commande.fournisseurLabel }}</p>
+        <p style="margin:4px 0;"><strong>Saison</strong> {{ commande.season.label }}</p>
+        <p style="margin:4px 0;"><strong>Référence</strong> CMD-{{ commande.id }}</p>
+        <p style="margin:4px 0;"><strong>Date</strong> {{ (commande.dateCommande ?? generatedAt)|date('d/m/Y') }}</p>
+    </div>
+
+    <table class="lignes">
+        <thead>
+            <tr>
+                <th>Article</th>
+                <th class="taille">Taille</th>
+                <th class="qty">Qté</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in commande.lignes %}
+                <tr>
+                    <td>
+                        {{ ligne.stockItem.nom }}
+                        {% if ligne.stockItem.marque %} — {{ ligne.stockItem.marque }}{% endif %}
+                        {% if ligne.stockItem.couleur %} — {{ ligne.stockItem.couleur }}{% endif %}
+                    </td>
+                    <td class="taille">{{ ligne.taille ?: '—' }}</td>
+                    <td class="qty">{{ ligne.quantite }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p class="footer">Document généré le {{ generatedAt|date('d/m/Y à H:i') }} — Foyer de Soudron.</p>
+
+</body>
+</html>

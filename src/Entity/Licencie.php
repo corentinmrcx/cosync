@@ -254,13 +254,4 @@ class Licencie
     {
         return $this->dossierClub;
     }
-
-    /**
-     * Détermine si le licencié est au tarif sénior (120€) ou jeune (85€).
-     * Basé sur la catégorie FFF du licencié : jeune = U*, senior = tout le reste.
-     */
-    public function isSeniorTariff(): bool
-    {
-        return !$this->category->isJeune();
-    }
 }

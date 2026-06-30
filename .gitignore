@@ -33,3 +33,8 @@ docker/db/data/
 google-credentials.json
 google-service-account.json
 ###< google credentials ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###

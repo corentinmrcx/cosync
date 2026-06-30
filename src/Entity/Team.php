@@ -23,6 +23,10 @@ class Team
     #[ORM\JoinColumn(nullable: false)]
     private Season $season;
 
+    /** Cotisation (€) des licenciés de cette équipe. null → cotisation par défaut de la saison. */
+    #[ORM\Column(nullable: true)]
+    private ?int $cotisation = null;
+
     /**
      * Catégories FFF jouant dans cette équipe.
      * Utilisé pour l'auto-assignation à l'import et le filtrage du dashboard.
@@ -60,6 +64,17 @@ class Team
     public function setSeason(Season $season): static
     {
         $this->season = $season;
+        return $this;
+    }
+
+    public function getCotisation(): ?int
+    {
+        return $this->cotisation;
+    }
+
+    public function setCotisation(?int $cotisation): static
+    {
+        $this->cotisation = $cotisation;
         return $this;
     }
 

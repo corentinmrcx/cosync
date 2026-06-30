@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { font-family: Arial, sans-serif; }
+        body { margin: 0; color: #1f1f1f; font-size: 12px; }
+        .header { border-bottom: 2px solid #ff3131; padding-bottom: 12px; margin-bottom: 18px; }
+        .header table { width: 100%; }
+        .club { font-size: 20px; font-weight: bold; color: #ff3131; }
+        .meta { font-size: 11px; color: #555; }
+        h1 { font-size: 18px; margin: 0 0 4px; }
+        .infos { margin-bottom: 16px; font-size: 11px; color: #555; }
+        h2 { font-size: 13px; margin: 16px 0 6px; color: #ff3131; }
+        table.lignes { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+        table.lignes th { background: #f3f4f6; text-align: left; padding: 6px 8px; font-size: 11px; border-bottom: 1px solid #d1d5db; }
+        table.lignes td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
+        .taille { text-align: center; width: 70px; }
+        .stock { text-align: center; width: 70px; font-weight: bold; }
+        .compte { text-align: center; width: 90px; color: #9aa1aa; }
+        .rupture { color: #ef4444; }
+        .bas { color: #f59e0b; }
+        .footer { margin-top: 24px; font-size: 10px; color: #9aa1aa; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <table>
+            <tr>
+                <td style="vertical-align: middle;">
+                    <span class="club">Foyer de Soudron</span><br>
+                    <span class="meta">Stade municipal · 51320 Soudron</span>
+                </td>
+                <td style="text-align: right; vertical-align: middle;">
+                    {% if logoDataUrl %}<img src="{{ logoDataUrl }}" width="56" height="56" style="object-fit: contain;">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Feuille d'inventaire</h1>
+    <div class="infos">
+        {% if saisonLabel %}Saison {{ saisonLabel }} · {% endif %}Édité le {{ generatedAt|date('d/m/Y à H:i') }}
+    </div>
+
+    {% for groupe in inventaire %}
+        <h2>{{ groupe.category ? groupe.category.name : 'Sans catégorie' }}</h2>
+        <table class="lignes">
+            <thead>
+                <tr>
+                    <th>Article</th>
+                    <th class="taille">Taille</th>
+                    <th class="stock">Stock</th>
+                    <th class="compte">Comptage réel</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in groupe.items %}
+                    {% for t in row.tailles %}
+                        <tr>
+                            {% if loop.first %}
+                                <td rowspan="{{ row.tailles|length }}">
+                                    {{ row.item.nom }}
+                                    {% if row.item.marque %} — {{ row.item.marque }}{% endif %}
+                                    {% if row.item.couleur %} — {{ row.item.couleur }}{% endif %}
+                                </td>
+                            {% endif %}
+                            <td class="taille">{{ t.taille }}</td>
+                            <td class="stock {{ t.stock <= 0 ? 'rupture' : (row.status == 'warning' ? 'bas') }}">{{ t.stock }}</td>
+                            <td class="compte">_______</td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Aucun article au catalogue.</p>
+    {% endfor %}
+
+    <p class="footer">Foyer de Soudron — feuille d'inventaire à usage interne.</p>
+
+</body>
+</html>

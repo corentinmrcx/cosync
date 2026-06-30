@@ -2,6 +2,7 @@
 
 namespace App\Form;
 
+use App\Entity\Fournisseur;
 use App\Entity\StockCategory;
 use App\Entity\StockItem;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -35,6 +36,14 @@ class StockItemType extends AbstractType
                 'choice_label' => 'name',
                 'placeholder'  => '— Sans catégorie —',
                 'required'     => false,
+            ])
+            ->add('fournisseur', EntityType::class, [
+                'label'        => 'Fournisseur',
+                'class'        => Fournisseur::class,
+                'choice_label' => 'nom',
+                'placeholder'  => '— Sans fournisseur —',
+                'required'     => false,
+                'help'         => 'Regroupe les bons de commande par fournisseur.',
             ])
             // kind, typeVetement, marque, taille, couleur gérés manuellement (conditionnels sur kind)
 

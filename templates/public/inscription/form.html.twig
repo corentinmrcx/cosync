@@ -8,7 +8,7 @@
 
 {% block body %}
 <div class="inscription-page"
-     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })">
+     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}, dotationGroupes: {{ (dotationGroupes|default([]))|map(g => g.groupe)|json_encode }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })">
 
     {% if demo|default(false) %}
         <div class="inscription-demo-banner">
@@ -58,7 +58,7 @@
                         </p>
                     {% endif %}
                     <p class="inscription-welcome-text">
-                        Ce formulaire vous prendra environ <strong>2 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations et signerez le règlement intérieur.
+                        Ce formulaire vous prendra moins de <strong>5 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations et signerez le règlement intérieur.
                     </p>
                     <button type="button" @click="next" class="inscription-btn-start">
                         Commencer →
@@ -157,6 +157,24 @@
                                 <input type="hidden" name="pointure" :value="pointure">
                             </div>
                         </div>
+
+                        {% if dotationGroupes|default([]) is not empty %}
+                            {% for grp in dotationGroupes %}
+                                <hr class="inscription-question-divider">
+                                <div class="inscription-question-block">
+                                    <span class="inscription-question-label">{{ grp.groupe }} *</span>
+                                    <span class="inscription-question-hint">Choisissez l'article souhaité pour votre dotation.</span>
+                                    <div class="inscription-radio-group">
+                                        {% for opt in grp.options %}
+                                            <label class="inscription-radio-option">
+                                                <input type="radio" name="dotation_choix[{{ grp.groupe }}]" value="{{ opt.id }}" x-model="dotationChoix['{{ grp.groupe }}']">
+                                                <span class="inscription-radio-label">{{ opt.nom }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
 
                     </div>
                 </div>
@@ -418,10 +436,10 @@
                             <p>Libellé : <strong>COTISATION {{ licencie.nom }} {{ licencie.prenom }} {{ licencie.season.label }}</strong></p>
                         </div>
                         <div x-show="isPaymentModeActive('cheque')" class="inscription-payment-info">
-                            Chèque à l'ordre de <strong>Foyer de Soudron</strong>, à remettre au local à un dirigeant.
+                            Chèque à l'ordre de <strong>Foyer de Soudron</strong>, à remettre à un dirigeant.
                         </div>
                         <div x-show="isPaymentModeActive('especes')" class="inscription-payment-info">
-                            Espèces à remettre au local à un dirigeant.
+                            Espèces à remettre à un dirigeant.
                         </div>
                         <div x-show="isPaymentModeActive('cb_online')" class="inscription-payment-info">
                             <p>Paiement sécurisé par carte bancaire via SumUp.</p>

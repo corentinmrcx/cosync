@@ -72,6 +72,21 @@ class LicencieCreateType extends AbstractType
                 'required' => false,
                 'attr'     => ['placeholder' => '06 12 34 56 78'],
             ])
+            ->add('voieRue', TextType::class, [
+                'label'    => 'Adresse',
+                'required' => false,
+                'attr'     => ['placeholder' => '12 rue de la Mairie'],
+            ])
+            ->add('codePostal', TextType::class, [
+                'label'    => 'Code postal',
+                'required' => false,
+                'attr'     => ['placeholder' => '51320'],
+            ])
+            ->add('ville', TextType::class, [
+                'label'    => 'Ville',
+                'required' => false,
+                'attr'     => ['placeholder' => 'Soudron'],
+            ])
             ->add('numLicence', TextType::class, [
                 'label'    => 'Numéro FootClubs',
                 'required' => false,

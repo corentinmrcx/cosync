@@ -1,0 +1,352 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Documentation{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Documentation' }
+] } %}
+
+<div class="doc-page" x-data="docNav()">
+
+    {# ── Sommaire ── #}
+    <nav class="doc-toc">
+        <p class="doc-toc-title">Sommaire</p>
+        <ul class="doc-toc-list">
+            <li><a href="#vue-ensemble"      class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'vue-ensemble' }">Vue d'ensemble</a></li>
+            <li><a href="#saison"            class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'saison' }">Préparer une saison</a></li>
+            <li><a href="#import"            class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'import' }">Importer les licenciés</a></li>
+            <li><a href="#formulaire-public" class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'formulaire-public' }">Le formulaire public</a></li>
+            <li><a href="#suivi"             class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'suivi' }">Suivre les inscriptions</a></li>
+            <li><a href="#paiements"         class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'paiements' }">Gérer les paiements</a></li>
+            <li><a href="#dirigeants"        class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'dirigeants' }">Les dirigeants</a></li>
+            <li><a href="#stock"             class="doc-toc-link doc-toc-link-strong" :class="{ 'doc-toc-link-active': active === 'stock' }">Le stock</a></li>
+            <li><a href="#dotations"         class="doc-toc-link doc-toc-link-strong" :class="{ 'doc-toc-link-active': active === 'dotations' }">Les dotations</a></li>
+            <li><a href="#commandes"         class="doc-toc-link doc-toc-link-strong" :class="{ 'doc-toc-link-active': active === 'commandes' }">Les commandes</a></li>
+            <li><a href="#diagnostic"        class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'diagnostic' }">Diagnostic &amp; outils</a></li>
+            <li><a href="#faq"               class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'faq' }">Questions fréquentes</a></li>
+        </ul>
+    </nav>
+
+    {# ── Contenu ── #}
+    <article class="doc-content">
+
+        <header class="doc-header">
+            <h1 class="doc-title">Documentation</h1>
+            <p class="doc-subtitle">Le guide pour prendre en main CoSync, étape par étape. Cliquez sur une section du sommaire pour y aller directement.</p>
+        </header>
+
+        {# ───────────────────────────── 1. VUE D'ENSEMBLE ───────────────────────────── #}
+        <section id="vue-ensemble" class="doc-section">
+            <h2 class="doc-h2">Vue d'ensemble</h2>
+
+            <p class="doc-p">CoSync est le cockpit interne du club. Ce n'est <strong>pas</strong> un remplacement de FootClubs (l'outil fédéral FFF) : c'est un complément qui gère ce que FootClubs ne gère pas — la vie interne du club : collecte des tailles et autorisations, signature du règlement, suivi des paiements, gestion du stock et des dotations.</p>
+
+            <div class="doc-tip">
+                <strong>Source de vérité</strong> — FootClubs reste la référence pour l'identité FFF des licenciés. CoSync gère uniquement les données « club ». Un ré-import depuis FootClubs ne touche jamais aux données club déjà saisies.
+            </div>
+
+            <h3 class="doc-h3">Le vocabulaire</h3>
+            <ul class="doc-ul">
+                <li><strong>Saison</strong> — toutes les données sont rattachées à une saison (ex. 2025‑2026). Une seule saison est active à la fois.</li>
+                <li><strong>Licencié</strong> — un joueur importé depuis FootClubs.</li>
+                <li><strong>Dossier club</strong> — les données collectées via le formulaire public (tailles, autorisations, signature, paiement).</li>
+                <li><strong>Dirigeant</strong> — un encadrant (président, éducateur, arbitre…), géré à part des licenciés.</li>
+                <li><strong>Équipe</strong> — une équipe interne (U15 A, Séniors 1, Loisirs…), reliée à une ou plusieurs catégories FFF.</li>
+                <li><strong>Catégorie FFF</strong> — le référentiel d'âge (U6 → SENIOR), fixe.</li>
+            </ul>
+
+            <h3 class="doc-h3">Le cycle de vie d'une inscription</h3>
+            <ol class="doc-ol">
+                <li><strong>Lien envoyé</strong> — le licencié est importé, un mail avec son lien unique part automatiquement.</li>
+                <li><strong>Formulaire complété</strong> — il remplit ses tailles, autorisations et signe le règlement.</li>
+                <li><strong>Validé</strong> — vous confirmez la réception du paiement ; l'inscription est finalisée.</li>
+            </ol>
+        </section>
+
+        {# ───────────────────────────── 2. SAISON ───────────────────────────── #}
+        <section id="saison" class="doc-section">
+            <h2 class="doc-h2">Préparer une saison</h2>
+
+            <p class="doc-p">Tout commence par une saison active. Rendez-vous dans le menu <em>Saison → Nouvelle saison</em>, ou dans <em>Configuration</em> pour ajuster la saison en cours.</p>
+
+            <h3 class="doc-h3">Paramètres de la saison</h3>
+            <ol class="doc-ol">
+                <li>Choisissez l'année de début : le libellé « Saison 2025–2026 » se construit tout seul.</li>
+                <li>Indiquez la <strong>cotisation par défaut</strong> (le montant appliqué à un licencié si son équipe n'a pas de tarif propre).</li>
+                <li>Enregistrez.</li>
+            </ol>
+
+            <h3 class="doc-h3">Les équipes</h3>
+            <p class="doc-p">Dans <em>Configuration → Équipes de la saison</em>, cliquez sur <strong>« Ajouter une équipe »</strong> pour dévoiler le formulaire :</p>
+            <ol class="doc-ol">
+                <li>Nom de l'équipe (ex. « U15 A »).</li>
+                <li>Cotisation propre (facultatif) : laissez vide pour utiliser la cotisation par défaut de la saison.</li>
+                <li>Catégories FFF associées : elles permettent l'assignation automatique des licenciés à l'import et le filtrage du tableau de bord.</li>
+            </ol>
+
+            <h3 class="doc-h3">Le règlement intérieur</h3>
+            <p class="doc-p">Toujours dans <em>Configuration</em>, le bouton <strong>« Éditer le règlement intérieur »</strong> ouvre l'éditeur du texte que le licencié devra lire et signer dans le formulaire public.</p>
+        </section>
+
+        {# ───────────────────────────── 3. IMPORT ───────────────────────────── #}
+        <section id="import" class="doc-section">
+            <h2 class="doc-h2">Importer les licenciés</h2>
+
+            <p class="doc-p">CoSync se remplit à partir d'un export Excel de FootClubs. L'import est <strong>idempotent</strong> : vous pouvez le relancer autant de fois que nécessaire sans créer de doublons ni écraser les données club.</p>
+
+            <h3 class="doc-h3">Exporter depuis FootClubs</h3>
+            <ol class="doc-ol">
+                <li>Menu gauche → <strong>Licenciés → Éditions et extractions</strong>.</li>
+                <li>Sélectionnez <strong>Édition licenciés</strong>.</li>
+                <li>Catégories : tout sélectionner (clic sur la première, puis Maj+clic sur la dernière).</li>
+                <li>Format : <strong>Extraction MS Excel</strong>.</li>
+                <li>Sortie et tri : <strong>Complet</strong> (important — donne les emails et mobiles).</li>
+                <li>Cliquez sur <strong>Valider</strong>.</li>
+            </ol>
+
+            <h3 class="doc-h3">Importer dans CoSync</h3>
+            <ol class="doc-ol">
+                <li>Allez dans <em>Import</em> et déposez le fichier XLSX.</li>
+                <li>CoSync nettoie les données (noms en majuscules, prénoms capitalisés, téléphones au format +33, emails en minuscules) et ignore les non‑joueurs (dirigeants, éducateurs).</li>
+                <li>Pour chaque licencié : mise à jour s'il existe déjà, création + envoi automatique du lien s'il est nouveau.</li>
+                <li>Un rapport s'affiche : X mis à jour, Y créés, Z erreurs.</li>
+            </ol>
+
+            <div class="doc-tip">
+                <strong>Sans danger</strong> — un ré-import met à jour uniquement les données FFF (nom, email…). Les dossiers club et les paiements ne sont jamais touchés.
+            </div>
+        </section>
+
+        {# ───────────────────────────── 4. FORMULAIRE PUBLIC ───────────────────────────── #}
+        <section id="formulaire-public" class="doc-section">
+            <h2 class="doc-h2">Le formulaire public</h2>
+
+            <p class="doc-p">Chaque licencié reçoit par mail un <strong>lien unique</strong> (valable 30 jours) vers un formulaire mobile, sans compte ni mot de passe. Il y renseigne&nbsp;:</p>
+            <ol class="doc-ol">
+                <li><strong>Équipement</strong> : taille du haut, taille du bas, pointure.</li>
+                <li><strong>Autorisations</strong> : droit à l'image pour tous ; transport (par les dirigeants / par d'autres parents) uniquement pour l'école de foot.</li>
+                <li><strong>Règlement</strong> : lecture du texte, case d'acceptation et signature tactile.</li>
+                <li><strong>Paiement</strong> : le mode souhaité (virement, chèque, espèces, CB en ligne, Pass'Sport, CAF, ANCV) avec le montant calculé automatiquement.</li>
+            </ol>
+
+            <p class="doc-p">À la validation, un PDF du règlement signé est généré et archivé sur le Drive du club, puis le dossier passe au statut <em>Formulaire complété</em>.</p>
+
+            <div class="doc-tip">
+                <strong>Renvoyer un lien</strong> — depuis la fiche d'un licencié, le bouton « Renvoyer le lien » régénère un lien neuf et renvoie le mail (utile si le licencié l'a perdu).
+            </div>
+        </section>
+
+        {# ───────────────────────────── 5. SUIVI ───────────────────────────── #}
+        <section id="suivi" class="doc-section">
+            <h2 class="doc-h2">Suivre les inscriptions</h2>
+
+            <p class="doc-p">Le menu <em>Licenciés</em> affiche le tableau de bord de tous les licenciés de la saison, filtrable par équipe, catégorie et statut.</p>
+
+            <h3 class="doc-h3">Les badges de statut</h3>
+            <ul class="doc-ul">
+                <li><span class="doc-badge doc-badge-sent">Lien envoyé</span> — le licencié n'a pas encore rempli son formulaire.</li>
+                <li><span class="doc-badge doc-badge-completed">Formulaire complété</span> — formulaire signé, en attente du paiement.</li>
+                <li><span class="doc-badge doc-badge-validated">Validé</span> — paiement confirmé, inscription finalisée.</li>
+            </ul>
+
+            <p class="doc-p">Un clic sur une ligne ouvre la <strong>fiche du licencié</strong> : ses informations, l'état de son dossier, ses paiements et ses dotations.</p>
+        </section>
+
+        {# ───────────────────────────── 6. PAIEMENTS ───────────────────────────── #}
+        <section id="paiements" class="doc-section">
+            <h2 class="doc-h2">Gérer les paiements</h2>
+
+            <p class="doc-p">Depuis la fiche d'un licencié, le bouton <strong>« Gérer les paiements »</strong> ouvre la fenêtre de gestion.</p>
+
+            <h3 class="doc-h3">Enregistrer un paiement</h3>
+            <ol class="doc-ol">
+                <li>Choisissez le mode (chèque, espèces, virement…).</li>
+                <li>Saisissez le montant et la date.</li>
+                <li>Pour un chèque ou un virement, ajoutez la référence (n° de chèque, libellé) ; une remarque est possible (ex. « 1er chèque sur 3 »).</li>
+                <li>Cliquez sur « Ajouter le paiement ».</li>
+            </ol>
+
+            <p class="doc-p">Dès que le total payé atteint la cotisation due, la licence passe <strong>automatiquement en « Validé »</strong> (et un mail de validation part au licencié). Vous pouvez aussi forcer la validation avec <strong>« Valider quand même »</strong> si vous acceptez une inscription sans paiement complet.</p>
+
+            <h3 class="doc-h3">Corriger une erreur</h3>
+            <p class="doc-p">Chaque paiement de la liste a une <strong>icône corbeille</strong> : elle supprime le paiement (après confirmation). Pour corriger un montant, supprimez la ligne erronée et ré-ajoutez la bonne.</p>
+            <div class="doc-tip">
+                Supprimer un paiement ne change pas le statut de la licence : une licence validée le reste, même si le total redescend sous le montant dû.
+            </div>
+        </section>
+
+        {# ───────────────────────────── 7. DIRIGEANTS ───────────────────────────── #}
+        <section id="dirigeants" class="doc-section">
+            <h2 class="doc-h2">Les dirigeants</h2>
+            <p class="doc-p">Le menu <em>Dirigeants</em> gère les encadrants indépendamment des licenciés. Chaque dirigeant a un <strong>rôle</strong> (président, éducateur, arbitre…) issu d'un référentiel modifiable, et peut lui aussi recevoir une dotation (voir la section dédiée).</p>
+        </section>
+
+        {# ───────────────────────────── 8. STOCK ───────────────────────────── #}
+        <section id="stock" class="doc-section">
+            <h2 class="doc-h2">Le stock</h2>
+
+            <p class="doc-p">Le stock suit tout l'équipement et l'épicerie du club. Le point d'entrée est le menu <em>Stock</em>, qui sert de <strong>tableau de bord</strong> : compteurs (articles, stock bas, ruptures, à commander), articles à réapprovisionner, et accès rapides vers le suivi des dotations, les commandes, les fournisseurs et les catégories.</p>
+
+            <div class="doc-tip">
+                Le stock n'est <strong>pas</strong> rattaché à une saison : c'est un catalogue continu. Une veste reste en stock d'une saison à l'autre.
+            </div>
+
+            <h3 class="doc-h3">Les écrans</h3>
+            <ul class="doc-ul">
+                <li><strong>Stock</strong> (accueil) — la vue de synthèse et les accès rapides.</li>
+                <li><strong>Gérer le stock</strong> — la liste des articles, où l'on crée et où l'on fait les mouvements.</li>
+                <li><strong>Historique</strong> — tous les mouvements (entrées, sorties, rebuts), filtrables.</li>
+                <li><strong>Inventaire PDF</strong> — l'état complet du stock ventilé par taille, à imprimer.</li>
+            </ul>
+
+            <h3 class="doc-h3">Créer un article</h3>
+            <p class="doc-p">Dans <em>Gérer le stock → Nouvel article</em>. Choisissez d'abord le <strong>type</strong> :</p>
+            <ul class="doc-ul">
+                <li><strong>Équipement</strong> (maillot, veste, short…) : pas de taille figée — les tailles sont des déclinaisons gérées à l'entrée en stock. Renseignez la couleur et surtout le <strong>type de vêtement</strong> (haut / bas / chaussures).</li>
+                <li><strong>Épicerie</strong> (boissons, en-cas…) : la « taille » porte la contenance (33cl, 1L…).</li>
+            </ul>
+            <p class="doc-p">Vous pouvez aussi rattacher un <strong>fournisseur</strong> (pour regrouper les bons de commande), un <strong>seuil d'alerte</strong> (alerte « stock bas »), un prix d'achat et un lien d'achat.</p>
+
+            <div class="doc-warn">
+                <strong>Le « type de vêtement » est essentiel.</strong> C'est lui qui permet aux dotations de retrouver automatiquement la bonne taille dans le dossier du licencié (haut → taille du haut, bas → taille du bas, chaussures → pointure). Un article d'équipement sans type ne pourra pas récupérer la taille tout seul.
+            </div>
+
+            <h3 class="doc-h3">Archiver ou supprimer un article</h3>
+            <p class="doc-p">Un article qui a un historique de mouvements ne peut pas être supprimé (l'historique doit être conservé) : il est alors <strong>archivé</strong> — il disparaît des listes mais reste consultable via « Voir les archivés », d'où on peut le <strong>désarchiver</strong>. Un article sans aucun mouvement peut, lui, être supprimé définitivement.</p>
+
+            <h3 class="doc-h3">Faire un mouvement de stock</h3>
+            <p class="doc-p">Sur la ligne d'un article, le bouton <strong>« +/− Mouvement »</strong> ouvre la fenêtre. Choisissez l'action :</p>
+            <ul class="doc-ul">
+                <li><strong>Entrée</strong> — un réassort (achat reçu).</li>
+                <li><strong>Sortie</strong> — une sortie manuelle.</li>
+                <li><strong>Dotation joueur</strong> — une remise à un licencié (au paiement confirmé).</li>
+                <li><strong>Rebut / perte</strong> — une perte (justification obligatoire).</li>
+            </ul>
+            <ol class="doc-ol">
+                <li>Indiquez la quantité.</li>
+                <li>Choisissez la <strong>taille</strong> concernée (le détail « En stock — XS 3 · M 5 · L 5 » vous montre ce que vous avez, et la dispo de la taille choisie).</li>
+                <li>Enregistrez.</li>
+            </ol>
+            <div class="doc-tip">
+                Une sortie ou un rebut au-delà du stock réel d'une taille est refusé. Une dotation, elle, reste possible même à stock zéro (équipement souvent fabriqué à la commande).
+            </div>
+
+            <h3 class="doc-h3">Voir le stock par taille</h3>
+            <p class="doc-p">Dans <em>Gérer le stock</em>, chaque article affiche son <strong>total</strong> ; cliquez sur la ligne (le chevron) pour <strong>déplier le détail par taille</strong>. L'historique affiche lui aussi la taille de chaque mouvement.</p>
+
+            <h3 class="doc-h3">Corriger un mouvement</h3>
+            <p class="doc-p">Une erreur de saisie ? Dans l'<em>Historique</em>, les mouvements <strong>manuels</strong> ont un bouton <strong>Supprimer</strong> : le stock se recalcule aussitôt. Les mouvements issus d'une dotation ou d'une commande ne se suppriment pas ici — ils se corrigent depuis leur écran dédié (voir Dotations et Commandes).</p>
+
+            <h3 class="doc-h3">Catégories de stock &amp; fournisseurs</h3>
+            <p class="doc-p">Les <strong>catégories de stock</strong> (Maillots, Plots…) organisent l'affichage du catalogue. Les <strong>fournisseurs</strong> servent à regrouper les bons de commande ; ils se gèrent depuis les accès rapides du stock.</p>
+        </section>
+
+        {# ───────────────────────────── 9. DOTATIONS ───────────────────────────── #}
+        <section id="dotations" class="doc-section">
+            <h2 class="doc-h2">Les dotations</h2>
+
+            <p class="doc-p">Une dotation, c'est ce que chaque personne (licencié ou dirigeant) doit recevoir : un maillot, un short, etc. Le principe : on définit des <strong>modèles</strong>, on les <strong>affecte</strong> à des cibles, et CoSync calcule pour chacun ses <strong>besoins</strong>.</p>
+
+            <h3 class="doc-h3">Modèles &amp; affectations</h3>
+            <ol class="doc-ol">
+                <li>Dans <em>Stock → Modèles de dotation</em>, créez un modèle (ex. « Dotation sénior ») et ajoutez-y des articles avec leur quantité.</li>
+                <li>Affectez le modèle à une cible : un licencié précis, une équipe, une catégorie FFF, ou par défaut pour toute la saison.</li>
+            </ol>
+            <div class="doc-tip">
+                <strong>Priorité des affectations</strong> — la plus précise gagne : individu &gt; équipe &gt; catégorie FFF &gt; défaut. Un joueur avec une affectation individuelle ignore celle de son équipe.
+            </div>
+            <p class="doc-p">Un modèle peut proposer un <strong>choix « 1 parmi N »</strong> (ex. « short bleu ou short noir ») : le licencié choisit dans son formulaire, sinon la première option s'applique.</p>
+
+            <h3 class="doc-h3">Le suivi des dotations</h3>
+            <p class="doc-p">Dans <em>Stock → Suivi des dotations</em>, chaque personne validée apparaît avec ce qu'elle doit recevoir. La <strong>taille est récupérée automatiquement</strong> depuis le dossier du licencié (selon le type de vêtement de l'article). Si besoin, le <strong>crayon</strong> permet de corriger une taille à la main.</p>
+            <ol class="doc-ol">
+                <li><strong>Recalculer les besoins</strong> met à jour la liste après un changement de modèle ou de validations.</li>
+                <li><strong>Marquer remis</strong> enregistre la sortie de stock (à la bonne taille) et passe le besoin en « donné ».</li>
+                <li><strong>Annuler</strong> une remise remet le besoin « à donner » et ré-incrémente le stock.</li>
+            </ol>
+            <div class="doc-warn">
+                Si une taille reste vide alors que le dossier est rempli, c'est presque toujours que l'<strong>article n'a pas de « type de vêtement »</strong>. Le suivi affiche alors un lien « type à définir » vers l'article à corriger.
+            </div>
+        </section>
+
+        {# ───────────────────────────── 10. COMMANDES ───────────────────────────── #}
+        <section id="commandes" class="doc-section">
+            <h2 class="doc-h2">Les commandes</h2>
+
+            <p class="doc-p">Le module commandes ferme la boucle : il calcule ce qu'il faut acheter, génère les bons par fournisseur, et suit la réception. Tout se passe dans <em>Stock → Commandes</em>.</p>
+
+            <h3 class="doc-h3">Ce qu'il faut commander</h3>
+            <p class="doc-p">Pour chaque article et chaque taille, CoSync calcule :</p>
+            <p class="doc-formula">à commander = besoins « à donner » − stock réel − commandes déjà en attente</p>
+            <p class="doc-p">La liste est regroupée par fournisseur.</p>
+
+            <h3 class="doc-h3">Passer une commande</h3>
+            <ol class="doc-ol">
+                <li><strong>Générer les bons de commande</strong> : crée un brouillon par fournisseur à partir du « à commander ». (Régénérer remplace les brouillons, sans toucher aux commandes déjà passées.)</li>
+                <li>Ouvrez un bon : <strong>téléchargez le PDF</strong> à envoyer au fournisseur, puis <strong>marquez-le « commandé »</strong> (avec la date).</li>
+                <li>À la livraison, saisissez la quantité reçue par ligne — une <strong>réception partielle</strong> est possible, en plusieurs fois. Chaque réception crée automatiquement une entrée en stock à la bonne taille.</li>
+                <li>Reçu par erreur ? <strong>Annuler la réception</strong> remet la quantité reçue à zéro, retire l'entrée de stock et repasse la commande au bon statut.</li>
+            </ol>
+            <div class="doc-tip">
+                Une commande « en attente » est déduite du « à commander » : tant qu'elle couvre le besoin, l'article ne réapparaît pas dans la liste à commander.
+            </div>
+        </section>
+
+        {# ───────────────────────────── 11. DIAGNOSTIC ───────────────────────────── #}
+        <section id="diagnostic" class="doc-section">
+            <h2 class="doc-h2">Diagnostic &amp; outils</h2>
+
+            <p class="doc-p">Le menu <em>Diagnostic</em> regroupe les outils techniques :</p>
+            <ul class="doc-ul">
+                <li><strong>Test d'envoi de mail</strong> — vérifie que la configuration mail fonctionne.</li>
+                <li><strong>Mode beta</strong> — un interrupteur qui débloque les outils de test (dont la purge).</li>
+                <li><strong>Purge des données</strong> — efface toutes les données métier pour repartir propre.</li>
+            </ul>
+            <div class="doc-warn">
+                <strong>La purge est irréversible</strong> et disponible <strong>uniquement en mode beta</strong>. Elle supprime tout (saisons, équipes, licenciés, dossiers, paiements, stock, dotations, commandes, fournisseurs) et ne conserve que les comptes admin et les référentiels FFF (catégories, rôles). Elle se déverrouille en tapant « SUPPRIMER ». Une fois la prod réelle lancée (hors beta), le bouton est désactivé.
+            </div>
+        </section>
+
+        {# ───────────────────────────── 12. FAQ ───────────────────────────── #}
+        <section id="faq" class="doc-section">
+            <h2 class="doc-h2">Questions fréquentes</h2>
+
+            <h3 class="doc-h3">Je me suis trompé en saisissant un paiement.</h3>
+            <p class="doc-p">Ouvrez « Gérer les paiements » sur la fiche du licencié, supprimez le paiement erroné (icône corbeille) et ré-ajoutez le bon.</p>
+
+            <h3 class="doc-h3">Dans le suivi des dotations, la taille ne s'affiche pas.</h3>
+            <p class="doc-p">L'article concerné n'a pas de « type de vêtement ». Ouvrez-le (lien « type à définir »), réglez son type sur Haut, Bas ou Chaussures, puis revenez au suivi : la taille du dossier remontera automatiquement.</p>
+
+            <h3 class="doc-h3">Je n'arrive pas à supprimer un article du stock.</h3>
+            <p class="doc-p">C'est normal s'il a un historique de mouvements : il est archivé plutôt que supprimé, pour conserver l'historique. Retrouvez-le via « Voir les archivés ».</p>
+
+            <h3 class="doc-h3">Comment repartir de zéro avant la vraie mise en prod ?</h3>
+            <p class="doc-p">En mode beta uniquement, utilisez la purge (menu Diagnostic). Elle vide toutes les données de test en conservant les comptes et les référentiels FFF.</p>
+        </section>
+
+    </article>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function docNav() {
+    return {
+        active: 'vue-ensemble',
+        init() {
+            const sections = this.$el.querySelectorAll('.doc-section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        this.active = entry.target.id;
+                    }
+                });
+            }, { rootMargin: '-25% 0px -65% 0px', threshold: 0 });
+            sections.forEach((section) => observer.observe(section));
+        },
+    };
+}
+</script>
+{% endblock %}

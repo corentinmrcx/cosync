@@ -38,6 +38,7 @@ final class InscriptionFormService
         $dossier->setAutorisationAccident($data->autorisationAccident);
         $dossier->setVolontaireTransport($data->volontaireTransport);
         $dossier->setPaymentIntentions($data->paymentIntentions);
+        $dossier->setDotationChoix($data->dotationChoix);
         $dossier->setIsSigned(true);
         $dossier->setSignatureDate(new \DateTimeImmutable());
         $dossier->setFormCompletedAt(new \DateTimeImmutable());
