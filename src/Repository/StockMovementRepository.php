@@ -2,7 +2,6 @@
 
 namespace App\Repository;
 
-use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
 use App\Enum\StockMovementType;
@@ -46,6 +45,37 @@ class StockMovementRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
 
         return $entrees - $sorties;
+    }
+
+    /**
+     * Stock net par taille pour un article : { taille|'' => quantité }.
+     * Clé '' = mouvements sans taille (épicerie / objet sans taille).
+     *
+     * @return array<string, int>
+     */
+    public function getStockGroupedByTaille(StockItem $item): array
+    {
+        $rows = $this->createQueryBuilder('m')
+            ->select('m.taille AS taille')
+            ->addSelect('SUM(CASE WHEN m.type = :entree THEN m.quantite ELSE -m.quantite END) AS net')
+            ->where('m.item = :item')
+            ->setParameter('item', $item)
+            ->setParameter('entree', StockMovementType::ENTREE)
+            ->groupBy('m.taille')
+            ->getQuery()
+            ->getResult();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[$row['taille'] ?? ''] = (int) $row['net'];
+        }
+
+        return $out;
+    }
+
+    public function getCurrentStockByTaille(StockItem $item, ?string $taille): int
+    {
+        return $this->getStockGroupedByTaille($item)[$taille ?? ''] ?? 0;
     }
 
     public function findBySumupTransactionId(string $txId): ?StockMovement
@@ -94,12 +124,10 @@ class StockMovementRepository extends ServiceEntityRepository
      * @param array{item_id?: int, type?: string, source?: string, date_from?: string, date_to?: string} $filters
      * @return array{movements: StockMovement[], total: int}
      */
-    public function findWithFilters(Season $season, array $filters, int $page, int $perPage): array
+    public function findWithFilters(array $filters, int $page, int $perPage): array
     {
         $qb = $this->createQueryBuilder('m')
             ->join('m.item', 'i')
-            ->where('i.season = :season')
-            ->setParameter('season', $season)
             ->orderBy('m.createdAt', 'DESC');
 
         if (!empty($filters['item_id'])) {

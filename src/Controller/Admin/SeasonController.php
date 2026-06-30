@@ -53,10 +53,6 @@ class SeasonController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $startYear = (int) $form->get('startYear')->getData();
             $season->setLabel($startYear . '-' . ($startYear + 1));
-            $season->setBaseCosts([
-                'jeunes'  => $form->get('coutJeunes')->getData(),
-                'seniors' => $form->get('coutSeniors')->getData(),
-            ]);
 
             try {
                 $seasonService->create($season);

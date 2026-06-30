@@ -184,14 +184,6 @@
     margin: 0;
 }
 
-.dotations-back {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-    text-decoration: none;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
 .dotations-empty {
     background: var(--color-bg-page);
     border: 1px solid var(--color-border);
@@ -548,6 +540,35 @@
 .stock-mouvements-item-couleur { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-left: 0.25rem; }
 .stock-mouvements-licencie { font-size: var(--font-size-xs); color: var(--color-text-muted); display: block; }
 
+.stock-mouvements-taille {
+    display: inline-block;
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.stock-mouvements-action { text-align: right; white-space: nowrap; }
+
+.stock-mouvements-delete {
+    padding: 0.25rem 0.5rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-danger);
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.stock-mouvements-delete:hover { background: var(--color-danger-bg); border-color: var(--color-danger); }
+
+.stock-mouvements-locked { color: var(--color-text-disabled); }
+
 .stock-mouvements-quantite { font-weight: 700; }
 .stock-mouvements-quantite-entree { color: var(--color-success); }
 .stock-mouvements-quantite-sortie { color: var(--color-danger); }
@@ -630,12 +651,6 @@
     font-weight: 800;
     color: var(--color-text-base);
     margin: 0;
-}
-
-.stock-categories-back {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-    text-decoration: none;
 }
 
 .stock-categories-layout {

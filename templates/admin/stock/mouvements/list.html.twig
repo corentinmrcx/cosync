@@ -62,11 +62,13 @@
                     <tr>
                         <th>Date</th>
                         <th>Article</th>
+                        <th>Taille</th>
                         <th>Type</th>
                         <th>Source</th>
                         <th>Quantité</th>
                         <th>Note</th>
                         <th>Par</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -76,6 +78,9 @@
                             <td>
                                 <span class="stock-mouvements-item-nom">{{ m.item.nom }}</span>
                                 {% if m.item.couleur %}<span class="stock-mouvements-item-couleur">{{ m.item.couleur }}</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if m.taille %}<span class="stock-mouvements-taille">{{ m.taille }}</span>{% else %}—{% endif %}
                             </td>
                             <td>
                                 <span class="stock-badge-type stock-badge-type-{{ m.type.value }}">
@@ -95,6 +100,17 @@
                             </td>
                             <td class="stock-mouvements-note">{{ m.note ?? '—' }}</td>
                             <td class="stock-mouvements-by">{{ m.createdBy ? m.createdBy.email : '—' }}</td>
+                            <td class="stock-mouvements-action">
+                                {% if m.source.value == 'manuel' %}
+                                    <form method="post" action="{{ path('admin_stock_mouvements_delete', {id: m.id}) }}"
+                                          onsubmit="return confirm('Supprimer ce mouvement ? Le stock sera recalculé.')">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_movement_' ~ m.id) }}">
+                                        <button type="submit" class="stock-mouvements-delete" title="Supprimer ce mouvement">Supprimer</button>
+                                    </form>
+                                {% else %}
+                                    <span class="stock-mouvements-locked" title="Corrigez depuis l'écran dotation ou commande">—</span>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

@@ -1,4 +1,4 @@
-export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '' }) {
+export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', dotationGroupes = [] }) {
     return {
         step: 1,
         isJeune,
@@ -12,6 +12,10 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '' }
         tailleHaut: '',
         tailleBas: '',
         pointure: '',
+
+        // Étape 2 — choix de dotation (groupes « 1 parmi N » configurés par l'admin)
+        dotationGroupes,
+        dotationChoix: {},
 
         // Étape 3 — autorisations
         autorisationPhoto: null,
@@ -117,7 +121,8 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '' }
                 case 1:
                     return true;
                 case 2:
-                    return this.tailleHaut !== '' && this.tailleBas !== '' && this.pointure !== '';
+                    if (this.tailleHaut === '' || this.tailleBas === '' || this.pointure === '') return false;
+                    return this.dotationGroupes.every(g => this.dotationChoix[g] !== undefined && this.dotationChoix[g] !== '');
                 case 3:
                     if (this.autorisationPhoto === null) return false;
                     if (this.isJeune) {

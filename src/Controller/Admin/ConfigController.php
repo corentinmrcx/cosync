@@ -34,23 +34,16 @@ class ConfigController extends AbstractController
             ]);
         }
 
-        $costs = $season->getBaseCosts();
         $startYear = (int) explode('-', $season->getLabel())[0];
 
         $form = $this->createForm(SeasonType::class, $season, [
-            'start_year'   => $startYear,
-            'cout_jeunes'  => $costs['jeunes'] ?? 85,
-            'cout_seniors' => $costs['seniors'] ?? 120,
+            'start_year' => $startYear,
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $startYear = (int) $form->get('startYear')->getData();
             $season->setLabel($startYear . '-' . ($startYear + 1));
-            $season->setBaseCosts([
-                'jeunes'  => $form->get('coutJeunes')->getData(),
-                'seniors' => $form->get('coutSeniors')->getData(),
-            ]);
 
             $seasonService->update($season);
 
@@ -87,6 +80,7 @@ class ConfigController extends AbstractController
             $team = new Team();
             $team->setName(trim($data->name));
             $team->setSeason($season);
+            $team->setCotisation($data->cotisation);
             foreach ($data->categories as $category) {
                 $team->addCategory($category);
             }
@@ -111,6 +105,7 @@ class ConfigController extends AbstractController
         $teamData    = $request->request->all('team');
         $name        = trim($teamData['name'] ?? '');
         $categoryIds = $teamData['categories'] ?? [];
+        $cotisation  = trim((string) ($teamData['cotisation'] ?? ''));
 
         if ($name === '') {
             $this->addFlash('error', 'Le nom ne peut pas être vide.');
@@ -118,6 +113,7 @@ class ConfigController extends AbstractController
         }
 
         $team->setName($name);
+        $team->setCotisation($cotisation === '' ? null : (int) $cotisation);
 
         $team->getCategories()->clear();
         foreach ($categoryIds as $catId) {

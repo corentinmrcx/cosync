@@ -10,6 +10,8 @@ final class TeamSetupData
 {
     public string $name = '';
 
+    public ?int $cotisation = null;
+
     /** @var Collection<int, Category> */
     public Collection $categories;
 

@@ -31,7 +31,7 @@
         {# — Paramètres saison — #}
         {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
 
-            <h1 class="season-form-header">Saison {{ season.label }}</h1>
+            <h1 class="season-form-header">Paramètres de la saison</h1>
             <hr class="season-form-divider">
 
             <div class="season-form-field" x-data="{ year: {{ form.startYear.vars.value }} }">
@@ -41,25 +41,23 @@
             </div>
 
             <div class="season-form-field">
-                {{ form_label(form.coutJeunes) }}
-                {{ form_widget(form.coutJeunes, { attr: { placeholder: '85' } }) }}
-            </div>
-
-            <div class="season-form-field">
-                {{ form_label(form.coutSeniors) }}
-                {{ form_widget(form.coutSeniors, { attr: { placeholder: '120' } }) }}
+                {{ form_label(form.cotisationDefaut) }}
+                {{ form_widget(form.cotisationDefaut) }}
+                {{ form_help(form.cotisationDefaut) }}
+                {{ form_errors(form.cotisationDefaut) }}
             </div>
 
             <button type="submit" class="season-form-submit">Enregistrer</button>
             <hr class="season-form-divider">
-            <a href="{{ path('admin_seasons_reglement', {id: season.id}) }}" class="season-form-reglement-link">
-                Éditer le règlement intérieur →
+            <a href="{{ path('admin_seasons_reglement', {id: season.id}) }}" class="season-form-reglement-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Éditer le règlement intérieur
             </a>
 
         {{ form_end(form) }}
 
         {# — Équipes — #}
-        <div class="season-form-card config-teams-card" x-data="{ editingTeam: null }">
+        <div class="season-form-card config-teams-card" x-data="{ editingTeam: null, addingTeam: {{ newTeamForm.vars.submitted ? 'true' : 'false' }} }">
 
             <h2 class="season-form-header" style="font-size:var(--font-size-lg)">Équipes de la saison</h2>
             <p class="config-teams-intro">Associez des catégories FFF à chaque équipe pour filtrer le tableau de bord et activer l'assignation automatique à l'import.</p>
@@ -76,6 +74,9 @@
                             <div class="config-teams-row" x-show="editingTeam !== {{ team.id }}">
                                 <div class="config-teams-info">
                                     <span class="config-teams-name">{{ team.name }}</span>
+                                    <span class="config-teams-cotisation">
+                                        {% if team.cotisation is not null %}{{ team.cotisation }} €{% else %}Cotisation par défaut{% endif %}
+                                    </span>
                                 </div>
                                 <div class="config-teams-btns">
                                     <button type="button" class="config-teams-btn-edit" @click="editingTeam = {{ team.id }}">Modifier</button>
@@ -95,6 +96,10 @@
                                 <div class="season-form-field" style="margin:0">
                                     <label class="season-form-label" style="font-size:var(--font-size-xs)">Nom</label>
                                     <input type="text" name="team[name]" value="{{ team.name }}" class="season-form-input" required>
+                                </div>
+                                <div class="season-form-field" style="margin:0">
+                                    <label class="season-form-label" style="font-size:var(--font-size-xs)">Cotisation (€)</label>
+                                    <input type="number" min="0" step="1" name="team[cotisation]" value="{{ team.cotisation }}" class="season-form-input" placeholder="Cotisation par défaut">
                                 </div>
                                 <div class="season-form-field" style="margin:0">
                                     <label class="season-form-label" style="font-size:var(--font-size-xs)">Catégories FFF</label>
@@ -118,29 +123,45 @@
 
             <hr class="season-form-divider">
 
-            <p class="season-form-header" style="font-size:var(--font-size-sm);font-weight:700;color:var(--color-text-body)">Ajouter une équipe</p>
+            <button type="button" class="config-teams-add-toggle" x-show="!addingTeam" @click="addingTeam = true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Ajouter une équipe
+            </button>
 
-            {{ form_start(newTeamForm, {attr: {class: 'config-teams-add-form'}}) }}
-                <div class="season-form-field">
-                    {{ form_label(newTeamForm.name) }}
-                    {{ form_widget(newTeamForm.name) }}
-                    {{ form_errors(newTeamForm.name) }}
-                </div>
-                <div class="season-form-field">
-                    {{ form_label(newTeamForm.categories) }}
-                    {# Widget Symfony rendu caché — les coches sont gérées par le composant Alpine ci-dessous #}
-                    <div style="display:none">{{ form_widget(newTeamForm.categories) }}</div>
-                    {% include 'components/multi-select.html.twig' with {
-                        ms_name: 'team_setup[categories][]',
-                        ms_options: ms_opts,
-                        ms_selected: [],
-                        ms_placeholder: '— Aucune (ex : Loisirs) —'
-                    } %}
-                    <p class="config-teams-hint" style="margin-top:0.375rem">Assignation automatique à l'import. Laissez vide si non applicable.</p>
-                    {{ form_errors(newTeamForm.categories) }}
-                </div>
-                <button type="submit" class="season-form-submit">Ajouter l'équipe</button>
-            {{ form_end(newTeamForm) }}
+            <div x-show="addingTeam" x-cloak>
+                <p class="season-form-header" style="font-size:var(--font-size-sm);font-weight:700;color:var(--color-text-body)">Ajouter une équipe</p>
+
+                {{ form_start(newTeamForm, {attr: {class: 'config-teams-add-form'}}) }}
+                    <div class="season-form-field">
+                        {{ form_label(newTeamForm.name) }}
+                        {{ form_widget(newTeamForm.name) }}
+                        {{ form_errors(newTeamForm.name) }}
+                    </div>
+                    <div class="season-form-field">
+                        {{ form_label(newTeamForm.cotisation) }}
+                        {{ form_widget(newTeamForm.cotisation) }}
+                        {{ form_help(newTeamForm.cotisation) }}
+                        {{ form_errors(newTeamForm.cotisation) }}
+                    </div>
+                    <div class="season-form-field">
+                        {{ form_label(newTeamForm.categories) }}
+                        {# Widget Symfony rendu caché — les coches sont gérées par le composant Alpine ci-dessous #}
+                        <div style="display:none">{{ form_widget(newTeamForm.categories) }}</div>
+                        {% include 'components/multi-select.html.twig' with {
+                            ms_name: 'team_setup[categories][]',
+                            ms_options: ms_opts,
+                            ms_selected: [],
+                            ms_placeholder: '— Aucune (ex : Loisirs) —'
+                        } %}
+                        <p class="config-teams-hint" style="margin-top:0.375rem">Assignation automatique à l'import. Laissez vide si non applicable.</p>
+                        {{ form_errors(newTeamForm.categories) }}
+                    </div>
+                    <div class="config-teams-edit-actions">
+                        <button type="submit" class="season-form-submit">Ajouter l'équipe</button>
+                        <button type="button" class="config-teams-btn-cancel" @click="addingTeam = false">Annuler</button>
+                    </div>
+                {{ form_end(newTeamForm) }}
+            </div>
 
         </div>
 

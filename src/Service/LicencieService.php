@@ -14,8 +14,10 @@ use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
+use App\Service\CotisationResolver;
 use App\Service\Import\DataSanitizer;
 use App\Service\Mail\MailerService;
+use App\Service\Stock\DotationBesoinService;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class LicencieService
@@ -27,6 +29,8 @@ final class LicencieService
         private readonly TeamRepository $teamRepo,
         private readonly DataSanitizer $sanitizer,
         private readonly MailerService $mailerService,
+        private readonly DotationBesoinService $dotationBesoinService,
+        private readonly CotisationResolver $cotisationResolver,
     ) {}
 
     /**
@@ -65,6 +69,9 @@ final class LicencieService
         $licencie->setSeason($season);
         $licencie->setEmail($email);
         $licencie->setTelephone($phone);
+        $licencie->setVoieRue($data->voieRue !== null && trim($data->voieRue) !== '' ? trim($data->voieRue) : null);
+        $licencie->setCodePostal($data->codePostal !== null && trim($data->codePostal) !== '' ? trim($data->codePostal) : null);
+        $licencie->setVille($data->ville !== null && trim($data->ville) !== '' ? trim($data->ville) : null);
         $licencie->setNumLicence($numLicence);
         $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
         $licencie->setCreatedManually(true);
@@ -115,6 +122,9 @@ final class LicencieService
         $licencie->setCategory($data->category);
         $licencie->setEmail($email);
         $licencie->setTelephone($phone);
+        $licencie->setVoieRue($data->voieRue !== null && trim($data->voieRue) !== '' ? trim($data->voieRue) : null);
+        $licencie->setCodePostal($data->codePostal !== null && trim($data->codePostal) !== '' ? trim($data->codePostal) : null);
+        $licencie->setVille($data->ville !== null && trim($data->ville) !== '' ? trim($data->ville) : null);
         $licencie->setNumLicence($numLicence);
 
         $this->em->flush();
@@ -158,13 +168,22 @@ final class LicencieService
         $this->em->persist($transaction);
         $this->em->flush();
 
-        $baseCosts = $season->getBaseCosts();
-        $expected  = (float) ($licencie->isSeniorTariff() ? ($baseCosts['seniors'] ?? 0) : ($baseCosts['jeunes'] ?? 0));
+        $expected  = (float) $this->cotisationResolver->resolve($licencie);
         $totalPaid = $this->transactionRepo->sumByLicencieAndSeason($licencie, $season);
 
         if ($totalPaid >= $expected) {
             $this->setValidated($licencie);
         }
+    }
+
+    /**
+     * Supprime un paiement saisi par erreur. Le total payé est recalculé à l'affichage ;
+     * le statut de la licence n'est pas modifié (une licence validée le reste).
+     */
+    public function deletePayment(Transaction $transaction): void
+    {
+        $this->em->remove($transaction);
+        $this->em->flush();
     }
 
     public function validateManually(Licencie $licencie): void
@@ -178,6 +197,7 @@ final class LicencieService
         if ($dossier !== null && $dossier->getStatus() !== LicenceStatus::VALIDATED) {
             $dossier->setStatus(LicenceStatus::VALIDATED);
             $this->em->flush();
+            $this->dotationBesoinService->recomputeForLicencie($licencie);
             if ($licencie->getEmail() !== null) {
                 $this->mailerService->sendValidation($licencie);
             }
