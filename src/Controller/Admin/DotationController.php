@@ -257,6 +257,7 @@ class DotationController extends AbstractController
             'season'         => $season,
             'groupes'        => $groupes,
             'taillesConnues' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'],
+            'pointures'      => array_map('strval', range(28, 48)),
         ]);
     }
 
