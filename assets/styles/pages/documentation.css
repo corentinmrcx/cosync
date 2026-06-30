@@ -1,0 +1,196 @@
+/* ============================================================
+   Page Documentation — sommaire collant + contenu guide
+   ============================================================ */
+
+.doc-page {
+    display: flex;
+    align-items: flex-start;
+    gap: 2.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    width: 100%;
+}
+
+/* — Sommaire collant — */
+.doc-toc {
+    position: sticky;
+    top: 1rem;
+    flex: 0 0 220px;
+    align-self: flex-start;
+}
+
+.doc-toc-title {
+    margin: 0 0 0.5rem;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+}
+
+.doc-toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    border-left: 2px solid var(--color-border);
+}
+
+.doc-toc-link {
+    display: block;
+    padding: 0.35rem 0.75rem;
+    margin-left: -2px;
+    border-left: 2px solid transparent;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    text-decoration: none;
+    transition: color 0.12s, border-color 0.12s;
+}
+
+.doc-toc-link:hover { color: var(--color-primary); }
+
+.doc-toc-link-strong { font-weight: 700; }
+
+.doc-toc-link-active {
+    color: var(--color-primary);
+    border-left-color: var(--color-primary);
+    font-weight: 700;
+}
+
+/* — Contenu — */
+.doc-content {
+    flex: 1;
+    min-width: 0;
+    max-width: 760px;
+}
+
+.doc-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.doc-title {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+}
+
+.doc-subtitle {
+    margin: 0.4rem 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.doc-section {
+    scroll-margin-top: 1rem;
+    padding: 1.75rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.doc-section:last-child { border-bottom: none; }
+
+.doc-h2 {
+    margin: 0 0 0.75rem;
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+}
+
+.doc-h3 {
+    margin: 1.5rem 0 0.5rem;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.doc-p {
+    margin: 0 0 0.75rem;
+    font-size: var(--font-size-sm);
+    line-height: 1.65;
+    color: var(--color-text-body);
+}
+
+.doc-ul,
+.doc-ol {
+    margin: 0 0 0.75rem;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.doc-ul li,
+.doc-ol li {
+    font-size: var(--font-size-sm);
+    line-height: 1.55;
+    color: var(--color-text-body);
+}
+
+/* — Encarts conseils / avertissements — */
+.doc-tip,
+.doc-warn {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    border-left: 3px solid;
+    font-size: var(--font-size-sm);
+    line-height: 1.55;
+}
+
+.doc-tip {
+    background: var(--color-info-bg);
+    border-left-color: var(--color-info);
+    color: var(--color-text-body);
+}
+
+.doc-warn {
+    background: var(--color-warning-bg);
+    border-left-color: var(--color-warning);
+    color: var(--color-text-body);
+}
+
+/* — Formule mise en avant — */
+.doc-formula {
+    margin: 0.5rem 0 0.75rem;
+    padding: 0.6rem 0.875rem;
+    background: var(--color-bg-muted);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-base);
+}
+
+/* — Badges de statut réutilisés dans le texte — */
+.doc-badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-xl);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.doc-badge-sent      { background: var(--color-status-sent-bg);      color: var(--color-status-sent); }
+.doc-badge-completed { background: var(--color-status-completed-bg); color: var(--color-status-completed); }
+.doc-badge-validated { background: var(--color-status-validated-bg); color: var(--color-status-validated); }
+
+/* — Responsive : sommaire au-dessus du contenu — */
+@media (max-width: 900px) {
+    .doc-page {
+        flex-direction: column;
+        gap: 1.25rem;
+        padding: 1rem;
+    }
+
+    .doc-toc {
+        position: static;
+        flex: none;
+        width: 100%;
+    }
+
+    .doc-content { max-width: none; }
+}
