@@ -30,11 +30,17 @@ class LicencieController extends AbstractController
         LicencieRepository $licencieRepo,
         SeasonContext $seasonContext,
         TeamRepository $teamRepo,
+        \App\Service\ListFilterMemory $filterMemory,
     ): Response {
         $season = $seasonContext->getCurrentSeason();
 
         if ($season === null) {
             return $this->redirectToRoute('admin_seasons_new');
+        }
+
+        $restored = $filterMemory->restoreOrRemember('licencies', $request, ['team', 'status', 'search']);
+        if ($restored !== null) {
+            return $this->redirectToRoute('admin_licencies_list', $restored);
         }
 
         $currentTeam   = null;
