@@ -70,9 +70,9 @@ class StockItemType extends AbstractType
                 'attr'     => ['placeholder' => 'ex: NK-2025-001'],
             ])
             ->add('lienAchat', TextType::class, [
-                'label'    => 'Lien d\'achat',
+                'label'    => 'Lien de l\'article',
                 'required' => false,
-                'attr'     => ['placeholder' => 'https://…'],
+                'attr'     => ['placeholder' => 'https://… (fiche catalogue du fournisseur)'],
             ]);
     }
 

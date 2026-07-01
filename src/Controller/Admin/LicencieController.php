@@ -30,11 +30,17 @@ class LicencieController extends AbstractController
         LicencieRepository $licencieRepo,
         SeasonContext $seasonContext,
         TeamRepository $teamRepo,
+        \App\Service\ListFilterMemory $filterMemory,
     ): Response {
         $season = $seasonContext->getCurrentSeason();
 
         if ($season === null) {
             return $this->redirectToRoute('admin_seasons_new');
+        }
+
+        $restored = $filterMemory->restoreOrRemember('licencies', $request, ['team', 'status', 'search']);
+        if ($restored !== null) {
+            return $this->redirectToRoute('admin_licencies_list', $restored);
         }
 
         $currentTeam   = null;
@@ -182,6 +188,8 @@ class LicencieController extends AbstractController
         \App\Repository\StockMovementRepository $stockMovementRepo,
         SeasonContext $seasonContext,
         \App\Service\CotisationResolver $cotisationResolver,
+        \App\Service\Stock\DotationBesoinService $dotationBesoinService,
+        \App\Service\Form\AutorisationCompletionService $completionService,
     ): Response {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
@@ -236,7 +244,9 @@ class LicencieController extends AbstractController
             'montant'         => $montant,
             'paymentModes'    => PaymentMode::cases(),
             'dotations'       => $stockMovementRepo->findDotationsByLicencie($licencie),
+            'dotationStatut'  => $dotationBesoinService->statutFicheLicencie($licencie),
             'history'         => $history,
+            'autorisationsManquantes' => $completionService->hasMissing($licencie),
         ]);
     }
 
@@ -413,6 +423,44 @@ class LicencieController extends AbstractController
         try {
             $inscriptionLinkService->send($licencie);
             $this->addFlash('success', 'Lien d\'inscription envoyé à ' . $licencie->getEmail() . '.');
+        } catch (\Throwable) {
+            $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
+        }
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+    }
+
+    #[Route('/{uuid}/send-completion', name: 'send_completion', methods: ['POST'])]
+    public function sendCompletion(
+        string $uuid,
+        LicencieRepository $licencieRepo,
+        InscriptionLinkService $inscriptionLinkService,
+        \App\Service\Form\AutorisationCompletionService $completionService,
+        Request $request,
+    ): Response {
+        if (!$this->isCsrfTokenValid('send_completion_' . $uuid, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+
+        if ($licencie === null) {
+            throw $this->createNotFoundException('Licencié introuvable.');
+        }
+
+        if ($licencie->getEmail() === null) {
+            $this->addFlash('error', 'Ce licencié n\'a pas d\'adresse email renseignée.');
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+        }
+
+        if (!$completionService->hasMissing($licencie)) {
+            $this->addFlash('error', 'Aucune autorisation manquante pour ce licencié.');
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+        }
+
+        try {
+            $inscriptionLinkService->sendCompletion($licencie);
+            $this->addFlash('success', 'Lien de complétion envoyé à ' . $licencie->getEmail() . '.');
         } catch (\Throwable) {
             $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
         }

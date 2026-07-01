@@ -478,12 +478,64 @@
     color: var(--color-text-muted);
 }
 
-.stock-modal-tailles {
-    display: block;
-    margin-top: 0.2rem;
+.stock-modal-stocklist {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+
+.stock-modal-stocklist-label {
     font-size: var(--font-size-xs);
     font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.stock-modal-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.stock-modal-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.15rem 0.2rem 0.15rem 0.55rem;
+    background: var(--color-bg-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+}
+
+.stock-modal-chip-taille {
+    font-weight: 600;
     color: var(--color-text-body);
+}
+
+.stock-modal-chip-qty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.35rem;
+    background: var(--color-bg-page);
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.stock-modal-chip.is-empty {
+    background: var(--color-danger-bg);
+    border-color: var(--color-danger);
+}
+
+.stock-modal-chip.is-empty .stock-modal-chip-taille,
+.stock-modal-chip.is-empty .stock-modal-chip-qty {
+    color: var(--color-danger);
 }
 
 .stock-modal-dispo {

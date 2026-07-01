@@ -31,11 +31,6 @@
     {% if dirigeants is empty %}
         <div class="dirigeants-empty">
             <p>Aucun dirigeant trouvé.</p>
-            {% if search or activeFilterCount > 0 %}
-                <p><a href="{{ path('admin_dirigeants_list') }}">Réinitialiser la recherche</a></p>
-            {% else %}
-                <p>Ajoutez-les manuellement ou importez le fichier FootClubs — les dirigeants sont automatiquement détectés.</p>
-            {% endif %}
         </div>
     {% else %}
         <div class="dirigeants-table-wrap">

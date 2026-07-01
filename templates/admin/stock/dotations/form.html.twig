@@ -30,6 +30,14 @@
     </div>
 
     {# — Articles du modèle — #}
+    {% set vetements = articles|filter(a => a.typeVetement) %}
+    {% set autres = articles|filter(a => not a.typeVetement) %}
+    {% set fixes = modele.lignes|filter(l => l.groupeChoix is null) %}
+    {% set choixGroupes = {} %}
+    {% for l in modele.lignes|filter(l => l.groupeChoix is not null) %}
+        {% set choixGroupes = choixGroupes|merge({ (l.groupeChoix): (choixGroupes[l.groupeChoix]|default([]))|merge([l]) }) %}
+    {% endfor %}
+
     <div class="dot-card">
         <div class="dot-card-header">
             <h2 class="dot-card-title">Articles à recevoir</h2>
@@ -40,15 +48,13 @@
             <p class="dot-empty">Aucun article. Ajoutez ce que cette dotation doit contenir.</p>
         {% else %}
             <ul class="dot-list">
-                {% for ligne in modele.lignes %}
+                {% for ligne in fixes %}
                     <li class="dot-list-item">
                         <div class="dot-list-main">
                             <span class="dot-list-name">{{ ligne.stockItem.nom }}</span>
                             <span class="dot-list-meta">
                                 ×{{ ligne.quantite }}
                                 {% if ligne.stockItem.typeVetement %} · {{ ligne.stockItem.typeVetement.label }}{% endif %}
-                                {% if not ligne.obligatoire %} · optionnel{% endif %}
-                                {% if ligne.groupeChoix %} · choix « {{ ligne.groupeChoix }} »{% endif %}
                             </span>
                         </div>
                         <form method="post" action="{{ path('admin_stock_dotations_ligne_delete', {id: ligne.id}) }}" style="display:inline">
@@ -57,37 +63,87 @@
                         </form>
                     </li>
                 {% endfor %}
+
+                {% for nom, lignes in choixGroupes %}
+                    <li class="dot-list-item dot-list-item-choix">
+                        <div class="dot-list-main">
+                            <span class="dot-list-name">
+                                <span class="dot-choix-tag">Choix</span> {{ nom }}
+                            </span>
+                            <span class="dot-list-meta">
+                                Le licencié choisit : {{ lignes|map(l => l.stockItem.nom)|join(' / ') }}
+                                {% if lignes[0].quantite > 1 %} · ×{{ lignes[0].quantite }}{% endif %}
+                            </span>
+                        </div>
+                        <form method="post" action="{{ path('admin_stock_dotations_choix_delete', {id: modele.id}) }}" style="display:inline"
+                              onsubmit="return confirm('Retirer ce choix et ses {{ lignes|length }} options ?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_delete_' ~ modele.id) }}">
+                            <input type="hidden" name="nom" value="{{ nom }}">
+                            <button type="submit" class="dot-action-delete">Retirer</button>
+                        </form>
+                    </li>
+                {% endfor %}
             </ul>
         {% endif %}
 
-        <form method="post" action="{{ path('admin_stock_dotations_ligne_add', {id: modele.id}) }}" class="dot-affect-form">
-            <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_add_' ~ modele.id) }}">
-            {% set vetements = articles|filter(a => a.typeVetement) %}
-            {% set autres = articles|filter(a => not a.typeVetement) %}
-            <select name="stock_item_id" class="dot-input" required>
-                <option value="">— Article —</option>
-                {% if vetements is not empty %}
-                    <optgroup label="Vêtements (taille automatique)">
-                        {% for item in vetements %}
-                            <option value="{{ item.id }}">{{ item.nom }} — {{ item.typeVetement.label }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
-                        {% endfor %}
-                    </optgroup>
-                {% endif %}
-                {% if autres is not empty %}
-                    <optgroup label="Autres articles">
-                        {% for item in autres %}
-                            <option value="{{ item.id }}">{{ item.nom }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
-                        {% endfor %}
-                    </optgroup>
-                {% endif %}
-            </select>
-            <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" value="1" title="Quantité">
-            <label class="dot-check"><input type="checkbox" name="obligatoire" value="1" checked> Obligatoire</label>
-            <input type="text" name="groupe_choix" class="dot-input dot-input-grp" placeholder="Groupe de choix (option.)">
-            <button type="submit" class="dot-btn-primary">+ Ajouter</button>
-        </form>
+        {# — Ajout : article fixe OU choix — #}
+        <div class="dot-add" x-data="{ mode: 'fixe' }">
+            <div class="dot-add-tabs">
+                <button type="button" class="dot-add-tab" :class="{ 'is-active': mode === 'fixe' }" @click="mode = 'fixe'">Article fixe</button>
+                <button type="button" class="dot-add-tab" :class="{ 'is-active': mode === 'choix' }" @click="mode = 'choix'">Choix (le licencié choisit)</button>
+            </div>
+
+            {# Mode 1 : un article que tout le monde reçoit #}
+            <form x-show="mode === 'fixe'" method="post" action="{{ path('admin_stock_dotations_ligne_add', {id: modele.id}) }}" class="dot-affect-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_add_' ~ modele.id) }}">
+                <select name="stock_item_id" class="dot-input" required>
+                    <option value="">— Article —</option>
+                    {% if vetements is not empty %}
+                        <optgroup label="Vêtements (taille automatique)">
+                            {% for item in vetements %}
+                                <option value="{{ item.id }}">{{ item.nom }} — {{ item.typeVetement.label }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
+                            {% endfor %}
+                        </optgroup>
+                    {% endif %}
+                    {% if autres is not empty %}
+                        <optgroup label="Autres articles">
+                            {% for item in autres %}
+                                <option value="{{ item.id }}">{{ item.nom }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
+                            {% endfor %}
+                        </optgroup>
+                    {% endif %}
+                </select>
+                <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" value="1" title="Quantité">
+                <button type="submit" class="dot-btn-primary">+ Ajouter</button>
+            </form>
+
+            {# Mode 2 : plusieurs articles, le licencié en choisit un dans son formulaire #}
+            <form x-show="mode === 'choix'" x-cloak method="post" action="{{ path('admin_stock_dotations_ligne_choix_add', {id: modele.id}) }}" class="dot-choix-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_add_' ~ modele.id) }}">
+                <div class="dot-choix-row">
+                    <input type="text" name="nom" class="dot-input" placeholder="Nom du choix (ex : Veste)" required>
+                    <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" value="1" title="Quantité">
+                </div>
+                <p class="dot-hint">Cochez les articles proposés (au moins 2). Le licencié en choisira un seul lors de son inscription.</p>
+                <div class="dot-choix-options">
+                    {% for item in vetements %}
+                        <label class="dot-choix-option">
+                            <input type="checkbox" name="stock_item_ids[]" value="{{ item.id }}">
+                            <span>{{ item.nom }} — {{ item.typeVetement.label }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</span>
+                        </label>
+                    {% endfor %}
+                    {% for item in autres %}
+                        <label class="dot-choix-option">
+                            <input type="checkbox" name="stock_item_ids[]" value="{{ item.id }}">
+                            <span>{{ item.nom }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="dot-btn-primary">+ Ajouter le choix</button>
+            </form>
+        </div>
+
         <p class="dot-hint">La taille n'est pas à choisir ici : pour un vêtement, elle est déterminée automatiquement pour chaque joueur d'après sa fiche d'inscription.</p>
-        <p class="dot-hint">Astuce : pour proposer « 1 parmi N » au licencié (livraison à venir), donnez le même « groupe de choix » à plusieurs articles.</p>
     </div>
 
 </div>

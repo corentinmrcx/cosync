@@ -142,14 +142,79 @@ class DotationController extends AbstractController
 
         $ligne = (new DotationModeleLigne())
             ->setStockItem($item)
-            ->setQuantite(max(1, (int) $request->request->get('quantite', 1)))
-            ->setObligatoire($request->request->get('obligatoire') === '1')
-            ->setGroupeChoix(trim((string) $request->request->get('groupe_choix', '')) ?: null);
+            ->setQuantite(max(1, (int) $request->request->get('quantite', 1)));
 
         $modele->addLigne($ligne);
         $this->em->persist($ligne);
         $this->em->flush();
         $this->addFlash('success', sprintf('« %s » ajouté au modèle.', $item->getNom()));
+
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+    }
+
+    #[Route('/{id}/choix', name: 'ligne_choix_add', methods: ['POST'])]
+    public function choixAdd(DotationModele $modele, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('dotation_choix_add_' . $modele->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        $nom = trim((string) $request->request->get('nom', ''));
+        if ($nom === '') {
+            $this->addFlash('error', 'Donnez un nom au choix (ex : « Veste »).');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        $itemIds = array_unique(array_filter(array_map('intval', (array) $request->request->all('stock_item_ids'))));
+        if (count($itemIds) < 2) {
+            $this->addFlash('error', 'Un choix doit proposer au moins 2 articles.');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        $quantite = max(1, (int) $request->request->get('quantite', 1));
+        $ajoutes = 0;
+        foreach ($itemIds as $itemId) {
+            $item = $this->itemRepository->find($itemId);
+            if ($item === null) {
+                continue;
+            }
+            $ligne = (new DotationModeleLigne())
+                ->setStockItem($item)
+                ->setQuantite($quantite)
+                ->setGroupeChoix($nom);
+            $modele->addLigne($ligne);
+            $this->em->persist($ligne);
+            ++$ajoutes;
+        }
+
+        if ($ajoutes < 2) {
+            $this->addFlash('error', 'Articles introuvables : choix non créé.');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        $this->em->flush();
+        $this->addFlash('success', sprintf('Choix « %s » ajouté (%d options).', $nom, $ajoutes));
+
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+    }
+
+    #[Route('/{id}/choix/supprimer', name: 'choix_delete', methods: ['POST'])]
+    public function choixDelete(DotationModele $modele, Request $request): Response
+    {
+        $nom = trim((string) $request->request->get('nom', ''));
+        if (!$this->isCsrfTokenValid('dotation_choix_delete_' . $modele->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        foreach ($modele->getLignes() as $ligne) {
+            if ($ligne->getGroupeChoix() === $nom) {
+                $this->em->remove($ligne);
+            }
+        }
+        $this->em->flush();
+        $this->addFlash('success', sprintf('Choix « %s » retiré.', $nom));
 
         return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
     }
@@ -287,7 +352,7 @@ class DotationController extends AbstractController
             return $this->redirectToRoute('admin_stock_dotations_suivi');
         }
 
-        $this->besoinService->updateTaille($besoin, (string) $request->request->get('taille', ''));
+        $this->besoinService->updateTaille($besoin, (string) $request->request->get('taille', ''), $this->getUser());
         $this->addFlash('success', sprintf('Taille mise à jour pour %s.', $besoin->getNomPrenom()));
 
         return $this->redirectToRoute('admin_stock_dotations_suivi');

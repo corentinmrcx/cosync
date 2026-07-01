@@ -81,6 +81,30 @@ final class MailerService
         $this->mailer->send($email);
     }
 
+    public function sendCompletionLink(Licencie $licencie): void
+    {
+        $url = $this->urlGenerator->generate(
+            'public_inscription_completer',
+            ['uuid' => $licencie->getUuid()],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+
+        $realEmail = $licencie->getEmail();
+        $subject   = 'Une précision à apporter à votre dossier — Foyer de Soudron, saison ' . $licencie->getSeason()->getLabel();
+
+        $email = (new TemplatedEmail())
+            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
+            ->to($this->resolveRecipient(new Address($realEmail, $licencie->getNomPrenom())))
+            ->subject($this->resolveSubject($subject, $realEmail))
+            ->htmlTemplate('email/completion_link.html.twig')
+            ->context([
+                'licencie' => $licencie,
+                'url'      => $url,
+            ]);
+
+        $this->mailer->send($email);
+    }
+
     public function sendDirigeantLink(Dirigeant $dirigeant): void
     {
         $url = $this->urlGenerator->generate(

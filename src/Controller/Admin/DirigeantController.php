@@ -31,10 +31,16 @@ class DirigeantController extends AbstractController
         DirigeantRoleRepository $roleRepo,
         TeamRepository $teamRepo,
         SeasonContext $seasonContext,
+        \App\Service\ListFilterMemory $filterMemory,
     ): Response {
         $season = $seasonContext->getCurrentSeason();
         if ($season === null) {
             return $this->redirectToRoute('admin_seasons_new');
+        }
+
+        $restored = $filterMemory->restoreOrRemember('dirigeants', $request, ['team', 'role', 'search']);
+        if ($restored !== null) {
+            return $this->redirectToRoute('admin_dirigeants_list', $restored);
         }
 
         $search      = trim((string) $request->query->get('search', ''));
