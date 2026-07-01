@@ -16,6 +16,32 @@
     justify-content: center;
 }
 
+/* Sur ordinateur : recherche + filtres + actions alignés sur une seule ligne.
+   En dessous (mobile/tablette), on garde l'empilement vertical par défaut. */
+@media (min-width: 768px) {
+    .list-tb-filters {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .list-tb-form-search {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .list-tb-form-search .list-tb-search-row {
+        justify-content: flex-start;
+    }
+
+    .list-tb-form-search .list-tb-search-wrap {
+        max-width: none;
+    }
+
+    .list-tb-form-toolbar {
+        flex: 0 0 auto;
+    }
+}
+
 .list-tb-search-wrap {
     position: relative;
     width: 100%;

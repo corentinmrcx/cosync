@@ -1,0 +1,38 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Merci – Foyer de Soudron{% endblock %}
+
+{% block body %}
+<div class="inscription-page">
+
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+        </div>
+    </header>
+
+    <main class="inscription-main">
+        <div class="inscription-container">
+
+            <div class="inscription-card">
+                <div class="inscription-confirm-icon">✅</div>
+                {% if rienAFaire %}
+                    <h1 class="inscription-confirm-title">Rien à compléter</h1>
+                    <p class="inscription-confirm-text">Toutes vos autorisations sont déjà enregistrées. Il n'y a rien de plus à faire.</p>
+                {% else %}
+                    <h1 class="inscription-confirm-title">Merci !</h1>
+                    <p class="inscription-confirm-text">Vos autorisations ont bien été enregistrées. Votre dossier est maintenant complet.</p>
+                {% endif %}
+
+                <p class="inscription-confirm-note">
+                    Pour toute question, contactez le club directement.
+                </p>
+            </div>
+
+        </div>
+    </main>
+
+    {% include 'components/footer.html.twig' %}
+
+</div>
+{% endblock %}

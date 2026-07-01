@@ -14,7 +14,7 @@
     <div class="dot-header">
         <div>
             <h1 class="dot-title">Dotations</h1>
-            <p class="dot-subtitle">Définissez ce que chaque personne doit recevoir, puis affectez les modèles.</p>
+            <p class="dot-subtitle">1. Composez un kit. 2. Dites quelle équipe le reçoit. Le suivi se remplit tout seul.</p>
         </div>
         <a href="{{ path('admin_stock_dotations_suivi') }}" class="dot-btn-primary">Suivi des dotations →</a>
     </div>
@@ -22,12 +22,13 @@
     {# — Modèles — #}
     <div class="dot-card">
         <div class="dot-card-header">
-            <h2 class="dot-card-title">Modèles</h2>
+            <h2 class="dot-card-title">Kits</h2>
             <span class="dot-card-count">{{ modeles|length }}</span>
         </div>
+        <p class="dot-hint">Un kit = la liste des articles d'une dotation (ex. « Kit sénior » = 1 maillot + 1 short). Réutilisable sur plusieurs équipes.</p>
 
         {% if modeles is empty %}
-            <p class="dot-empty">Aucun modèle pour cette saison.</p>
+            <p class="dot-empty">Aucun kit pour cette saison.</p>
         {% else %}
             <ul class="dot-list">
                 {% for modele in modeles %}
@@ -39,7 +40,7 @@
                         </div>
                         <div class="dot-list-actions">
                             <a href="{{ path('admin_stock_dotations_edit', {id: modele.id}) }}" class="dot-action-edit">Modifier</a>
-                            <form method="post" action="{{ path('admin_stock_dotations_delete', {id: modele.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce modèle et ses affectations ?')">
+                            <form method="post" action="{{ path('admin_stock_dotations_delete', {id: modele.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce kit et ses attributions ?')">
                                 <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_delete_' ~ modele.id) }}">
                                 <button type="submit" class="dot-action-delete">Supprimer</button>
                             </form>
@@ -51,21 +52,21 @@
 
         <form method="post" action="{{ path('admin_stock_dotations_new') }}" class="dot-inline-form">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_new') }}">
-            <input type="text" name="nom" class="dot-input" placeholder="Nom du modèle (ex : Dotation sénior)" required>
-            <button type="submit" class="dot-btn-primary">+ Nouveau modèle</button>
+            <input type="text" name="nom" class="dot-input" placeholder="Nom du kit (ex : Kit sénior)" required>
+            <button type="submit" class="dot-btn-primary">+ Nouveau kit</button>
         </form>
     </div>
 
     {# — Affectations — #}
     <div class="dot-card">
         <div class="dot-card-header">
-            <h2 class="dot-card-title">Affectations</h2>
+            <h2 class="dot-card-title">Qui reçoit quel kit</h2>
             <span class="dot-card-count">{{ affectations|length }}</span>
         </div>
-        <p class="dot-hint">Priorité de résolution : individu &gt; équipe &gt; catégorie &gt; défaut.</p>
+        <p class="dot-hint">Attribuez un kit à une équipe, une catégorie, une personne, ou par défaut. En cas de chevauchement, le plus précis l'emporte : personne &gt; équipe &gt; catégorie &gt; défaut.</p>
 
         {% if affectations is empty %}
-            <p class="dot-empty">Aucune affectation. Sans affectation, aucune personne ne reçoit de dotation.</p>
+            <p class="dot-empty">Aucune attribution. Tant qu'un kit n'est attribué à personne, le suivi reste vide.</p>
         {% else %}
             <ul class="dot-list">
                 {% for affectation in affectations %}
@@ -89,7 +90,7 @@
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_new') }}">
 
             <select name="modele_id" class="dot-input" required>
-                <option value="">— Modèle —</option>
+                <option value="">— Kit —</option>
                 {% for modele in modeles %}
                     <option value="{{ modele.id }}">{{ modele.nom }}</option>
                 {% endfor %}

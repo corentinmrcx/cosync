@@ -1,4 +1,5 @@
 {% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
 
 {% block title %}CoSync — Stock{% endblock %}
 
@@ -16,40 +17,49 @@
         </div>
         <div class="stock-home-actions">
             <a href="{{ path('admin_stock_gestion') }}" class="stock-home-btn-primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                {{ ui.icon('list') }}
                 Gérer le stock
             </a>
         </div>
     </div>
 
     {# — Tuiles de synthèse — #}
-    <div class="stock-home-tiles">
-        <div class="stock-home-tile">
-            <span class="stock-home-tile-value">{{ data.nbArticles }}</span>
-            <span class="stock-home-tile-label">Article{{ data.nbArticles > 1 ? 's' : '' }} au catalogue</span>
+    <div class="stat-grid">
+        <div class="stat-card stat-card-primary">
+            <span class="stat-card-icon">{{ ui.icon('box', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ data.nbArticles }}</span>
+                <span class="stat-card-label">Article{{ data.nbArticles > 1 ? 's' : '' }} au catalogue</span>
+            </span>
         </div>
-        <div class="stock-home-tile {{ data.nbAlertes > 0 ? 'stock-home-tile-warning' }}">
-            <span class="stock-home-tile-value">{{ data.nbAlertes }}</span>
-            <span class="stock-home-tile-label">Stock bas</span>
+        <div class="stat-card {{ data.nbAlertes > 0 ? 'stat-card-warning' }}">
+            <span class="stat-card-icon">{{ ui.icon('alert-triangle', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ data.nbAlertes }}</span>
+                <span class="stat-card-label">Stock bas</span>
+            </span>
         </div>
-        <div class="stock-home-tile {{ data.nbRuptures > 0 ? 'stock-home-tile-danger' }}">
-            <span class="stock-home-tile-value">{{ data.nbRuptures }}</span>
-            <span class="stock-home-tile-label">En rupture</span>
+        <div class="stat-card {{ data.nbRuptures > 0 ? 'stat-card-danger' }}">
+            <span class="stat-card-icon">{{ ui.icon('package', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ data.nbRuptures }}</span>
+                <span class="stat-card-label">En rupture</span>
+            </span>
         </div>
-        <div class="stock-home-tile {{ aCommanderCount > 0 ? 'stock-home-tile-warning' }}">
-            <span class="stock-home-tile-value">{{ aCommanderCount }}</span>
-            <span class="stock-home-tile-label">À commander</span>
+        <div class="stat-card {{ aCommanderCount > 0 ? 'stat-card-warning' }}">
+            <span class="stat-card-icon">{{ ui.icon('cart', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ aCommanderCount }}</span>
+                <span class="stat-card-label">À commander</span>
+            </span>
         </div>
-        <div class="stock-home-tile">
-            <span class="stock-home-tile-value">{{ commandesEnAttente }}</span>
-            <span class="stock-home-tile-label">Commande{{ commandesEnAttente > 1 ? 's' : '' }} en attente</span>
+        <div class="stat-card">
+            <span class="stat-card-icon">{{ ui.icon('truck', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ commandesEnAttente }}</span>
+                <span class="stat-card-label">Commande{{ commandesEnAttente > 1 ? 's' : '' }} en attente</span>
+            </span>
         </div>
-        {% if data.valeurStock > 0 %}
-        <div class="stock-home-tile">
-            <span class="stock-home-tile-value">{{ data.valeurStock|number_format(0, ',', ' ') }} €</span>
-            <span class="stock-home-tile-label">Valeur du stock</span>
-        </div>
-        {% endif %}
     </div>
 
     {# — À réapprovisionner — #}
@@ -63,7 +73,7 @@
             <p class="stock-home-empty">Aucun réapprovisionnement à prévoir</p>
         {% else %}
             <div class="stock-home-table-wrapper">
-                <table class="stock-home-table">
+                <table class="stock-home-table resp-table">
                     <thead>
                         <tr>
                             <th>Article</th>
@@ -76,13 +86,15 @@
                         {% for row in data.alertes %}
                             <tr>
                                 <td>
-                                    <span class="stock-home-item-nom">{{ row.item.nom }}</span>
-                                    <span class="stock-home-item-meta">
-                                        {% if row.item.marque %}{{ row.item.marque }}{% endif %}
-                                        {% if row.item.marque and row.item.taille %} · {% endif %}
-                                        {% if row.item.taille %}{{ row.item.taille }}{% endif %}
-                                        {% if (row.item.marque or row.item.taille) and row.item.couleur %} · {% endif %}
-                                        {% if row.item.couleur %}{{ row.item.couleur }}{% endif %}
+                                    <span>
+                                        <span class="stock-home-item-nom">{{ row.item.nom }}</span>
+                                        <span class="stock-home-item-meta">
+                                            {% if row.item.marque %}{{ row.item.marque }}{% endif %}
+                                            {% if row.item.marque and row.item.taille %} · {% endif %}
+                                            {% if row.item.taille %}{{ row.item.taille }}{% endif %}
+                                            {% if (row.item.marque or row.item.taille) and row.item.couleur %} · {% endif %}
+                                            {% if row.item.couleur %}{{ row.item.couleur }}{% endif %}
+                                        </span>
                                     </span>
                                 </td>
                                 <td>
@@ -93,7 +105,7 @@
                                 <td>{{ row.item.alertSeuil ?? '—' }}</td>
                                 <td class="stock-home-table-action">
                                     {% if row.item.lienAchat %}
-                                        <a href="{{ row.item.lienAchat }}" target="_blank" rel="noopener" class="stock-home-buy">Commander ↗</a>
+                                        <a href="{{ row.item.lienAchat }}" target="_blank" rel="noopener" class="stock-home-buy">Voir l'article ↗</a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -109,34 +121,62 @@
         <div class="stock-home-section-header">
             <h2 class="stock-home-section-title">Accès rapides</h2>
         </div>
-        <div class="stock-home-links">
-            <a href="{{ path('admin_stock_dotations_suivi') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Suivi des dotations</span>
-                <span class="stock-home-link-text">Ce que chaque joueur doit recevoir et ce qui a été remis</span>
+        <div class="quicklink-grid">
+            <a href="{{ path('admin_stock_dotations_suivi') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('clipboard-list', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Suivi des dotations</span>
+                    <span class="quicklink-text">Ce que chaque joueur doit recevoir et ce qui a été remis</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
-            <a href="{{ path('admin_stock_dotations_index') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Modèles de dotation</span>
-                <span class="stock-home-link-text">Configurer les articles attribués par équipe ou catégorie</span>
+            <a href="{{ path('admin_stock_dotations_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('layers', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Modèles de dotation</span>
+                    <span class="quicklink-text">Configurer les articles attribués par équipe ou catégorie</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
-            <a href="{{ path('admin_stock_commandes_index') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Commandes</span>
-                <span class="stock-home-link-text">À commander, bons par fournisseur, réceptions</span>
+            <a href="{{ path('admin_stock_commandes_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('cart', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Commandes</span>
+                    <span class="quicklink-text">À commander, bons par fournisseur, réceptions</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
-            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Historique des mouvements</span>
-                <span class="stock-home-link-text">Entrées, sorties et rebuts, filtrables par article et taille</span>
+            <a href="{{ path('admin_stock_mouvements_list') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('history', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Historique des mouvements</span>
+                    <span class="quicklink-text">Entrées, sorties et rebuts, filtrables par article et taille</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
-            <a href="{{ path('admin_stock_inventaire_pdf') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Inventaire PDF</span>
-                <span class="stock-home-link-text">Feuille d'inventaire complète, ventilée par taille</span>
+            <a href="{{ path('admin_stock_inventaire_pdf') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('file-text', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Inventaire PDF</span>
+                    <span class="quicklink-text">Feuille d'inventaire complète, ventilée par taille</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
-            <a href="{{ path('admin_stock_fournisseurs_list') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Fournisseurs</span>
-                <span class="stock-home-link-text">Carnet d'adresses des fournisseurs d'équipement</span>
+            <a href="{{ path('admin_stock_fournisseurs_list') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('truck', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Fournisseurs</span>
+                    <span class="quicklink-text">Carnet d'adresses des fournisseurs d'équipement</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
-            <a href="{{ path('admin_stock_categories_list') }}" class="stock-home-link-card">
-                <span class="stock-home-link-title">Catégories</span>
-                <span class="stock-home-link-text">Organiser les articles par catégorie</span>
+            <a href="{{ path('admin_stock_categories_list') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('tag', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Catégories</span>
+                    <span class="quicklink-text">Organiser les articles par catégorie</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
         </div>
     </div>
