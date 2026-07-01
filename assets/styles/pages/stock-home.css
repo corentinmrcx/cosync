@@ -25,12 +25,6 @@
     color: var(--color-text-base);
 }
 
-.stock-home-subtitle {
-    margin: 0.25rem 0 0;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-}
-
 .stock-home-actions {
     display: flex;
     flex-wrap: wrap;
