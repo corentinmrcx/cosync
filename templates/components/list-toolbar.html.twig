@@ -19,7 +19,7 @@
 <div class="list-tb-filters">
 
     {# ── Barre de recherche ── #}
-    <form method="get" id="{{ formId }}-search">
+    <form method="get" id="{{ formId }}-search" class="list-tb-form-search">
         {% for group in filterGroups %}
             <input type="hidden" name="{{ group.name }}" value="{{ group.current ?? '' }}">
         {% endfor %}
@@ -38,7 +38,7 @@
     </form>
 
     {# ── Toolbar : filtre + actions ── #}
-    <form method="get" id="{{ formId }}-filters">
+    <form method="get" id="{{ formId }}-filters" class="list-tb-form-toolbar">
         <input type="hidden" name="search" value="{{ search ?? '' }}">
         {% for group in filterGroups %}
             <input type="hidden" name="{{ group.name }}" value="{{ group.current ?? '' }}">
