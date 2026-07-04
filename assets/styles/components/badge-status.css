@@ -16,6 +16,12 @@
     flex-shrink: 0;
 }
 
+.badge-status-imported {
+    background: var(--color-status-imported-bg);
+    color: var(--color-status-imported);
+}
+.badge-status-imported .badge-status-dot { background: var(--color-status-imported); }
+
 .badge-status-sent {
     background: var(--color-status-sent-bg);
     color: var(--color-status-sent);

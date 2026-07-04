@@ -159,7 +159,7 @@
                 Modifier
             </a>
 
-            {% if licencie.dossierClub is null or licencie.dossierClub.status.value == 'link_sent' %}
+            {% if licencie.dossierClub is null or licencie.dossierClub.status.value in ['imported', 'link_sent'] %}
                 {% if licencie.email %}
                     <form method="post" action="{{ path('admin_licencies_send_link', {uuid: licencie.uuid}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('send_link_' ~ licencie.uuid) }}">
