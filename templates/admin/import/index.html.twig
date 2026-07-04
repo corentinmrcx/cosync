@@ -22,7 +22,7 @@
         </div>
 
         <p class="import-card-desc">
-            Importe le fichier XLSX exporté depuis FootClubs. Les licenciés existants seront mis à jour, les nouveaux créés.
+            Importe un fichier XLSX exporté depuis FootClubs. Le format est <strong>détecté automatiquement</strong> : dépose l'export « Licences dématérialisées » (recommandé) ou l'ancien « Éditions et extractions ». Les licenciés existants sont mis à jour, les nouveaux créés.
         </p>
 
         {% if currentSeason %}
@@ -79,25 +79,25 @@
 
             <div class="import-guide-body" x-show="open" x-transition>
                 <div class="import-guide-step">
-                    <p class="import-guide-step-title">Étape 1 — Exporter depuis FootClubs</p>
-                    <p class="import-guide-step-text">Connecte-toi sur FootClubs avec le compte du club. Dans le menu à gauche, section <strong>Licenciés</strong>, clique sur <strong>Éditions et extractions</strong> puis sélectionne <strong>Édition licenciés</strong>.</p>
-                    <p class="import-guide-step-text">Configure l'export comme suit :</p>
+                    <p class="import-guide-step-title">Option A — Licences dématérialisées <em>(recommandé)</em></p>
+                    <p class="import-guide-step-text">Cet export contient <strong>toutes les licences, même non signées</strong> : il permet de collecter les dossiers club avant la signature FFF. Connecte-toi à FootClubs, menu <strong>Licences</strong> → <strong>Dématérialisées</strong>, puis exporte la liste au format <strong>Excel</strong>.</p>
+                    <p class="import-guide-step-text">Les <strong>Joueurs</strong> deviennent des licenciés, tous les autres rôles (Dirigeant, Arbitre, Éducateur) des dirigeants. Aucun mail n'est envoyé automatiquement : tu enverras les liens depuis le tableau de bord.</p>
+                </div>
+
+                <div class="import-guide-step">
+                    <p class="import-guide-step-title">Option B — Éditions et extractions</p>
+                    <p class="import-guide-step-text">L'ancien export, qui ne contient que les licences <strong>déjà signées</strong>. Menu <strong>Licenciés</strong> → <strong>Éditions et extractions</strong> → <strong>Édition licenciés</strong>, avec :</p>
                     <ul class="import-guide-list">
                         <li><strong>Catégories :</strong> tout sélectionner (clic sur la première, puis Shift+clic sur la dernière)</li>
                         <li><strong>Format :</strong> Extraction MS Excel</li>
                         <li><strong>Sortie et tri :</strong> Complet</li>
                     </ul>
-                    <p class="import-guide-step-text">Clique sur <strong>Valider</strong>. Un fichier <code>.xlsx</code> se télécharge automatiquement.</p>
+                    <p class="import-guide-step-text">Ici, chaque nouveau licencié reçoit automatiquement son lien d'inscription par mail.</p>
                 </div>
 
                 <div class="import-guide-step">
-                    <p class="import-guide-step-title">Étape 2 — Importer dans CoSync</p>
-                    <p class="import-guide-step-text">Glisse-dépose le fichier dans la zone ci-dessus, ou clique pour le sélectionner. CoSync va automatiquement :</p>
-                    <ul class="import-guide-list">
-                        <li>Mettre à jour les licenciés déjà présents (sans écraser leurs données club)</li>
-                        <li>Créer les nouveaux licenciés et leur envoyer leur lien d'inscription par mail</li>
-                        <li>Ignorer les non-licenciés (dirigeants, éducateurs)</li>
-                    </ul>
+                    <p class="import-guide-step-title">Dans les deux cas</p>
+                    <p class="import-guide-step-text">Glisse-dépose le fichier dans la zone ci-dessus : CoSync reconnaît le format tout seul, met à jour les fiches déjà présentes et crée les nouvelles.</p>
                     <p class="import-guide-note">À savoir : tu peux importer plusieurs fois sans risque. Les données d'inscription déjà remplies par les parents ne sont jamais effacées.</p>
                 </div>
             </div>

@@ -5,27 +5,75 @@ namespace App\Service\Import;
 final class DataSanitizer
 {
     /**
-     * La colonne "Nom, prénom" FootClubs contient les deux dans une seule cellule.
-     * Règle : tout avant le premier espace = NOM (MAJUSCULES), tout après = Prénom (Capitalize).
+     * Alias de codes catégories FFF vers le code CoSync équivalent.
+     * Ex : « Senior U20 » (licence jeune rattachée aux séniors) → SENIOR.
+     */
+    private const CATEGORY_ALIASES = [
+        'SENIORU20' => 'SENIOR',
+    ];
+
+    /**
+     * La colonne "Nom, prénom" FootClubs contient les deux dans une seule cellule, sous la forme
+     * « NOM Prénom » : le nom en MAJUSCULES (éventuellement composé, ex. « SAINT LOUIS »), le
+     * prénom en Capitalize. On découpe donc à la bascule majuscules → minuscules plutôt qu'au
+     * premier espace, ce qui préserve les noms composés (et fait coïncider le résultat avec
+     * l'export dématérialisé, où nom et prénom sont déjà séparés).
      *
      * @return array{nom: string, prenom: string}
      */
     public function splitNomPrenom(string $raw): array
     {
-        $raw   = trim($raw);
-        $pos   = strpos($raw, ' ');
+        $raw = trim((string) preg_replace('/\s+/', ' ', $raw));
 
-        if ($pos === false) {
-            return [
-                'nom'    => mb_strtoupper($raw, 'UTF-8'),
-                'prenom' => '',
-            ];
+        if ($raw === '') {
+            return ['nom' => '', 'prenom' => ''];
         }
 
-        $nom    = mb_strtoupper(substr($raw, 0, $pos), 'UTF-8');
-        $prenom = mb_convert_case(trim(substr($raw, $pos + 1)), MB_CASE_TITLE, 'UTF-8');
+        $tokens = explode(' ', $raw);
+        if (count($tokens) === 1) {
+            return ['nom' => mb_strtoupper($raw, 'UTF-8'), 'prenom' => ''];
+        }
 
-        return ['nom' => $nom, 'prenom' => $prenom];
+        // Le nom = suite initiale de tokens entièrement en majuscules.
+        $nomCount = 0;
+        foreach ($tokens as $token) {
+            if (!$this->isUpperToken($token)) {
+                break;
+            }
+            $nomCount++;
+        }
+
+        // Repli si aucun token majuscule en tête, ou si tout est en majuscules (prénom introuvable) :
+        // le dernier token devient le prénom, le reste le nom.
+        if ($nomCount === 0 || $nomCount === count($tokens)) {
+            $nomCount = count($tokens) - 1;
+        }
+
+        return [
+            'nom'    => mb_strtoupper(implode(' ', array_slice($tokens, 0, $nomCount)), 'UTF-8'),
+            'prenom' => mb_convert_case(implode(' ', array_slice($tokens, $nomCount)), MB_CASE_TITLE, 'UTF-8'),
+        ];
+    }
+
+    /** Un token est « nom » s'il contient une lettre et aucune minuscule (donc en capitales). */
+    private function isUpperToken(string $token): bool
+    {
+        return preg_match('/\p{L}/u', $token) === 1
+            && preg_match('/\p{Ll}/u', $token) === 0;
+    }
+
+    /**
+     * Normalise un nom et un prénom déjà séparés (export dématérialisé, deux colonnes).
+     * Nom en MAJUSCULES, Prénom en Capitalize.
+     *
+     * @return array{nom: string, prenom: string}
+     */
+    public function sanitizeSeparateNomPrenom(string $nom, string $prenom): array
+    {
+        return [
+            'nom'    => mb_strtoupper(trim($nom), 'UTF-8'),
+            'prenom' => mb_convert_case(trim($prenom), MB_CASE_TITLE, 'UTF-8'),
+        ];
     }
 
     /**
@@ -52,7 +100,7 @@ final class DataSanitizer
         $code = str_replace(['É', 'È', 'Ê', 'Ë'], 'E', $code);
         $code = str_replace(['À', 'Â'], 'A', $code);
 
-        return $code;
+        return self::CATEGORY_ALIASES[$code] ?? $code;
     }
 
     public function sanitizeEmail(?string $raw): ?string
