@@ -14,7 +14,8 @@ final class AttestationTransportData
         public readonly string $prenomConducteur,
         public readonly string $numPermis,
         public readonly string $assuranceNomAdresse,
-        public readonly \DateTimeImmutable $dateCT,
+        public readonly ?\DateTimeImmutable $dateCT,
+        public readonly bool $vehiculeNeuf,
         public readonly bool $engagementPris,
         public readonly string $signatureData,
     ) {}

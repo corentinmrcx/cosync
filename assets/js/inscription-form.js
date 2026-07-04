@@ -1,5 +1,9 @@
+import { reglementSignature } from './reglement-signature.js';
+
 export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', dotationGroupes = [] }) {
     return {
+        ...reglementSignature(),
+
         step: 1,
         isJeune,
         montant,
@@ -30,15 +34,12 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
         numPermis: '',
         assuranceNomAdresse: '',
         dateCT: '',
+        vehiculeNeuf: false,
         engagementAttestation: false,
         signatureDataAttestation: '',
         signaturePadAttestation: null,
 
-        // Étape 5 — règlement + signature
-        reglementScrolled: false,
-        hasRead: false,
-        signatureData: '',
-        signaturePad: null,
+        // Étape 5 — règlement + signature : état fourni par le mixin reglementSignature()
 
         // Étape 6 — paiement
         paymentMode: '',
@@ -97,23 +98,9 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
                     this.$nextTick(() => this.initAttestationSignaturePad());
                 }
                 if (value === 5) {
-                    this.$nextTick(() => {
-                        const el = this.$refs.reglementEl;
-                        if (!el) return;
-                        if (el.scrollHeight <= el.clientHeight) {
-                            this.reglementScrolled = true;
-                        }
-                    });
+                    this.$nextTick(() => this.markReglementScrolledIfShort());
                 }
             });
-        },
-
-        onReglementScroll(event) {
-            if (this.reglementScrolled) return;
-            const el = event.target;
-            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
-                this.reglementScrolled = true;
-            }
         },
 
         get canGoNext() {
@@ -137,8 +124,7 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
                         && this.prenomConducteur !== ''
                         && this.numPermis !== ''
                         && this.assuranceNomAdresse !== ''
-                        && this.dateCT !== ''
-                        && !this.dateCTFuture
+                        && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
                         && this.engagementAttestation
                         && this.signatureDataAttestation !== '';
                 case 5: // règlement
@@ -165,25 +151,6 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
                 this.step = this.steps[idx - 1];
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
-        },
-
-        initSignaturePad() {
-            const canvas = this.$refs.signatureCanvas;
-            if (!canvas || this.signaturePad) return;
-
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width  = canvas.offsetWidth  * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext('2d').scale(ratio, ratio);
-
-            this.signaturePad = new SignaturePad(canvas, {
-                backgroundColor: 'rgb(255, 255, 255)',
-                penColor: 'rgb(0, 0, 0)',
-            });
-
-            this.signaturePad.addEventListener('endStroke', () => {
-                this.signatureData = this.signaturePad.toDataURL('image/png');
-            });
         },
 
         initAttestationSignaturePad() {
@@ -222,13 +189,6 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
             return this.multiPayment
                 ? this.paymentModes.includes(value)
                 : this.paymentMode === value;
-        },
-
-        clearSignature() {
-            if (this.signaturePad) {
-                this.signaturePad.clear();
-                this.signatureData = '';
-            }
         },
 
         // Soumission en mode démo : faux loader puis redirection, aucun enregistrement

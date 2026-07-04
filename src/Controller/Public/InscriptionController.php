@@ -2,12 +2,12 @@
 
 namespace App\Controller\Public;
 
-use App\DTO\AttestationTransportData;
 use App\DTO\AutorisationCompletionData;
 use App\DTO\InscriptionFormData;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Service\CotisationResolver;
+use App\Service\Form\AttestationTransportRequestFactory;
 use App\Service\Form\AutorisationCompletionService;
 use App\Service\Form\InscriptionFormService;
 use App\Service\Stock\DotationResolver;
@@ -20,6 +20,10 @@ use Symfony\Component\Uid\Uuid;
 #[Route('/inscription', name: 'public_inscription_')]
 class InscriptionController extends AbstractController
 {
+    public function __construct(
+        private readonly AttestationTransportRequestFactory $attestationFactory,
+    ) {}
+
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
     public function show(string $uuid, LicencieRepository $licencieRepo, DotationResolver $resolver, CotisationResolver $cotisationResolver): Response
     {
@@ -167,7 +171,7 @@ class InscriptionController extends AbstractController
             $volontaireTransport  = $volRaw === '1';
 
             if ($volontaireTransport) {
-                $attestationData = $this->buildAttestationData($request);
+                $attestationData = $this->attestationFactory->fromRequest($request);
                 if ($attestationData === null) {
                     return null;
                 }
@@ -187,48 +191,6 @@ class InscriptionController extends AbstractController
             paymentIntentions:               $modes,
             attestationTransport:            $attestationData,
             dotationChoix:                   $dotationChoix,
-        );
-    }
-
-    /** Lit et valide les champs de l'attestation de transport. Null si incomplet/invalide. */
-    private function buildAttestationData(Request $request): ?AttestationTransportData
-    {
-        $nomConducteur    = trim($request->request->get('attestation_nom_conducteur', ''));
-        $prenomConducteur = trim($request->request->get('attestation_prenom_conducteur', ''));
-        $numPermis        = $request->request->get('attestation_num_permis', '');
-        $assurance        = $request->request->get('attestation_assurance', '');
-        $dateCTRaw        = $request->request->get('attestation_date_ct', '');
-        $sigAttest        = $request->request->get('attestation_signature_data', '');
-        $engagement       = $request->request->get('attestation_engagement') === '1';
-
-        if ($nomConducteur === '' || $prenomConducteur === ''
-            || $numPermis === '' || $assurance === '' || $dateCTRaw === '' || $sigAttest === '') {
-            return null;
-        }
-
-        if (!str_starts_with($sigAttest, 'data:image/') || strlen($sigAttest) > 2_800_000) {
-            return null;
-        }
-
-        try {
-            $dateCT = new \DateTimeImmutable($dateCTRaw);
-        } catch (\Exception) {
-            return null;
-        }
-
-        // Refuser une date de contrôle technique dans le futur
-        if ($dateCT > new \DateTimeImmutable('today')) {
-            return null;
-        }
-
-        return new AttestationTransportData(
-            nomConducteur:       $nomConducteur,
-            prenomConducteur:    $prenomConducteur,
-            numPermis:           $numPermis,
-            assuranceNomAdresse: $assurance,
-            dateCT:              $dateCT,
-            engagementPris:      $engagement,
-            signatureData:       $sigAttest,
         );
     }
 
@@ -326,7 +288,7 @@ class InscriptionController extends AbstractController
                 return null;
             }
             if ($vol === true) {
-                $attestation = $this->buildAttestationData($request);
+                $attestation = $this->attestationFactory->fromRequest($request);
                 if ($attestation === null) {
                     return null;
                 }

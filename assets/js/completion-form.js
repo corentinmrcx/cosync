@@ -15,6 +15,7 @@ export function completionForm({ manquants = [] }) {
         numPermis: '',
         assuranceNomAdresse: '',
         dateCT: '',
+        vehiculeNeuf: false,
         engagementAttestation: false,
         signatureDataAttestation: '',
         signaturePadAttestation: null,
@@ -61,8 +62,7 @@ export function completionForm({ manquants = [] }) {
                         && this.prenomConducteur !== ''
                         && this.numPermis !== ''
                         && this.assuranceNomAdresse !== ''
-                        && this.dateCT !== ''
-                        && !this.dateCTFuture
+                        && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
                         && this.engagementAttestation
                         && this.signatureDataAttestation !== '';
                 }

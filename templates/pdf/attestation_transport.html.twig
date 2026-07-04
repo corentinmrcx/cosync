@@ -191,7 +191,13 @@
 
 <div class="field-row">
     <span class="field-label">Date du dernier contrôle technique :</span>
-    <span class="field-value">{{ data.dateCT|date('d/m/Y') }}</span>
+    <span class="field-value">
+        {%- if data.vehiculeNeuf -%}
+            Véhicule neuf (aucun contrôle technique à ce jour)
+        {%- else -%}
+            {{ data.dateCT|date('d/m/Y') }}
+        {%- endif -%}
+    </span>
 </div>
 
 <p class="section-title">Engagement</p>

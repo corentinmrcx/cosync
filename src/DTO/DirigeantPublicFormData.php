@@ -15,5 +15,7 @@ final class DirigeantPublicFormData
         public readonly bool $volontaireTransport,
         // Attestation transport : présente uniquement si volontaireTransport === true
         public readonly ?AttestationTransportData $attestationTransport = null,
+        // Signature du règlement intérieur (base64) : null si déjà signé (dirigeant-joueur)
+        public readonly ?string $reglementSignatureData = null,
     ) {}
 }

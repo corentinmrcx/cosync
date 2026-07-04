@@ -18,6 +18,9 @@ final class PendingUploadQueue
     /** @var string[] uuids des dirigeants dont l'attestation transport doit être uploadée */
     private array $dirigeantAttestationUuids = [];
 
+    /** @var string[] uuids des dirigeants dont le règlement signé doit être uploadé */
+    private array $dirigeantReglementUuids = [];
+
     public function enqueue(int $dossierId): void
     {
         $this->dossierIds[] = $dossierId;
@@ -31,6 +34,11 @@ final class PendingUploadQueue
     public function enqueueDirigeantAttestation(string $dirigeantUuid): void
     {
         $this->dirigeantAttestationUuids[] = $dirigeantUuid;
+    }
+
+    public function enqueueDirigeantReglement(string $dirigeantUuid): void
+    {
+        $this->dirigeantReglementUuids[] = $dirigeantUuid;
     }
 
     /**
@@ -64,6 +72,17 @@ final class PendingUploadQueue
     {
         $uuids = $this->dirigeantAttestationUuids;
         $this->dirigeantAttestationUuids = [];
+
+        return $uuids;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function flushDirigeantReglements(): array
+    {
+        $uuids = $this->dirigeantReglementUuids;
+        $this->dirigeantReglementUuids = [];
 
         return $uuids;
     }
