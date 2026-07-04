@@ -21,6 +21,7 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport }) {
         numPermis: '',
         assuranceNomAdresse: '',
         dateCT: '',
+        vehiculeNeuf: false,
         engagementAttestation: false,
         signatureDataAttestation: '',
         signaturePadAttestation: null,
@@ -89,8 +90,7 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport }) {
                         && this.prenomConducteur !== ''
                         && this.numPermis !== ''
                         && this.assuranceNomAdresse !== ''
-                        && this.dateCT !== ''
-                        && !this.dateCTFuture
+                        && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
                         && this.engagementAttestation
                         && this.signatureDataAttestation !== '';
                 default:

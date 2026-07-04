@@ -30,6 +30,7 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
         numPermis: '',
         assuranceNomAdresse: '',
         dateCT: '',
+        vehiculeNeuf: false,
         engagementAttestation: false,
         signatureDataAttestation: '',
         signaturePadAttestation: null,
@@ -137,8 +138,7 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
                         && this.prenomConducteur !== ''
                         && this.numPermis !== ''
                         && this.assuranceNomAdresse !== ''
-                        && this.dateCT !== ''
-                        && !this.dateCTFuture
+                        && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
                         && this.engagementAttestation
                         && this.signatureDataAttestation !== '';
                 case 5: // règlement

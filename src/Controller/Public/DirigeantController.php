@@ -2,11 +2,11 @@
 
 namespace App\Controller\Public;
 
-use App\DTO\AttestationTransportData;
 use App\DTO\DirigeantPublicFormData;
 use App\Entity\Dirigeant;
 use App\Repository\DirigeantRepository;
 use App\Service\DirigeantFormService;
+use App\Service\Form\AttestationTransportRequestFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,6 +16,10 @@ use Symfony\Component\Uid\Uuid;
 #[Route('/dirigeant', name: 'public_dirigeant_')]
 class DirigeantController extends AbstractController
 {
+    public function __construct(
+        private readonly AttestationTransportRequestFactory $attestationFactory,
+    ) {}
+
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
     public function show(string $uuid, DirigeantRepository $dirigeantRepo): Response
     {
@@ -130,7 +134,7 @@ class DirigeantController extends AbstractController
         $attestationData = null;
 
         if ($volontaireTransport) {
-            $attestationData = $this->buildAttestationData($request);
+            $attestationData = $this->attestationFactory->fromRequest($request);
             if ($attestationData === null) {
                 return null;
             }
@@ -146,44 +150,4 @@ class DirigeantController extends AbstractController
         );
     }
 
-    private function buildAttestationData(Request $request): ?AttestationTransportData
-    {
-        $nomConducteur    = trim($request->request->get('attestation_nom_conducteur', ''));
-        $prenomConducteur = trim($request->request->get('attestation_prenom_conducteur', ''));
-        $numPermis        = $request->request->get('attestation_num_permis', '');
-        $assurance        = $request->request->get('attestation_assurance', '');
-        $dateCTRaw        = $request->request->get('attestation_date_ct', '');
-        $sigAttest        = $request->request->get('attestation_signature_data', '');
-        $engagement       = $request->request->get('attestation_engagement') === '1';
-
-        if ($nomConducteur === '' || $prenomConducteur === ''
-            || $numPermis === '' || $assurance === '' || $dateCTRaw === '' || $sigAttest === '') {
-            return null;
-        }
-
-        if (!str_starts_with($sigAttest, 'data:image/') || strlen($sigAttest) > 2_800_000) {
-            return null;
-        }
-
-        try {
-            $dateCT = new \DateTimeImmutable($dateCTRaw);
-        } catch (\Exception) {
-            return null;
-        }
-
-        // Refuser une date de contrôle technique dans le futur
-        if ($dateCT > new \DateTimeImmutable('today')) {
-            return null;
-        }
-
-        return new AttestationTransportData(
-            nomConducteur:       $nomConducteur,
-            prenomConducteur:    $prenomConducteur,
-            numPermis:           $numPermis,
-            assuranceNomAdresse: $assurance,
-            dateCT:              $dateCT,
-            engagementPris:      $engagement,
-            signatureData:       $sigAttest,
-        );
-    }
 }
