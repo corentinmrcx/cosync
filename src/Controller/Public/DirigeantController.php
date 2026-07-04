@@ -42,6 +42,7 @@ class DirigeantController extends AbstractController
             'needTaille'    => $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null,
             'needPhoto'     => $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null,
             'needTransport' => $dirigeant->getVolontaireTransport() === null,
+            'needReglement' => $dirigeant->needsReglementSignature(),
         ]);
     }
 
@@ -95,6 +96,7 @@ class DirigeantController extends AbstractController
         $needTaille    = $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null;
         $needPhoto     = $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null;
         $needTransport = $dirigeant->getVolontaireTransport() === null;
+        $needReglement = $dirigeant->needsReglementSignature();
 
         $tailleHaut = null;
         $tailleBas  = null;
@@ -120,33 +122,50 @@ class DirigeantController extends AbstractController
             $autorisationPhoto = $photoRaw === '1';
         }
 
-        // Le transport doit déjà être renseigné si non demandé (sécurité)
-        if (!$needTransport) {
-            return null;
-        }
+        // Transport : collecté uniquement s'il n'est pas déjà renseigné.
+        // Sinon on conserve la valeur existante (cas d'une simple complétion,
+        // ex. l'ajout du règlement intérieur sur un dossier déjà rempli).
+        $volontaireTransport = $dirigeant->getVolontaireTransport() ?? false;
+        $attestationData     = null;
 
-        $volRaw = $request->request->get('volontaire_transport');
-        if ($volRaw === null) {
-            return null;
-        }
-        $volontaireTransport = $volRaw === '1';
-
-        $attestationData = null;
-
-        if ($volontaireTransport) {
-            $attestationData = $this->attestationFactory->fromRequest($request);
-            if ($attestationData === null) {
+        if ($needTransport) {
+            $volRaw = $request->request->get('volontaire_transport');
+            if ($volRaw === null) {
                 return null;
+            }
+            $volontaireTransport = $volRaw === '1';
+
+            if ($volontaireTransport) {
+                $attestationData = $this->attestationFactory->fromRequest($request);
+                if ($attestationData === null) {
+                    return null;
+                }
             }
         }
 
+        // Signature du règlement intérieur : requise sauf si déjà signé
+        $reglementSignature = null;
+
+        if ($needReglement) {
+            $signatureData = $request->request->get('signature_data', '');
+
+            if ($signatureData === ''
+                || !str_starts_with($signatureData, 'data:image/')
+                || strlen($signatureData) > 2_800_000) {
+                return null;
+            }
+
+            $reglementSignature = $signatureData;
+        }
+
         return new DirigeantPublicFormData(
-            tailleHaut:           $tailleHaut,
-            tailleBas:            $tailleBas,
-            pointure:             $pointure,
-            autorisationPhoto:    $autorisationPhoto,
-            volontaireTransport:  $volontaireTransport,
-            attestationTransport: $attestationData,
+            tailleHaut:             $tailleHaut,
+            tailleBas:              $tailleBas,
+            pointure:               $pointure,
+            autorisationPhoto:      $autorisationPhoto,
+            volontaireTransport:    $volontaireTransport,
+            attestationTransport:   $attestationData,
+            reglementSignatureData: $reglementSignature,
         );
     }
 

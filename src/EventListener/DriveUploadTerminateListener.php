@@ -6,6 +6,7 @@ use App\Repository\DirigeantRepository;
 use App\Repository\DossierClubRepository;
 use App\Service\Drive\AttestationDriveSync;
 use App\Service\Drive\DirigeantAttestationDriveSync;
+use App\Service\Drive\DirigeantReglementDriveSync;
 use App\Service\Drive\DossierDriveSync;
 use App\Service\Drive\PendingUploadQueue;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -29,6 +30,7 @@ final class DriveUploadTerminateListener
         private readonly DossierDriveSync $driveSync,
         private readonly AttestationDriveSync $attestationDriveSync,
         private readonly DirigeantAttestationDriveSync $dirigeantAttestationDriveSync,
+        private readonly DirigeantReglementDriveSync $dirigeantReglementDriveSync,
     ) {}
 
     public function __invoke(TerminateEvent $event): void
@@ -54,6 +56,14 @@ final class DriveUploadTerminateListener
 
             if ($dirigeant !== null) {
                 $this->dirigeantAttestationDriveSync->sync($dirigeant);
+            }
+        }
+
+        foreach ($this->queue->flushDirigeantReglements() as $dirigeantUuid) {
+            $dirigeant = $this->dirigeantRepository->findByUuid(Uuid::fromString($dirigeantUuid));
+
+            if ($dirigeant !== null) {
+                $this->dirigeantReglementDriveSync->sync($dirigeant);
             }
         }
     }
