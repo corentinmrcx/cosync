@@ -157,7 +157,12 @@
                                               placeholder="Ex : Macif — 12 rue de la Paix, 75001 Paris"></textarea>
                                 </div>
 
-                                <div class="inscription-field">
+                                <label class="inscription-checkbox-row">
+                                    <input type="checkbox" name="attestation_vehicule_neuf" value="1" x-model="vehiculeNeuf">
+                                    <span class="inscription-checkbox-text">Véhicule neuf, sans contrôle technique à ce jour</span>
+                                </label>
+
+                                <div class="inscription-field" x-show="!vehiculeNeuf">
                                     <label class="inscription-label">Date du dernier contrôle technique *</label>
                                     <input type="date" name="attestation_date_ct" x-model="dateCT"
                                            class="inscription-input" :class="dateCTFuture ? 'inscription-input-error' : ''"

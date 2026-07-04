@@ -33,6 +33,7 @@ class LicencieIdentityType extends AbstractType
                 'label'       => 'Date de naissance',
                 'widget'      => 'single_text',
                 'input'       => 'datetime_immutable',
+                'attr'        => ['max' => (new \DateTimeImmutable('yesterday'))->format('Y-m-d')],
                 'constraints' => [
                     new NotBlank(message: 'La date de naissance est requise.'),
                     new LessThan(value: 'today', message: 'La date de naissance doit être dans le passé.'),

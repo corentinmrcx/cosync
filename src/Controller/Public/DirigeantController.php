@@ -2,11 +2,11 @@
 
 namespace App\Controller\Public;
 
-use App\DTO\AttestationTransportData;
 use App\DTO\DirigeantPublicFormData;
 use App\Entity\Dirigeant;
 use App\Repository\DirigeantRepository;
 use App\Service\DirigeantFormService;
+use App\Service\Form\AttestationTransportRequestFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,6 +16,10 @@ use Symfony\Component\Uid\Uuid;
 #[Route('/dirigeant', name: 'public_dirigeant_')]
 class DirigeantController extends AbstractController
 {
+    public function __construct(
+        private readonly AttestationTransportRequestFactory $attestationFactory,
+    ) {}
+
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
     public function show(string $uuid, DirigeantRepository $dirigeantRepo): Response
     {
@@ -38,6 +42,7 @@ class DirigeantController extends AbstractController
             'needTaille'    => $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null,
             'needPhoto'     => $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null,
             'needTransport' => $dirigeant->getVolontaireTransport() === null,
+            'needReglement' => $dirigeant->needsReglementSignature(),
         ]);
     }
 
@@ -91,6 +96,7 @@ class DirigeantController extends AbstractController
         $needTaille    = $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null;
         $needPhoto     = $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null;
         $needTransport = $dirigeant->getVolontaireTransport() === null;
+        $needReglement = $dirigeant->needsReglementSignature();
 
         $tailleHaut = null;
         $tailleBas  = null;
@@ -116,74 +122,51 @@ class DirigeantController extends AbstractController
             $autorisationPhoto = $photoRaw === '1';
         }
 
-        // Le transport doit déjà être renseigné si non demandé (sécurité)
-        if (!$needTransport) {
-            return null;
-        }
+        // Transport : collecté uniquement s'il n'est pas déjà renseigné.
+        // Sinon on conserve la valeur existante (cas d'une simple complétion,
+        // ex. l'ajout du règlement intérieur sur un dossier déjà rempli).
+        $volontaireTransport = $dirigeant->getVolontaireTransport() ?? false;
+        $attestationData     = null;
 
-        $volRaw = $request->request->get('volontaire_transport');
-        if ($volRaw === null) {
-            return null;
-        }
-        $volontaireTransport = $volRaw === '1';
-
-        $attestationData = null;
-
-        if ($volontaireTransport) {
-            $attestationData = $this->buildAttestationData($request);
-            if ($attestationData === null) {
+        if ($needTransport) {
+            $volRaw = $request->request->get('volontaire_transport');
+            if ($volRaw === null) {
                 return null;
+            }
+            $volontaireTransport = $volRaw === '1';
+
+            if ($volontaireTransport) {
+                $attestationData = $this->attestationFactory->fromRequest($request);
+                if ($attestationData === null) {
+                    return null;
+                }
             }
         }
 
+        // Signature du règlement intérieur : requise sauf si déjà signé
+        $reglementSignature = null;
+
+        if ($needReglement) {
+            $signatureData = $request->request->get('signature_data', '');
+
+            if ($signatureData === ''
+                || !str_starts_with($signatureData, 'data:image/')
+                || strlen($signatureData) > 2_800_000) {
+                return null;
+            }
+
+            $reglementSignature = $signatureData;
+        }
+
         return new DirigeantPublicFormData(
-            tailleHaut:           $tailleHaut,
-            tailleBas:            $tailleBas,
-            pointure:             $pointure,
-            autorisationPhoto:    $autorisationPhoto,
-            volontaireTransport:  $volontaireTransport,
-            attestationTransport: $attestationData,
+            tailleHaut:             $tailleHaut,
+            tailleBas:              $tailleBas,
+            pointure:               $pointure,
+            autorisationPhoto:      $autorisationPhoto,
+            volontaireTransport:    $volontaireTransport,
+            attestationTransport:   $attestationData,
+            reglementSignatureData: $reglementSignature,
         );
     }
 
-    private function buildAttestationData(Request $request): ?AttestationTransportData
-    {
-        $nomConducteur    = trim($request->request->get('attestation_nom_conducteur', ''));
-        $prenomConducteur = trim($request->request->get('attestation_prenom_conducteur', ''));
-        $numPermis        = $request->request->get('attestation_num_permis', '');
-        $assurance        = $request->request->get('attestation_assurance', '');
-        $dateCTRaw        = $request->request->get('attestation_date_ct', '');
-        $sigAttest        = $request->request->get('attestation_signature_data', '');
-        $engagement       = $request->request->get('attestation_engagement') === '1';
-
-        if ($nomConducteur === '' || $prenomConducteur === ''
-            || $numPermis === '' || $assurance === '' || $dateCTRaw === '' || $sigAttest === '') {
-            return null;
-        }
-
-        if (!str_starts_with($sigAttest, 'data:image/') || strlen($sigAttest) > 2_800_000) {
-            return null;
-        }
-
-        try {
-            $dateCT = new \DateTimeImmutable($dateCTRaw);
-        } catch (\Exception) {
-            return null;
-        }
-
-        // Refuser une date de contrôle technique dans le futur
-        if ($dateCT > new \DateTimeImmutable('today')) {
-            return null;
-        }
-
-        return new AttestationTransportData(
-            nomConducteur:       $nomConducteur,
-            prenomConducteur:    $prenomConducteur,
-            numPermis:           $numPermis,
-            assuranceNomAdresse: $assurance,
-            dateCT:              $dateCT,
-            engagementPris:      $engagement,
-            signatureData:       $sigAttest,
-        );
-    }
 }

@@ -1,8 +1,13 @@
-export function dirigeantForm({ needTaille, needPhoto, needTransport }) {
+import { reglementSignature } from './reglement-signature.js';
+
+export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglement }) {
     return {
+        ...reglementSignature(),
+
         needTaille,
         needPhoto,
         needTransport,
+        needReglement,
 
         step: 1,
 
@@ -21,6 +26,7 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport }) {
         numPermis: '',
         assuranceNomAdresse: '',
         dateCT: '',
+        vehiculeNeuf: false,
         engagementAttestation: false,
         signatureDataAttestation: '',
         signaturePadAttestation: null,
@@ -33,6 +39,7 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport }) {
             if (this.needTaille) s.push(2);
             if (this.needPhoto || this.needTransport) s.push(3);
             if (this.needTransport && this.volontaireTransport === '1') s.push(4);
+            if (this.needReglement) s.push(5);
             return s;
         },
 
@@ -71,6 +78,15 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport }) {
                 if (value === 4) {
                     this.$nextTick(() => this.initAttestationSignaturePad());
                 }
+                if (value === 5) {
+                    this.$nextTick(() => this.markReglementScrolledIfShort());
+                }
+            });
+
+            this.$watch('hasRead', (value) => {
+                if (value === true && this.step === 5) {
+                    window.requestAnimationFrame(() => this.initSignaturePad());
+                }
             });
         },
 
@@ -89,10 +105,11 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport }) {
                         && this.prenomConducteur !== ''
                         && this.numPermis !== ''
                         && this.assuranceNomAdresse !== ''
-                        && this.dateCT !== ''
-                        && !this.dateCTFuture
+                        && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
                         && this.engagementAttestation
                         && this.signatureDataAttestation !== '';
+                case 5: // règlement intérieur
+                    return this.hasRead && this.signatureData !== '';
                 default:
                     return false;
             }

@@ -56,6 +56,14 @@ class Dirigeant
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $attestationTransportDriveId = null;
 
+    /** Chemin local temporaire puis ID Drive du règlement intérieur signé */
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $reglementSignePath = null;
+
+    /** Date de signature du règlement intérieur par le dirigeant */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $reglementSignedAt = null;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Team $team = null;
@@ -132,6 +140,12 @@ class Dirigeant
     public function getAttestationTransportDriveId(): ?string { return $this->attestationTransportDriveId; }
     public function setAttestationTransportDriveId(?string $attestationTransportDriveId): static { $this->attestationTransportDriveId = $attestationTransportDriveId; return $this; }
 
+    public function getReglementSignePath(): ?string { return $this->reglementSignePath; }
+    public function setReglementSignePath(?string $reglementSignePath): static { $this->reglementSignePath = $reglementSignePath; return $this; }
+
+    public function getReglementSignedAt(): ?\DateTimeImmutable { return $this->reglementSignedAt; }
+    public function setReglementSignedAt(?\DateTimeImmutable $reglementSignedAt): static { $this->reglementSignedAt = $reglementSignedAt; return $this; }
+
     public function getTeam(): ?Team { return $this->team; }
     public function setTeam(?Team $team): static { $this->team = $team; return $this; }
 
@@ -159,8 +173,30 @@ class Dirigeant
     }
 
     /**
+     * Le règlement intérieur est-il déjà signé pour cette personne ?
+     * Vrai si le dirigeant l'a signé lui-même, ou si le licencié auquel il est
+     * rattaché (dirigeant-joueur) l'a déjà signé via son propre dossier.
+     */
+    public function hasSignedReglement(): bool
+    {
+        if ($this->reglementSignePath !== null) {
+            return true;
+        }
+
+        return $this->licencie?->getDossierClub()?->isSigned() === true;
+    }
+
+    /** Le dirigeant doit-il signer le règlement dans son formulaire public ? */
+    public function needsReglementSignature(): bool
+    {
+        return !$this->hasSignedReglement();
+    }
+
+    /**
      * Source de vérité de la complétude du dossier public dirigeant.
      * - Transport : requis pour tous ; attestation requise si volontaire.
+     * - Règlement intérieur : requis sauf s'il est déjà signé (dirigeant-joueur
+     *   dont le licencié a signé).
      * - Dirigeant-joueur (lié à un licencié) : taille + droit image proviennent
      *   du dossier licencié → non requis ici.
      */
@@ -170,6 +206,9 @@ class Dirigeant
             return false;
         }
         if ($this->volontaireTransport === true && $this->attestationTransportDriveId === null) {
+            return false;
+        }
+        if ($this->needsReglementSignature()) {
             return false;
         }
 

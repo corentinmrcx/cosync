@@ -11,9 +11,9 @@ enum StockItemVetementType: string
     public function label(): string
     {
         return match($this) {
-            self::HAUT       => 'Haut (maillot, veste…)',
-            self::BAS        => 'Bas (short, pantalon…)',
-            self::CHAUSSURES => 'Chaussures',
+            self::HAUT       => 'Haut',
+            self::BAS        => 'Bas',
+            self::CHAUSSURES => 'Pieds',
         };
     }
 

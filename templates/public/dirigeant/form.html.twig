@@ -11,7 +11,8 @@
      x-data="dirigeantForm({
          needTaille: {{ needTaille ? 'true' : 'false' }},
          needPhoto: {{ needPhoto ? 'true' : 'false' }},
-         needTransport: {{ needTransport ? 'true' : 'false' }}
+         needTransport: {{ needTransport ? 'true' : 'false' }},
+         needReglement: {{ needReglement ? 'true' : 'false' }}
      })">
 
     {# — Header — #}
@@ -36,9 +37,11 @@
     <main class="inscription-main">
         <div class="inscription-container">
 
-            <form method="post" action="{{ path('public_dirigeant_submit', {uuid: dirigeant.uuid}) }}">
+            <form method="post" action="{{ path('public_dirigeant_submit', {uuid: dirigeant.uuid}) }}"
+                  @submit="submitting = true">
                 <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_submit') }}">
                 <input type="hidden" name="attestation_signature_data" :value="signatureDataAttestation">
+                <input type="hidden" name="signature_data" :value="signatureData">
 
                 {# ── Étape 1 : Bienvenue ── #}
                 <div x-show="step === 1" class="inscription-card">
@@ -235,7 +238,12 @@
                                       placeholder="Ex : Macif — 12 rue de la Paix, 75001 Paris"></textarea>
                         </div>
 
-                        <div class="inscription-field">
+                        <label class="inscription-checkbox-row">
+                            <input type="checkbox" name="attestation_vehicule_neuf" value="1" x-model="vehiculeNeuf">
+                            <span class="inscription-checkbox-text">Véhicule neuf, sans contrôle technique à ce jour</span>
+                        </label>
+
+                        <div class="inscription-field" x-show="!vehiculeNeuf">
                             <label class="inscription-label">Date du dernier contrôle technique *</label>
                             <input type="date" name="attestation_date_ct" x-model="dateCT"
                                    class="inscription-input" :class="dateCTFuture ? 'inscription-input-error' : ''"
@@ -270,6 +278,14 @@
                 </div>
                 {% endif %}
 
+                {% if needReglement %}
+                {# ── Étape 5 : Règlement + Signature ── #}
+                {% include 'public/_reglement_signature_step.html.twig' with {
+                    season: dirigeant.season,
+                    stepShow: 'step === 5'
+                } %}
+                {% endif %}
+
                 {# ── Navigation ── #}
                 <div class="inscription-nav">
                     <template x-if="step > 1">
@@ -297,6 +313,15 @@
     </main>
 
     {% include 'components/footer.html.twig' %}
+
+    {# — Overlay de chargement pendant la soumission finale — #}
+    <div class="inscription-overlay" x-show="submitting" x-cloak>
+        <div class="inscription-overlay-box">
+            <div class="inscription-overlay-spinner"></div>
+            <p class="inscription-overlay-title">Validation de votre dossier…</p>
+            <p class="inscription-overlay-text">Merci de patienter quelques secondes, ne fermez pas cette page.</p>
+        </div>
+    </div>
 
 </div>
 {% endblock %}

@@ -62,6 +62,7 @@ class DirigeantType extends AbstractType
                 'widget'      => 'single_text',
                 'input'       => 'datetime_immutable',
                 'required'    => false,
+                'attr'        => ['max' => (new \DateTimeImmutable('yesterday'))->format('Y-m-d')],
                 'constraints' => [
                     new LessThan(value: 'today', message: 'La date de naissance doit être dans le passé.'),
                 ],
