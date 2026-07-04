@@ -38,3 +38,7 @@ google-service-account.json
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
+
+###> exports FootClubs (données personnelles licenciés — jamais versionnées) ###
+*.xlsx
+###< exports FootClubs ###
