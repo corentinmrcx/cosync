@@ -78,7 +78,7 @@ final class LicencieService
 
         $dossier = new DossierClub();
         $dossier->setLicencie($licencie);
-        $dossier->setStatus(LicenceStatus::LINK_SENT);
+        $dossier->setStatus(LicenceStatus::IMPORTED);
 
         $this->em->persist($licencie);
         $this->em->persist($dossier);

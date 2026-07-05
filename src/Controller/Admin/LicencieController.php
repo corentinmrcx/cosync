@@ -215,8 +215,8 @@ class LicencieController extends AbstractController
             ],
         ];
 
-        if ($licencie->getEmail() !== null) {
-            $history[] = ['date' => $licencie->getImportedAt(), 'format' => 'd/m/Y à H:i', 'label' => 'Lien d\'inscription envoyé par email', 'who' => 'Système'];
+        if ($licencie->getLinkSentAt() !== null) {
+            $history[] = ['date' => $licencie->getLinkSentAt(), 'format' => 'd/m/Y à H:i', 'label' => 'Lien d\'inscription envoyé par email', 'who' => 'Système'];
         }
 
         $dossier = $licencie->getDossierClub();

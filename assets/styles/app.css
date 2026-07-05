@@ -52,6 +52,8 @@
     --color-border-strong: #d1d5db;
 
     /* — Statuts licenciés — */
+    --color-status-imported:     #6b7280;
+    --color-status-imported-bg:  #f3f4f6;
     --color-status-sent:         #3b82f6;
     --color-status-sent-bg:      #eff6ff;
     --color-status-completed:    #f59e0b;

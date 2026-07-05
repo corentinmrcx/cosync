@@ -60,6 +60,10 @@ class Licencie
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $formTokenExpiresAt = null;
 
+    /** Date d'envoi effectif du lien d'inscription par mail — null tant qu'aucun mail n'est parti */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $linkSentAt = null;
+
     #[ORM\Column(options: ['default' => false])]
     private bool $createdManually = false;
 
@@ -232,6 +236,17 @@ class Licencie
     {
         return $this->formTokenExpiresAt !== null
             && $this->formTokenExpiresAt > new \DateTimeImmutable();
+    }
+
+    public function getLinkSentAt(): ?\DateTimeImmutable
+    {
+        return $this->linkSentAt;
+    }
+
+    public function setLinkSentAt(?\DateTimeImmutable $linkSentAt): static
+    {
+        $this->linkSentAt = $linkSentAt;
+        return $this;
     }
 
     public function isCreatedManually(): bool
