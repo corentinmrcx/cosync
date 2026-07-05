@@ -112,6 +112,27 @@
     gap: 0.5rem;
 }
 
+.dot-card-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.dot-card-chevron {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+    transition: transform 0.2s ease;
+}
+
+.dot-card-chevron-open {
+    transform: rotate(90deg);
+}
+
 .dot-card-title {
     margin: 0;
     font-size: var(--font-size-lg);
@@ -131,6 +152,24 @@
     color: var(--color-text-body);
     font-size: var(--font-size-xs);
     font-weight: 700;
+}
+
+/* Badge de synthèse : nombre restant à remettre ou « tout remis ». */
+.dot-card-count-todo {
+    min-width: 0;
+    background: var(--color-status-completed-bg);
+    color: var(--color-status-completed);
+}
+
+.dot-card-count-done {
+    min-width: 0;
+    background: var(--color-status-validated-bg);
+    color: var(--color-status-validated);
+}
+
+/* Le compteur total est repoussé à droite du header. */
+.dot-card-toggle .dot-card-count:last-child {
+    margin-left: auto;
 }
 
 .dot-empty {

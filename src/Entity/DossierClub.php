@@ -74,7 +74,7 @@ class DossierClub
     private ?\DateTimeImmutable $formCompletedAt = null;
 
     #[ORM\Column(enumType: LicenceStatus::class)]
-    private LicenceStatus $status = LicenceStatus::LINK_SENT;
+    private LicenceStatus $status = LicenceStatus::IMPORTED;
 
     public function getId(): int
     {

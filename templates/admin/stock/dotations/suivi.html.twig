@@ -34,14 +34,24 @@
         </div>
     {% endif %}
 
-    {% for equipe, besoins in groupes %}
-        <div class="dot-card">
-            <div class="dot-card-header">
-                <h2 class="dot-card-title">{{ equipe }}</h2>
-                <span class="dot-card-count">{{ besoins|length }}</span>
-            </div>
+    {% for groupe in groupes %}
+        <div class="dot-card" x-data="{ open: false }">
+            <button type="button" class="dot-card-header dot-card-toggle" @click="open = !open"
+                    :aria-expanded="open" aria-label="Déplier / replier l'équipe">
+                <svg class="dot-card-chevron" :class="{ 'dot-card-chevron-open': open }"
+                     width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                <h2 class="dot-card-title">{{ groupe.nom }}</h2>
+                {% if groupe.restants > 0 %}
+                    <span class="dot-card-count dot-card-count-todo">{{ groupe.restants }} à remettre</span>
+                {% else %}
+                    <span class="dot-card-count dot-card-count-done">Tout remis</span>
+                {% endif %}
+                <span class="dot-card-count">{{ groupe.total }}</span>
+            </button>
 
-            <div class="dot-table-wrapper">
+            <div class="dot-table-wrapper" x-show="open" x-collapse x-cloak>
                 <table class="dot-table resp-table">
                     <thead>
                         <tr>
@@ -54,7 +64,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for besoin in besoins %}
+                        {% for besoin in groupe.besoins %}
                             <tr>
                                 <td>
                                     <span class="dot-person-name">{{ besoin.nomPrenom }}</span>

@@ -44,9 +44,10 @@ class SeedReferentialCommand extends Command
         ['code' => 'U18F',    'label' => 'U18 Féminin',       'ecole' => false],
         ['code' => 'U19',     'label' => 'U19',               'ecole' => false],
         ['code' => 'U19F',    'label' => 'U19 Féminin',       'ecole' => false],
-        ['code' => 'SENIOR',  'label' => 'Senior',            'ecole' => false],
-        ['code' => 'SENIORF', 'label' => 'Senior Féminin',    'ecole' => false],
-        ['code' => 'VETERAN', 'label' => 'Vétéran',           'ecole' => false],
+        ['code' => 'SENIOR',     'label' => 'Senior',            'ecole' => false],
+        ['code' => 'SENIORF',    'label' => 'Senior Féminin',    'ecole' => false],
+        ['code' => 'VETERAN',    'label' => 'Vétéran',           'ecole' => false],
+        ['code' => 'FOOTLOISIR', 'label' => 'Foot Loisir',       'ecole' => false],
     ];
 
     public function __construct(private readonly EntityManagerInterface $em)

@@ -3,6 +3,7 @@
 namespace App\Service\Mail;
 
 use App\Entity\Licencie;
+use App\Enum\LicenceStatus;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class InscriptionLinkService
@@ -22,6 +23,14 @@ final class InscriptionLinkService
         $this->em->flush();
 
         $this->mailerService->sendInscriptionLink($licencie);
+
+        $licencie->setLinkSentAt(new \DateTimeImmutable());
+        // Le dossier passe de « Importé » à « Lien envoyé » sans jamais rétrograder un statut avancé.
+        $dossier = $licencie->getDossierClub();
+        if ($dossier?->getStatus() === LicenceStatus::IMPORTED) {
+            $dossier->setStatus(LicenceStatus::LINK_SENT);
+        }
+        $this->em->flush();
     }
 
     /**
