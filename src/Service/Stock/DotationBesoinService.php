@@ -217,6 +217,68 @@ final class DotationBesoinService
     }
 
     /**
+     * Regroupe les besoins de la saison par équipe pour l'écran de suivi.
+     * Dans chaque équipe, les personnes sont triées par nom (via le tri du repository),
+     * mais celles entièrement servies (tous leurs besoins « donnés ») sont renvoyées
+     * en fin de liste.
+     *
+     * @return list<array{nom: string, besoins: list<DotationBesoin>, total: int, restants: int}>
+     */
+    public function getSuiviGroupes(Season $season): array
+    {
+        // findBySeason renvoie déjà les besoins triés par nom/prénom de personne.
+        /** @var array<string, array<string, list<DotationBesoin>>> $parEquipe */
+        $parEquipe = [];
+        foreach ($this->besoinRepository->findBySeason($season) as $besoin) {
+            $equipe   = $besoin->getTeamName() ?? 'Sans équipe';
+            $personne = $besoin->getLicencie() ?? $besoin->getDirigeant();
+            $cle      = $personne !== null ? (string) $personne->getUuid() : 'inconnu';
+            $parEquipe[$equipe][$cle][] = $besoin;
+        }
+        ksort($parEquipe);
+
+        $groupes = [];
+        foreach ($parEquipe as $nom => $personnes) {
+            $aServir = [];
+            $servies = [];
+            foreach ($personnes as $besoinsPersonne) {
+                $tousDonnes = true;
+                foreach ($besoinsPersonne as $b) {
+                    if ($b->getStatut() !== DotationBesoinStatut::DONNE) {
+                        $tousDonnes = false;
+                        break;
+                    }
+                }
+                if ($tousDonnes) {
+                    $servies[] = $besoinsPersonne;
+                } else {
+                    $aServir[] = $besoinsPersonne;
+                }
+            }
+
+            $ordonnes = [];
+            $restants = 0;
+            foreach (array_merge($aServir, $servies) as $besoinsPersonne) {
+                foreach ($besoinsPersonne as $b) {
+                    $ordonnes[] = $b;
+                    if ($b->getStatut() !== DotationBesoinStatut::DONNE) {
+                        $restants++;
+                    }
+                }
+            }
+
+            $groupes[] = [
+                'nom'      => $nom,
+                'besoins'  => $ordonnes,
+                'total'    => count($ordonnes),
+                'restants' => $restants,
+            ];
+        }
+
+        return $groupes;
+    }
+
+    /**
      * Fixe (ou réinitialise) à la main la taille d'un besoin.
      * - « à donner » : une taille vide repasse en mode automatique (déduit du dossier au recalcul).
      * - « donné » : si la taille change, le mouvement de stock est rejoué (restitution à

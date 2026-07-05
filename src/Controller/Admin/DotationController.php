@@ -9,7 +9,6 @@ use App\Entity\DotationModeleLigne;
 use App\Repository\CategoryRepository;
 use App\Repository\DirigeantRepository;
 use App\Repository\DotationAffectationRepository;
-use App\Repository\DotationBesoinRepository;
 use App\Repository\DotationModeleLigneRepository;
 use App\Repository\DotationModeleRepository;
 use App\Repository\LicencieRepository;
@@ -37,7 +36,6 @@ class DotationController extends AbstractController
         private readonly CategoryRepository $categoryRepository,
         private readonly LicencieRepository $licencieRepository,
         private readonly DirigeantRepository $dirigeantRepository,
-        private readonly DotationBesoinRepository $besoinRepository,
         private readonly DotationBesoinService $besoinService,
         private readonly EntityManagerInterface $em,
     ) {}
@@ -311,16 +309,9 @@ class DotationController extends AbstractController
 
         $this->besoinService->syncTaillesFromDossiers($season);
 
-        /** @var array<string, DotationBesoin[]> $groupes */
-        $groupes = [];
-        foreach ($this->besoinRepository->findBySeason($season) as $besoin) {
-            $groupes[$besoin->getTeamName() ?? 'Sans équipe'][] = $besoin;
-        }
-        ksort($groupes);
-
         return $this->render('admin/stock/dotations/suivi.html.twig', [
             'season'         => $season,
-            'groupes'        => $groupes,
+            'groupes'        => $this->besoinService->getSuiviGroupes($season),
             'taillesConnues' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'],
             'pointures'      => array_map('strval', range(28, 48)),
         ]);

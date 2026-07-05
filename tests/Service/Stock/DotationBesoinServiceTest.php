@@ -195,6 +195,61 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         self::assertSame('ZULU', $besoins[1]->getLicencie()->getNom());
     }
 
+    public function testGetSuiviGroupesRenvoieLesPersonnesServiesEnFin(): void
+    {
+        $season = $this->makeSeason();
+        $cat    = $this->makeCategory('SENIOR');
+        $team   = $this->makeTeam($season, 'Séniors 1');
+        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+
+        // ALPHA : encore à servir. MIKE : entièrement servi. ZULU : encore à servir.
+        $alpha = $this->makeLicencie($season, $cat, $team, 'L');
+        $alpha->setNom('ALPHA')->setPrenom('Amir');
+        $mike = $this->makeLicencie($season, $cat, $team, 'M');
+        $mike->setNom('MIKE')->setPrenom('Mike');
+        $zulu = $this->makeLicencie($season, $cat, $team, 'XL');
+        $zulu->setNom('ZULU')->setPrenom('Zoe');
+
+        $this->makeBesoin($season, $item, 'L', 1)->setLicencie($alpha);
+        $this->makeBesoin($season, $item, 'M', 1, DotationBesoinStatut::DONNE)->setLicencie($mike);
+        $this->makeBesoin($season, $item, 'XL', 1)->setLicencie($zulu);
+        $this->em->flush();
+
+        $groupes = $this->besoinService()->getSuiviGroupes($season);
+
+        self::assertCount(1, $groupes);
+        self::assertSame('Séniors 1', $groupes[0]['nom']);
+        self::assertSame(3, $groupes[0]['total']);
+        self::assertSame(2, $groupes[0]['restants']);
+
+        $noms = array_map(static fn ($b) => $b->getLicencie()->getNom(), $groupes[0]['besoins']);
+        self::assertSame(['ALPHA', 'ZULU', 'MIKE'], $noms, 'À servir (alphabétique) puis servis en fin.');
+    }
+
+    public function testGetSuiviGroupesPersonnePartielleResteEnTete(): void
+    {
+        $season = $this->makeSeason();
+        $cat    = $this->makeCategory('SENIOR');
+        $team   = $this->makeTeam($season, 'Séniors 1');
+        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+
+        // Une personne servie entièrement (WHISKEY) et une servie à moitié (BRAVO).
+        $bravo = $this->makeLicencie($season, $cat, $team, 'L');
+        $bravo->setNom('BRAVO')->setPrenom('Bob');
+        $whiskey = $this->makeLicencie($season, $cat, $team, 'M');
+        $whiskey->setNom('WHISKEY')->setPrenom('Will');
+
+        $this->makeBesoin($season, $item, 'L', 1, DotationBesoinStatut::DONNE)->setLicencie($bravo);
+        $this->makeBesoin($season, $item, 'L', 1)->setLicencie($bravo);
+        $this->makeBesoin($season, $item, 'M', 1, DotationBesoinStatut::DONNE)->setLicencie($whiskey);
+        $this->em->flush();
+
+        $groupes = $this->besoinService()->getSuiviGroupes($season);
+
+        $noms = array_map(static fn ($b) => $b->getLicencie()->getNom(), $groupes[0]['besoins']);
+        self::assertSame(['BRAVO', 'BRAVO', 'WHISKEY'], $noms, 'Une dotation partielle reste devant les personnes entièrement servies.');
+    }
+
     public function testStatutFicheLicencie(): void
     {
         $season = $this->makeSeason();
