@@ -35,7 +35,9 @@
     {% endif %}
 
     {% for groupe in groupes %}
-        <div class="dot-card" x-data="{ open: false }">
+        <div class="dot-card" x-data="{ open: false }"
+             x-init="if (sessionStorage.getItem('dotOpenGroup') === '{{ loop.index }}') { open = true; sessionStorage.removeItem('dotOpenGroup'); }"
+             @submit.capture="sessionStorage.setItem('dotOpenGroup', '{{ loop.index }}')">
             <button type="button" class="dot-card-header dot-card-toggle" @click="open = !open"
                     :aria-expanded="open" aria-label="Déplier / replier l'équipe">
                 <svg class="dot-card-chevron" :class="{ 'dot-card-chevron-open': open }"
