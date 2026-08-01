@@ -782,3 +782,22 @@
 .inscription-textarea:focus {
     border-color: var(--color-primary);
 }
+
+/* — Attestation de remise de clés (récépissé court) — */
+.attestation-cle-statement {
+    margin: 0 0 1rem;
+    padding: 0.9rem 1rem;
+    background: var(--color-bg-subtle);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    line-height: 1.7;
+    color: var(--color-text-body);
+}
+
+.attestation-cle-engagement {
+    margin-bottom: 1rem;
+    font-size: var(--font-size-sm);
+    line-height: 1.65;
+    color: var(--color-text-body);
+}

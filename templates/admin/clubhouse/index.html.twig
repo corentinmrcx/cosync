@@ -1,0 +1,121 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Club house{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Club house' }
+] } %}
+
+<div class="clubhouse-page">
+
+    <div class="clubhouse-header">
+        <div>
+            <h1 class="clubhouse-title">Club house</h1>
+            <p class="clubhouse-subtitle">Clés du club house et attestations de remise signées</p>
+        </div>
+    </div>
+
+    {# — Tuiles de synthèse — #}
+    <div class="stat-grid">
+        <div class="stat-card stat-card-primary">
+            <span class="stat-card-icon">{{ ui.icon('key', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.clesEnCirculation }}</span>
+                <span class="stat-card-label">Clé{{ stats.clesEnCirculation > 1 ? 's' : '' }} en circulation</span>
+            </span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-icon">{{ ui.icon('clipboard-list', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.nbDetenteurs }}</span>
+                <span class="stat-card-label">Détenteur{{ stats.nbDetenteurs > 1 ? 's' : '' }}</span>
+            </span>
+        </div>
+        <div class="stat-card {{ stats.nbAttestationsManquantes > 0 ? 'stat-card-warning' }}">
+            <span class="stat-card-icon">{{ ui.icon('file-text', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.nbAttestationsManquantes }}</span>
+                <span class="stat-card-label">Attestation{{ stats.nbAttestationsManquantes > 1 ? 's' : '' }} à signer</span>
+            </span>
+        </div>
+        <div class="stat-card {{ stats.clesPerdues > 0 ? 'stat-card-danger' }}">
+            <span class="stat-card-icon">{{ ui.icon('alert-triangle', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.clesPerdues }}</span>
+                <span class="stat-card-label">Clé{{ stats.clesPerdues > 1 ? 's' : '' }} perdue{{ stats.clesPerdues > 1 ? 's' : '' }}</span>
+            </span>
+        </div>
+    </div>
+
+    {# — Derniers mouvements — #}
+    <div class="clubhouse-section">
+        <div class="clubhouse-section-header">
+            <h2 class="clubhouse-section-title">Derniers mouvements</h2>
+        </div>
+
+        {% if recents is empty %}
+            <p class="clubhouse-empty">Aucun mouvement de clé enregistré pour cette saison.</p>
+        {% else %}
+            <div class="clubhouse-table-wrapper">
+                <table class="clubhouse-table resp-table">
+                    <thead>
+                        <tr>
+                            <th>Personne</th>
+                            <th>Mouvement</th>
+                            <th>Quantité</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mouvement in recents %}
+                            <tr>
+                                <td>{{ mouvement.dirigeant.nomPrenom }}</td>
+                                <td><span class="clubhouse-badge-{{ mouvement.type.value }}">{{ mouvement.type.label }}</span></td>
+                                <td>{{ mouvement.quantite }}</td>
+                                <td>{{ mouvement.dateMouvement|date('d/m/Y') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    {# — Accès rapides — #}
+    <div class="clubhouse-section">
+        <div class="clubhouse-section-header">
+            <h2 class="clubhouse-section-title">Accès rapides</h2>
+        </div>
+        <div class="quicklink-grid">
+            <a href="{{ path('admin_clubhouse_cles_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('key', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Registre des clés</span>
+                    <span class="quicklink-text">Qui détient quoi, depuis quand, et l'historique complet</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_clubhouse_attestation_edit') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('edit', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Attestation de remise</span>
+                    <span class="quicklink-text">Rédiger le texte signé par les détenteurs de clés</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_clubhouse_attestation_recap') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('download', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Récapitulatif pour la mairie</span>
+                    <span class="quicklink-text">Liste PDF des détenteurs et de leurs signatures</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

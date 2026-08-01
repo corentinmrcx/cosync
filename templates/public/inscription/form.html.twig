@@ -345,7 +345,7 @@
                 {% include 'public/_reglement_signature_step.html.twig' with {
                     season: licencie.season,
                     stepShow: 'step === 5'
-                } %}
+                } only %}
 
                 {# ── Étape 6 : Paiement ── #}
                 <div x-show="step === 6" class="inscription-card">

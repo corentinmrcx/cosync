@@ -46,6 +46,13 @@
         } %}
 
         {% include 'components/hub-card.html.twig' with {
+            icon: 'key',
+            label: 'Club house',
+            route: hasSeason ? 'admin_clubhouse_index' : null,
+            disabled: not hasSeason
+        } %}
+
+        {% include 'components/hub-card.html.twig' with {
             icon: 'wallet',
             label: 'Finance',
             sub: 'Bientôt disponible',

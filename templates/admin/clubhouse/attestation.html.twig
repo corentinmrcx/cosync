@@ -1,0 +1,97 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Attestation de remise{% endblock %}
+
+{% block head %}
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Club house', route: 'admin_clubhouse_index' },
+    { label: 'Attestation de remise' }
+] } %}
+
+<div class="clubhouse-editor-page">
+    <div class="clubhouse-editor-layout">
+
+        <form method="post" action="{{ path('admin_clubhouse_attestation_edit') }}" class="clubhouse-editor-card" id="attestation-form">
+
+            <input type="hidden" name="_token" value="{{ csrf_token('attestation_cle_text_' ~ season.id) }}">
+            <input type="hidden" name="attestation_cle_text" id="attestation_cle_text_input">
+
+            <div class="clubhouse-editor-header">
+                <h1 class="clubhouse-editor-title">Attestation de remise de clés</h1>
+                <p class="clubhouse-editor-hint">
+                    Le nom du signataire, le nombre de clés et la date de remise sont repris
+                    automatiquement du registre. Ce champ ne sert qu'à ajouter un engagement
+                    complémentaire (ne pas prêter la clé, la restituer en fin de saison…).
+                    Il est propre à la saison {{ season.label }}.
+                </p>
+            </div>
+
+            <hr class="clubhouse-editor-divider">
+
+            <div class="clubhouse-editor-field">
+                <label class="clubhouse-editor-label">Engagement complémentaire (facultatif)</label>
+                <div class="clubhouse-editor-wrapper">
+                    <div id="quill-editor" class="clubhouse-editor-zone">{{ season.attestationCleText|raw }}</div>
+                </div>
+            </div>
+
+            <div class="clubhouse-editor-actions">
+                <a href="{{ path('admin_clubhouse_index') }}" class="clubhouse-btn-cancel">Annuler</a>
+                <button type="submit" class="clubhouse-btn-primary">Enregistrer</button>
+            </div>
+
+        </form>
+
+        <aside class="clubhouse-preview-panel">
+            <div class="clubhouse-preview-header">
+                <span class="clubhouse-preview-title">Aperçu — rendu signataire</span>
+                <span class="clubhouse-preview-hint">Mis à jour en direct</span>
+            </div>
+            <div class="clubhouse-preview-content" id="attestation-preview">
+                {{ season.attestationCleText|raw }}
+            </div>
+            <div class="clubhouse-preview-footer">
+                <a href="{{ path('admin_clubhouse_attestation_apercu') }}" target="_blank" class="clubhouse-btn-secondary">Aperçu PDF</a>
+                <a href="{{ path('admin_clubhouse_attestation_recap') }}" class="clubhouse-btn-secondary">Récapitulatif mairie</a>
+
+                <form method="post" action="{{ path('admin_clubhouse_attestation_recap_sync') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('attestation_cle_recap_sync') }}">
+                    <button type="submit" class="clubhouse-btn-link">Régénérer le récapitulatif sur Drive</button>
+                </form>
+
+                <span class="clubhouse-editor-hint">Les aperçus sont basés sur le texte enregistré.</span>
+            </div>
+        </aside>
+
+    </div>
+</div>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+    const quill = new Quill('#quill-editor', {
+        theme: 'snow',
+        placeholder: 'Ex. : je m'''engage à ne pas prêter cette clé et à la restituer sur demande…',
+        modules: {
+            toolbar: [
+                [{ header: [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['clean']
+            ]
+        }
+    });
+
+    document.getElementById('attestation-form').addEventListener('submit', function () {
+        document.getElementById('attestation_cle_text_input').value = quill.root.innerHTML;
+    });
+
+    const preview = document.getElementById('attestation-preview');
+    preview.innerHTML = quill.root.innerHTML;
+    quill.on('text-change', () => { preview.innerHTML = quill.root.innerHTML; });
+</script>
+{% endblock %}

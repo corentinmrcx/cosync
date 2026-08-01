@@ -1,0 +1,206 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Registre des clés{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Club house', route: 'admin_clubhouse_index' },
+    { label: 'Clés' }
+] } %}
+
+<div class="clubhouse-page" x-data="{ modaleOuverte: false, personne: '', typeMouvement: 'remise' }">
+
+    <div class="clubhouse-header">
+        <div>
+            <h1 class="clubhouse-title">Registre des clés</h1>
+            <p class="clubhouse-subtitle">Saison {{ season.label }} — détention et historique des mouvements</p>
+        </div>
+        <div class="clubhouse-actions">
+            <a href="{{ path('admin_clubhouse_attestation_recap') }}" class="clubhouse-btn-secondary">
+                {{ ui.icon('download') }}
+                Récapitulatif PDF
+            </a>
+        </div>
+    </div>
+
+    {# — Tuiles de synthèse — #}
+    <div class="stat-grid">
+        <div class="stat-card stat-card-primary">
+            <span class="stat-card-icon">{{ ui.icon('key', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.clesEnCirculation }}</span>
+                <span class="stat-card-label">Clé{{ stats.clesEnCirculation > 1 ? 's' : '' }} en circulation</span>
+            </span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-icon">{{ ui.icon('clipboard-list', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.nbDetenteurs }}</span>
+                <span class="stat-card-label">Détenteur{{ stats.nbDetenteurs > 1 ? 's' : '' }}</span>
+            </span>
+        </div>
+        <div class="stat-card stat-card-ok">
+            <span class="stat-card-icon">{{ ui.icon('check', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.nbAttestationsSignees }}</span>
+                <span class="stat-card-label">Attestation{{ stats.nbAttestationsSignees > 1 ? 's' : '' }} signée{{ stats.nbAttestationsSignees > 1 ? 's' : '' }}</span>
+            </span>
+        </div>
+        <div class="stat-card {{ stats.clesPerdues > 0 ? 'stat-card-danger' }}">
+            <span class="stat-card-icon">{{ ui.icon('alert-triangle', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.clesPerdues }}</span>
+                <span class="stat-card-label">Clé{{ stats.clesPerdues > 1 ? 's' : '' }} perdue{{ stats.clesPerdues > 1 ? 's' : '' }}</span>
+            </span>
+        </div>
+    </div>
+
+    {# — Recherche, filtres, action — #}
+    {% embed 'components/list-toolbar.html.twig' with {
+        search: search,
+        searchPlaceholder: 'Rechercher une personne…',
+        filterGroups: filterGroups,
+        activeCount: activeFilterCount,
+        resetUrl: path('admin_clubhouse_cles_index', {statut: '', search: ''}),
+        formId: 'cles'
+    } %}
+        {% block actions %}
+            {# L'import de macro du template parent ne traverse pas l'embed : SVG inline. #}
+            <button type="button" class="clubhouse-btn-primary" @click="modaleOuverte = true; typeMouvement = 'remise'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Remettre une clé
+            </button>
+        {% endblock %}
+    {% endembed %}
+
+    {# — Détenteurs — #}
+    {% if detentions is empty %}
+        <p class="clubhouse-empty">Aucun mouvement de clé ne correspond à cette recherche.</p>
+    {% else %}
+        <div class="clubhouse-table-wrapper">
+            <table class="clubhouse-table resp-table">
+                <thead>
+                    <tr>
+                        <th>Personne</th>
+                        <th>Rôle</th>
+                        <th>Clés</th>
+                        <th>Détenteur depuis</th>
+                        <th>Attestation</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detention in detentions %}
+                        {% set dirigeant = detention.dirigeant %}
+                        <tr>
+                            <td data-label="Personne">
+                                <span class="clubhouse-nom">{{ dirigeant.nomPrenom }}</span>
+                                {% if dirigeant.email %}
+                                    <span class="clubhouse-meta">{{ dirigeant.email }}</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Rôle">{{ dirigeant.role ? dirigeant.role.label : '—' }}</td>
+                            <td data-label="Clés">
+                                {% if detention.estDetenteur %}
+                                    <span class="clubhouse-cles-count">{{ detention.solde }}</span>
+                                {% else %}
+                                    <span class="clubhouse-meta">Aucune</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Détenteur depuis">
+                                {{ detention.detenteurDepuis ? detention.detenteurDepuis|date('d/m/Y') : '—' }}
+                            </td>
+                            <td data-label="Attestation">
+                                {% if detention.doitResigner %}
+                                    <span class="clubhouse-badge-renouveler">À renouveler</span>
+                                {% elseif detention.aSigne %}
+                                    <span class="clubhouse-badge-signee">Signée le {{ dirigeant.attestationCleSignedAt|date('d/m/Y') }}</span>
+                                {% elseif dirigeant.isAttestationCleTokenValid %}
+                                    <span class="clubhouse-badge-attente">Lien envoyé</span>
+                                {% else %}
+                                    <span class="clubhouse-badge-manquante">Non signée</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Actions" class="clubhouse-row-actions">
+                                {% if not detention.attestationAJour and dirigeant.email %}
+                                    <form method="post" action="{{ path('admin_clubhouse_cles_send_link', {uuid: dirigeant.uuid}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('attestation_cle_send_link_' ~ dirigeant.uuid) }}">
+                                        <button type="submit" class="clubhouse-btn-sm">
+                                            {{ ui.icon('send', 14) }}
+                                            {{ dirigeant.isAttestationCleTokenValid ? 'Renvoyer le lien' : 'Envoyer le lien' }}
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <button type="button" class="clubhouse-btn-sm"
+                                        @click="modaleOuverte = true; personne = '{{ dirigeant.uuid }}'; typeMouvement = 'remise'">
+                                    Mouvement
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {# — Modale de saisie d'un mouvement — #}
+    <div class="clubhouse-modal" x-show="modaleOuverte" x-cloak @click.self="modaleOuverte = false">
+        <div class="clubhouse-modal-box">
+            <h2 class="clubhouse-modal-title">Enregistrer un mouvement de clé</h2>
+            <p class="clubhouse-modal-hint">
+                L'historique n'est jamais modifié : une erreur se corrige par un mouvement inverse.
+            </p>
+
+            <form method="post" action="{{ path('admin_clubhouse_cles_mouvement') }}" class="clubhouse-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('cle_mouvement') }}">
+
+                <div class="clubhouse-form-row">
+                    <label class="clubhouse-form-label" for="cle-dirigeant">Personne</label>
+                    <select name="dirigeant" id="cle-dirigeant" class="clubhouse-form-input" x-model="personne" required>
+                        <option value="">— Sélectionner —</option>
+                        {% for candidat in candidats %}
+                            <option value="{{ candidat.uuid }}">{{ candidat.nomPrenom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="clubhouse-form-row">
+                    <label class="clubhouse-form-label" for="cle-type">Type de mouvement</label>
+                    <select name="type" id="cle-type" class="clubhouse-form-input" x-model="typeMouvement" required>
+                        <option value="remise">Remise</option>
+                        <option value="restitution">Restitution</option>
+                        <option value="perte">Perte</option>
+                    </select>
+                </div>
+
+                <div class="clubhouse-form-row">
+                    <label class="clubhouse-form-label" for="cle-quantite">Nombre de clés</label>
+                    <input type="number" name="quantite" id="cle-quantite" class="clubhouse-form-input" value="1" min="1" required>
+                </div>
+
+                <div class="clubhouse-form-row">
+                    <label class="clubhouse-form-label" for="cle-date">Date</label>
+                    <input type="date" name="date_mouvement" id="cle-date" class="clubhouse-form-input"
+                           value="{{ 'now'|date('Y-m-d') }}" required>
+                </div>
+
+                <div class="clubhouse-form-row">
+                    <label class="clubhouse-form-label" for="cle-note">Note (facultatif)</label>
+                    <input type="text" name="note" id="cle-note" class="clubhouse-form-input"
+                           placeholder="Ex. : clé du portail arrière">
+                </div>
+
+                <div class="clubhouse-modal-actions">
+                    <button type="button" class="clubhouse-btn-cancel" @click="modaleOuverte = false">Annuler</button>
+                    <button type="submit" class="clubhouse-btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

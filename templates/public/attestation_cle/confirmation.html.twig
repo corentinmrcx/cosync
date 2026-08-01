@@ -1,0 +1,38 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Attestation signée — Foyer de Soudron{% endblock %}
+
+{% block body %}
+<div class="inscription-page">
+
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+        </div>
+        <div class="inscription-progress">
+            <div class="inscription-progress-segment inscription-progress-segment-done"></div>
+        </div>
+    </header>
+
+    <main class="inscription-main">
+        <div class="inscription-container">
+            <div class="inscription-card">
+                <div class="inscription-expired-icon">✅</div>
+                <h1 class="inscription-expired-title">Attestation signée !</h1>
+                <p class="inscription-expired-text">
+                    Merci {{ dirigeant.prenom }}, votre attestation de remise de clés
+                    a bien été enregistrée le {{ dirigeant.attestationCleSignedAt|date('d/m/Y') }}.
+                </p>
+
+                <p style="margin-top: 1.5rem; font-size: 0.8125rem; color: #9ca3af; line-height: 1.6;">
+                    Le document signé est archivé par le club et peut être transmis à la mairie sur
+                    demande. Pour toute question, contactez le club directement.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    {% include 'components/footer.html.twig' %}
+
+</div>
+{% endblock %}

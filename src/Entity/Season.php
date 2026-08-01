@@ -23,6 +23,10 @@ class Season
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $reglementText = null;
 
+    /** Texte de l'attestation de remise signée par les détenteurs de clés du club house */
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $attestationCleText = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -66,6 +70,17 @@ class Season
     public function setReglementText(?string $reglementText): static
     {
         $this->reglementText = $reglementText;
+        return $this;
+    }
+
+    public function getAttestationCleText(): ?string
+    {
+        return $this->attestationCleText;
+    }
+
+    public function setAttestationCleText(?string $attestationCleText): static
+    {
+        $this->attestationCleText = $attestationCleText;
         return $this;
     }
 

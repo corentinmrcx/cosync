@@ -2,7 +2,10 @@
 
 namespace App\Tests\Service\Stock;
 
+use App\Entity\CleMouvement;
+use App\Entity\Dirigeant;
 use App\Entity\StockCategory;
+use App\Enum\CleMouvementType;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementType;
 use App\Service\PurgeService;
@@ -38,6 +41,19 @@ final class PurgeServiceTest extends StockIntegrationTestCase
         $this->makeMovement($item, 5, StockMovementType::ENTREE, 'L');
         $this->makeCommandeEnAttente($season, $item, 'L', 3, $four);
 
+        // Registre des clés du club house : référence dirigeant, season et user.
+        $dirigeant = (new Dirigeant())->setNom('DUPONT')->setPrenom('Thomas')->setSeason($season);
+        $this->em->persist($dirigeant);
+
+        $this->em->persist(
+            (new CleMouvement())
+                ->setDirigeant($dirigeant)
+                ->setSeason($season)
+                ->setType(CleMouvementType::REMISE)
+                ->setQuantite(1)
+                ->setDateMouvement(new \DateTimeImmutable('2026-01-10')),
+        );
+
         $this->em->flush();
         $this->em->clear();
 
@@ -48,13 +64,14 @@ final class PurgeServiceTest extends StockIntegrationTestCase
 
         self::assertGreaterThan(0, $this->rowCount('dotation_besoin'), 'Le besoin doit exister avant purge.');
         self::assertGreaterThan(0, $this->rowCount('commande_ligne'), 'La ligne de commande doit exister avant purge.');
+        self::assertGreaterThan(0, $this->rowCount('cle_mouvement'), 'Le mouvement de clé doit exister avant purge.');
 
         // — Purge —
         $this->service(PurgeService::class)->purgeAll();
 
         // Toutes les tables de données sont vides.
         $videes = [
-            'transaction', 'commande_ligne', 'dotation_modele_ligne', 'dotation_affectation',
+            'transaction', 'cle_mouvement', 'commande_ligne', 'dotation_modele_ligne', 'dotation_affectation',
             'dotation_besoin', 'stock_movement', 'commande', 'dotation_modele', 'dossier_club',
             'licencie', 'dirigeant', 'stock_item', 'fournisseur', 'stock_category', 'team', 'season',
         ];

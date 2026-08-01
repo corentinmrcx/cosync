@@ -129,6 +129,30 @@ final class MailerService
         $this->mailer->send($email);
     }
 
+    public function sendAttestationCleLink(Dirigeant $dirigeant): void
+    {
+        $url = $this->urlGenerator->generate(
+            'public_attestation_cle_show',
+            ['uuid' => $dirigeant->getUuid()],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+
+        $realEmail = $dirigeant->getEmail();
+        $subject   = 'Attestation de remise de clés à signer — Foyer de Soudron, saison ' . $dirigeant->getSeason()->getLabel();
+
+        $email = (new TemplatedEmail())
+            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
+            ->to($this->resolveRecipient(new Address($realEmail, $dirigeant->getNomPrenom())))
+            ->subject($this->resolveSubject($subject, $realEmail))
+            ->htmlTemplate('email/attestation_cle_link.html.twig')
+            ->context([
+                'dirigeant' => $dirigeant,
+                'url'       => $url,
+            ]);
+
+        $this->mailer->send($email);
+    }
+
     public function sendValidationTest(string $to, bool $isJeune): void
     {
         $subject = $isJeune

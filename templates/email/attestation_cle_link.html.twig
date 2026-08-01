@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Attestation de remise de clés — Foyer de Soudron</title>
+    <style>
+        body { margin: 0; padding: 0; background: #ebedf0; -webkit-font-smoothing: antialiased; }
+        a { text-decoration: none; }
+        .btn-cta:hover { background: #e02020 !important; }
+        @media (max-width: 620px) {
+            .container { width: 100% !important; }
+            .px { padding-left: 28px !important; padding-right: 28px !important; }
+            .h1 { font-size: 25px !important; }
+        }
+    </style>
+</head>
+<body>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #ebedf0; font-family: Arial, sans-serif;">
+    <tr>
+        <td align="center" style="padding: 40px 16px;">
+
+            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0"
+                   style="width: 600px; max-width: 600px; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.08);">
+
+                {# — Bandeau rouge — #}
+                <tr>
+                    <td style="background: #ff3131; padding: 30px 40px;" class="px">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="vertical-align: middle;">
+                                    <span style="color: #ffffff; font-size: 22px; font-weight: 900; letter-spacing: 2px;">CoSync</span>
+                                </td>
+                                <td align="right" style="vertical-align: middle;">
+                                    <img src="{{ absolute_url(asset('images/logo/logo.png')) }}"
+                                         alt="Foyer de Soudron"
+                                         width="48" height="48"
+                                         style="display: block; width: 48px; height: 48px; object-fit: contain;">
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                {# — Hero — #}
+                <tr>
+                    <td style="padding: 44px 40px 8px;" class="px">
+                        <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #ff3131;">
+                            Clés du club house · Saison {{ dirigeant.season.label }}
+                        </p>
+                        <h1 class="h1" style="margin: 0 0 18px; font-size: 30px; line-height: 1.2; font-weight: 800; color: #1f1f1f;">
+                            Bonjour {{ dirigeant.prenom }},<br>attestez de la remise de vos clés
+                        </h1>
+                        <p style="margin: 0; font-size: 16px; line-height: 1.65; color: #374151;">
+                            Vous détenez une ou plusieurs <strong style="color: #1f1f1f;">clés du local communal</strong>.
+                            Le club vous demande de le confirmer par une signature électronique.
+                            Cela prend <strong style="color: #1f1f1f;">moins d'une minute</strong>.
+                        </p>
+                    </td>
+                </tr>
+
+                {# — Bouton CTA — #}
+                <tr>
+                    <td align="center" style="padding: 32px 40px 8px;" class="px">
+                        <table role="presentation" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="border-radius: 9px; background: #ff3131;">
+                                    <a href="{{ url }}" class="btn-cta"
+                                       style="display: inline-block; background: #ff3131; color: #ffffff; font-size: 16px; font-weight: 800; padding: 16px 44px; border-radius: 9px; letter-spacing: .3px;">
+                                        Signer l'attestation →
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                        <p style="margin: 16px 0 0; font-size: 13px; color: #9aa1aa;">Lien personnel — valable 30 jours, ne le partagez pas.</p>
+                    </td>
+                </tr>
+
+                {# — Lien de secours — #}
+                <tr>
+                    <td style="padding: 24px 40px 36px;" class="px">
+                        <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #9aa1aa;">
+                            Le bouton ne fonctionne pas ? Copiez ce lien dans votre navigateur :<br>
+                            <a href="{{ url }}" style="color: #ff3131; font-weight: 600; word-break: break-all;">{{ url }}</a>
+                        </p>
+                    </td>
+                </tr>
+
+                {# — Pied de page sombre — #}
+                <tr>
+                    <td style="background: #1f1f1f; padding: 28px 40px;" class="px">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td>
+                                    <p style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: #ffffff;">Foyer de Soudron</p>
+                                    <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #9aa1aa;">
+                                        Stade municipal · 51320 Soudron
+                                    </p>
+                                </td>
+                                <td align="right" style="vertical-align: bottom;">
+                                    <p style="margin: 0; font-size: 11px; color: #5b6068;">Propulsé par <a href="https://codepp.fr/" style="color: #ff3131; font-weight: 700; text-decoration: none;">Codepp</a></p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+            </table>
+
+            {# — Sous-pied de page — #}
+            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="width: 600px; max-width: 600px;">
+                <tr>
+                    <td align="center" style="padding: 20px 40px;">
+                        <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #9aa1aa;">
+                            Vous recevez cet email car vous détenez une clé du local du Foyer de Soudron.<br>
+                            Pour toute question, contactez le club directement.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

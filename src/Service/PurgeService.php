@@ -28,6 +28,7 @@ final class PurgeService
         // Ordre FK-safe : chaque table est vidée après toutes celles qui la référencent.
         $tables = [
             'transaction',
+            'cle_mouvement',
             'commande_ligne',
             'dotation_modele_ligne',
             'dotation_affectation',

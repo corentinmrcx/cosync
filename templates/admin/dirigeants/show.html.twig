@@ -216,7 +216,35 @@
                         <span class="licencie-show-check-badge-pending">En attente</span>
                     {% endif %}
                 </li>
+
+                {# Attestation de remise de clés — affichée seulement pour les détenteurs de clés #}
+                {% if nbCles > 0 or dirigeant.hasSignedAttestationCle %}
+                <li class="licencie-show-check-item">
+                    {% if dirigeant.hasSignedAttestationCle %}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span class="licencie-show-check-label">Attestation de remise de clés</span>
+                        {% if dirigeant.attestationCleSignePath starts with '/' %}
+                            <span class="licencie-show-check-badge-pending">Upload en attente</span>
+                        {% else %}
+                            <span class="licencie-show-check-badge-yes">Archivée sur Drive</span>
+                        {% endif %}
+                    {% else %}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span class="licencie-show-check-label licencie-show-check-label-pending">Attestation de remise de clés</span>
+                        <span class="licencie-show-check-badge-pending">
+                            {{ dirigeant.isAttestationCleTokenValid ? 'Lien envoyé' : 'En attente' }}
+                        </span>
+                    {% endif %}
+                </li>
+                {% endif %}
             </ul>
+
+            {% if nbCles > 0 %}
+                <p class="licencie-show-card-note">
+                    Détient {{ nbCles }} clé{{ nbCles > 1 ? 's' : '' }} du club house —
+                    <a href="{{ path('admin_clubhouse_cles_index') }}">voir le registre</a>
+                </p>
+            {% endif %}
         </div>
 
         {# — Historique — #}

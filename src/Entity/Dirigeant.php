@@ -64,6 +64,18 @@ class Dirigeant
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $reglementSignedAt = null;
 
+    /** Chemin local temporaire puis ID Drive de l'attestation de remise de clés signée */
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $attestationCleSignePath = null;
+
+    /** Date de signature de l'attestation de remise de clés */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $attestationCleSignedAt = null;
+
+    /** Expiration du lien public de signature de l'attestation — indépendant de formTokenExpiresAt */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $attestationCleTokenExpiresAt = null;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Team $team = null;
@@ -146,6 +158,15 @@ class Dirigeant
     public function getReglementSignedAt(): ?\DateTimeImmutable { return $this->reglementSignedAt; }
     public function setReglementSignedAt(?\DateTimeImmutable $reglementSignedAt): static { $this->reglementSignedAt = $reglementSignedAt; return $this; }
 
+    public function getAttestationCleSignePath(): ?string { return $this->attestationCleSignePath; }
+    public function setAttestationCleSignePath(?string $attestationCleSignePath): static { $this->attestationCleSignePath = $attestationCleSignePath; return $this; }
+
+    public function getAttestationCleSignedAt(): ?\DateTimeImmutable { return $this->attestationCleSignedAt; }
+    public function setAttestationCleSignedAt(?\DateTimeImmutable $attestationCleSignedAt): static { $this->attestationCleSignedAt = $attestationCleSignedAt; return $this; }
+
+    public function getAttestationCleTokenExpiresAt(): ?\DateTimeImmutable { return $this->attestationCleTokenExpiresAt; }
+    public function setAttestationCleTokenExpiresAt(?\DateTimeImmutable $attestationCleTokenExpiresAt): static { $this->attestationCleTokenExpiresAt = $attestationCleTokenExpiresAt; return $this; }
+
     public function getTeam(): ?Team { return $this->team; }
     public function setTeam(?Team $team): static { $this->team = $team; return $this; }
 
@@ -190,6 +211,22 @@ class Dirigeant
     public function needsReglementSignature(): bool
     {
         return !$this->hasSignedReglement();
+    }
+
+    /**
+     * L'attestation de remise de clés est-elle signée ?
+     * Volontairement hors de isPublicFormComplete() : elle ne concerne que les
+     * détenteurs de clés, pas le parcours dirigeant standard.
+     */
+    public function hasSignedAttestationCle(): bool
+    {
+        return $this->attestationCleSignePath !== null;
+    }
+
+    public function isAttestationCleTokenValid(): bool
+    {
+        return $this->attestationCleTokenExpiresAt !== null
+            && $this->attestationCleTokenExpiresAt > new \DateTimeImmutable();
     }
 
     /**

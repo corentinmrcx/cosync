@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 25mm 20mm 25mm;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: #111;
+            line-height: 1.5;
+            padding: 12mm 10mm;
+        }
+
+        /* ── Header ── */
+        .header {
+            width: 100%;
+            border-collapse: collapse;
+            border-bottom: 2px solid #ff0033;
+            margin-bottom: 6mm;
+        }
+
+        .header td { vertical-align: middle; padding: 0 0 6mm 0; }
+
+        .header-logo {
+            width: 20mm;
+            height: 20mm;
+            object-fit: contain;
+        }
+
+        .header-title {
+            text-align: center;
+            padding: 0 8px;
+        }
+
+        .header-title h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 3px;
+        }
+
+        .header-title p {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ff0033;
+        }
+
+        /* ── Ce que le signataire atteste ── */
+        .statement {
+            font-size: 13px;
+            line-height: 1.7;
+            margin-bottom: 8mm;
+            page-break-inside: avoid;
+        }
+
+        .statement .highlight { color: #ff0033; font-weight: 700; }
+
+        /* ── Engagement complémentaire du club ── */
+        .content {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #111;
+            margin-bottom: 12mm;
+        }
+
+        .content h2 {
+            font-size: 15px;
+            margin: 20px 0 10px;
+            page-break-after: avoid;
+        }
+
+        .content h3 {
+            font-size: 13px;
+            margin: 16px 0 7px;
+            page-break-after: avoid;
+        }
+
+        .content p {
+            margin: 0 0 12px;
+            page-break-inside: avoid;
+        }
+
+        .content ul,
+        .content ol {
+            margin: 8px 0 14px 20px;
+        }
+
+        .content li {
+            margin-bottom: 6px;
+            page-break-inside: avoid;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            border-top: 1px solid #ccc;
+            padding-top: 6mm;
+            font-size: 10px;
+            page-break-inside: avoid;
+        }
+
+        .footer-date {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .footer-statement {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .footer-statement .highlight { color: #ff0033; }
+
+        .sign-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .sign-img {
+            max-height: 80px;
+            max-width: 220px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+{% if previewMode is defined and previewMode %}
+<div style="background:#ff3131;color:#fff;text-align:center;padding:5px 0;font-size:12px;font-weight:700;letter-spacing:0.1em;margin-bottom:8mm;">
+    APERÇU — NON OFFICIEL
+</div>
+{% endif %}
+
+{# ── Header ── #}
+<table class="header" cellpadding="0" cellspacing="0">
+    <tr>
+        <td width="68">
+            <img src="{{ logoDataUrl }}" alt="Logo club" class="header-logo">
+        </td>
+        <td class="header-title">
+            <h1>Attestation de remise de clés</h1>
+            <p>Club house — Foyer de Soudron — Saison {{ season.label }}</p>
+        </td>
+        <td width="68" style="text-align: right;">
+            <img src="{{ foyerLogoDataUrl }}" alt="Foyer de Soudron" class="header-logo">
+        </td>
+    </tr>
+</table>
+
+{# ── Ce que le signataire atteste, repris du registre des clés ── #}
+<p class="statement">
+    Je soussigné·e <span class="highlight">{{ prenom }} {{ nom }}</span>, reconnais avoir reçu
+    <span class="highlight">{{ nbCles }}</span> clé{{ nbCles > 1 ? 's' }} du club house du Foyer de
+    Soudron{% if remiseLe %} le <span class="highlight">{{ remiseLe|date('d/m/Y') }}</span>{% endif %},
+    pour la saison <span class="highlight">{{ season.label }}</span>.
+</p>
+
+{# ── Engagement complémentaire défini par le club ── #}
+{% if season.attestationCleText %}
+    <div class="content">
+        {{ season.attestationCleText|raw }}
+    </div>
+{% endif %}
+
+{# ── Footer ── #}
+<div class="footer">
+    <p class="footer-date">Soudron, le {{ signedAt|date('d/m/Y') }}</p>
+    <div class="sign-label">Signature :</div>
+    {% if previewMode is defined and previewMode %}
+        <p style="font-size:11px;color:#888;font-style:italic;">(Emplacement de la signature)</p>
+    {% else %}
+        <img class="sign-img" src="{{ signatureDataUrl }}" alt="Signature">
+    {% endif %}
+</div>
+
+</body>
+</html>

@@ -12,6 +12,7 @@ use App\Repository\DirigeantRoleRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
+use App\Service\ClubHouse\CleRegistreService;
 use App\Service\DirigeantService;
 use App\Service\Mail\DirigeantLinkService;
 use App\Service\SeasonContext;
@@ -131,6 +132,7 @@ class DirigeantController extends AbstractController
         string $uuid,
         DirigeantRepository $dirigeantRepo,
         StockMovementRepository $stockMovementRepo,
+        CleRegistreService $registre,
     ): Response {
         $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
         if ($dirigeant === null) {
@@ -161,12 +163,21 @@ class DirigeantController extends AbstractController
             ];
         }
 
+        if ($dirigeant->getAttestationCleSignedAt() !== null) {
+            $history[] = [
+                'date'  => $dirigeant->getAttestationCleSignedAt(),
+                'label' => 'Attestation de remise de clés signée',
+                'who'   => $dirigeant->getNomPrenom(),
+            ];
+        }
+
         usort($history, fn(array $a, array $b) => $a['date'] <=> $b['date']);
 
         return $this->render('admin/dirigeants/show.html.twig', [
             'dirigeant' => $dirigeant,
             'dotations' => $stockMovementRepo->findDotationsByDirigeant($dirigeant),
             'history'   => $history,
+            'nbCles'    => $registre->getSolde($dirigeant),
         ]);
     }
 

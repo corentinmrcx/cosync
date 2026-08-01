@@ -34,6 +34,12 @@ final class SeasonService
         $this->em->flush();
     }
 
+    public function updateAttestationCleText(Season $season, ?string $attestationCleText): void
+    {
+        $season->setAttestationCleText($attestationCleText);
+        $this->em->flush();
+    }
+
     public function delete(Season $season): void
     {
         $this->em->remove($season);
