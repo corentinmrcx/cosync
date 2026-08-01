@@ -28,6 +28,7 @@
 @import './pages/categories.css';
 @import './pages/documentation.css';
 @import './pages/error.css';
+@import './pages/legal.css';
 
 :root {
     /* — Identité club — */

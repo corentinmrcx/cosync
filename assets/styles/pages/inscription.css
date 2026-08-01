@@ -116,6 +116,24 @@
     margin-bottom: 0.625rem;
 }
 
+/* — Information RGPD au point de collecte — */
+.inscription-rgpd-note {
+    margin: 1rem 0 0;
+    padding: 0.75rem 0.875rem;
+    background: var(--color-info-bg);
+    border-left: 3px solid var(--color-info);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    line-height: 1.6;
+    color: var(--color-text-body);
+}
+
+.inscription-rgpd-note-link {
+    color: var(--color-info);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
 /* — Titres d'étapes — */
 .inscription-step-title {
     font-size: var(--font-size-lg);

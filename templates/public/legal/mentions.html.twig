@@ -1,0 +1,100 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Mentions légales – Foyer de Soudron{% endblock %}
+
+{% block body %}
+<div class="legal-page">
+
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+        </div>
+    </header>
+
+    <main class="legal-main">
+        <div class="legal-container">
+
+            <div class="legal-header">
+                <h1 class="legal-title">Mentions légales</h1>
+                <p class="legal-updated">Dernière mise à jour : 1<sup>er</sup> août 2026</p>
+            </div>
+
+            <article class="legal-content">
+
+                {# — Éditeur — #}
+                <section class="legal-section" id="editeur">
+                    <h2 class="legal-h2">Éditeur du site</h2>
+                    <p class="legal-p">
+                        <strong>Foyer de Soudron</strong> — association loi 1901<br>
+                        1 Rue de l'Église, 51320 Soudron<br>
+                        SIRET : 488 128 794 00010<br>
+                        Email : <a class="legal-link" href="mailto:contact@codepp.fr">contact@codepp.fr</a>
+                    </p>
+                    <p class="legal-p">
+                        L'association est responsable des données traitées dans l'application et des contenus publiés.
+                    </p>
+                </section>
+
+                {# — Publication — #}
+                <section class="legal-section" id="publication">
+                    <h2 class="legal-h2">Directeur de la publication</h2>
+                    <p class="legal-p">
+                        Le président de l'association : Lydie BOULLAND.
+                    </p>
+                </section>
+
+                {# — Conception et hébergement — #}
+                <section class="legal-section" id="prestataire">
+                    <h2 class="legal-h2">Conception, développement et hébergement</h2>
+                    <p class="legal-p">
+                        L'application <strong>CoSync</strong> est conçue, développée et hébergée par :
+                    </p>
+                    <p class="legal-p">
+                        <strong>Codepp</strong> — Corentin Marcoux, entrepreneur individuel<br>
+                        2 Chemin de Conflans, 51320 Soudron<br>
+                        SIRET : 103 387 379 00011<br>
+                        Email : <a class="legal-link" href="mailto:contact@codepp.fr">contact@codepp.fr</a><br>
+                        Site : <a class="legal-link" href="https://codepp.fr/" target="_blank" rel="noopener">codepp.fr</a>
+                    </p>
+                    <p class="legal-p">
+                        L'application est mise à disposition de l'association à titre gracieux et hébergée sur un
+                        serveur exploité par Codepp, qui intervient à ce titre comme sous-traitant au sens de
+                        l'article 28 du RGPD : il ne traite les données que pour le compte de l'association et sur ses
+                        instructions.
+                    </p>
+                    <p class="legal-p">
+                        Les documents PDF signés (règlement intérieur, attestations de transport) sont archivés sur
+                        l'espace Google Drive du club, opéré par Google.
+                    </p>
+                </section>
+
+                {# — Propriété intellectuelle — #}
+                <section class="legal-section" id="propriete">
+                    <h2 class="legal-h2">Propriété intellectuelle</h2>
+                    <p class="legal-p">
+                        L'ensemble des contenus du site (textes, logo du club, mise en page, code source) est protégé
+                        par le droit d'auteur. Toute reproduction ou réutilisation, totale ou partielle, sans
+                        autorisation préalable est interdite.
+                    </p>
+                </section>
+
+                {# — Données personnelles — #}
+                <section class="legal-section" id="donnees">
+                    <h2 class="legal-h2">Données personnelles</h2>
+                    <p class="legal-p">
+                        Le traitement des données personnelles est détaillé dans la
+                        <a class="legal-link" href="{{ path('public_legal_confidentialite') }}">politique de
+                        confidentialité</a> : données traitées, finalités, durées de conservation, destinataires et
+                        modalités d'exercice de vos droits.
+                    </p>
+                </section>
+
+            </article>
+
+        </div>
+    </main>
+
+    {% include 'components/footer.html.twig' %}
+
+</div>
+{% endblock %}

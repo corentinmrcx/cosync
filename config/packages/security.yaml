@@ -30,6 +30,8 @@ security:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/inscription, roles: PUBLIC_ACCESS }
         - { path: ^/dirigeant, roles: PUBLIC_ACCESS }
+        - { path: ^/politique-de-confidentialite, roles: PUBLIC_ACCESS }
+        - { path: ^/mentions-legales, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: ROLE_USER }
 
 when@test:

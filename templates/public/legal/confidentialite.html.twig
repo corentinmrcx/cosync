@@ -1,0 +1,302 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Politique de confidentialité – Foyer de Soudron{% endblock %}
+
+{% block body %}
+<div class="legal-page">
+
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+        </div>
+    </header>
+
+    <main class="legal-main">
+        <div class="legal-container">
+
+            <div class="legal-header">
+                <h1 class="legal-title">Politique de confidentialité</h1>
+                <p class="legal-updated">Dernière mise à jour : 1<sup>er</sup> août 2026</p>
+            </div>
+
+            <nav class="legal-toc">
+                <p class="legal-toc-title">Sommaire</p>
+                <ul class="legal-toc-list">
+                    <li><a class="legal-toc-link" href="#responsable">1. Qui traite vos données</a></li>
+                    <li><a class="legal-toc-link" href="#origine">2. D'où viennent vos données</a></li>
+                    <li><a class="legal-toc-link" href="#donnees">3. Données traitées</a></li>
+                    <li><a class="legal-toc-link" href="#non-collecte">4. Ce que nous ne collectons pas</a></li>
+                    <li><a class="legal-toc-link" href="#finalites">5. Pourquoi et sur quelle base</a></li>
+                    <li><a class="legal-toc-link" href="#mineurs">6. Cas des mineurs</a></li>
+                    <li><a class="legal-toc-link" href="#destinataires">7. Qui y a accès</a></li>
+                    <li><a class="legal-toc-link" href="#durees">8. Combien de temps</a></li>
+                    <li><a class="legal-toc-link" href="#securite">9. Sécurité</a></li>
+                    <li><a class="legal-toc-link" href="#cookies">10. Cookies</a></li>
+                    <li><a class="legal-toc-link" href="#droits">11. Vos droits</a></li>
+                </ul>
+            </nav>
+
+            <article class="legal-content">
+
+                <p class="legal-intro">
+                    Le Foyer de Soudron utilise <strong>CoSync</strong>, un outil interne, pour gérer les inscriptions
+                    et la vie du club. Cette page explique quelles données personnelles y sont traitées, pourquoi,
+                    pendant combien de temps et comment exercer vos droits.
+                </p>
+
+                {# — 1 — #}
+                <section class="legal-section" id="responsable">
+                    <h2 class="legal-h2">1. Qui traite vos données</h2>
+                    <p class="legal-p">
+                        Le responsable de traitement est le <strong>Foyer de Soudron</strong>,
+                        association loi 1901, dont le siège est situé 1 Rue de l'Église, 51320 Soudron.
+                    </p>
+                    <p class="legal-p">
+                        Numéro SIRET : 488 128 794 00010.
+                    </p>
+                    <p class="legal-p">
+                        Pour toute question relative à vos données personnelles :
+                        <a class="legal-link" href="mailto:contact@codepp.fr">contact@codepp.fr</a>.
+                    </p>
+                </section>
+
+                {# — 2 — #}
+                <section class="legal-section" id="origine">
+                    <h2 class="legal-h2">2. D'où viennent vos données</h2>
+                    <p class="legal-p">
+                        Vos données d'identité et de contact ne sont pas saisies par le club : elles proviennent de
+                        <strong>Footclubs</strong>, l'outil de la Fédération Française de Football, où votre licence est
+                        enregistrée. Le club en extrait un fichier qu'il importe dans CoSync.
+                    </p>
+                    <p class="legal-p">
+                        Les autres informations (tailles d'équipement, autorisations, signature du règlement intérieur)
+                        sont celles que vous renseignez vous-même dans le formulaire d'inscription en ligne.
+                    </p>
+                </section>
+
+                {# — 3 — #}
+                <section class="legal-section" id="donnees">
+                    <h2 class="legal-h2">3. Données traitées</h2>
+
+                    <h3 class="legal-h3">Importées depuis Footclubs (FFF)</h3>
+                    <ul class="legal-ul">
+                        <li>Nom, prénom, date de naissance, numéro de licence</li>
+                        <li>Adresse email, numéro de téléphone mobile</li>
+                        <li>Adresse postale : voie, code postal, ville</li>
+                        <li>Catégorie d'âge (U6 à Sénior)</li>
+                    </ul>
+
+                    <h3 class="legal-h3">Renseignées dans le formulaire d'inscription</h3>
+                    <ul class="legal-ul">
+                        <li>Tailles d'équipement : haut, bas, pointure</li>
+                        <li>Autorisation de droit à l'image</li>
+                        <li>Autorisations de transport (par les dirigeants, par d'autres parents)</li>
+                        <li>Autorisation d'intervention en cas d'accident</li>
+                        <li>Volontariat pour assurer des transports</li>
+                        <li>Mode de règlement envisagé pour la cotisation</li>
+                        <li>Signature manuscrite et date de signature du règlement intérieur</li>
+                    </ul>
+
+                    <h3 class="legal-h3">Ajoutées par le club</h3>
+                    <ul class="legal-ul">
+                        <li>Équipe d'affectation</li>
+                        <li>Cotisations : montant, mode de règlement, référence (numéro de chèque ou de virement), date</li>
+                        <li>Équipement remis (dotations)</li>
+                    </ul>
+
+                    <h3 class="legal-h3">Conducteurs bénévoles (attestation de transport)</h3>
+                    <p class="legal-p">
+                        Si vous vous portez volontaire pour transporter des joueurs, une attestation recueille en plus :
+                        vos nom et prénom, votre <strong>numéro de permis de conduire</strong>, le nom et l'adresse de
+                        votre compagnie d'assurance, la date du dernier contrôle technique et votre signature.
+                    </p>
+                    <div class="legal-note">
+                        Ces informations ne sont <strong>pas enregistrées dans la base de données</strong> de CoSync.
+                        Elles figurent uniquement dans le document PDF d'attestation, archivé dans l'espace de stockage
+                        du club.
+                    </div>
+
+                    <h3 class="legal-h3">Comptes administrateurs</h3>
+                    <p class="legal-p">
+                        Pour les membres du bureau disposant d'un accès : adresse email et mot de passe, ce dernier
+                        étant stocké sous forme chiffrée (haché) et jamais lisible en clair.
+                    </p>
+                </section>
+
+                {# — 4 — #}
+                <section class="legal-section" id="non-collecte">
+                    <h2 class="legal-h2">4. Ce que nous ne collectons pas</h2>
+                    <ul class="legal-ul">
+                        <li><strong>Aucune donnée de santé</strong> ni certificat médical</li>
+                        <li><strong>Aucun numéro de sécurité sociale</strong></li>
+                        <li>
+                            <strong>Aucune coordonnée bancaire</strong> : les cotisations sont réglées en dehors de
+                            l'application, aucun paiement n'y est effectué
+                        </li>
+                    </ul>
+                </section>
+
+                {# — 5 — #}
+                <section class="legal-section" id="finalites">
+                    <h2 class="legal-h2">5. Pourquoi et sur quelle base</h2>
+                    <ul class="legal-ul">
+                        <li>
+                            <strong>Gérer les adhésions et la vie du club</strong> (constitution des équipes, remise
+                            des équipements, communication avec les licenciés) — base légale : exécution du contrat
+                            d'adhésion au club.
+                        </li>
+                        <li>
+                            <strong>Recueillir les autorisations</strong> (droit à l'image, transport, intervention en
+                            cas d'accident) — base légale : votre consentement, que vous pouvez retirer à tout moment.
+                        </li>
+                        <li>
+                            <strong>Suivre les cotisations</strong> — base légale : obligation légale de tenue de la
+                            comptabilité de l'association.
+                        </li>
+                        <li>
+                            <strong>Encadrer les transports bénévoles</strong> (attestation d'assurance et de permis) —
+                            base légale : intérêt légitime du club à s'assurer que les déplacements des joueurs sont
+                            couverts.
+                        </li>
+                    </ul>
+                </section>
+
+                {# — 6 — #}
+                <section class="legal-section" id="mineurs">
+                    <h2 class="legal-h2">6. Cas des mineurs</h2>
+                    <p class="legal-p">
+                        Une large part des licenciés du club sont mineurs. Dans ce cas, le formulaire est renseigné et
+                        signé par le <strong>représentant légal</strong>, qui donne également les autorisations relatives
+                        au droit à l'image, aux transports et à l'intervention en cas d'accident. Ces autorisations sont
+                        révocables à tout moment sur simple demande auprès du club.
+                    </p>
+                </section>
+
+                {# — 7 — #}
+                <section class="legal-section" id="destinataires">
+                    <h2 class="legal-h2">7. Qui y a accès</h2>
+                    <p class="legal-p">
+                        Vos données sont accessibles aux <strong>membres du bureau et dirigeants habilités</strong> du
+                        Foyer de Soudron, disposant d'un compte personnel protégé par mot de passe.
+                    </p>
+                    <p class="legal-p">Elles sont également hébergées ou acheminées par les prestataires suivants :</p>
+                    <ul class="legal-ul">
+                        <li>
+                            <strong>Google (Google Drive)</strong> — archivage des documents PDF signés (règlement
+                            intérieur, attestations de transport), sur l'espace de stockage du club.
+                        </li>
+                        <li>
+                            <strong>Brevo</strong> — acheminement des emails envoyés par le club (lien d'inscription,
+                            confirmation).
+                        </li>
+                        <li>
+                            <strong>Codepp</strong> (Corentin Marcoux, entrepreneur individuel, 2 Chemin de Conflans,
+                            51320 Soudron) — développement et hébergement de l'application, en qualité de sous-traitant
+                            agissant pour le compte et sur instruction du club.
+                        </li>
+                    </ul>
+                    <p class="legal-p">
+                        Vos données ne sont <strong>ni vendues, ni louées, ni transmises à des tiers à des fins
+                        commerciales ou publicitaires</strong>.
+                    </p>
+                </section>
+
+                {# — 8 — #}
+                <section class="legal-section" id="durees">
+                    <h2 class="legal-h2">8. Combien de temps</h2>
+                    <ul class="legal-ul">
+                        <li>
+                            <strong>Lien d'accès au formulaire</strong> : 30 jours à compter de son envoi. Il devient
+                            également inutilisable dès que le formulaire est validé.
+                        </li>
+                        <li>
+                            <strong>Données du licencié ou du dirigeant</strong> : durée de l'adhésion, puis 3 saisons
+                            supplémentaires (afin de gérer les renouvellements et le suivi d'une saison à l'autre).
+                        </li>
+                        <li>
+                            <strong>Documents PDF signés</strong> (règlement intérieur, attestations) : la saison
+                            concernée, puis 3 ans.
+                        </li>
+                        <li>
+                            <strong>Éléments liés aux cotisations</strong> : 10 ans, conformément aux obligations
+                            comptables applicables aux associations.
+                        </li>
+                        <li>
+                            <strong>Journaux techniques du serveur</strong> : 12 mois.
+                        </li>
+                    </ul>
+                </section>
+
+                {# — 9 — #}
+                <section class="legal-section" id="securite">
+                    <h2 class="legal-h2">9. Sécurité</h2>
+                    <ul class="legal-ul">
+                        <li>L'ensemble des échanges avec l'application est chiffré (HTTPS).</li>
+                        <li>
+                            L'accès administrateur est protégé par identifiant et mot de passe ; les mots de passe sont
+                            stockés hachés.
+                        </li>
+                        <li>
+                            Le lien du formulaire d'inscription contient un identifiant aléatoire non devinable. Il
+                            n'expose ni votre nom ni aucune autre donnée, et cesse d'être valable après 30 jours ou
+                            après validation du formulaire.
+                        </li>
+                    </ul>
+                </section>
+
+                {# — 10 — #}
+                <section class="legal-section" id="cookies">
+                    <h2 class="legal-h2">10. Cookies</h2>
+                    <p class="legal-p">
+                        L'application dépose un <strong>unique cookie de session</strong>, strictement nécessaire au
+                        fonctionnement de l'espace administrateur (maintien de la connexion). Il expire à la fermeture
+                        du navigateur.
+                    </p>
+                    <p class="legal-p">
+                        Aucun cookie publicitaire, aucun traceur et aucun outil de mesure d'audience n'est utilisé.
+                        Aucun bandeau de consentement n'est donc nécessaire.
+                    </p>
+                </section>
+
+                {# — 11 — #}
+                <section class="legal-section" id="droits">
+                    <h2 class="legal-h2">11. Vos droits</h2>
+                    <p class="legal-p">
+                        Conformément au Règlement général sur la protection des données (RGPD), vous disposez des droits
+                        suivants sur vos données — ou sur celles de votre enfant si vous êtes son représentant légal :
+                    </p>
+                    <ul class="legal-ul">
+                        <li>Droit d'accès : obtenir une copie des données vous concernant</li>
+                        <li>Droit de rectification : corriger une donnée inexacte</li>
+                        <li>Droit à l'effacement</li>
+                        <li>Droit à la limitation du traitement</li>
+                        <li>Droit d'opposition</li>
+                        <li>Droit à la portabilité</li>
+                        <li>Droit de retirer votre consentement (droit à l'image, autorisations de transport)</li>
+                    </ul>
+                    <p class="legal-p">
+                        Pour exercer ces droits, écrivez à
+                        <a class="legal-link" href="mailto:contact@codepp.fr">contact@codepp.fr</a>.
+                        Le club vous répondra dans un délai d'un mois.
+                    </p>
+                    <div class="legal-note">
+                        Vos données d'identité provenant de Footclubs (FFF), une demande de rectification peut nécessiter
+                        une démarche à la fois auprès du club et auprès de la Fédération, faute de quoi la correction
+                        serait écrasée au prochain import.
+                    </div>
+                    <p class="legal-p">
+                        Si vous estimez, après nous avoir contactés, que vos droits ne sont pas respectés, vous pouvez
+                        adresser une réclamation à la
+                        <a class="legal-link" href="https://www.cnil.fr" target="_blank" rel="noopener">CNIL</a>.
+                    </p>
+                </section>
+
+            </article>
+
+        </div>
+    </main>
+
+    {% include 'components/footer.html.twig' %}
+
+</div>
+{% endblock %}
