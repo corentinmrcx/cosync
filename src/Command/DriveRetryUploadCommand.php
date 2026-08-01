@@ -2,9 +2,12 @@
 
 namespace App\Command;
 
+use App\Entity\Dirigeant;
+use App\Entity\DossierClub;
 use App\Repository\DirigeantRepository;
 use App\Repository\DossierClubRepository;
 use App\Service\Drive\DirigeantAttestationCleDriveSync;
+use App\Service\Drive\DirigeantReglementDriveSync;
 use App\Service\Drive\DossierDriveSync;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -22,45 +25,96 @@ final class DriveRetryUploadCommand extends Command
         private readonly DossierClubRepository $dossierRepository,
         private readonly DossierDriveSync $driveSync,
         private readonly DirigeantRepository $dirigeantRepository,
+        private readonly DirigeantReglementDriveSync $reglementDriveSync,
         private readonly DirigeantAttestationCleDriveSync $attestationCleDriveSync,
     ) {
         parent::__construct();
     }
 
+    /**
+     * Chaque famille de documents est rattrapée indépendamment : l'échec de l'une
+     * ne doit pas empêcher les autres de partir. Le récapitulatif des détenteurs de
+     * clés, lui, n'a rien à rattraper — il est régénéré depuis la base.
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
-        $dossiers = $this->dossierRepository->findWithLocalPdf();
+        $failures = $this->retrySection(
+            $io,
+            'règlement(s) licencié(s)',
+            $this->dossierRepository->findWithLocalPdf(),
+            static fn (DossierClub $d): string => $d->getLicencie()->getNom() . ' ' . $d->getLicencie()->getPrenom(),
+            static fn (DossierClub $d): ?string => $d->getSignaturePath(),
+            fn (DossierClub $d): bool => $this->driveSync->sync($d),
+        );
 
-        if (empty($dossiers)) {
-            $io->info('Aucun règlement licencié en attente.');
+        $failures += $this->retrySection(
+            $io,
+            'règlement(s) dirigeant(s)',
+            $this->dirigeantRepository->findWithLocalReglement(),
+            static fn (Dirigeant $d): string => $d->getNomPrenom(),
+            static fn (Dirigeant $d): ?string => $d->getReglementSignePath(),
+            fn (Dirigeant $d): bool => $this->reglementDriveSync->sync($d),
+        );
 
-            return $this->retryAttestationsCle($io) === 0 ? Command::SUCCESS : Command::FAILURE;
+        $failures += $this->retrySection(
+            $io,
+            'attestation(s) de remise de clés',
+            $this->dirigeantRepository->findWithLocalAttestationCle(),
+            static fn (Dirigeant $d): string => $d->getNomPrenom(),
+            static fn (Dirigeant $d): ?string => $d->getAttestationCleSignePath(),
+            fn (Dirigeant $d): bool => $this->attestationCleDriveSync->sync($d),
+        );
+
+        return $failures === 0 ? Command::SUCCESS : Command::FAILURE;
+    }
+
+    /**
+     * Rattrape une famille de documents : pour chacun, vérifie que le fichier local
+     * existe toujours puis relance sa synchronisation Drive.
+     * Retourne le nombre d'échecs d'upload.
+     *
+     * @param object[]                   $items
+     * @param callable(object): string   $label libellé de la personne, pour la sortie console
+     * @param callable(object): ?string  $path  chemin courant : local avant sync, ID Drive après
+     * @param callable(object): bool     $sync  synchronisation effective
+     */
+    private function retrySection(
+        SymfonyStyle $io,
+        string $libelle,
+        array $items,
+        callable $label,
+        callable $path,
+        callable $sync,
+    ): int {
+        if ($items === []) {
+            $io->info(sprintf('Aucun rattrapage : %s en attente.', $libelle));
+
+            return 0;
         }
 
-        $io->info(sprintf('%d PDF(s) en attente d\'upload.', count($dossiers)));
+        $io->section(sprintf('%d %s en attente d\'upload.', count($items), $libelle));
 
         $success = 0;
         $failure = 0;
         $missing = 0;
 
-        foreach ($dossiers as $dossier) {
-            $licencie  = $dossier->getLicencie();
-            $localPath = $dossier->getSignaturePath();
-            $label     = sprintf('%s %s', $licencie->getNom(), $licencie->getPrenom());
+        foreach ($items as $item) {
+            $nom       = $label($item);
+            $localPath = $path($item);
 
             if ($localPath === null || !file_exists($localPath)) {
-                $io->warning(sprintf('[%s] Fichier local introuvable : %s', $label, $localPath));
+                $io->warning(sprintf('[%s] Fichier local introuvable : %s', $nom, $localPath));
                 $missing++;
                 continue;
             }
 
-            if ($this->driveSync->sync($dossier)) {
-                $io->text(sprintf('<info>✓</info> [%s] Uploadé → %s', $label, $dossier->getSignaturePath()));
+            if ($sync($item)) {
+                $io->text(sprintf('<info>✓</info> [%s] Uploadé → %s', $nom, $path($item)));
                 $success++;
             } else {
-                $io->text(sprintf('<comment>✗</comment> [%s] Échec, conservé en local.', $label));
+                $io->text(sprintf('<comment>✗</comment> [%s] Échec, conservé en local.', $nom));
                 $failure++;
             }
         }
@@ -70,55 +124,6 @@ final class DriveRetryUploadCommand extends Command
             ['Uploadés'       => $success],
             ['Échecs'         => $failure],
             ['Fichier absent' => $missing],
-        );
-
-        $failure += $this->retryAttestationsCle($io);
-
-        return $failure === 0 ? Command::SUCCESS : Command::FAILURE;
-    }
-
-    /**
-     * Attestations de remise de clés signées mais pas encore archivées sur Drive.
-     * Le récapitulatif, lui, n'a rien à rattraper : il est régénéré depuis la base.
-     */
-    private function retryAttestationsCle(SymfonyStyle $io): int
-    {
-        $dirigeants = $this->dirigeantRepository->findWithLocalAttestationCle();
-
-        if (empty($dirigeants)) {
-            return 0;
-        }
-
-        $io->section(sprintf('%d attestation(s) de remise en attente d\'upload.', count($dirigeants)));
-
-        $success = 0;
-        $failure = 0;
-        $missing = 0;
-
-        foreach ($dirigeants as $dirigeant) {
-            $localPath = $dirigeant->getAttestationCleSignePath();
-            $label     = $dirigeant->getNomPrenom();
-
-            if ($localPath === null || !file_exists($localPath)) {
-                $io->warning(sprintf('[%s] Fichier local introuvable : %s', $label, $localPath));
-                $missing++;
-                continue;
-            }
-
-            if ($this->attestationCleDriveSync->sync($dirigeant)) {
-                $io->text(sprintf('<info>✓</info> [%s] Attestation uploadée → %s', $label, $dirigeant->getAttestationCleSignePath()));
-                $success++;
-            } else {
-                $io->text(sprintf('<comment>✗</comment> [%s] Échec, conservée en local.', $label));
-                $failure++;
-            }
-        }
-
-        $io->newLine();
-        $io->definitionList(
-            ['Attestations uploadées' => $success],
-            ['Échecs'                => $failure],
-            ['Fichier absent'        => $missing],
         );
 
         return $failure;

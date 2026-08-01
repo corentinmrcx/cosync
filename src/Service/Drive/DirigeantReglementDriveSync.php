@@ -6,13 +6,19 @@ use App\Entity\Dirigeant;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Synchronise le règlement intérieur signé d'un dirigeant vers Drive
+ * Synchronise le règlement intérieur des dirigeants signé vers Drive
  * (pattern identique à DirigeantAttestationDriveSync).
+ *
+ * Archivé dans un sous-dossier « Dirigeants » : ce n'est pas le même document
+ * que le règlement signé par les licenciés, les mélanger serait trompeur.
  */
 final class DirigeantReglementDriveSync
 {
+    private const DRIVE_PATH = ['Règlements intérieurs signés', 'Dirigeants'];
+
     public function __construct(
         private readonly DriveUploaderService $driveUploader,
+        private readonly DriveFilenameSanitizer $sanitizer,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -29,10 +35,10 @@ final class DirigeantReglementDriveSync
             return false;
         }
 
-        $driveId = $this->driveUploader->uploadToSubFolder(
+        $driveId = $this->driveUploader->uploadToPath(
             $localPath,
             $dirigeant->getSeason()->getLabel(),
-            'Règlements intérieurs signés',
+            self::DRIVE_PATH,
             $this->buildFilename($dirigeant),
             (string) $dirigeant->getUuid(),
         );
@@ -50,13 +56,10 @@ final class DirigeantReglementDriveSync
 
     private function buildFilename(Dirigeant $dirigeant): string
     {
-        $sanitize = static function (string $value): string {
-            $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) ?: $value;
-            $value = (string) preg_replace('/[^A-Za-z0-9]+/', '_', $value);
-
-            return trim($value, '_');
-        };
-
-        return sprintf('RI_%s_%s_Dirigeant.pdf', $sanitize($dirigeant->getNom()), $sanitize($dirigeant->getPrenom()));
+        return sprintf(
+            'RI_%s_%s_Dirigeant.pdf',
+            $this->sanitizer->sanitize($dirigeant->getNom()),
+            $this->sanitizer->sanitize($dirigeant->getPrenom()),
+        );
     }
 }

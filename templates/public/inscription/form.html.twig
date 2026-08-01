@@ -343,7 +343,9 @@
 
                 {# ── Étape 5 : Règlement + Signature ── #}
                 {% include 'public/_reglement_signature_step.html.twig' with {
-                    season: licencie.season,
+                    documentTitle: 'Règlement intérieur',
+                    reglementHtml: licencie.season.reglementText,
+                    checkboxLabel: "J'ai lu et j'accepte le règlement intérieur du Foyer de Soudron.",
                     stepShow: 'step === 5'
                 } only %}
 

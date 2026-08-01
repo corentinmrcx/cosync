@@ -5,6 +5,7 @@ namespace App\Service\Pdf;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Enum\ReglementAudience;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -29,11 +30,12 @@ final class PdfGeneratorService
             $licencie->getSeason(),
             $signatureDataUrl,
             (string) $licencie->getUuid(),
+            ReglementAudience::LICENCIE,
         );
     }
 
     /**
-     * Génère le PDF règlement signé d'un dirigeant et le sauvegarde dans var/pdfs/.
+     * Génère le PDF du règlement dirigeants signé et le sauvegarde dans var/pdfs/.
      * Retourne le chemin absolu du fichier généré.
      */
     public function generateReglementSigneDirigeant(Dirigeant $dirigeant, string $signatureDataUrl): string
@@ -44,47 +46,65 @@ final class PdfGeneratorService
             $dirigeant->getSeason(),
             $signatureDataUrl,
             (string) $dirigeant->getUuid(),
+            ReglementAudience::DIRIGEANT,
         );
     }
 
-    public function generatePreview(Season $season): string
+    public function generatePreview(Season $season, ReglementAudience $audience): string
     {
-        $html = $this->twig->render('pdf/reglement_signe.html.twig', [
-            'prenom'           => 'Prénom',
-            'nom'              => 'NOM',
-            'season'           => $season,
-            'signatureDataUrl' => '',
-            'signedAt'         => new \DateTimeImmutable(),
-            'logoDataUrl'      => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
-            'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
-            'previewMode'      => true,
-        ]);
-
-        return $this->renderPdf($html);
+        return $this->renderPdf($this->renderReglementHtml(
+            'Prénom',
+            'NOM',
+            $season,
+            '',
+            $audience,
+            previewMode: true,
+        ));
     }
 
     /** Rend le règlement signé en PDF et l'écrit dans var/pdfs/. Retourne le chemin absolu. */
-    private function renderReglementToFile(string $prenom, string $nom, Season $season, string $signatureDataUrl, string $fileKey): string
-    {
-        $html = $this->twig->render('pdf/reglement_signe.html.twig', [
-            'prenom'           => $prenom,
-            'nom'              => $nom,
-            'season'           => $season,
-            'signatureDataUrl' => $signatureDataUrl,
-            'signedAt'         => new \DateTimeImmutable(),
-            'logoDataUrl'      => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
-            'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
-        ]);
+    private function renderReglementToFile(
+        string $prenom,
+        string $nom,
+        Season $season,
+        string $signatureDataUrl,
+        string $fileKey,
+        ReglementAudience $audience,
+    ): string {
+        $html = $this->renderReglementHtml($prenom, $nom, $season, $signatureDataUrl, $audience);
 
         $dir = $this->projectDir . '/var/pdfs';
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
-        $path = $dir . '/' . $fileKey . '_reglement.pdf';
+        $path = $dir . '/' . $fileKey . $audience->fileSuffix() . '.pdf';
         file_put_contents($path, $this->renderPdf($html));
 
         return $path;
+    }
+
+    private function renderReglementHtml(
+        string $prenom,
+        string $nom,
+        Season $season,
+        string $signatureDataUrl,
+        ReglementAudience $audience,
+        bool $previewMode = false,
+    ): string {
+        return $this->twig->render('pdf/reglement_signe.html.twig', [
+            'prenom'           => $prenom,
+            'nom'              => $nom,
+            'season'           => $season,
+            'documentTitle'    => $audience->documentTitle(),
+            'documentLabel'    => $audience->documentLabel(),
+            'reglementHtml'    => $audience->textOf($season),
+            'signatureDataUrl' => $signatureDataUrl,
+            'signedAt'         => new \DateTimeImmutable(),
+            'logoDataUrl'      => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
+            'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
+            'previewMode'      => $previewMode,
+        ]);
     }
 
     private function renderPdf(string $html): string

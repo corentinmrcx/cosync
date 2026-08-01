@@ -194,17 +194,14 @@ class Dirigeant
     }
 
     /**
-     * Le règlement intérieur est-il déjà signé pour cette personne ?
-     * Vrai si le dirigeant l'a signé lui-même, ou si le licencié auquel il est
-     * rattaché (dirigeant-joueur) l'a déjà signé via son propre dossier.
+     * Le règlement intérieur des dirigeants est-il signé ?
+     * Un dirigeant-joueur signe les deux règlements : celui des joueurs dans son
+     * parcours licencié, celui des dirigeants ici. Le dossier du licencié auquel
+     * il est rattaché ne l'exonère donc pas — ce sont deux documents distincts.
      */
     public function hasSignedReglement(): bool
     {
-        if ($this->reglementSignePath !== null) {
-            return true;
-        }
-
-        return $this->licencie?->getDossierClub()?->isSigned() === true;
+        return $this->reglementSignePath !== null;
     }
 
     /** Le dirigeant doit-il signer le règlement dans son formulaire public ? */
@@ -232,8 +229,8 @@ class Dirigeant
     /**
      * Source de vérité de la complétude du dossier public dirigeant.
      * - Transport : requis pour tous ; attestation requise si volontaire.
-     * - Règlement intérieur : requis sauf s'il est déjà signé (dirigeant-joueur
-     *   dont le licencié a signé).
+     * - Règlement intérieur des dirigeants : requis pour tous, y compris les
+     *   dirigeants-joueurs (le règlement joueurs est un autre document).
      * - Dirigeant-joueur (lié à un licencié) : taille + droit image proviennent
      *   du dossier licencié → non requis ici.
      */

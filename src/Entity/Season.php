@@ -20,8 +20,13 @@ class Season
     #[ORM\Column(options: ['default' => 0])]
     private int $cotisationDefaut = 0;
 
+    /** Règlement intérieur signé par les licenciés dans le parcours d'inscription */
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $reglementText = null;
+
+    /** Règlement intérieur propre aux dirigeants, signé dans le parcours dirigeant */
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $reglementDirigeantText = null;
 
     /** Texte de l'attestation de remise signée par les détenteurs de clés du club house */
     #[ORM\Column(type: 'text', nullable: true)]
@@ -70,6 +75,17 @@ class Season
     public function setReglementText(?string $reglementText): static
     {
         $this->reglementText = $reglementText;
+        return $this;
+    }
+
+    public function getReglementDirigeantText(): ?string
+    {
+        return $this->reglementDirigeantText;
+    }
+
+    public function setReglementDirigeantText(?string $reglementDirigeantText): static
+    {
+        $this->reglementDirigeantText = $reglementDirigeantText;
         return $this;
     }
 

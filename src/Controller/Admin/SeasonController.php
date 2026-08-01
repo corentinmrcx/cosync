@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Season;
+use App\Enum\ReglementAudience;
 use App\Form\SeasonType;
 use App\Repository\DirigeantRepository;
 use App\Repository\LicencieRepository;
@@ -72,31 +73,70 @@ class SeasonController extends AbstractController
     #[Route('/{id}/reglement', name: 'reglement', methods: ['GET', 'POST'])]
     public function reglement(Season $season, Request $request, SeasonService $seasonService): Response
     {
-        if ($request->isMethod('POST')) {
-            if (!$this->isCsrfTokenValid('reglement_' . $season->getId(), $request->request->get('_token'))) {
-                $this->addFlash('error', 'Token CSRF invalide.');
-                return $this->redirectToRoute('admin_seasons_reglement', ['id' => $season->getId()]);
-            }
+        return $this->editReglement($season, $request, $seasonService, ReglementAudience::LICENCIE);
+    }
 
-            $seasonService->updateReglement($season, $request->request->get('reglement_text') ?: null);
-
-            $this->addFlash('success', 'Règlement mis à jour.');
-            return $this->redirectToRoute('admin_config_index');
-        }
-
-        return $this->render('admin/seasons/reglement.html.twig', [
-            'season' => $season,
-        ]);
+    #[Route('/{id}/reglement-dirigeant', name: 'reglement_dirigeant', methods: ['GET', 'POST'])]
+    public function reglementDirigeant(Season $season, Request $request, SeasonService $seasonService): Response
+    {
+        return $this->editReglement($season, $request, $seasonService, ReglementAudience::DIRIGEANT);
     }
 
     #[Route('/{id}/reglement/apercu', name: 'reglement_apercu', methods: ['GET'])]
     public function reglementApercu(Season $season, PdfGeneratorService $pdfGenerator): Response
     {
-        $pdfContent = $pdfGenerator->generatePreview($season);
+        return $this->reglementPdfResponse($season, $pdfGenerator, ReglementAudience::LICENCIE);
+    }
+
+    #[Route('/{id}/reglement-dirigeant/apercu', name: 'reglement_dirigeant_apercu', methods: ['GET'])]
+    public function reglementDirigeantApercu(Season $season, PdfGeneratorService $pdfGenerator): Response
+    {
+        return $this->reglementPdfResponse($season, $pdfGenerator, ReglementAudience::DIRIGEANT);
+    }
+
+    /**
+     * Écran d'édition partagé entre le règlement des licenciés et celui des dirigeants :
+     * même éditeur Quill, seuls la cible d'enregistrement et les libellés changent.
+     */
+    private function editReglement(
+        Season $season,
+        Request $request,
+        SeasonService $seasonService,
+        ReglementAudience $audience,
+    ): Response {
+        $editRoute = 'admin_seasons_' . ($audience === ReglementAudience::DIRIGEANT ? 'reglement_dirigeant' : 'reglement');
+        $csrfId    = 'reglement_' . $audience->value . '_' . $season->getId();
+
+        if ($request->isMethod('POST')) {
+            if (!$this->isCsrfTokenValid($csrfId, $request->request->get('_token'))) {
+                $this->addFlash('error', 'Token CSRF invalide.');
+                return $this->redirectToRoute($editRoute, ['id' => $season->getId()]);
+            }
+
+            $seasonService->updateReglement($season, $audience, $request->request->get('reglement_text') ?: null);
+
+            $this->addFlash('success', $audience->documentTitle() . ' mis à jour.');
+            return $this->redirectToRoute('admin_config_index');
+        }
+
+        return $this->render('admin/seasons/reglement.html.twig', [
+            'season'      => $season,
+            'audience'    => $audience,
+            'currentHtml' => $audience->textOf($season),
+            'formAction'  => $this->generateUrl($editRoute, ['id' => $season->getId()]),
+            'csrfId'      => $csrfId,
+            'apercuUrl'   => $this->generateUrl($editRoute . '_apercu', ['id' => $season->getId()]),
+        ]);
+    }
+
+    private function reglementPdfResponse(Season $season, PdfGeneratorService $pdfGenerator, ReglementAudience $audience): Response
+    {
+        $pdfContent = $pdfGenerator->generatePreview($season, $audience);
+        $filename   = 'apercu-reglement-' . $audience->value . '-' . $season->getLabel() . '.pdf';
 
         return new Response($pdfContent, Response::HTTP_OK, [
             'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="apercu-reglement-' . $season->getLabel() . '.pdf"',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
         ]);
     }
 

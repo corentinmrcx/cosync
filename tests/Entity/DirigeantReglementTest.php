@@ -12,9 +12,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
- * Règles de signature du règlement intérieur côté dirigeant :
- * requis sauf si déjà signé (par le dirigeant lui-même ou par le licencié
- * auquel il est rattaché).
+ * Règles de signature du règlement intérieur des dirigeants : requis pour tous,
+ * y compris les dirigeants-joueurs. Le règlement des joueurs est un autre
+ * document — le signer dans son dossier licencié n'exonère de rien ici.
  */
 final class DirigeantReglementTest extends KernelTestCase
 {
@@ -46,14 +46,19 @@ final class DirigeantReglementTest extends KernelTestCase
         self::assertTrue($dirigeant->isPublicFormComplete());
     }
 
-    public function testDirigeantJoueurAvecLicencieSigneNeResigne(): void
+    public function testDirigeantJoueurDoitSignerMemeSiSonLicencieASigne(): void
     {
         $dirigeant = $this->makeDirigeantLieAuLicencie(licencieSigne: true);
 
-        self::assertFalse($dirigeant->needsReglementSignature());
+        // Le dossier joueur signé ne couvre que le règlement des joueurs.
+        self::assertTrue($dirigeant->needsReglementSignature());
+        self::assertFalse($dirigeant->hasSignedReglement());
+        self::assertFalse($dirigeant->isPublicFormComplete());
+
+        // Une fois le règlement dirigeants signé : taille/photo viennent du
+        // licencié, transport renseigné → dossier complet.
+        $dirigeant->setReglementSignePath('/tmp/ri_dirigeant.pdf');
         self::assertTrue($dirigeant->hasSignedReglement());
-        // Dirigeant-joueur : taille/photo viennent du licencié, transport renseigné,
-        // règlement déjà signé → dossier complet.
         self::assertTrue($dirigeant->isPublicFormComplete());
     }
 

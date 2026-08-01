@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Season;
+use App\Enum\ReglementAudience;
 use App\Repository\SeasonRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -28,9 +29,14 @@ final class SeasonService
         $this->em->flush();
     }
 
-    public function updateReglement(Season $season, ?string $reglementText): void
+    /** Enregistre le texte du règlement de la saison pour un destinataire donné. */
+    public function updateReglement(Season $season, ReglementAudience $audience, ?string $reglementText): void
     {
-        $season->setReglementText($reglementText);
+        match ($audience) {
+            ReglementAudience::LICENCIE  => $season->setReglementText($reglementText),
+            ReglementAudience::DIRIGEANT => $season->setReglementDirigeantText($reglementText),
+        };
+
         $this->em->flush();
     }
 

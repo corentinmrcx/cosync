@@ -282,7 +282,9 @@
                 {% if needReglement %}
                 {# ── Étape 5 : Règlement + Signature ── #}
                 {% include 'public/_reglement_signature_step.html.twig' with {
-                    season: dirigeant.season,
+                    documentTitle: 'Règlement intérieur des dirigeants',
+                    reglementHtml: dirigeant.season.reglementDirigeantText,
+                    checkboxLabel: "J'ai lu et j'accepte le règlement intérieur des dirigeants du Foyer de Soudron.",
                     stepShow: 'step === 5'
                 } only %}
                 {% endif %}

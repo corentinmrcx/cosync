@@ -68,10 +68,17 @@ final class DriveUploadTerminateListener
         }
 
         foreach ($this->queue->flushDirigeantReglements() as $dirigeantUuid) {
-            $dirigeant = $this->dirigeantRepository->findByUuid(Uuid::fromString($dirigeantUuid));
+            try {
+                $dirigeant = $this->dirigeantRepository->findByUuid(Uuid::fromString($dirigeantUuid));
 
-            if ($dirigeant !== null) {
-                $this->dirigeantReglementDriveSync->sync($dirigeant);
+                if ($dirigeant !== null) {
+                    $this->dirigeantReglementDriveSync->sync($dirigeant);
+                }
+            } catch (\Throwable $e) {
+                $this->logger->error('Échec sync du règlement dirigeants de {uuid} : {message}', [
+                    'uuid'    => $dirigeantUuid,
+                    'message' => $e->getMessage(),
+                ]);
             }
         }
 
