@@ -5,12 +5,14 @@ namespace App\Form;
 use App\DTO\LicencieCreateData;
 use App\Entity\Category;
 use App\Entity\Team;
+use App\Enum\NatureLicence;
 use App\Repository\TeamRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
@@ -92,6 +94,14 @@ class LicencieCreateType extends AbstractType
                 'label'    => 'Numéro FootClubs',
                 'required' => false,
                 'attr'     => ['placeholder' => 'Ex : 123456 (facultatif)'],
+            ])
+            ->add('natureLicence', EnumType::class, [
+                'class'        => NatureLicence::class,
+                'label'        => 'Nature de la licence',
+                'help'         => 'Détermine les options de dotation proposées au licencié.',
+                'required'     => false,
+                'placeholder'  => '— Inconnue —',
+                'choice_label' => static fn(NatureLicence $nature): string => $nature->label(),
             ])
             ->add('sendLink', CheckboxType::class, [
                 'label'    => 'Envoyer le lien d\'inscription par email',

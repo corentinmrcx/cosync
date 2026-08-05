@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
 use App\Enum\LicenceStatus;
+use App\Enum\NatureLicence;
 use App\Enum\PaymentMode;
 use App\Form\LicencieCreateType;
 use App\Form\LicencieEditType;
@@ -38,13 +39,14 @@ class LicencieController extends AbstractController
             return $this->redirectToRoute('admin_seasons_new');
         }
 
-        $restored = $filterMemory->restoreOrRemember('licencies', $request, ['team', 'status', 'search']);
+        $restored = $filterMemory->restoreOrRemember('licencies', $request, ['team', 'status', 'nature', 'search']);
         if ($restored !== null) {
             return $this->redirectToRoute('admin_licencies_list', $restored);
         }
 
         $currentTeam   = null;
         $currentStatus = null;
+        $currentNature = null;
 
         if ($request->query->has('team') && $request->query->get('team') !== '') {
             $currentTeam = $teamRepo->find((int) $request->query->get('team'));
@@ -52,13 +54,16 @@ class LicencieController extends AbstractController
         if ($request->query->has('status') && $request->query->get('status') !== '') {
             $currentStatus = LicenceStatus::tryFrom($request->query->get('status'));
         }
+        if ($request->query->has('nature') && $request->query->get('nature') !== '') {
+            $currentNature = NatureLicence::tryFrom($request->query->get('nature'));
+        }
 
         $search  = trim((string) $request->query->get('search', ''));
         $page    = max(1, (int) $request->query->get('page', 1));
         $perPage = 25;
         $offset  = ($page - 1) * $perPage;
 
-        $total = $licencieRepo->countWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null);
+        $total = $licencieRepo->countWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature);
         $pages = (int) ceil($total / $perPage);
 
         $teams = $teamRepo->findBySeason($season);
@@ -78,14 +83,21 @@ class LicencieController extends AbstractController
                 'options'  => array_map(fn(LicenceStatus $s) => ['value' => $s->value, 'label' => $s->label()], LicenceStatus::cases()),
                 'current'  => $currentStatus?->value,
             ],
+            [
+                'name'     => 'nature',
+                'label'    => 'Nature',
+                'allLabel' => 'Toutes',
+                'options'  => array_map(fn(NatureLicence $n) => ['value' => $n->value, 'label' => $n->label()], NatureLicence::cases()),
+                'current'  => $currentNature?->value,
+            ],
         ];
 
         return $this->render('admin/licencies/list.html.twig', [
-            'licencies'         => $licencieRepo->findWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $perPage, $offset),
+            'licencies'         => $licencieRepo->findWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature, $perPage, $offset),
             'season'            => $season,
             'search'            => $search,
             'filterGroups'      => $filterGroups,
-            'activeFilterCount' => ($currentTeam ? 1 : 0) + ($currentStatus ? 1 : 0),
+            'activeFilterCount' => ($currentTeam ? 1 : 0) + ($currentStatus ? 1 : 0) + ($currentNature ? 1 : 0),
             'total'             => $total,
             'page'              => $page,
             'pages'             => $pages,
@@ -272,10 +284,11 @@ class LicencieController extends AbstractController
         $dossier = $licencie->getDossierClub();
 
         $form = $this->createForm(LicencieEditType::class, $licencie, [
-            'season'      => $season,
-            'taille_haut' => $dossier?->getTailleHaut(),
-            'taille_bas'  => $dossier?->getTailleBas(),
-            'pointure'    => $dossier?->getPointure(),
+            'season'         => $season,
+            'taille_haut'    => $dossier?->getTailleHaut(),
+            'taille_bas'     => $dossier?->getTailleBas(),
+            'pointure'       => $dossier?->getPointure(),
+            'nature_licence' => $licencie->getNatureLicence(),
         ]);
         $form->handleRequest($request);
 
@@ -285,6 +298,7 @@ class LicencieController extends AbstractController
                 $form->get('tailleHaut')->getData() ?: null,
                 $form->get('tailleBas')->getData() ?: null,
                 $form->get('pointure')->getData() ?: null,
+                $form->get('natureLicence')->getData(),
             );
 
             $this->addFlash('success', 'Dossier de ' . $licencie->getNomPrenom() . ' mis à jour.');

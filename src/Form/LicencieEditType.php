@@ -4,10 +4,12 @@ namespace App\Form;
 
 use App\Entity\Licencie;
 use App\Entity\Team;
+use App\Enum\NatureLicence;
 use App\Repository\TeamRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -66,17 +68,28 @@ class LicencieEditType extends AbstractType
                 'choices'     => $pointureChoices,
                 'data'        => $options['pointure'],
             ])
+            ->add('natureLicence', EnumType::class, [
+                'class'        => NatureLicence::class,
+                'label'        => 'Nature de la licence',
+                'help'         => 'Détermine les options de dotation proposées au licencié.',
+                'mapped'       => false,
+                'required'     => false,
+                'placeholder'  => '— Inconnue —',
+                'choice_label' => static fn(NatureLicence $nature): string => $nature->label(),
+                'data'         => $options['nature_licence'],
+            ])
         ;
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class'  => Licencie::class,
-            'season'      => null,
-            'taille_haut' => null,
-            'taille_bas'  => null,
-            'pointure'    => null,
+            'data_class'     => Licencie::class,
+            'season'         => null,
+            'taille_haut'    => null,
+            'taille_bas'     => null,
+            'pointure'       => null,
+            'nature_licence' => null,
         ]);
     }
 }

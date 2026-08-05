@@ -148,6 +148,10 @@
                 {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
             {% endif %}
             {% include 'components/_badge_dotation.html.twig' with { dotation: dotationStatut } only %}
+            {% include 'components/_badge_nature.html.twig' with {
+                nature: licencie.natureLicence,
+                manuelle: licencie.natureManuelle,
+            } only %}
         </div>
 
         <div class="licencie-show-header-actions">
@@ -226,6 +230,13 @@
                 <div class="licencie-show-dl-row">
                     <dt class="licencie-show-dt">Catégorie</dt>
                     <dd class="licencie-show-dd">{{ licencie.category.label }}</dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Nature de licence</dt>
+                    <dd class="{{ licencie.natureLicence ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ licencie.natureLicence ? licencie.natureLicence.label : '—' }}
+                        {%- if licencie.natureManuelle %} <em>(corrigée manuellement)</em>{% endif -%}
+                    </dd>
                 </div>
                 <div class="licencie-show-dl-row">
                     <dt class="licencie-show-dt">Équipe</dt>

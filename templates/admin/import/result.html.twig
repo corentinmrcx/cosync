@@ -56,6 +56,33 @@
             </div>
         </div>
 
+        {# Répartition par nature de licence : elle pilote les options de dotation proposées
+           au licencié, une répartition aberrante doit sauter aux yeux dès l'import. #}
+        <div class="import-stats">
+            <div class="import-stat import-stat-info">
+                <span class="import-stat-value">{{ result.nouveaux }}</span>
+                <span class="import-stat-label">Nouveaux licenciés</span>
+            </div>
+            <div class="import-stat import-stat-info">
+                <span class="import-stat-value">{{ result.renouvellements }}</span>
+                <span class="import-stat-label">Renouvellements</span>
+            </div>
+            {% if result.natureInconnue > 0 %}
+            <div class="import-stat import-stat-danger">
+                <span class="import-stat-value">{{ result.natureInconnue }}</span>
+                <span class="import-stat-label">Nature inconnue</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if result.natureInconnue > 0 %}
+            <p class="import-guide-note">
+                La colonne « Nature » manque ou n'a pas été comprise pour {{ result.natureInconnue }} licencié(s).
+                Sans elle, ils garderont le choix de leur dotation comme un renouvellement.
+                Corrigez-les au besoin depuis la liste des licenciés, filtre « Nature ».
+            </p>
+        {% endif %}
+
         {% if not result.emailAutoSend and result.created > 0 %}
             <p class="import-guide-note">
                 Les liens d'inscription n'ont pas été envoyés automatiquement. Envoyez-les depuis le

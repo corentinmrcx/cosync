@@ -27,6 +27,8 @@ final class ImportRowData
         public readonly ?string $rawVoieRue,
         public readonly ?string $rawCodePostal,
         public readonly ?string $rawVille,
+        /** Colonne « Nature » FootClubs — absente de certains exports, d'où la valeur par défaut. */
+        public readonly ?string $rawNature = null,
     ) {}
 
     public static function skipped(): self

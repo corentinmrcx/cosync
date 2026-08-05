@@ -10,6 +10,7 @@ use App\Entity\Season;
 use App\Entity\Transaction;
 use App\Entity\User;
 use App\Enum\LicenceStatus;
+use App\Enum\NatureLicence;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
@@ -75,6 +76,9 @@ final class LicencieService
         $licencie->setNumLicence($numLicence);
         $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
         $licencie->setCreatedManually(true);
+        // Saisie explicite par l'admin : elle fait autorité sur un import ultérieur.
+        $licencie->setNatureLicence($data->natureLicence);
+        $licencie->setNatureManuelle($data->natureLicence !== null);
 
         $dossier = new DossierClub();
         $dossier->setLicencie($licencie);
@@ -135,6 +139,7 @@ final class LicencieService
         ?string $tailleHaut,
         ?string $tailleBas,
         ?string $pointure,
+        ?NatureLicence $natureLicence = null,
     ): void {
         $dossier = $licencie->getDossierClub();
         if ($dossier !== null) {
@@ -143,7 +148,20 @@ final class LicencieService
             $dossier->setPointure($pointure ?: null);
         }
 
+        // Le verrou n'est posé que si la valeur change réellement : ouvrir puis réenregistrer
+        // le formulaire sans y toucher ne doit pas figer la nature contre les futurs imports.
+        $natureChangee = $natureLicence !== $licencie->getNatureLicence();
+        if ($natureChangee) {
+            $licencie->setNatureLicence($natureLicence);
+            $licencie->setNatureManuelle(true);
+        }
+
         $this->em->flush();
+
+        // La nature pilote les options de dotation : la corriger change ce qui est dû.
+        if ($natureChangee) {
+            $this->dotationBesoinService->recomputeForLicencie($licencie);
+        }
     }
 
     /**

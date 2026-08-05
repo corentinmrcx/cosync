@@ -32,6 +32,7 @@ final class LicencesDematerialiseesLayout implements ImportLayoutInterface
     private const COL_ADRESSE        = 'adresse 1';
     private const COL_CODE_POSTAL    = 'code postal';
     private const COL_VILLE          = 'ville';
+    private const COL_NATURE         = 'nature';
 
     private const TYPE_JOUEUR = 'joueur';
 
@@ -74,6 +75,7 @@ final class LicencesDematerialiseesLayout implements ImportLayoutInterface
             $this->value($row, $columns, self::COL_ADRESSE),
             $this->value($row, $columns, self::COL_CODE_POSTAL),
             $this->value($row, $columns, self::COL_VILLE),
+            $this->value($row, $columns, self::COL_NATURE),
         );
     }
 

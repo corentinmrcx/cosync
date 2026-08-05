@@ -1,0 +1,19 @@
+{# Badge « nouveau licencié / renouvellement ».
+   `nature` = App\Enum\NatureLicence ou null (inconnue).
+   `manuelle` = true si la valeur a été corrigée à la main par l'admin. #}
+{% set classes = {
+    'nouvelle_demande': 'badge-status badge-status-sent',
+    'changement_club':  'badge-status badge-status-sent',
+    'renouvellement':   'badge-status badge-status-validated',
+} %}
+{% set labels = {
+    'nouvelle_demande': 'Nouveau licencié',
+    'changement_club':  'Muté — nouveau au club',
+    'renouvellement':   'Renouvellement',
+} %}
+<span class="{{ nature is not null ? (classes[nature.value] ?? 'badge-status') : 'badge-status' }}"
+      {% if manuelle|default(false) %}title="Nature corrigée manuellement — les imports ne la modifieront plus"{% endif %}>
+    <span class="badge-status-dot"></span>
+    {{ nature is not null ? (labels[nature.value] ?? nature.label) : 'Nature inconnue' }}
+    {%- if manuelle|default(false) %} ✎{% endif -%}
+</span>

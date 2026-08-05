@@ -26,6 +26,7 @@ final class EditionExtractionLayout implements ImportLayoutInterface
     private const COL_NUMERO_PERSONNE     = 'numéro personne';
     private const COL_MOBILE_PERSONNEL    = 'mobile personnel';
     private const COL_EMAIL_PRINCIPAL     = 'email principal';
+    private const COL_NATURE              = 'nature';
 
     private const TYPE_LIBRE     = 'libre';
     private const TYPE_DIRIGEANT = 'dirigeant';
@@ -68,6 +69,7 @@ final class EditionExtractionLayout implements ImportLayoutInterface
             $this->value($row, $columns, self::COL_VOIE_RUE),
             $this->value($row, $columns, self::COL_CODE_POSTAL),
             $this->value($row, $columns, self::COL_BUREAU_DISTRIBUTEUR),
+            $this->value($row, $columns, self::COL_NATURE),
         );
     }
 

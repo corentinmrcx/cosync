@@ -7,6 +7,7 @@ use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\Team;
 use App\Enum\LicenceStatus;
+use App\Enum\NatureLicence;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
@@ -38,6 +39,24 @@ class LicencieRepository extends ServiceEntityRepository
             ->orderBy('l.nom', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * Ce numéro de licence apparaît-il dans une saison antérieure ? Sert de contrôle croisé
+     * à la colonne « Nature » de l'export FootClubs. Les saisons sont ordonnées par leur
+     * label (« 2025-2026 »), qui est chronologique.
+     */
+    public function existsInEarlierSeason(string $numLicence, Season $season): bool
+    {
+        return (int) $this->createQueryBuilder('l')
+            ->select('COUNT(l.uuid)')
+            ->join('l.season', 's')
+            ->where('l.numLicence = :numLicence')
+            ->andWhere('s.label < :label')
+            ->setParameter('numLicence', $numLicence)
+            ->setParameter('label', $season->getLabel())
+            ->getQuery()
+            ->getSingleScalarResult() > 0;
     }
 
     /** Fallback pour les licenciés importés avant l'ajout du num_licence */
@@ -90,10 +109,11 @@ class LicencieRepository extends ServiceEntityRepository
         ?Category $category = null,
         ?LicenceStatus $status = null,
         ?string $search = null,
+        ?NatureLicence $nature = null,
         int $limit = 25,
         int $offset = 0,
     ): array {
-        return $this->buildFilterQuery($season, $team, $category, $status, $search)
+        return $this->buildFilterQuery($season, $team, $category, $status, $search, $nature)
             ->setMaxResults($limit)
             ->setFirstResult($offset)
             ->getQuery()
@@ -106,8 +126,9 @@ class LicencieRepository extends ServiceEntityRepository
         ?Category $category = null,
         ?LicenceStatus $status = null,
         ?string $search = null,
+        ?NatureLicence $nature = null,
     ): int {
-        return (int) $this->buildFilterQuery($season, $team, $category, $status, $search)
+        return (int) $this->buildFilterQuery($season, $team, $category, $status, $search, $nature)
             ->select('COUNT(l.uuid)')
             ->resetDQLPart('orderBy')
             ->getQuery()
@@ -120,6 +141,7 @@ class LicencieRepository extends ServiceEntityRepository
         ?Category $category,
         ?LicenceStatus $status,
         ?string $search,
+        ?NatureLicence $nature = null,
     ): \Doctrine\ORM\QueryBuilder {
         $qb = $this->createQueryBuilder('l')
             ->leftJoin('l.dossierClub', 'd')
@@ -139,6 +161,9 @@ class LicencieRepository extends ServiceEntityRepository
         }
         if ($status !== null) {
             $qb->andWhere('d.status = :status')->setParameter('status', $status);
+        }
+        if ($nature !== null) {
+            $qb->andWhere('l.natureLicence = :nature')->setParameter('nature', $nature);
         }
         if ($search !== null && $search !== '') {
             $qb->andWhere('LOWER(CONCAT(l.nom, \' \', l.prenom)) LIKE :search OR LOWER(CONCAT(l.prenom, \' \', l.nom)) LIKE :search')

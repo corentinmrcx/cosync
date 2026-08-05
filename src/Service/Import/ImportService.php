@@ -37,6 +37,7 @@ final class ImportService
         private readonly TeamRepository $teamRepository,
         private readonly EntityManagerInterface $em,
         private readonly MailerService $mailerService,
+        private readonly NatureLicenceResolver $natureResolver,
     ) {}
 
     public function importFromXlsx(UploadedFile $file, Season $season): ImportResultData
@@ -176,6 +177,17 @@ final class ImportService
         $codePostal = $this->nullableTrim($data->rawCodePostal);
         $ville      = $this->nullableTrim($data->rawVille);
 
+        $nature = $this->natureResolver->resolve($data->rawNature, $numLicence, $season);
+        if ($nature !== null && $this->natureResolver->contredit($nature, $numLicence, $season)) {
+            $result->addNotice($lineNumber, sprintf(
+                'L\'export annonce « %s » pour %s %s (n°%s), ce que l\'historique des saisons contredit. Valeur de l\'export conservée — à vérifier.',
+                $nature->label(),
+                $nom,
+                $prenom,
+                $numLicence,
+            ));
+        }
+
         $licencie = $this->licencieRepository->findByNumLicence($numLicence, $season)
             ?? $this->licencieRepository->findByNomPrenomNaissance($nom, $prenom, $dateNaissance, $season);
 
@@ -208,7 +220,12 @@ final class ImportService
             if ($ville !== null) {
                 $licencie->setVille($ville);
             }
+            // Une correction faite à la main par l'admin fait autorité sur l'export.
+            if ($nature !== null && !$licencie->isNatureManuelle()) {
+                $licencie->setNatureLicence($nature);
+            }
             $result->updated++;
+            $this->countNature($licencie, $result);
 
             return;
         }
@@ -225,6 +242,7 @@ final class ImportService
         $licencie->setVoieRue($voieRue);
         $licencie->setCodePostal($codePostal);
         $licencie->setVille($ville);
+        $licencie->setNatureLicence($nature);
         $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
 
         // Auto-assignation si une seule équipe couvre cette catégorie
@@ -242,6 +260,16 @@ final class ImportService
 
         $newLicencies[] = $licencie;
         $result->created++;
+        $this->countNature($licencie, $result);
+    }
+
+    private function countNature(Licencie $licencie, ImportResultData $result): void
+    {
+        match ($licencie->estNouveau()) {
+            true  => $result->nouveaux++,
+            false => $result->renouvellements++,
+            null  => $result->natureInconnue++,
+        };
     }
 
     /**
