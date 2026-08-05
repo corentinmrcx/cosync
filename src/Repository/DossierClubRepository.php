@@ -22,6 +22,24 @@ class DossierClubRepository extends ServiceEntityRepository
         return $this->findOneBy(['licencie' => $licencie]);
     }
 
+    /**
+     * Dossiers ayant lancé un paiement HelloAsso sans qu'aucun encaissement en ligne
+     * ne soit encore enregistré pour le licencié.
+     *
+     * @return DossierClub[]
+     */
+    public function findWithPendingHelloAssoPayment(): array
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.helloassoCheckoutIntentId IS NOT NULL')
+            ->andWhere('NOT EXISTS (
+                SELECT 1 FROM App\Entity\Transaction t
+                WHERE t.licencie = d.licencie AND t.externalPaymentId IS NOT NULL
+            )')
+            ->getQuery()
+            ->getResult();
+    }
+
     /** @return DossierClub[] */
     public function findWithLocalPdf(): array
     {

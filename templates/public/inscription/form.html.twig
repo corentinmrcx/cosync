@@ -361,6 +361,26 @@
                         Votre inscription ne sera validée qu'à réception du paiement.
                     </p>
 
+                    {# Paiement par carte — mis en avant #}
+                    <input type="hidden" name="pay_online" value="0" x-ref="payOnlineFlag">
+
+                    <div class="inscription-cb-block" x-show="!multiPayment">
+                        <button type="button" class="inscription-btn-cb" :disabled="submitting" @click="payByCard($el)">
+                            Payer — <span x-text="montant + ' €'"></span>
+                        </button>
+                        <p class="inscription-cb-note">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            Paiement 100 % sécurisé via HelloAsso
+                        </p>
+                        <p class="inscription-cb-hint">Votre inscription est enregistrée, puis vous êtes redirigé vers HelloAsso.</p>
+                    </div>
+
+                    <div class="inscription-payment-separator" x-show="!multiPayment">
+                        <span>ou régler autrement</span>
+                    </div>
+
                     {# Toggle plusieurs moyens de paiement #}
                     <label class="inscription-multi-toggle">
                         <input type="checkbox" name="multi_payment" value="1" x-model="multiPayment"
@@ -372,7 +392,6 @@
                         { value: 'virement',   label: 'Virement bancaire' },
                         { value: 'cheque',     label: 'Chèque' },
                         { value: 'especes',    label: 'Espèces' },
-                        { value: 'cb_online',  label: 'Carte bancaire en ligne (SumUp)' },
                         { value: 'pass_sport', label: "Pass'Sport" },
                         { value: 'caf',        label: 'Chèque CAF' },
                         { value: 'ancv',       label: 'ANCV / Chèques Vacances' },
@@ -413,10 +432,6 @@
                         </div>
                         <div x-show="isPaymentModeActive('especes')" class="inscription-payment-info">
                             Espèces à remettre à un dirigeant.
-                        </div>
-                        <div x-show="isPaymentModeActive('cb_online')" class="inscription-payment-info">
-                            <p>Paiement sécurisé par carte bancaire via SumUp.</p>
-                            <p style="color: var(--color-text-muted); font-size: var(--font-size-xs);">Des frais de traitement peuvent s'appliquer (+1,5%). Le lien de paiement vous sera transmis par le club.</p>
                         </div>
                         <div x-show="isPaymentModeActive('pass_sport') || isPaymentModeActive('caf') || isPaymentModeActive('ancv')" class="inscription-payment-info">
                             Document à remettre en main propre à un dirigeant du club.

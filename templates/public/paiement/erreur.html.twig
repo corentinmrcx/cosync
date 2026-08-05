@@ -1,0 +1,58 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Paiement non finalisé – Foyer de Soudron{% endblock %}
+
+{% block body %}
+<div class="inscription-page">
+
+    <header class="inscription-header">
+        <div class="inscription-header-top">
+            <span class="inscription-header-club">Foyer de Soudron</span>
+        </div>
+        <div class="inscription-progress">
+            {% for i in 1..5 %}
+                <div class="inscription-progress-segment inscription-progress-segment-done"></div>
+            {% endfor %}
+        </div>
+    </header>
+
+    <main class="inscription-main">
+        <div class="inscription-container">
+
+            <div class="inscription-card">
+                <div class="inscription-confirm-icon">⚠️</div>
+                <h1 class="inscription-confirm-title">Paiement non finalisé</h1>
+                <p class="inscription-confirm-text">
+                    Le paiement a été interrompu ou refusé. <strong>Votre inscription, elle, est bien enregistrée</strong> —
+                    rien n'est perdu, il ne reste qu'à régler la cotisation.
+                </p>
+
+                <div class="inscription-cb-block" style="margin-top: 1.25rem;">
+                    <form method="post" action="{{ path('public_helloasso_checkout', { uuid: licencie.uuid }) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('paiement_helloasso') }}">
+                        <button type="submit" class="inscription-btn-cb">
+                            Réessayer le paiement par carte — {{ montant }} €
+                        </button>
+                    </form>
+                    <p class="inscription-cb-note">
+                        Paiement 100 % sécurisé via HelloAsso
+                    </p>
+                </div>
+
+                <p class="inscription-confirm-note">
+                    Vous préférez régler autrement (virement, chèque, espèces) ?
+                    Contactez un dirigeant du club, c'est tout aussi simple.
+                </p>
+
+                <p class="inscription-cb-hint" style="margin-top: 1rem;">
+                    <a href="{{ path('public_inscription_confirmation', { uuid: licencie.uuid }) }}">Revoir le récapitulatif de mon inscription</a>
+                </p>
+            </div>
+
+        </div>
+    </main>
+
+    {% include 'components/footer.html.twig' %}
+
+</div>
+{% endblock %}

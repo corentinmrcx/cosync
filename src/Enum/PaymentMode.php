@@ -15,7 +15,7 @@ enum PaymentMode: string
     public function label(): string
     {
         return match($this) {
-            self::CB_ONLINE => 'CB en ligne (SumUp)',
+            self::CB_ONLINE => 'Carte bancaire en ligne (HelloAsso)',
             self::CHEQUE => 'Chèque',
             self::ESPECES => 'Espèces',
             self::VIREMENT => 'Virement bancaire',

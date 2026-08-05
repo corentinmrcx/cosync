@@ -146,6 +146,11 @@ final class LicencieService
         $this->em->flush();
     }
 
+    /**
+     * @param ?User   $confirmedBy       null pour un encaissement automatique en ligne (aucun dirigeant ne le saisit)
+     * @param ?string $externalPaymentId identifiant du paiement chez le prestataire — unique en base, garantit
+     *                                   qu'un encaissement notifié plusieurs fois n'est enregistré qu'une fois
+     */
     public function addPayment(
         Licencie $licencie,
         PaymentMode $mode,
@@ -153,8 +158,9 @@ final class LicencieService
         ?string $reference,
         ?string $note,
         \DateTimeImmutable $datePaiement,
-        User $confirmedBy,
+        ?User $confirmedBy,
         Season $season,
+        ?string $externalPaymentId = null,
     ): void {
         $transaction = new Transaction();
         $transaction->setLicencie($licencie);
@@ -165,6 +171,7 @@ final class LicencieService
         $transaction->setNote($note);
         $transaction->setDatePaiement($datePaiement);
         $transaction->setConfirmedBy($confirmedBy);
+        $transaction->setExternalPaymentId($externalPaymentId);
         $this->em->persist($transaction);
         $this->em->flush();
 

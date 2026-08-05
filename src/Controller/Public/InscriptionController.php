@@ -6,6 +6,7 @@ use App\DTO\AutorisationCompletionData;
 use App\DTO\InscriptionFormData;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
+use App\Repository\TransactionRepository;
 use App\Service\CotisationResolver;
 use App\Service\Form\AttestationTransportRequestFactory;
 use App\Service\Form\AutorisationCompletionService;
@@ -75,22 +76,36 @@ class InscriptionController extends AbstractController
 
         $formService->submit($licencie, $data);
 
+        // Paiement par carte : l'inscription est enregistrée d'abord (PDF, signature, Drive),
+        // le licencié ne peut donc rien perdre s'il abandonne sur HelloAsso.
+        if ($request->request->get('pay_online') === '1') {
+            return $this->redirectToRoute('public_helloasso_checkout_start', ['uuid' => $uuid]);
+        }
+
         return $this->redirectToRoute('public_inscription_confirmation', ['uuid' => $uuid]);
     }
 
     #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'])]
-    public function confirmation(string $uuid, LicencieRepository $licencieRepo, CotisationResolver $cotisationResolver): Response
-    {
+    public function confirmation(
+        string $uuid,
+        LicencieRepository $licencieRepo,
+        CotisationResolver $cotisationResolver,
+        TransactionRepository $transactionRepo,
+    ): Response {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || $licencie->getDossierClub() === null) {
             return $this->render('public/inscription/expired.html.twig');
         }
 
+        $montant = $cotisationResolver->resolve($licencie);
+
         return $this->render('public/inscription/confirmation.html.twig', [
             'licencie' => $licencie,
             'dossier'  => $licencie->getDossierClub(),
-            'montant'  => $cotisationResolver->resolve($licencie),
+            'montant'  => $montant,
+            // Seule une transaction réellement enregistrée autorise à annoncer un paiement reçu.
+            'paiementRecu' => $transactionRepo->sumByLicencieAndSeason($licencie, $licencie->getSeason()) >= (float) $montant,
         ]);
     }
 
@@ -127,7 +142,10 @@ class InscriptionController extends AbstractController
 
         $multiPayment = $request->request->get('multi_payment') === '1';
 
-        if ($multiPayment) {
+        if ($request->request->get('pay_online') === '1') {
+            // Le bouton « payer par carte » vaut choix du mode : aucun radio n'est coché.
+            $modes = [PaymentMode::CB_ONLINE];
+        } elseif ($multiPayment) {
             $rawModes = (array) ($request->request->all()['payment_intentions'] ?? []);
             $modes    = [];
             foreach ($rawModes as $raw) {

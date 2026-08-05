@@ -16,6 +16,11 @@
         </div>
     </header>
 
+    {# — Flash — #}
+    {% for message in app.flashes('error') %}
+        <div class="inscription-flash-error">{{ message }}</div>
+    {% endfor %}
+
     <main class="inscription-main">
         <div class="inscription-container">
 
@@ -57,11 +62,22 @@
                             À remettre à un dirigeant du club ou lors d'une permanence.
                         </div>
                     {% endif %}
-                    {% if 'cb_online' in intentionValues %}
-                        <div class="inscription-payment-info" style="margin-top: 1rem;">
-                            Le lien de paiement SumUp vous sera transmis par le club.
-                        </div>
-                    {% endif %}
+                {% endif %}
+
+                {% if paiementRecu %}
+                    <p class="inscription-cb-note" style="margin-top: 1rem;">Paiement reçu ✓</p>
+                {% else %}
+                    <div class="inscription-cb-block" style="margin-top: 1.25rem;">
+                        <form method="post" action="{{ path('public_helloasso_checkout', { uuid: licencie.uuid }) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('paiement_helloasso') }}">
+                            <button type="submit" class="inscription-btn-cb">
+                                Payer — {{ montant }} €
+                            </button>
+                        </form>
+                        <p class="inscription-cb-note">
+                            Paiement 100 % sécurisé via HelloAsso
+                        </p>
+                    </div>
                 {% endif %}
 
                 <p class="inscription-confirm-note">

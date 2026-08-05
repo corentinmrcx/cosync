@@ -76,6 +76,10 @@ class DossierClub
     #[ORM\Column(enumType: LicenceStatus::class)]
     private LicenceStatus $status = LicenceStatus::IMPORTED;
 
+    /** ID de la dernière intention de paiement HelloAsso créée pour ce dossier */
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $helloassoCheckoutIntentId = null;
+
     public function getId(): int
     {
         return $this->id;
@@ -261,6 +265,17 @@ class DossierClub
     public function setAttestationTransportDriveId(?string $attestationTransportDriveId): static
     {
         $this->attestationTransportDriveId = $attestationTransportDriveId;
+        return $this;
+    }
+
+    public function getHelloassoCheckoutIntentId(): ?string
+    {
+        return $this->helloassoCheckoutIntentId;
+    }
+
+    public function setHelloassoCheckoutIntentId(?string $helloassoCheckoutIntentId): static
+    {
+        $this->helloassoCheckoutIntentId = $helloassoCheckoutIntentId;
         return $this;
     }
 

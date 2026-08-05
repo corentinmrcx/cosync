@@ -229,7 +229,8 @@ class LicencieController extends AbstractController
                 'date'   => $t->getDatePaiement(),
                 'format' => 'd/m/Y',
                 'label'  => sprintf('Paiement enregistré — %s %s €', $t->getMode()->label(), $t->getMontant()),
-                'who'    => $t->getConfirmedBy()?->getEmail() ?? 'Admin',
+                // Pas de dirigeant sur un encaissement en ligne : c'est HelloAsso qui l'a confirmé.
+                'who'    => $t->getConfirmedBy()?->getEmail() ?? ($t->getMode() === PaymentMode::CB_ONLINE ? 'HelloAsso' : 'Admin'),
             ];
         }
 

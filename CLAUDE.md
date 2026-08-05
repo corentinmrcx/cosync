@@ -23,7 +23,8 @@ Ce n'est **pas** un remplacement de FootClubs (outil fédéral FFF). C'est un **
 - Ne recrée pas FootClubs (pas de gestion de licences FFF)
 - Ne stocke pas les données médicales (hors scope RGPD V1)
 - Ne gère pas l'attestation de conduite parentsSection F (trop sensible pour V1)
-- Ne fait pas de paiement en ligne intégré V1 (SumUp lien externe possible, pas de webhook)
+- Ne traite aucune donnée bancaire : le paiement en ligne est intégralement délégué à HelloAsso Checkout
+  (aucun numéro de carte ne transite ni n'est stocké dans CoSync)
 
 ### Philosophie
 - **Aller à l'essentiel.** Si une fonctionnalité peut attendre la V2, elle attend.
@@ -278,13 +279,21 @@ Formulaire multi-étapes Alpine.js, mobile-first, sans login.
 **Étape 5 — Paiement**
 - Affichage : "Comment souhaitez-vous régler votre cotisation ?"
 - Montant affiché dynamiquement (jeunes : 85€ / seniors : 120€ depuis `season.base_costs`)
-- Options radio :
+- Bouton principal mis en avant : **paiement par carte via HelloAsso** (aucun frais pour le club).
+  Le clic enregistre l'inscription puis redirige vers HelloAsso — le licencié ne peut rien perdre
+  s'il abandonne.
+- Puis, sous un séparateur "ou régler autrement", les options radio :
   - Virement → affiche RIB du club + libellé exact à mettre
   - Chèque → "À l'ordre de [nom club], à remettre au local"
   - Espèces → "À remettre au local lors d'une permanence"
-  - CB en ligne (SumUp) → lien externe + mention frais (ex: "+1,5% de frais")
   - Pass Sport / Chèque CAF / ANCV → "À remettre au local"
 - Mention bien visible : **"Votre inscription ne sera validée qu'à réception du paiement."**
+
+**Règle absolue du paiement en ligne** — une licence n'est jamais marquée payée sans encaissement
+vérifié. Aucune `Transaction` n'est créée sur la foi d'une `returnUrl` ou du corps d'une notification :
+`HelloAssoPaymentRecorder` relit l'état du paiement auprès de l'API HelloAsso (`state === Authorized`)
+avant tout enregistrement, de façon idempotente. Le licencié ne voit jamais autre chose que
+"paiement en cours de validation" tant qu'aucune transaction n'existe.
 
 **Validation finale**
 - Génération PDF règlement signé (template Twig → DomPDF)

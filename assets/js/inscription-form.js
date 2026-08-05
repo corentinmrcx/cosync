@@ -191,6 +191,22 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
                 : this.paymentMode === value;
         },
 
+        /**
+         * Paiement par carte : enregistre l'inscription puis part sur HelloAsso.
+         * Bouton de type "button" et soumission explicite, pour qu'un appui sur Entrée
+         * dans un champ des étapes précédentes ne déclenche jamais un paiement.
+         */
+        payByCard(el) {
+            if (this.submitting) return;
+            if (this.demo) {
+                this.demoSubmit();
+                return;
+            }
+            this.submitting = true;
+            this.$refs.payOnlineFlag.value = '1';
+            el.closest('form').requestSubmit();
+        },
+
         // Soumission en mode démo : faux loader puis redirection, aucun enregistrement
         demoSubmit() {
             if (this.submitting) return;
