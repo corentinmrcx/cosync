@@ -80,6 +80,49 @@ final class DotationResolverTest extends StockIntegrationTestCase
         self::assertSame('Veste', $lignes[0]['stockItem']->getNom(), 'Sans choix stocké → première option.');
     }
 
+    public function testModeleInactifNeDotePersonne(): void
+    {
+        $season = $this->makeSeason();
+        $cat    = $this->makeCategory('SENIOR');
+        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+
+        $modele = $this->makeModele($season, 'Kit en préparation');
+        $modele->setActif(false);
+        $this->addLigne($modele, $item, 1);
+        $this->affecterCategorie($season, $modele, $cat);
+
+        $licencie = $this->makeLicencie($season, $cat, null, 'L');
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+
+        self::assertNull($this->resolver()->resolveModele($licencie), 'Un kit désactivé ne s\'applique pas.');
+        self::assertSame([], $this->resolver()->resolveDotation($licencie));
+    }
+
+    public function testAPrioriteEgaleLaDerniereAffectationGagne(): void
+    {
+        $season = $this->makeSeason();
+        $cat    = $this->makeCategory('SENIOR');
+
+        $premier = $this->makeModele($season, 'Premier');
+        $this->addLigne($premier, $this->makeItem('Veste', StockItemVetementType::HAUT), 1);
+        $this->affecterCategorie($season, $premier, $cat);
+
+        $second = $this->makeModele($season, 'Second');
+        $this->addLigne($second, $this->makeItem('Sweat', StockItemVetementType::HAUT), 1);
+        $this->affecterCategorie($season, $second, $cat);
+
+        $licencie = $this->makeLicencie($season, $cat, null, 'L');
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+
+        self::assertSame(
+            'Second',
+            $this->resolver()->resolveModele($licencie)?->getNom(),
+            'Deux affectations de même priorité : la plus récente gagne, de façon reproductible.',
+        );
+    }
+
     public function testSansAffectationAucuneDotation(): void
     {
         $season = $this->makeSeason();

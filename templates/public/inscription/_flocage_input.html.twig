@@ -1,0 +1,23 @@
+{# Champ de saisie d'un texte de personnalisation (flocage).
+   `cle`            = clé sous laquelle le texte est posté et stocké
+   `ligne`          = App\Entity\DotationModeleLigne portant les réglages
+   `maxDefaut`      = longueur max quand la ligne n'en fixe aucune
+   `conditionnel`   = true si le champ dépend d'une option à sélectionner
+   `valeurAttendue` = id de l'article qui active le champ (si conditionnel) #}
+{# La clé peut contenir une apostrophe (« Choix d'été ») : elle est échappée en contexte JS
+   partout où elle entre dans une expression Alpine. #}
+{% set max = ligne.personnalisationMaxLength ?? maxDefaut %}
+{% set cleJs = cle|e('js') %}
+<span class="inscription-question-label">{{ ligne.personnalisationLabel|default('Texte à personnaliser') }} *</span>
+<span class="inscription-question-hint">
+    Prénom ou surnom, tel qu'il sera imprimé. {{ max }} caractères maximum.
+</span>
+<input type="text"
+       class="inscription-input"
+       name="dotation_personnalisation[{{ cle }}]"
+       maxlength="{{ max }}"
+       autocomplete="off"
+       x-model="dotationPersonnalisation['{{ cleJs }}']"
+       {% if conditionnel %}:disabled="dotationChoix['{{ cleJs }}'] !== '{{ valeurAttendue }}'"{% endif %}>
+<span class="inscription-flocage-count"
+      x-text="`${(dotationPersonnalisation['{{ cleJs }}'] || '').length} / {{ max }}`"></span>

@@ -28,6 +28,9 @@ class DotationAffectationRepository extends ServiceEntityRepository
             ->leftJoin('a.dirigeant', 'd')->addSelect('d')
             ->where('a.season = :season')
             ->setParameter('season', $season)
+            // Ordre stable : à priorité égale, DotationResolver retient la dernière affectation
+            // créée. Sans ce tri, le gagnant dépendrait du plan d'exécution SQL.
+            ->orderBy('a.id', 'ASC')
             ->getQuery()
             ->getResult();
     }

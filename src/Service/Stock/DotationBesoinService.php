@@ -138,10 +138,13 @@ final class DotationBesoinService
 
             if ($aMettreAJour !== null) {
                 // Le choix a pu changer → on réaligne l'article sur l'option retenue.
+                // Le texte de flocage suit : corriger une faute de frappe doit se propager
+                // tant que l'article n'a pas été remis.
                 $aMettreAJour
                     ->setStockItem($item)
                     ->setQuantite($ligne['quantite'])
-                    ->setGroupeChoix($ligne['groupeChoix']);
+                    ->setGroupeChoix($ligne['groupeChoix'])
+                    ->setPersonnalisation($ligne['personnalisation']);
                 // La taille saisie à la main par l'admin prime sur celle déduite du dossier.
                 if (!$aMettreAJour->isTailleManuelle()) {
                     $aMettreAJour->setTaille($ligne['taille']);
@@ -153,7 +156,8 @@ final class DotationBesoinService
                     ->setStockItem($item)
                     ->setQuantite($ligne['quantite'])
                     ->setTaille($ligne['taille'])
-                    ->setGroupeChoix($ligne['groupeChoix']);
+                    ->setGroupeChoix($ligne['groupeChoix'])
+                    ->setPersonnalisation($ligne['personnalisation']);
 
                 if ($person instanceof Licencie) {
                     $besoin->setLicencie($person);
@@ -179,10 +183,51 @@ final class DotationBesoinService
         return $resolved !== [];
     }
 
-    /** Clé d'emplacement : un groupe de choix = un emplacement unique, sinon l'article. */
+    /**
+     * Clé d'emplacement : un groupe de choix = un emplacement unique, sinon l'article.
+     *
+     * Le texte de personnalisation n'entre volontairement PAS dans cette clé : sinon
+     * corriger une faute de frappe supprimerait le besoin pour en recréer un autre, perdant
+     * au passage le statut « donné », la taille manuelle et l'historique.
+     */
     private function slotKey(?string $groupeChoix, int $itemId): string
     {
         return $groupeChoix !== null ? 'g:' . $groupeChoix : 'i:' . $itemId;
+    }
+
+    /**
+     * Besoins encore à donner qui portent un texte de flocage : la liste à transmettre au
+     * floqueur. Triée par personne, comme le suivi.
+     *
+     * @return DotationBesoin[]
+     */
+    public function getFlocages(Season $season): array
+    {
+        return array_values(array_filter(
+            $this->besoinRepository->findBySeason($season),
+            static fn (DotationBesoin $b): bool => $b->getPersonnalisation() !== null
+                && $b->getStatut() === DotationBesoinStatut::A_DONNER,
+        ));
+    }
+
+    /**
+     * Corrige le texte de flocage d'un besoin depuis le suivi admin — pour rattraper une
+     * faute de frappe du licencié avant la commande. Refusé une fois l'article remis :
+     * le vêtement est déjà floqué, le texte porté par le besoin est la trace de ce qui a
+     * réellement été donné.
+     *
+     * @throws \DomainException si le besoin est déjà marqué comme donné
+     */
+    public function updatePersonnalisation(DotationBesoin $besoin, ?string $texte): void
+    {
+        if ($besoin->getStatut() === DotationBesoinStatut::DONNE) {
+            throw new \DomainException('Cet article a déjà été remis : son flocage ne peut plus être modifié.');
+        }
+
+        $normalise = $texte !== null ? trim((string) preg_replace('/\s+/u', ' ', $texte)) : '';
+        $besoin->setPersonnalisation($normalise !== '' ? $normalise : null);
+
+        $this->em->flush();
     }
 
     /**

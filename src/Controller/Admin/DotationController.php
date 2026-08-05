@@ -2,10 +2,12 @@
 
 namespace App\Controller\Admin;
 
+use App\DTO\DotationLigneReglagesData;
 use App\Entity\DotationAffectation;
 use App\Entity\DotationBesoin;
 use App\Entity\DotationModele;
 use App\Entity\DotationModeleLigne;
+use App\Enum\DotationEligibilite;
 use App\Repository\CategoryRepository;
 use App\Repository\DirigeantRepository;
 use App\Repository\DotationAffectationRepository;
@@ -16,6 +18,7 @@ use App\Repository\StockItemRepository;
 use App\Repository\TeamRepository;
 use App\Service\SeasonContext;
 use App\Service\Stock\DotationBesoinService;
+use App\Service\Stock\DotationModeleService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,6 +40,7 @@ class DotationController extends AbstractController
         private readonly LicencieRepository $licencieRepository,
         private readonly DirigeantRepository $dirigeantRepository,
         private readonly DotationBesoinService $besoinService,
+        private readonly DotationModeleService $modeleService,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -105,8 +109,10 @@ class DotationController extends AbstractController
         }
 
         return $this->render('admin/stock/dotations/form.html.twig', [
-            'modele'   => $modele,
-            'articles' => $this->itemRepository->findAllOrdered(),
+            'modele'                    => $modele,
+            'articles'                  => $this->itemRepository->findAllOrdered(),
+            'eligibilites'              => DotationEligibilite::cases(),
+            'personnalisationMaxDefaut' => DotationModeleService::PERSONNALISATION_MAX_DEFAUT,
         ]);
     }
 
@@ -170,7 +176,8 @@ class DotationController extends AbstractController
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
-        $quantite = max(1, (int) $request->request->get('quantite', 1));
+        $quantite      = max(1, (int) $request->request->get('quantite', 1));
+        $eligibilites  = (array) $request->request->all('eligibilite');
         $ajoutes = 0;
         foreach ($itemIds as $itemId) {
             $item = $this->itemRepository->find($itemId);
@@ -180,7 +187,10 @@ class DotationController extends AbstractController
             $ligne = (new DotationModeleLigne())
                 ->setStockItem($item)
                 ->setQuantite($quantite)
-                ->setGroupeChoix($nom);
+                ->setGroupeChoix($nom)
+                ->setEligibilite(
+                    DotationEligibilite::tryFrom((string) ($eligibilites[$itemId] ?? '')) ?? DotationEligibilite::TOUS,
+                );
             $modele->addLigne($ligne);
             $this->em->persist($ligne);
             ++$ajoutes;
@@ -215,6 +225,29 @@ class DotationController extends AbstractController
         $this->addFlash('success', sprintf('Choix « %s » retiré.', $nom));
 
         return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+    }
+
+    #[Route('/lignes/{id}/reglages', name: 'ligne_reglages', methods: ['POST'])]
+    public function ligneReglages(DotationModeleLigne $ligne, Request $request): Response
+    {
+        $modeleId = $ligne->getModele()->getId();
+        if (!$this->isCsrfTokenValid('dotation_ligne_reglages_' . $ligne->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
+        }
+
+        $max = trim((string) $request->request->get('personnalisation_max', ''));
+
+        $this->modeleService->updateReglages($ligne, new DotationLigneReglagesData(
+            DotationEligibilite::tryFrom((string) $request->request->get('eligibilite', '')) ?? DotationEligibilite::TOUS,
+            $request->request->getBoolean('personnalisation_requise'),
+            $request->request->get('personnalisation_label'),
+            $max !== '' ? (int) $max : null,
+        ));
+
+        $this->addFlash('success', sprintf('Réglages de « %s » enregistrés.', $ligne->getStockItem()->getNom()));
+
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
     }
 
     #[Route('/lignes/{id}/supprimer', name: 'ligne_delete', methods: ['POST'])]
@@ -347,6 +380,38 @@ class DotationController extends AbstractController
         $this->addFlash('success', sprintf('Taille mise à jour pour %s.', $besoin->getNomPrenom()));
 
         return $this->redirectToRoute('admin_stock_dotations_suivi');
+    }
+
+    #[Route('/besoins/{id}/personnalisation', name: 'besoin_personnalisation', methods: ['POST'])]
+    public function besoinPersonnalisation(DotationBesoin $besoin, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('dotation_besoin_personnalisation_' . $besoin->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_suivi');
+        }
+
+        try {
+            $this->besoinService->updatePersonnalisation($besoin, $request->request->get('personnalisation'));
+            $this->addFlash('success', sprintf('Texte de flocage mis à jour pour %s.', $besoin->getNomPrenom()));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_stock_dotations_suivi');
+    }
+
+    #[Route('/flocage', name: 'flocage', methods: ['GET'])]
+    public function flocage(): Response
+    {
+        $season = $this->seasonContext->getCurrentSeason();
+        if ($season === null) {
+            return $this->redirectToRoute('admin_seasons_new');
+        }
+
+        return $this->render('admin/stock/dotations/flocage.html.twig', [
+            'season'  => $season,
+            'besoins' => $this->besoinService->getFlocages($season),
+        ]);
     }
 
     #[Route('/besoins/{id}/remise', name: 'besoin_remise', methods: ['POST'])]

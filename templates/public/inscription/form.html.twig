@@ -8,7 +8,19 @@
 
 {% block body %}
 <div class="inscription-page"
-     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}, dotationGroupes: {{ (dotationGroupes|default([]))|map(g => g.groupe)|json_encode }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })">
+     {# dotationFlocages : { groupe: { stockItemId: max } } — quelles options réclament un texte.
+        dotationAutoFlocages : [{ cle, max }] — textes dus sans question de choix. #}
+     {% set flocagesParGroupe = {} %}
+     {% for grp in dotationGroupes|default([]) %}
+         {% set options = {} %}
+         {% for opt in grp.options|filter(o => o.personnalisationRequise) %}
+             {% set options = options|merge({ (opt.stockItem.id): opt.personnalisationMaxLength ?? personnalisationMaxDefaut }) %}
+         {% endfor %}
+         {% if options is not empty %}
+             {% set flocagesParGroupe = flocagesParGroupe|merge({ (grp.groupe): options }) %}
+         {% endif %}
+     {% endfor %}
+     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}, dotationGroupes: {{ (dotationGroupes|default([]))|map(g => g.groupe)|json_encode }}, dotationFlocages: {{ flocagesParGroupe|json_encode }}, dotationAutoFlocages: {{ (dotationAutos|default([]))|map(a => { cle: a.cle, max: a.ligne.personnalisationMaxLength ?? personnalisationMaxDefaut })|json_encode }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })">
 
     {% if demo|default(false) %}
         <div class="inscription-demo-banner">
@@ -159,23 +171,63 @@
                             </div>
                         </div>
 
-                        {% if dotationGroupes|default([]) is not empty %}
-                            {% for grp in dotationGroupes %}
-                                <hr class="inscription-question-divider">
-                                <div class="inscription-question-block">
-                                    <span class="inscription-question-label">{{ grp.groupe }} *</span>
-                                    <span class="inscription-question-hint">Choisissez l'article souhaité pour votre dotation.</span>
-                                    <div class="inscription-radio-group">
-                                        {% for opt in grp.options %}
-                                            <label class="inscription-radio-option">
-                                                <input type="radio" name="dotation_choix[{{ grp.groupe }}]" value="{{ opt.id }}" x-model="dotationChoix['{{ grp.groupe }}']">
-                                                <span class="inscription-radio-label">{{ opt.nom }}</span>
-                                            </label>
-                                        {% endfor %}
-                                    </div>
+                        {% for grp in dotationGroupes|default([]) %}
+                            <hr class="inscription-question-divider">
+                            <div class="inscription-question-block">
+                                <span class="inscription-question-label">{{ grp.groupe }} *</span>
+                                <span class="inscription-question-hint">Choisissez l'article souhaité pour votre dotation.</span>
+                                <div class="inscription-radio-group">
+                                    {% for opt in grp.options %}
+                                        <label class="inscription-radio-option">
+                                            <input type="radio" name="dotation_choix[{{ grp.groupe }}]" value="{{ opt.stockItem.id }}" x-model="dotationChoix['{{ grp.groupe|e('js') }}']">
+                                            <span class="inscription-radio-label">{{ opt.stockItem.nom }}</span>
+                                        </label>
+                                    {% endfor %}
                                 </div>
-                            {% endfor %}
-                        {% endif %}
+
+                                {# Champ de flocage : rendu seulement pour les options qui l'exigent, et
+                                   désactivé — donc non soumis — tant que l'option n'est pas sélectionnée. #}
+                                {% for opt in grp.options|filter(o => o.personnalisationRequise) %}
+                                    <div class="inscription-flocage-field"
+                                         x-show="dotationChoix['{{ grp.groupe|e('js') }}'] === '{{ opt.stockItem.id }}'" x-cloak>
+                                        {% include 'public/inscription/_flocage_input.html.twig' with {
+                                            cle: grp.groupe,
+                                            ligne: opt,
+                                            maxDefaut: personnalisationMaxDefaut,
+                                            conditionnel: true,
+                                            valeurAttendue: opt.stockItem.id,
+                                        } only %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+
+                        {# Personnalisations dues sans question de choix : groupe à option unique
+                           (nouveau licencié) ou article fixe personnalisé. #}
+                        {% for auto in dotationAutos|default([]) %}
+                            <hr class="inscription-question-divider">
+                            <div class="inscription-question-block">
+                                {% include 'public/inscription/_flocage_input.html.twig' with {
+                                    cle: auto.cle,
+                                    ligne: auto.ligne,
+                                    maxDefaut: personnalisationMaxDefaut,
+                                    conditionnel: false,
+                                    valeurAttendue: null,
+                                } only %}
+                            </div>
+                        {% endfor %}
+
+                        {# Récapitulatif : le texte tel qu'il sera imprimé, à confirmer avant de continuer. #}
+                        <div class="inscription-flocage-recap" x-show="flocagesActifs.length > 0" x-cloak>
+                            <p class="inscription-flocage-recap-title">Vérifiez l'orthographe avant de continuer</p>
+                            <template x-for="f in flocagesActifs" :key="f.cle">
+                                <div class="inscription-flocage-preview" x-text="f.texte || '…'"></div>
+                            </template>
+                            <label class="inscription-flocage-check">
+                                <input type="checkbox" name="flocage_confirme" value="1" x-model="flocageConfirme">
+                                <span>Je confirme l'orthographe. Le texte sera imprimé tel quel et ne pourra plus être modifié.</span>
+                            </label>
+                        </div>
 
                     </div>
                 </div>

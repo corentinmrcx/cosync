@@ -60,6 +60,14 @@ class DossierClub
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $dotationChoix = null;
 
+    /**
+     * Textes de personnalisation saisis au formulaire : { groupeChoix: texte }.
+     * Même espace de clés que dotationChoix — les deux se lisent côte à côte, et le texte
+     * survit à un changement d'option à l'intérieur du groupe.
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $dotationPersonnalisation = null;
+
     #[ORM\Column]
     private bool $isSigned = false;
 
@@ -188,6 +196,19 @@ class DossierClub
     public function setDotationChoix(?array $dotationChoix): static
     {
         $this->dotationChoix = $dotationChoix ?: null;
+        return $this;
+    }
+
+    /** @return array<string, string>|null */
+    public function getDotationPersonnalisation(): ?array
+    {
+        return $this->dotationPersonnalisation;
+    }
+
+    /** @param array<string, string>|null $dotationPersonnalisation */
+    public function setDotationPersonnalisation(?array $dotationPersonnalisation): static
+    {
+        $this->dotationPersonnalisation = $dotationPersonnalisation ?: null;
         return $this;
     }
 

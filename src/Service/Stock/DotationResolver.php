@@ -5,8 +5,10 @@ namespace App\Service\Stock;
 use App\Entity\Dirigeant;
 use App\Entity\DotationAffectation;
 use App\Entity\DotationModele;
+use App\Entity\DotationModeleLigne;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Repository\DotationAffectationRepository;
 
@@ -30,10 +32,18 @@ final class DotationResolver
         $best = null;
 
         foreach ($this->affectationsForSeason($person->getSeason()) as $affectation) {
+            // Un modèle désactivé ne dote plus personne, même s'il reste affecté : c'est ce
+            // qui permet de préparer le kit de la saison suivante sans qu'il parte en production.
+            if (!$affectation->getModele()->isActif()) {
+                continue;
+            }
             if (!$this->matches($affectation, $person)) {
                 continue;
             }
-            if ($best === null || $affectation->priorite() > $best->priorite()) {
+            // >= et non > : à priorité égale, la dernière affectation créée l'emporte (le
+            // repository trie par id croissant). C'est le modèle mental de l'admin, et
+            // surtout le résultat devient reproductible.
+            if ($best === null || $affectation->priorite() >= $best->priorite()) {
                 $best = $affectation;
             }
         }
@@ -42,41 +52,12 @@ final class DotationResolver
     }
 
     /**
-     * @return array<int, array{stockItem: \App\Entity\StockItem, quantite: int, obligatoire: bool, groupeChoix: ?string, taille: ?string}>
+     * @return array<int, array{stockItem: \App\Entity\StockItem, quantite: int, obligatoire: bool, groupeChoix: ?string, taille: ?string, personnalisation: ?string}>
      */
     public function resolveDotation(Licencie|Dirigeant $person): array
     {
-        $modele = $this->resolveModele($person);
-        if ($modele === null) {
-            return [];
-        }
-
-        $choix = $this->storedChoices($person);
-
-        // Sépare les lignes simples des groupes de choix « 1 parmi N »
-        $simples = [];
-        $groupes = [];
-        foreach ($modele->getLignes() as $ligne) {
-            if ($ligne->getGroupeChoix() !== null) {
-                $groupes[$ligne->getGroupeChoix()][] = $ligne;
-            } else {
-                $simples[] = $ligne;
-            }
-        }
-
-        // Pour chaque groupe : la ligne choisie (sinon la première par défaut)
-        $retenues = $simples;
-        foreach ($groupes as $groupe => $lignes) {
-            $voulu = isset($choix[$groupe]) ? (int) $choix[$groupe] : null;
-            $choisie = null;
-            foreach ($lignes as $ligne) {
-                if ($voulu !== null && $ligne->getStockItem()->getId() === $voulu) {
-                    $choisie = $ligne;
-                    break;
-                }
-            }
-            $retenues[] = $choisie ?? $lignes[0];
-        }
+        $retenues = $this->retainedLines($person, $this->storedChoices($person));
+        $textes   = $this->storedPersonnalisations($person);
 
         $out = [];
         foreach ($retenues as $ligne) {
@@ -87,6 +68,11 @@ final class DotationResolver
                 'obligatoire' => $ligne->isObligatoire(),
                 'groupeChoix' => $ligne->getGroupeChoix(),
                 'taille'      => $this->sizeFor($person, $item->getTypeVetement()),
+                // Un texte périmé, laissé sur une option qui n'exige plus de personnalisation,
+                // ne doit jamais remonter jusqu'au flocage.
+                'personnalisation' => $ligne->isPersonnalisationRequise()
+                    ? ($textes[$this->personnalisationKey($ligne)] ?? null)
+                    : null,
             ];
         }
 
@@ -94,9 +80,16 @@ final class DotationResolver
     }
 
     /**
-     * Groupes de choix « 1 parmi N » du modèle résolu, pour proposer un choix dans le formulaire public.
+     * Questions de choix à poser dans le formulaire public : uniquement les groupes qui
+     * proposent au moins 2 options éligibles à cette personne. Un groupe dont une seule
+     * option est éligible n'est pas une question — il est résolu automatiquement par
+     * `resolveDotation()`. C'est ainsi qu'un nouveau licencié reçoit la veste sans qu'on
+     * lui demande quoi que ce soit.
      *
-     * @return array<int, array{groupe: string, options: \App\Entity\StockItem[]}>
+     * Retourne les lignes du modèle, pas les articles : le formulaire a besoin des réglages
+     * de personnalisation portés par la ligne.
+     *
+     * @return array<int, array{groupe: string, options: DotationModeleLigne[]}>
      */
     public function getChoiceGroups(Licencie|Dirigeant $person): array
     {
@@ -105,19 +98,30 @@ final class DotationResolver
             return [];
         }
 
+        $nature  = $this->natureOf($person);
         $groupes = [];
         foreach ($modele->getLignes() as $ligne) {
-            if ($ligne->getGroupeChoix() !== null) {
-                $groupes[$ligne->getGroupeChoix()][] = $ligne->getStockItem();
+            if ($ligne->getGroupeChoix() === null || !$ligne->getEligibilite()->accepte($nature)) {
+                continue;
             }
+            $groupes[$ligne->getGroupeChoix()][] = $ligne;
         }
 
         $out = [];
         foreach ($groupes as $groupe => $options) {
+            if (count($options) < 2) {
+                continue;
+            }
             $out[] = ['groupe' => $groupe, 'options' => $options];
         }
 
         return $out;
+    }
+
+    /** Un dirigeant n'a pas de nature de licence : il relève du cas « inconnu ». */
+    private function natureOf(Licencie|Dirigeant $person): ?NatureLicence
+    {
+        return $person instanceof Licencie ? $person->getNatureLicence() : null;
     }
 
     /** @return array<string, int> */
@@ -128,6 +132,94 @@ final class DotationResolver
         }
 
         return [];
+    }
+
+    /** @return array<string, string> */
+    private function storedPersonnalisations(Licencie|Dirigeant $person): array
+    {
+        if ($person instanceof Licencie) {
+            return $person->getDossierClub()?->getDotationPersonnalisation() ?? [];
+        }
+
+        return [];
+    }
+
+    /**
+     * Clé sous laquelle le texte d'une ligne est stocké dans le dossier : le nom du groupe
+     * pour une option de choix, « ligne:<id> » pour un article fixe personnalisé. Le préfixe
+     * écarte toute collision avec un groupe qui s'appellerait littéralement « 12 ».
+     */
+    public function personnalisationKey(DotationModeleLigne $ligne): string
+    {
+        return $ligne->getGroupeChoix() ?? 'ligne:' . $ligne->getId();
+    }
+
+    /**
+     * Lignes retenues qui réclament un texte du licencié, compte tenu des choix faits.
+     * Couvre les groupes auto-résolus (une seule option éligible) et les articles fixes :
+     * un article floqué doit être saisi même quand aucune question de choix n'est posée.
+     *
+     * @param  array<string, int> $choix { groupeChoix: stockItemId }
+     * @return array<int, array{cle: string, ligne: DotationModeleLigne}>
+     */
+    public function getPersonnalisationRequests(Licencie|Dirigeant $person, array $choix): array
+    {
+        $out = [];
+        foreach ($this->retainedLines($person, $choix) as $ligne) {
+            if ($ligne->isPersonnalisationRequise()) {
+                $out[] = ['cle' => $this->personnalisationKey($ligne), 'ligne' => $ligne];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Lignes du kit effectivement dues à cette personne : articles fixes + une option par
+     * groupe de choix. L'éligibilité s'applique aux deux — une ligne fixe peut être réservée
+     * aux nouveaux licenciés. Un groupe sans aucune option éligible n'est pas dû du tout.
+     *
+     * @param  array<string, int> $choix { groupeChoix: stockItemId }
+     * @return DotationModeleLigne[]
+     */
+    private function retainedLines(Licencie|Dirigeant $person, array $choix): array
+    {
+        $modele = $this->resolveModele($person);
+        if ($modele === null) {
+            return [];
+        }
+
+        $nature  = $this->natureOf($person);
+        $simples = [];
+        $groupes = [];
+        foreach ($modele->getLignes() as $ligne) {
+            if (!$ligne->getEligibilite()->accepte($nature)) {
+                continue;
+            }
+            if ($ligne->getGroupeChoix() !== null) {
+                $groupes[$ligne->getGroupeChoix()][] = $ligne;
+            } else {
+                $simples[] = $ligne;
+            }
+        }
+
+        // Pour chaque groupe : la ligne choisie si elle est encore éligible, sinon la
+        // première option éligible. Couvre le cas d'un choix devenu invalide après une
+        // correction de la nature de licence par l'admin.
+        $retenues = $simples;
+        foreach ($groupes as $groupe => $lignes) {
+            $voulu   = isset($choix[$groupe]) ? (int) $choix[$groupe] : null;
+            $choisie = null;
+            foreach ($lignes as $ligne) {
+                if ($voulu !== null && $ligne->getStockItem()->getId() === $voulu) {
+                    $choisie = $ligne;
+                    break;
+                }
+            }
+            $retenues[] = $choisie ?? $lignes[0];
+        }
+
+        return $retenues;
     }
 
     /** @return DotationAffectation[] */

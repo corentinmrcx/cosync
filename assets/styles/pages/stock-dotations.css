@@ -397,6 +397,110 @@
 
 .dot-choix-form .dot-btn-primary { align-self: flex-start; }
 
+/* — Réglages par option d'un choix : éligibilité et personnalisation — */
+
+.dot-choix-option-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dot-choix-option-row .dot-choix-option { flex: 1 1 auto; }
+.dot-option-eligibilite { flex: 0 0 14rem; font-size: var(--font-size-xs); }
+
+.dot-choix-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.dot-option-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dot-option {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+}
+
+.dot-option-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dot-option-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.dot-option-name {
+    flex: 1 1 10rem;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-base);
+}
+
+.dot-option-meta {
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+
+.dot-option-perso {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--color-border);
+}
+
+.dot-option-perso .dot-input { flex: 1 1 12rem; }
+
+/* — Flocage : texte personnalisé porté par un besoin — */
+
+.dot-flocage { margin-top: 0.2rem; }
+
+.dot-flocage-display {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.dot-flocage-value {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.dot-flocage-input {
+    min-width: 8rem;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-body);
+}
+
+/* Liste de flocage : le texte doit se relire d'un coup d'œil avant impression. */
+.dot-flocage-print {
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-base);
+}
+
 /* — Tableau aperçu — */
 .dot-table-wrapper { overflow-x: auto; }
 
@@ -597,4 +701,10 @@
     .dot-choix-form > .dot-btn-primary { width: 100%; }
     .dot-input-qty { flex-basis: auto; }
     .dot-add-tab { flex: 1 1 auto; text-align: center; }
+
+    /* Réglages par option : tout passe en colonne pleine largeur */
+    .dot-choix-option-row,
+    .dot-option-row,
+    .dot-option-perso { flex-direction: column; align-items: stretch; }
+    .dot-option-eligibilite { flex-basis: auto; }
 }

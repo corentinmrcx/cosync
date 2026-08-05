@@ -51,6 +51,10 @@ class DotationBesoin
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $groupeChoix = null;
 
+    /** Texte à floquer, figé à la résolution. Null si l'article n'est pas personnalisé. */
+    #[ORM\Column(length: 60, nullable: true)]
+    private ?string $personnalisation = null;
+
     /** Mouvement de sortie créé lors de la remise. */
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -92,6 +96,9 @@ class DotationBesoin
 
     public function getGroupeChoix(): ?string { return $this->groupeChoix; }
     public function setGroupeChoix(?string $groupeChoix): static { $this->groupeChoix = $groupeChoix; return $this; }
+
+    public function getPersonnalisation(): ?string { return $this->personnalisation; }
+    public function setPersonnalisation(?string $personnalisation): static { $this->personnalisation = $personnalisation; return $this; }
 
     public function getMouvementSortie(): ?StockMovement { return $this->mouvementSortie; }
     public function setMouvementSortie(?StockMovement $mouvementSortie): static { $this->mouvementSortie = $mouvementSortie; return $this; }

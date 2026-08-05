@@ -1,0 +1,36 @@
+{# Réglages d'une option de choix : qui y a droit, et faut-il demander un texte au licencié.
+   `ligne` = App\Entity\DotationModeleLigne #}
+<li class="dot-option" x-data="{ perso: {{ ligne.personnalisationRequise ? 'true' : 'false' }} }">
+    <form method="post" action="{{ path('admin_stock_dotations_ligne_reglages', {id: ligne.id}) }}" class="dot-option-form">
+        <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_reglages_' ~ ligne.id) }}">
+
+        <div class="dot-option-row">
+            <span class="dot-option-name">
+                {{ ligne.stockItem.nom }}
+                {%- if ligne.stockItem.typeVetement %} <span class="dot-option-meta">— {{ ligne.stockItem.typeVetement.label }}</span>{% endif -%}
+            </span>
+
+            <select name="eligibilite" class="dot-input dot-option-eligibilite">
+                {% for cas in eligibilites %}
+                    <option value="{{ cas.value }}" {{ ligne.eligibilite == cas ? 'selected' : '' }}>{{ cas.label }}</option>
+                {% endfor %}
+            </select>
+
+            <label class="dot-check">
+                <input type="checkbox" name="personnalisation_requise" value="1" x-model="perso"> Texte à personnaliser
+            </label>
+
+            <button type="submit" class="dot-btn-secondary">Enregistrer</button>
+        </div>
+
+        <div class="dot-option-perso" x-show="perso" x-cloak>
+            <input type="text" name="personnalisation_label" class="dot-input"
+                   value="{{ ligne.personnalisationLabel }}"
+                   placeholder="Question posée (ex : Nom à floquer au dos)">
+            <input type="number" name="personnalisation_max" class="dot-input dot-input-qty"
+                   min="1" max="60" value="{{ ligne.personnalisationMaxLength }}"
+                   placeholder="{{ personnalisationMaxDefaut }}" title="Nombre de caractères maximum">
+            <span class="dot-hint">Le licencié devra saisir ce texte et en confirmer l'orthographe avant l'envoi.</span>
+        </div>
+    </form>
+</li>

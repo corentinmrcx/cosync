@@ -21,5 +21,7 @@ final class InscriptionFormData
         public readonly ?AttestationTransportData $attestationTransport = null,
         /** @var array<string, int> { groupeChoix: stockItemId } */
         public readonly array $dotationChoix = [],
+        /** @var array<string, string> { clé de personnalisation: texte à floquer } */
+        public readonly array $dotationPersonnalisation = [],
     ) {}
 }

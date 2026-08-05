@@ -18,6 +18,7 @@
             <p class="dot-subtitle">Ce que chaque personne doit recevoir et ce qui a déjà été remis.</p>
         </div>
         <div class="dot-header-actions">
+            <a href="{{ path('admin_stock_dotations_flocage') }}" class="dot-btn-secondary">Liste de flocage</a>
             <form method="post" action="{{ path('admin_stock_dotations_recalculer') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('dotation_recalculer') }}">
                 <button type="submit" class="dot-btn-secondary">↻ Recalculer les besoins</button>
@@ -72,7 +73,10 @@
                                     <span class="dot-person-name">{{ besoin.nomPrenom }}</span>
                                     <span class="dot-person-role">{{ besoin.roleLabel }}</span>
                                 </td>
-                                <td><span class="dot-item-nom">{{ besoin.stockItem.nom }}</span></td>
+                                <td>
+                                    <span class="dot-item-nom">{{ besoin.stockItem.nom }}</span>
+                                    {% include 'admin/stock/dotations/_flocage_cell.html.twig' with { besoin: besoin } only %}
+                                </td>
                                 <td>
                                     {% set options = besoin.stockItem.typeVetement and besoin.stockItem.typeVetement.value == 'chaussures' ? pointures : taillesConnues %}
                                     {% set estDonne = besoin.statut.value == 'donne' %}

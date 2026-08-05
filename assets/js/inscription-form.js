@@ -1,6 +1,14 @@
 import { reglementSignature } from './reglement-signature.js';
 
-export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', dotationGroupes = [] }) {
+export function inscriptionForm({
+    isJeune,
+    montant,
+    demo = false,
+    demoUrl = '',
+    dotationGroupes = [],
+    dotationFlocages = {},
+    dotationAutoFlocages = [],
+}) {
     return {
         ...reglementSignature(),
 
@@ -20,6 +28,12 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
         // Étape 2 — choix de dotation (groupes « 1 parmi N » configurés par l'admin)
         dotationGroupes,
         dotationChoix: {},
+
+        // Étape 2 — textes de personnalisation (flocage) + confirmation d'orthographe
+        dotationFlocages,
+        dotationAutoFlocages,
+        dotationPersonnalisation: {},
+        flocageConfirme: false,
 
         // Étape 3 — autorisations
         autorisationPhoto: null,
@@ -69,6 +83,28 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
             return this.step === this.steps[this.steps.length - 1];
         },
 
+        // Textes de flocage effectivement demandés au vu des choix courants.
+        get flocagesActifs() {
+            const out = [];
+            for (const [groupe, options] of Object.entries(this.dotationFlocages)) {
+                const choisi = this.dotationChoix[groupe];
+                if (choisi !== undefined && options[choisi] !== undefined) {
+                    out.push({ cle: groupe, max: options[choisi], texte: (this.dotationPersonnalisation[groupe] || '').trim() });
+                }
+            }
+            for (const auto of this.dotationAutoFlocages) {
+                out.push({ cle: auto.cle, max: auto.max, texte: (this.dotationPersonnalisation[auto.cle] || '').trim() });
+            }
+            return out;
+        },
+
+        // Miroir de FLOCAGE_PATTERN côté serveur : confort de saisie, la validation qui fait foi
+        // reste celle de DotationChoixRequestFactory.
+        get flocagesValides() {
+            const autorise = /^[\p{L}\p{N} .'\-]+$/u;
+            return this.flocagesActifs.every(f => f.texte !== '' && f.texte.length <= f.max && autorise.test(f.texte));
+        },
+
         // Vrai si l'utilisateur a saisi une date de CT strictement dans le futur (aujourd'hui autorisé)
         get dateCTFuture() {
             if (this.dateCT === '') return false;
@@ -109,7 +145,9 @@ export function inscriptionForm({ isJeune, montant, demo = false, demoUrl = '', 
                     return true;
                 case 2:
                     if (this.tailleHaut === '' || this.tailleBas === '' || this.pointure === '') return false;
-                    return this.dotationGroupes.every(g => this.dotationChoix[g] !== undefined && this.dotationChoix[g] !== '');
+                    if (!this.dotationGroupes.every(g => this.dotationChoix[g] !== undefined && this.dotationChoix[g] !== '')) return false;
+                    if (!this.flocagesValides) return false;
+                    return this.flocagesActifs.length === 0 || this.flocageConfirme;
                 case 3:
                     if (this.autorisationPhoto === null) return false;
                     if (this.isJeune) {

@@ -243,6 +243,67 @@
     margin: 0.25rem 0;
 }
 
+/* — Personnalisation (flocage) — */
+
+.inscription-flocage-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+}
+
+.inscription-flocage-count {
+    align-self: flex-end;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.inscription-flocage-recap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-md);
+    background: var(--color-warning-bg);
+}
+
+.inscription-flocage-recap-title {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-base);
+}
+
+/* Le texte tel qu'il sera imprimé : c'est ce que le licencié doit relire, pas un champ de plus. */
+.inscription-flocage-preview {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-page);
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--color-text-base);
+    word-break: break-word;
+}
+
+.inscription-flocage-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    cursor: pointer;
+}
+
+.inscription-flocage-check input { margin-top: 0.15rem; }
+
 /* — Règlement — */
 .inscription-reglement {
     max-height: 220px;

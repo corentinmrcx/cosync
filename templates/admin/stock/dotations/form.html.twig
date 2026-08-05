@@ -66,21 +66,32 @@
 
                 {% for nom, lignes in choixGroupes %}
                     <li class="dot-list-item dot-list-item-choix">
-                        <div class="dot-list-main">
-                            <span class="dot-list-name">
-                                <span class="dot-choix-tag">Choix</span> {{ nom }}
-                            </span>
-                            <span class="dot-list-meta">
-                                Le licencié choisit : {{ lignes|map(l => l.stockItem.nom)|join(' / ') }}
-                                {% if lignes[0].quantite > 1 %} · ×{{ lignes[0].quantite }}{% endif %}
-                            </span>
+                        <div class="dot-choix-head">
+                            <div class="dot-list-main">
+                                <span class="dot-list-name">
+                                    <span class="dot-choix-tag">Choix</span> {{ nom }}
+                                </span>
+                                <span class="dot-list-meta">
+                                    {{ lignes|length }} option(s){% if lignes[0].quantite > 1 %} · ×{{ lignes[0].quantite }}{% endif %}
+                                </span>
+                            </div>
+                            <form method="post" action="{{ path('admin_stock_dotations_choix_delete', {id: modele.id}) }}" style="display:inline"
+                                  onsubmit="return confirm('Retirer ce choix et ses {{ lignes|length }} options ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_delete_' ~ modele.id) }}">
+                                <input type="hidden" name="nom" value="{{ nom }}">
+                                <button type="submit" class="dot-action-delete">Retirer</button>
+                            </form>
                         </div>
-                        <form method="post" action="{{ path('admin_stock_dotations_choix_delete', {id: modele.id}) }}" style="display:inline"
-                              onsubmit="return confirm('Retirer ce choix et ses {{ lignes|length }} options ?')">
-                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_delete_' ~ modele.id) }}">
-                            <input type="hidden" name="nom" value="{{ nom }}">
-                            <button type="submit" class="dot-action-delete">Retirer</button>
-                        </form>
+
+                        <ul class="dot-option-list">
+                            {% for ligne in lignes %}
+                                {% include 'admin/stock/dotations/_option_reglages.html.twig' with {
+                                    ligne: ligne,
+                                    eligibilites: eligibilites,
+                                    personnalisationMaxDefaut: personnalisationMaxDefaut,
+                                } only %}
+                            {% endfor %}
+                        </ul>
                     </li>
                 {% endfor %}
             </ul>
@@ -124,19 +135,24 @@
                     <input type="text" name="nom" class="dot-input" placeholder="Nom du choix (ex : Veste)" required>
                     <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" value="1" title="Quantité">
                 </div>
-                <p class="dot-hint">Cochez les articles proposés (au moins 2). Le licencié en choisira un seul lors de son inscription.</p>
+                <p class="dot-hint">
+                    Cochez les articles proposés (au moins 2). Le licencié en choisira un seul lors de son inscription.
+                    Par défaut tout le monde voit l'option ; restreignez-la si elle est réservée aux nouveaux licenciés
+                    ou aux renouvellements. Le texte à personnaliser se règle ensuite, option par option.
+                </p>
                 <div class="dot-choix-options">
-                    {% for item in vetements %}
-                        <label class="dot-choix-option">
-                            <input type="checkbox" name="stock_item_ids[]" value="{{ item.id }}">
-                            <span>{{ item.nom }} — {{ item.typeVetement.label }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</span>
-                        </label>
-                    {% endfor %}
-                    {% for item in autres %}
-                        <label class="dot-choix-option">
-                            <input type="checkbox" name="stock_item_ids[]" value="{{ item.id }}">
-                            <span>{{ item.nom }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</span>
-                        </label>
+                    {% for item in vetements|merge(autres) %}
+                        <div class="dot-choix-option-row">
+                            <label class="dot-choix-option">
+                                <input type="checkbox" name="stock_item_ids[]" value="{{ item.id }}">
+                                <span>{{ item.nom }}{% if item.typeVetement %} — {{ item.typeVetement.label }}{% endif %}{% if item.couleur %} · {{ item.couleur }}{% endif %}</span>
+                            </label>
+                            <select name="eligibilite[{{ item.id }}]" class="dot-input dot-option-eligibilite">
+                                {% for cas in eligibilites %}
+                                    <option value="{{ cas.value }}">{{ cas.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     {% endfor %}
                 </div>
                 <button type="submit" class="dot-btn-primary">+ Ajouter le choix</button>

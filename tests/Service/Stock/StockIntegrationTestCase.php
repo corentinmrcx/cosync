@@ -18,7 +18,9 @@ use App\Entity\StockItem;
 use App\Entity\Team;
 use App\Enum\CommandeStatut;
 use App\Enum\DotationBesoinStatut;
+use App\Enum\DotationEligibilite;
 use App\Enum\LicenceStatus;
+use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
@@ -97,8 +99,17 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         StockItem $item,
         int $qte = 1,
         ?string $groupeChoix = null,
+        DotationEligibilite $eligibilite = DotationEligibilite::TOUS,
+        bool $personnalisation = false,
+        ?int $maxLength = null,
     ): DotationModeleLigne {
-        $ligne = (new DotationModeleLigne())->setStockItem($item)->setQuantite($qte)->setGroupeChoix($groupeChoix);
+        $ligne = (new DotationModeleLigne())
+            ->setStockItem($item)
+            ->setQuantite($qte)
+            ->setGroupeChoix($groupeChoix)
+            ->setEligibilite($eligibilite)
+            ->setPersonnalisationRequise($personnalisation)
+            ->setPersonnalisationMaxLength($maxLength);
         $modele->addLigne($ligne);
         $this->em->persist($ligne);
         return $ligne;
@@ -124,6 +135,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         ?Team $team = null,
         string $tailleHaut = 'L',
         LicenceStatus $status = LicenceStatus::VALIDATED,
+        ?NatureLicence $nature = null,
     ): Licencie {
         static $n = 0;
         ++$n;
@@ -132,6 +144,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
             ->setPrenom('Joueur' . $n)
             ->setDateNaissance(new \DateTimeImmutable('2000-01-01'))
             ->setCategory($cat)
+            ->setNatureLicence($nature)
             ->setSeason($season);
         if ($team !== null) {
             $licencie->setTeam($team);
@@ -144,6 +157,24 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         $this->em->persist($dossier);
 
         return $licencie;
+    }
+
+    /**
+     * Écrit sur le dossier les réponses que le licencié aurait données au formulaire public.
+     *
+     * @param array<string, int>    $choix            { groupeChoix: stockItemId }
+     * @param array<string, string> $personnalisation { clé: texte à floquer }
+     */
+    protected function setReponsesFormulaire(Licencie $licencie, array $choix, array $personnalisation = []): void
+    {
+        // Le côté inverse du OneToOne n'est hydraté qu'au rechargement : on passe par le
+        // repository pour que le helper fonctionne aussi juste après la création.
+        $dossier = $licencie->getDossierClub()
+            ?? $this->em->getRepository(DossierClub::class)->findOneBy(['licencie' => $licencie]);
+        self::assertNotNull($dossier, 'Le licencié de test doit avoir un dossier club.');
+        $dossier->setDotationChoix($choix);
+        $dossier->setDotationPersonnalisation($personnalisation);
+        $this->em->flush();
     }
 
     protected function makeBesoin(

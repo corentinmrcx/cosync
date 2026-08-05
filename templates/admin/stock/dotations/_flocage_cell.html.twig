@@ -1,0 +1,30 @@
+{# Texte de flocage d'un besoin, corrigible en ligne tant que l'article n'a pas été remis.
+   Rien n'est affiché pour un article non personnalisé — la très grande majorité des lignes.
+   `besoin` = App\Entity\DotationBesoin #}
+{% set estDonne = besoin.statut.value == 'donne' %}
+{% if besoin.personnalisation %}
+    <div class="dot-flocage" x-data="{ editing: false }">
+        <div x-show="!editing" class="dot-flocage-display">
+            <span class="dot-flocage-value">Flocage : {{ besoin.personnalisation }}</span>
+            {% if not estDonne %}
+                <button type="button" class="dot-taille-pen" @click="editing = true"
+                        title="Corriger le texte à floquer" aria-label="Corriger le texte à floquer">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </button>
+            {% endif %}
+        </div>
+
+        {% if not estDonne %}
+            <form x-show="editing" x-cloak method="post"
+                  action="{{ path('admin_stock_dotations_besoin_personnalisation', {id: besoin.id}) }}"
+                  class="dot-taille-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_personnalisation_' ~ besoin.id) }}">
+                <input type="text" name="personnalisation" class="dot-flocage-input" maxlength="60"
+                       value="{{ besoin.personnalisation }}" placeholder="Texte à floquer"
+                       x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
+                <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
+                <button type="button" class="dot-taille-cancel" @click="editing = false" title="Annuler">✕</button>
+            </form>
+        {% endif %}
+    </div>
+{% endif %}
