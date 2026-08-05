@@ -33,6 +33,8 @@ security:
         - { path: ^/attestation-cle, roles: PUBLIC_ACCESS }
         - { path: ^/politique-de-confidentialite, roles: PUBLIC_ACCESS }
         - { path: ^/mentions-legales, roles: PUBLIC_ACCESS }
+        # Notifications HelloAsso : pas de session, authenticité revérifiée côté service
+        - { path: ^/webhook, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: ROLE_USER }
 
 when@test:
