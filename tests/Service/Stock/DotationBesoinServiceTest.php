@@ -250,6 +250,39 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         self::assertSame(['BRAVO', 'BRAVO', 'WHISKEY'], $noms, 'Une dotation partielle reste devant les personnes entièrement servies.');
     }
 
+    public function testRecalculNeTouchePasAuxBesoinsDUneAutreSaison(): void
+    {
+        $season = $this->makeSeason('2025-2026');
+        $cat    = $this->makeCategory('SENIOR');
+        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $modele = $this->makeModele($season);
+        $this->addLigne($modele, $item, 1);
+        $this->affecterCategorie($season, $modele, $cat);
+
+        $licencie = $this->makeLicencie($season, $cat, null, 'L');
+        $this->em->flush();
+        $this->besoinService()->recomputeForLicencie($licencie);
+
+        // Un besoin d'une autre saison rattaché à la même personne ne doit jamais entrer
+        // dans le périmètre du recalcul — sinon il serait supprimé comme caduc.
+        $autreSaison = $this->makeSeason('2024-2025');
+        $etranger    = (new \App\Entity\DotationBesoin())
+            ->setSeason($autreSaison)
+            ->setStockItem($this->makeItem('Sweat', StockItemVetementType::HAUT))
+            ->setLicencie($licencie)
+            ->setQuantite(1);
+        $this->em->persist($etranger);
+        $this->em->flush();
+        $idEtranger = $etranger->getId();
+
+        $this->besoinService()->recomputeForLicencie($licencie);
+
+        self::assertNotNull(
+            $this->em->find(\App\Entity\DotationBesoin::class, $idEtranger),
+            'Le besoin de la saison précédente doit survivre au recalcul.',
+        );
+    }
+
     public function testStatutFicheLicencie(): void
     {
         $season = $this->makeSeason();

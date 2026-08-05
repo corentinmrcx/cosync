@@ -54,15 +54,21 @@ class DotationBesoinRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /** @return DotationBesoin[] */
+    /**
+     * Besoins de la personne pour SA saison. Le filtre est indispensable : ces listes
+     * alimentent le recalcul, qui supprime les besoins « à donner » devenus caducs — sans
+     * lui, un recalcul détruirait les besoins des autres saisons.
+     *
+     * @return DotationBesoin[]
+     */
     public function findForLicencie(Licencie $licencie): array
     {
-        return $this->findBy(['licencie' => $licencie]);
+        return $this->findBy(['licencie' => $licencie, 'season' => $licencie->getSeason()]);
     }
 
     /** @return DotationBesoin[] */
     public function findForDirigeant(Dirigeant $dirigeant): array
     {
-        return $this->findBy(['dirigeant' => $dirigeant]);
+        return $this->findBy(['dirigeant' => $dirigeant, 'season' => $dirigeant->getSeason()]);
     }
 }
