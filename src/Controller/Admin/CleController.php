@@ -44,21 +44,21 @@ class CleController extends AbstractController
         $detentions = $registre->getDetentions($season);
 
         return $this->render('admin/clubhouse/cles.html.twig', [
-            'season'       => $season,
-            'stats'        => $registre->getStats($season),
-            'detentions'   => $this->filterDetentions($detentions, $search, $statut),
-            'candidats'    => $dirigeantRepo->findBySeason($season),
-            'search'       => $search,
+            'season' => $season,
+            'stats' => $registre->getStats($season),
+            'detentions' => $this->filterDetentions($detentions, $search, $statut),
+            'candidats' => $dirigeantRepo->findBySeason($season),
+            'search' => $search,
             'filterGroups' => [[
-                'name'     => 'statut',
-                'label'    => 'Statut',
+                'name' => 'statut',
+                'label' => 'Statut',
                 'allLabel' => 'Tous',
-                'options'  => [
+                'options' => [
                     ['value' => 'detenteur', 'label' => 'Détenteurs actuels'],
                     ['value' => 'signature_manquante', 'label' => 'Attestation non signée'],
                     ['value' => 'restitue', 'label' => 'Clés restituées'],
                 ],
-                'current'  => $statut !== '' ? $statut : null,
+                'current' => $statut !== '' ? $statut : null,
             ]],
             'activeFilterCount' => ($search !== '' ? 1 : 0) + ($statut !== '' ? 1 : 0),
         ]);
@@ -72,14 +72,16 @@ class CleController extends AbstractController
     ): Response {
         if (!$this->isCsrfTokenValid('cle_mouvement', $request->request->get('_token'))) {
             $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+
             return $this->redirectToRoute('admin_clubhouse_cles_index');
         }
 
         $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString((string) $request->request->get('dirigeant', '')));
-        $type      = CleMouvementType::tryFrom((string) $request->request->get('type', ''));
+        $type = CleMouvementType::tryFrom((string) $request->request->get('type', ''));
 
         if ($dirigeant === null || $type === null) {
             $this->addFlash('error', 'Mouvement invalide.');
+
             return $this->redirectToRoute('admin_clubhouse_cles_index');
         }
 
@@ -119,6 +121,7 @@ class CleController extends AbstractController
     ): Response {
         if (!$this->isCsrfTokenValid('attestation_cle_send_link_' . $uuid, $request->request->get('_token'))) {
             $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+
             return $this->redirectToRoute('admin_clubhouse_cles_index');
         }
 
@@ -126,6 +129,7 @@ class CleController extends AbstractController
 
         if ($dirigeant === null) {
             $this->addFlash('error', 'Dirigeant introuvable.');
+
             return $this->redirectToRoute('admin_clubhouse_cles_index');
         }
 
@@ -155,10 +159,10 @@ class CleController extends AbstractController
             }
 
             return match ($statut) {
-                'detenteur'           => $detention->estDetenteur(),
+                'detenteur' => $detention->estDetenteur(),
                 'signature_manquante' => $detention->estDetenteur() && !$detention->dirigeant->hasSignedAttestationCle(),
-                'restitue'            => !$detention->estDetenteur(),
-                default               => true,
+                'restitue' => !$detention->estDetenteur(),
+                default => true,
             };
         }));
     }

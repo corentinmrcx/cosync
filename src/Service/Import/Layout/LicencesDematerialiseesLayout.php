@@ -21,18 +21,18 @@ final class LicencesDematerialiseesLayout implements ImportLayoutInterface
 {
     use ReadsColumnsTrait;
 
-    private const COL_NOM            = 'nom';
-    private const COL_PRENOM         = 'prénom';
-    private const COL_NUMERO         = 'numéro personne';
+    private const COL_NOM = 'nom';
+    private const COL_PRENOM = 'prénom';
+    private const COL_NUMERO = 'numéro personne';
     private const COL_SOUS_CATEGORIE = 'sous-catégorie';
-    private const COL_TYPE           = 'type';
+    private const COL_TYPE = 'type';
     private const COL_DATE_NAISSANCE = 'date de naissance';
-    private const COL_EMAIL          = 'email';
-    private const COL_MOBILE         = 'téléphone mobile';
-    private const COL_ADRESSE        = 'adresse 1';
-    private const COL_CODE_POSTAL    = 'code postal';
-    private const COL_VILLE          = 'ville';
-    private const COL_NATURE         = 'nature';
+    private const COL_EMAIL = 'email';
+    private const COL_MOBILE = 'téléphone mobile';
+    private const COL_ADRESSE = 'adresse 1';
+    private const COL_CODE_POSTAL = 'code postal';
+    private const COL_VILLE = 'ville';
+    private const COL_NATURE = 'nature';
 
     private const TYPE_JOUEUR = 'joueur';
 
@@ -50,7 +50,7 @@ final class LicencesDematerialiseesLayout implements ImportLayoutInterface
 
     public function map(array $row, array $columns): ImportRowData
     {
-        $rawNom    = trim((string) $this->value($row, $columns, self::COL_NOM));
+        $rawNom = trim((string) $this->value($row, $columns, self::COL_NOM));
         $rawPrenom = trim((string) $this->value($row, $columns, self::COL_PRENOM));
         if ($rawNom === '' && $rawPrenom === '') {
             return ImportRowData::skipped();
@@ -59,7 +59,7 @@ final class LicencesDematerialiseesLayout implements ImportLayoutInterface
 
         // CoSync ne connaît que deux cibles : Joueur → licencié, tout le reste → dirigeant.
         $typeValue = mb_strtolower(trim((string) $this->value($row, $columns, self::COL_TYPE)), 'UTF-8');
-        $type      = $typeValue === self::TYPE_JOUEUR ? ImportRowType::LICENCIE : ImportRowType::DIRIGEANT;
+        $type = $typeValue === self::TYPE_JOUEUR ? ImportRowType::LICENCIE : ImportRowType::DIRIGEANT;
 
         $categoryOrRole = $this->stripFamilyPrefix($this->value($row, $columns, self::COL_SOUS_CATEGORIE));
 

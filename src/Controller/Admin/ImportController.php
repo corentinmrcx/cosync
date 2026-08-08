@@ -5,9 +5,9 @@ namespace App\Controller\Admin;
 use App\Service\Import\ImportService;
 use App\Service\SeasonContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/admin/import', name: 'admin_import_')]
@@ -18,6 +18,7 @@ class ImportController extends AbstractController
     {
         if ($seasonContext->getCurrentSeason() === null) {
             $this->addFlash('warning', 'Créez une saison avant de pouvoir importer des licenciés.');
+
             return $this->redirectToRoute('admin_seasons_new');
         }
 
@@ -33,6 +34,7 @@ class ImportController extends AbstractController
 
         if ($season === null) {
             $this->addFlash('error', 'Aucune saison sélectionnée. Créez et activez une saison d\'abord.');
+
             return $this->redirectToRoute('admin_import_index');
         }
 
@@ -40,11 +42,13 @@ class ImportController extends AbstractController
 
         if (!$file instanceof UploadedFile) {
             $this->addFlash('error', 'Aucun fichier reçu.');
+
             return $this->redirectToRoute('admin_import_index');
         }
 
         if ($file->getClientOriginalExtension() !== 'xlsx') {
             $this->addFlash('error', 'Le fichier doit être au format .xlsx');
+
             return $this->redirectToRoute('admin_import_index');
         }
 
@@ -52,6 +56,7 @@ class ImportController extends AbstractController
             $result = $importService->importFromXlsx($file, $season);
         } catch (\Throwable) {
             $this->addFlash('error', 'Une erreur inattendue est survenue pendant l\'import. Veuillez réessayer.');
+
             return $this->redirectToRoute('admin_import_index');
         }
 

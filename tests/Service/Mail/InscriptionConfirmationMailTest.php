@@ -27,7 +27,7 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
     use MailerAssertionsTrait;
 
     private const IBAN = 'FR76 3000 4000 0300 0000 0000 143';
-    private const BIC  = 'BNPAFRPPXXX';
+    private const BIC = 'BNPAFRPPXXX';
 
     /** @var string[] */
     private array $fichiersTemporaires = [];
@@ -140,6 +140,7 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
         $this->envoyer($this->seed([PaymentMode::CHEQUE]));
 
         $message = self::getMailerMessages()[0];
+        self::assertInstanceOf(Email::class, $message);
         self::assertSame('kevin.martin@example.test', $message->getTo()[0]->getAddress());
         self::assertStringContainsString('Inscription bien reçue', $message->getSubject());
     }
@@ -161,7 +162,7 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
 
         $this->envoyer($licencie, [
             $this->pdfTemporaire('reglement') => 'Règlement intérieur.pdf',
-            $this->pdfTemporaire('charte')    => 'Charte du joueur.pdf',
+            $this->pdfTemporaire('charte') => 'Charte du joueur.pdf',
         ]);
 
         $pieces = $this->piecesJointes();
@@ -179,7 +180,7 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
         $licencie = $this->seed([PaymentMode::CHEQUE]);
 
         $this->envoyer($licencie, [
-            $this->pdfTemporaire('present')             => 'Règlement intérieur.pdf',
+            $this->pdfTemporaire('present') => 'Règlement intérieur.pdf',
             '/var/www/html/var/pdfs/fichier_disparu.pdf' => 'Document disparu.pdf',
         ]);
 
@@ -191,7 +192,7 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
     public function testDesPiecesJointesTropLourdesSontAbandonneesMaisLeMailPart(): void
     {
         $licencie = $this->seed([PaymentMode::VIREMENT]);
-        $lourd    = $this->pdfTemporaire('enorme', 9 * 1024 * 1024);
+        $lourd = $this->pdfTemporaire('enorme', 9 * 1024 * 1024);
 
         $this->envoyer($licencie, [$lourd => 'Énorme document.pdf']);
 
@@ -213,7 +214,10 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
         $messages = self::getMailerMessages();
         self::assertNotEmpty($messages, 'Aucun mail envoyé');
 
-        return (string) end($messages)->getHtmlBody();
+        $dernier = end($messages);
+        self::assertInstanceOf(Email::class, $dernier);
+
+        return (string) $dernier->getHtmlBody();
     }
 
     /** @return \Symfony\Component\Mime\Part\DataPart[] */
@@ -230,7 +234,7 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
         $repertoire = self::getContainer()->getParameter('kernel.project_dir') . '/var/pdfs';
         @mkdir($repertoire, 0775, true);
 
-        $path    = sprintf('%s/test_%s_%d.pdf', $repertoire, $nom, random_int(1000, 9999));
+        $path = sprintf('%s/test_%s_%d.pdf', $repertoire, $nom, random_int(1000, 9999));
         $contenu = "%PDF-1.4\n" . str_repeat('x', max(0, $taille - 9));
 
         file_put_contents($path, $contenu);

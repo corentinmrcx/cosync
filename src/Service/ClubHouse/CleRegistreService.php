@@ -38,14 +38,7 @@ final class CleRegistreService
         if ($data->type !== CleMouvementType::REMISE) {
             $solde = $this->mouvementRepo->getSolde($dirigeant);
             if ($data->quantite > $solde) {
-                throw new \DomainException(sprintf(
-                    '%s %s ne détient que %d clé(s) : impossible d\'en enregistrer %d en %s.',
-                    $dirigeant->getNom(),
-                    $dirigeant->getPrenom(),
-                    $solde,
-                    $data->quantite,
-                    mb_strtolower($data->type->label()),
-                ));
+                throw new \DomainException(sprintf('%s %s ne détient que %d clé(s) : impossible d\'en enregistrer %d en %s.', $dirigeant->getNom(), $dirigeant->getPrenom(), $solde, $data->quantite, mb_strtolower($data->type->label())));
             }
         }
 
@@ -106,13 +99,13 @@ final class CleRegistreService
     public function getStats(Season $season): CleRegistreStats
     {
         $enCirculation = 0;
-        $detenteurs    = 0;
-        $perdues       = 0;
-        $restituees    = 0;
-        $signees       = 0;
+        $detenteurs = 0;
+        $perdues = 0;
+        $restituees = 0;
+        $signees = 0;
 
         foreach ($this->getDetentions($season) as $detention) {
-            $perdues    += $detention->pertes;
+            $perdues += $detention->pertes;
             $restituees += $detention->restitutions;
 
             if (!$detention->estDetenteur()) {
@@ -157,21 +150,21 @@ final class CleRegistreService
      */
     private function foldDetention(Dirigeant $dirigeant, array $mouvements): CleDetention
     {
-        $solde          = 0;
-        $depuis         = null;
+        $solde = 0;
+        $depuis = null;
         $derniereRemise = null;
-        $remises        = 0;
-        $restitutions   = 0;
-        $pertes         = 0;
-        $dernier        = null;
+        $remises = 0;
+        $restitutions = 0;
+        $pertes = 0;
+        $dernier = null;
 
         foreach ($mouvements as $mouvement) {
             $quantite = $mouvement->getQuantite();
 
             match ($mouvement->getType()) {
-                CleMouvementType::REMISE      => $remises += $quantite,
+                CleMouvementType::REMISE => $remises += $quantite,
                 CleMouvementType::RESTITUTION => $restitutions += $quantite,
-                CleMouvementType::PERTE       => $pertes += $quantite,
+                CleMouvementType::PERTE => $pertes += $quantite,
             };
 
             $avant = $solde;
@@ -184,7 +177,7 @@ final class CleRegistreService
                 $depuis = $mouvement->getDateMouvement();
             }
             if ($solde <= 0) {
-                $depuis         = null;
+                $depuis = null;
                 $derniereRemise = null;
             }
 

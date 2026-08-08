@@ -4,7 +4,11 @@
         "@babel/preset-env": "^7.16.0",
         "@symfony/webpack-encore": "^6.0.0",
         "core-js": "^3.38.0",
+        "eslint": "^9.39.5",
+        "globals": "^15.15.0",
         "regenerator-runtime": "^0.13.9",
+        "stylelint": "^16.26.1",
+        "stylelint-config-standard": "^37.0.0",
         "webpack": "^5.72",
         "webpack-cli": "^6.0.0"
     },
@@ -14,7 +18,12 @@
         "dev-server": "encore dev-server",
         "dev": "encore dev",
         "watch": "encore dev --watch",
-        "build": "encore production --progress"
+        "build": "encore production --progress",
+        "lint:css": "stylelint \"assets/styles/**/*.css\"",
+        "lint:js": "eslint assets/",
+        "lint": "npm run lint:css && npm run lint:js",
+        "fix:css": "stylelint \"assets/styles/**/*.css\" --fix",
+        "fix:js": "eslint assets/ --fix"
     },
     "dependencies": {
         "@alpinejs/collapse": "^3.15.12",

@@ -83,12 +83,12 @@ class StockMovementRepository extends ServiceEntityRepository
         return $this->findOneBy(['sumupTransactionId' => $txId]);
     }
 
-    public function hasDotation(\App\Entity\StockItem $item, \App\Entity\Licencie $licencie): bool
+    public function hasDotation(StockItem $item, \App\Entity\Licencie $licencie): bool
     {
         return $this->count([
-            'item'     => $item,
+            'item' => $item,
             'licencie' => $licencie,
-            'source'   => \App\Enum\StockMovementSource::DOTATION,
+            'source' => \App\Enum\StockMovementSource::DOTATION,
         ]) > 0;
     }
 
@@ -121,7 +121,7 @@ class StockMovementRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param array{item_id?: int, type?: string, source?: string, date_from?: string, date_to?: string} $filters
+     * @param array{item_id?: string, type?: string, source?: string, date_from?: string, date_to?: string} $filters
      * @return array{movements: StockMovement[], total: int}
      */
     public function findWithFilters(array $filters, int $page, int $perPage): array

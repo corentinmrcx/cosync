@@ -47,22 +47,70 @@ class DocumentSignature
         $this->signedAt = new \DateTimeImmutable();
     }
 
-    public function getId(): int { return $this->id; }
+    public function getId(): int
+    {
+        return $this->id;
+    }
 
-    public function getDocument(): DocumentSignable { return $this->document; }
-    public function setDocument(DocumentSignable $document): static { $this->document = $document; return $this; }
+    public function getDocument(): DocumentSignable
+    {
+        return $this->document;
+    }
 
-    public function getDirigeant(): ?Dirigeant { return $this->dirigeant; }
-    public function setDirigeant(?Dirigeant $dirigeant): static { $this->dirigeant = $dirigeant; return $this; }
+    public function setDocument(DocumentSignable $document): static
+    {
+        $this->document = $document;
 
-    public function getLicencie(): ?Licencie { return $this->licencie; }
-    public function setLicencie(?Licencie $licencie): static { $this->licencie = $licencie; return $this; }
+        return $this;
+    }
 
-    public function getSignedAt(): \DateTimeImmutable { return $this->signedAt; }
-    public function setSignedAt(\DateTimeImmutable $signedAt): static { $this->signedAt = $signedAt; return $this; }
+    public function getDirigeant(): ?Dirigeant
+    {
+        return $this->dirigeant;
+    }
 
-    public function getDrivePath(): ?string { return $this->drivePath; }
-    public function setDrivePath(?string $drivePath): static { $this->drivePath = $drivePath; return $this; }
+    public function setDirigeant(?Dirigeant $dirigeant): static
+    {
+        $this->dirigeant = $dirigeant;
+
+        return $this;
+    }
+
+    public function getLicencie(): ?Licencie
+    {
+        return $this->licencie;
+    }
+
+    public function setLicencie(?Licencie $licencie): static
+    {
+        $this->licencie = $licencie;
+
+        return $this;
+    }
+
+    public function getSignedAt(): \DateTimeImmutable
+    {
+        return $this->signedAt;
+    }
+
+    public function setSignedAt(\DateTimeImmutable $signedAt): static
+    {
+        $this->signedAt = $signedAt;
+
+        return $this;
+    }
+
+    public function getDrivePath(): ?string
+    {
+        return $this->drivePath;
+    }
+
+    public function setDrivePath(?string $drivePath): static
+    {
+        $this->drivePath = $drivePath;
+
+        return $this;
+    }
 
     /** Le PDF est-il encore sur le disque local, en attente d'upload Drive ? */
     public function isUploadPending(): bool

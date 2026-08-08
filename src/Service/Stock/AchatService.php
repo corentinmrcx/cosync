@@ -2,6 +2,7 @@
 
 namespace App\Service\Stock;
 
+use App\Entity\Fournisseur;
 use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Repository\CommandeLigneRepository;
@@ -22,7 +23,7 @@ final class AchatService
 
     /**
      * @return array<int, array{
-     *   fournisseur: ?\App\Entity\Fournisseur,
+     *   fournisseur: ?Fournisseur,
      *   fournisseurNom: string,
      *   lignes: array<int, array{stockItem: StockItem, taille: ?string, besoin: int, stock: int, enAttente: int, aCommander: int}>
      * }>
@@ -33,8 +34,8 @@ final class AchatService
         /** @var array<string, array{item: StockItem, taille: ?string, besoin: int}> $agg */
         $agg = [];
         foreach ($this->besoinRepository->findADonnerBySeason($season) as $besoin) {
-            $item  = $besoin->getStockItem();
-            $key   = $item->getId() . '|' . ($besoin->getTaille() ?? '');
+            $item = $besoin->getStockItem();
+            $key = $item->getId() . '|' . ($besoin->getTaille() ?? '');
             if (!isset($agg[$key])) {
                 $agg[$key] = ['item' => $item, 'taille' => $besoin->getTaille(), 'besoin' => 0];
             }
@@ -45,15 +46,15 @@ final class AchatService
 
         /** @var array<int, array<string, int>> $stockCache */
         $stockCache = [];
-        /** @var array<string, array{fournisseur: ?\App\Entity\Fournisseur, fournisseurNom: string, lignes: array}> $groupes */
+        /** @var array<string, array{fournisseur: ?Fournisseur, fournisseurNom: string, lignes: array<int, array<string, mixed>>}> $groupes */
         $groupes = [];
 
         foreach ($agg as $key => $row) {
-            $item   = $row['item'];
+            $item = $row['item'];
             $taille = $row['taille'];
 
             $stockCache[$item->getId()] ??= $this->movementRepository->getStockGroupedByTaille($item);
-            $stock     = $stockCache[$item->getId()][$taille ?? ''] ?? 0;
+            $stock = $stockCache[$item->getId()][$taille ?? ''] ?? 0;
             $enAttente = $pending[$key] ?? 0;
 
             $aCommander = $row['besoin'] - $stock - $enAttente;
@@ -62,21 +63,21 @@ final class AchatService
             }
 
             $fournisseur = $item->getFournisseur();
-            $fKey        = $fournisseur !== null ? (string) $fournisseur->getId() : '0';
+            $fKey = $fournisseur !== null ? (string) $fournisseur->getId() : '0';
             if (!isset($groupes[$fKey])) {
                 $groupes[$fKey] = [
-                    'fournisseur'    => $fournisseur,
+                    'fournisseur' => $fournisseur,
                     'fournisseurNom' => $fournisseur?->getNom() ?? 'Sans fournisseur',
-                    'lignes'         => [],
+                    'lignes' => [],
                 ];
             }
 
             $groupes[$fKey]['lignes'][] = [
-                'stockItem'  => $item,
-                'taille'     => $taille,
-                'besoin'     => $row['besoin'],
-                'stock'      => $stock,
-                'enAttente'  => $enAttente,
+                'stockItem' => $item,
+                'taille' => $taille,
+                'besoin' => $row['besoin'],
+                'stock' => $stock,
+                'enAttente' => $enAttente,
                 'aCommander' => $aCommander,
             ];
         }

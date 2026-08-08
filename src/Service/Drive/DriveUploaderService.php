@@ -37,19 +37,21 @@ final class DriveUploaderService
     {
         if ($this->credentialsPath === '' || $this->rootFolderId === '') {
             $this->logger->warning('Google Drive non configuré (variables d\'env manquantes). PDF conservé en local.');
+
             return null;
         }
 
         try {
             $service = $this->buildDriveService();
-            $folder  = $this->resolvePath($service, $seasonLabel, $segments);
+            $folder = $this->resolvePath($service, $seasonLabel, $segments);
 
             return $this->uploadFile($service, $localPdfPath, $folder, $filename);
         } catch (\Throwable $e) {
             $this->logger->error('Échec upload Drive ({ref}) : {message}', [
-                'ref'     => $logRef ?: $filename,
+                'ref' => $logRef ?: $filename,
                 'message' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -65,11 +67,12 @@ final class DriveUploaderService
     {
         if ($this->credentialsPath === '' || $this->rootFolderId === '') {
             $this->logger->warning('Google Drive non configuré (variables d\'env manquantes). PDF conservé en local.');
+
             return null;
         }
 
         try {
-            $service  = $this->buildDriveService();
+            $service = $this->buildDriveService();
             $folderId = $this->resolvePath($service, $seasonLabel, $segments);
             $existing = $this->findFileIdByName($service, $filename, $folderId);
 
@@ -84,19 +87,20 @@ final class DriveUploaderService
 
             // Pas de 'parents' dans un update : l'API Drive exige addParents/removeParents.
             $updated = $service->files->update($existing, new DriveFile(['name' => $filename]), [
-                'data'              => $content,
-                'mimeType'          => 'application/pdf',
-                'uploadType'        => 'multipart',
-                'fields'            => 'id',
+                'data' => $content,
+                'mimeType' => 'application/pdf',
+                'uploadType' => 'multipart',
+                'fields' => 'id',
                 'supportsAllDrives' => true,
             ]);
 
             return $updated->getId();
         } catch (\Throwable $e) {
             $this->logger->error('Échec remplacement Drive ({ref}) : {message}', [
-                'ref'     => $logRef ?: $filename,
+                'ref' => $logRef ?: $filename,
                 'message' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -111,11 +115,12 @@ final class DriveUploaderService
     {
         if ($this->credentialsPath === '' || $this->rootFolderId === '') {
             $this->logger->warning('Google Drive non configuré (variables d\'env manquantes). Fichier conservé en local.');
+
             return null;
         }
 
         try {
-            $service  = $this->buildDriveService();
+            $service = $this->buildDriveService();
             $parentId = $this->rootFolderId;
 
             foreach ($segments as $segment) {
@@ -125,9 +130,10 @@ final class DriveUploaderService
             return $this->uploadFile($service, $localPath, $parentId, $filename, $mimeType);
         } catch (\Throwable $e) {
             $this->logger->error('Échec upload Drive ({ref}) : {message}', [
-                'ref'     => $logRef ?: $filename,
+                'ref' => $logRef ?: $filename,
                 'message' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -160,13 +166,13 @@ final class DriveUploaderService
     private function findFileIdByName(Drive $service, string $name, string $parentId): ?string
     {
         $escaped = str_replace("'", "\\'", $name);
-        $q       = "name = '$escaped' and '$parentId' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false";
+        $q = "name = '$escaped' and '$parentId' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false";
 
         $results = $service->files->listFiles([
-            'q'                         => $q,
-            'fields'                    => 'files(id)',
-            'pageSize'                  => 1,
-            'supportsAllDrives'         => true,
+            'q' => $q,
+            'fields' => 'files(id)',
+            'pageSize' => 1,
+            'supportsAllDrives' => true,
             'includeItemsFromAllDrives' => true,
         ]);
 
@@ -176,13 +182,13 @@ final class DriveUploaderService
     private function findOrCreateFolder(Drive $service, string $name, string $parentId): string
     {
         $escaped = str_replace("'", "\\'", $name);
-        $q       = "name = '$escaped' and '$parentId' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+        $q = "name = '$escaped' and '$parentId' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
 
         $results = $service->files->listFiles([
-            'q'                         => $q,
-            'fields'                    => 'files(id)',
-            'pageSize'                  => 1,
-            'supportsAllDrives'         => true,
+            'q' => $q,
+            'fields' => 'files(id)',
+            'pageSize' => 1,
+            'supportsAllDrives' => true,
             'includeItemsFromAllDrives' => true,
         ]);
 
@@ -190,7 +196,7 @@ final class DriveUploaderService
             return $results->getFiles()[0]->getId();
         }
 
-        $folder  = new DriveFile(['name' => $name, 'mimeType' => 'application/vnd.google-apps.folder', 'parents' => [$parentId]]);
+        $folder = new DriveFile(['name' => $name, 'mimeType' => 'application/vnd.google-apps.folder', 'parents' => [$parentId]]);
         $created = $service->files->create($folder, ['fields' => 'id', 'supportsAllDrives' => true]);
 
         return $created->getId();
@@ -203,16 +209,15 @@ final class DriveUploaderService
             throw new \RuntimeException(sprintf('Impossible de lire le fichier local : %s', $localPath));
         }
 
-        $meta    = new DriveFile(['name' => $filename, 'parents' => [$folderId]]);
+        $meta = new DriveFile(['name' => $filename, 'parents' => [$folderId]]);
         $created = $service->files->create($meta, [
-            'data'              => $content,
-            'mimeType'          => $mimeType,
-            'uploadType'        => 'multipart',
-            'fields'            => 'id',
+            'data' => $content,
+            'mimeType' => $mimeType,
+            'uploadType' => 'multipart',
+            'fields' => 'id',
             'supportsAllDrives' => true,
         ]);
 
         return $created->getId();
     }
-
 }

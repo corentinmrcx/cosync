@@ -11,7 +11,6 @@ use App\Enum\LicenceStatus;
 use App\Service\Form\AutorisationCompletionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Uid\Uuid;
 
 /**
  * Complétion a posteriori des autorisations : conteneur réel + base réelle

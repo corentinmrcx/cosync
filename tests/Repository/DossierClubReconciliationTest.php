@@ -123,7 +123,7 @@ final class DossierClubReconciliationTest extends KernelTestCase
         static $n = 0;
         ++$n;
 
-        $season   = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
+        $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
         $category = (new Category())->setCode('SENIOR' . $n)->setLabel('Séniors')->setIsEcoleFoot(false);
 
         $licencie = (new Licencie())

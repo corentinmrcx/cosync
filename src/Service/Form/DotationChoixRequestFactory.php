@@ -53,7 +53,7 @@ final class DotationChoixRequestFactory
         // 2. Un texte par option retenue qui en réclame un — y compris quand aucune question
         //    de choix n'a été posée (groupe auto-résolu, ou article fixe personnalisé).
         $rawTextes = (array) ($request->request->all()['dotation_personnalisation'] ?? []);
-        $textes    = [];
+        $textes = [];
         foreach ($this->resolver->getPersonnalisationRequests($licencie, $choix) as $demande) {
             $texte = $this->normalise($rawTextes[$demande['cle']] ?? null);
             if ($texte === null) {

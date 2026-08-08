@@ -16,19 +16,19 @@ final class EditionExtractionLayout implements ImportLayoutInterface
 {
     use ReadsColumnsTrait;
 
-    private const COL_TYPE_LICENCE        = 'type licence';
-    private const COL_NOM_PRENOM          = 'nom, prénom';
-    private const COL_DATE_NAISSANCE      = 'né(e) le';
-    private const COL_SOUS_CATEGORIE      = 'sous catégorie';
-    private const COL_VOIE_RUE            = 'voie-rue';
-    private const COL_CODE_POSTAL         = 'code postal';
+    private const COL_TYPE_LICENCE = 'type licence';
+    private const COL_NOM_PRENOM = 'nom, prénom';
+    private const COL_DATE_NAISSANCE = 'né(e) le';
+    private const COL_SOUS_CATEGORIE = 'sous catégorie';
+    private const COL_VOIE_RUE = 'voie-rue';
+    private const COL_CODE_POSTAL = 'code postal';
     private const COL_BUREAU_DISTRIBUTEUR = 'bureau distributeur';
-    private const COL_NUMERO_PERSONNE     = 'numéro personne';
-    private const COL_MOBILE_PERSONNEL    = 'mobile personnel';
-    private const COL_EMAIL_PRINCIPAL     = 'email principal';
-    private const COL_NATURE              = 'nature';
+    private const COL_NUMERO_PERSONNE = 'numéro personne';
+    private const COL_MOBILE_PERSONNEL = 'mobile personnel';
+    private const COL_EMAIL_PRINCIPAL = 'email principal';
+    private const COL_NATURE = 'nature';
 
-    private const TYPE_LIBRE     = 'libre';
+    private const TYPE_LIBRE = 'libre';
     private const TYPE_DIRIGEANT = 'dirigeant';
 
     public function __construct(private readonly DataSanitizer $sanitizer) {}
@@ -43,9 +43,9 @@ final class EditionExtractionLayout implements ImportLayoutInterface
         $typeLicence = mb_strtolower(trim((string) $this->value($row, $columns, self::COL_TYPE_LICENCE)), 'UTF-8');
 
         $type = match ($typeLicence) {
-            self::TYPE_LIBRE     => ImportRowType::LICENCIE,
+            self::TYPE_LIBRE => ImportRowType::LICENCIE,
             self::TYPE_DIRIGEANT => ImportRowType::DIRIGEANT,
-            default              => ImportRowType::SKIP,
+            default => ImportRowType::SKIP,
         };
         if ($type === ImportRowType::SKIP) {
             return ImportRowData::skipped();

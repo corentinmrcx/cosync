@@ -25,7 +25,7 @@ final class InventairePdfService
     {
         $logoPath = $this->projectDir . '/public/images/logo/logo.png';
         $html = $this->twig->render('pdf/inventaire.html.twig', [
-            'inventaire'  => $inventaire,
+            'inventaire' => $inventaire,
             'saisonLabel' => $saisonLabel,
             'logoDataUrl' => is_file($logoPath)
                 ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($logoPath))

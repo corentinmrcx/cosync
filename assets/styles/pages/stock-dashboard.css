@@ -122,7 +122,7 @@
 }
 
 .stock-dashboard-section-icon {
-    font-size: 1.25rem;
+    font-size: var(--font-size-xl);
     line-height: 1;
 }
 
@@ -395,7 +395,7 @@
 .stock-modal-close {
     background: none;
     border: none;
-    font-size: 1.1rem;
+    font-size: var(--font-size-lg);
     cursor: pointer;
     color: var(--color-text-muted);
     padding: 0.25rem;

@@ -10,7 +10,7 @@ enum CleMouvementType: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::REMISE => 'Remise',
             self::RESTITUTION => 'Restitution',
             self::PERTE => 'Perte',

@@ -42,8 +42,8 @@ class AttestationCleController extends AbstractController
 
         return $this->render('public/attestation_cle/form.html.twig', [
             'dirigeant' => $dirigeant,
-            'nbCles'    => $detention->solde,
-            'remiseLe'  => $detention->detenteurDepuis,
+            'nbCles' => $detention->solde,
+            'remiseLe' => $detention->detenteurDepuis,
         ]);
     }
 
@@ -62,6 +62,7 @@ class AttestationCleController extends AbstractController
 
         if (!$this->isCsrfTokenValid('attestation_cle_submit', $request->request->get('_token'))) {
             $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+
             return $this->redirectToRoute('public_attestation_cle_show', ['uuid' => $uuid]);
         }
 
@@ -69,6 +70,7 @@ class AttestationCleController extends AbstractController
 
         if ($data === null) {
             $this->addFlash('error', 'Signature manquante, veuillez signer avant de valider.');
+
             return $this->redirectToRoute('public_attestation_cle_show', ['uuid' => $uuid]);
         }
 

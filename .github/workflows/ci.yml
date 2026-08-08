@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - production
+  pull_request:
+  workflow_call:
+
+jobs:
+  php:
+    name: PHP — tests, analyse statique, style
+    runs-on: ubuntu-latest
+
+    services:
+      database:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cosync
+          POSTGRES_USER: cosync
+          POSTGRES_PASSWORD: cosync
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cosync -d cosync"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql://cosync:cosync@127.0.0.1:5432/cosync?serverVersion=16&charset=utf8
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: ctype, iconv, pdo_pgsql, zip, intl, gd
+          coverage: none
+          tools: composer:v2
+
+      - name: Installer les dépendances
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Préparer la base de test
+        run: |
+          php bin/console doctrine:database:create --env=test --if-not-exists
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+
+      - name: Tests
+        run: vendor/bin/phpunit
+
+      - name: Analyse statique
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Style de code
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff --show-progress=none
+
+  front:
+    name: Front — CSS et JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Stylelint
+        run: npm run lint:css
+
+      - name: ESLint
+        run: npm run lint:js
+
+      - name: Build des assets
+        run: npm run build
+
+  migrations:
+    name: Migrations — signaler les opérations destructrices
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Refuser un DROP non annoncé dans une migration ajoutée
+        run: |
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "Pas de base de comparaison, contrôle ignoré."
+            exit 0
+          fi
+          added=$(git diff --name-only --diff-filter=A "$base" HEAD -- migrations/ || true)
+          if [ -z "$added" ]; then
+            echo "Aucune migration ajoutée."
+            exit 0
+          fi
+          echo "Migrations ajoutées : $added"
+          if grep -inE 'DROP (TABLE|COLUMN)|ALTER TABLE .* DROP' $added; then
+            echo ""
+            echo "::error::Cette migration supprime une table ou une colonne — donc des données de production."
+            echo "Relire le CLAUDE.md §13, puis retirer ce contrôle du blocage seulement après validation humaine explicite."
+            exit 1
+          fi
+          echo "Aucune opération destructrice détectée."

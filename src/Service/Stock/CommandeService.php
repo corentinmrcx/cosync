@@ -120,10 +120,10 @@ final class CommandeService
     private function recomputeStatut(Commande $commande): void
     {
         $restant = 0;
-        $recu    = 0;
+        $recu = 0;
         foreach ($commande->getLignes() as $ligne) {
             $restant += $ligne->getRestant();
-            $recu    += $ligne->getQuantiteRecue();
+            $recu += $ligne->getQuantiteRecue();
         }
 
         if ($restant === 0) {

@@ -26,7 +26,7 @@ final class CotisationResolverTest extends TestCase
     public function testCotisationDeLEquipePrimeSurLaSaison(): void
     {
         $season = (new Season())->setCotisationDefaut(85);
-        $team   = (new Team())->setName('Séniors 1')->setCotisation(120);
+        $team = (new Team())->setName('Séniors 1')->setCotisation(120);
 
         $montant = (new CotisationResolver())->resolve($this->makeLicencie($season, $team));
 
@@ -36,7 +36,7 @@ final class CotisationResolverTest extends TestCase
     public function testEquipeSansCotisationUtiliseLeDefautDeLaSaison(): void
     {
         $season = (new Season())->setCotisationDefaut(85);
-        $team   = (new Team())->setName('Loisirs'); // cotisation null
+        $team = (new Team())->setName('Loisirs'); // cotisation null
 
         $montant = (new CotisationResolver())->resolve($this->makeLicencie($season, $team));
 

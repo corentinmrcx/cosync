@@ -14,14 +14,14 @@ final class AttestationTransportRequestFactory
 {
     public function fromRequest(Request $request): ?AttestationTransportData
     {
-        $nomConducteur    = trim($request->request->get('attestation_nom_conducteur', ''));
+        $nomConducteur = trim($request->request->get('attestation_nom_conducteur', ''));
         $prenomConducteur = trim($request->request->get('attestation_prenom_conducteur', ''));
-        $numPermis        = $request->request->get('attestation_num_permis', '');
-        $assurance        = $request->request->get('attestation_assurance', '');
-        $dateCTRaw        = $request->request->get('attestation_date_ct', '');
-        $sigAttest        = $request->request->get('attestation_signature_data', '');
-        $engagement       = $request->request->get('attestation_engagement') === '1';
-        $vehiculeNeuf     = $request->request->get('attestation_vehicule_neuf') === '1';
+        $numPermis = $request->request->get('attestation_num_permis', '');
+        $assurance = $request->request->get('attestation_assurance', '');
+        $dateCTRaw = $request->request->get('attestation_date_ct', '');
+        $sigAttest = $request->request->get('attestation_signature_data', '');
+        $engagement = $request->request->get('attestation_engagement') === '1';
+        $vehiculeNeuf = $request->request->get('attestation_vehicule_neuf') === '1';
 
         // La date de contrôle technique n'est pas exigée pour un véhicule neuf
         if ($nomConducteur === '' || $prenomConducteur === ''
@@ -49,14 +49,14 @@ final class AttestationTransportRequestFactory
         }
 
         return new AttestationTransportData(
-            nomConducteur:       $nomConducteur,
-            prenomConducteur:    $prenomConducteur,
-            numPermis:           $numPermis,
+            nomConducteur: $nomConducteur,
+            prenomConducteur: $prenomConducteur,
+            numPermis: $numPermis,
             assuranceNomAdresse: $assurance,
-            dateCT:              $dateCT,
-            vehiculeNeuf:        $vehiculeNeuf,
-            engagementPris:      $engagement,
-            signatureData:       $sigAttest,
+            dateCT: $dateCT,
+            vehiculeNeuf: $vehiculeNeuf,
+            engagementPris: $engagement,
+            signatureData: $sigAttest,
         );
     }
 }

@@ -23,7 +23,7 @@ final class BonCommandePdfService
     {
         $logoPath = $this->projectDir . '/public/images/logo/logo.png';
         $html = $this->twig->render('pdf/bon_commande.html.twig', [
-            'commande'    => $commande,
+            'commande' => $commande,
             'logoDataUrl' => is_file($logoPath)
                 ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($logoPath))
                 : null,

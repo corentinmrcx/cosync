@@ -41,9 +41,9 @@ final class StockServiceTest extends StockIntegrationTestCase
     public function testRecordManualMovementDotationLicencieNonValideEstRefusee(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory();
+        $cat = $this->makeCategory();
         $licencie = $this->makeLicencie($season, $cat, status: LicenceStatus::FORM_COMPLETED);
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $this->em->flush();
 
         $this->expectException(\InvalidArgumentException::class);

@@ -75,14 +75,14 @@ final class HelloAssoPaymentRecorder
 
         try {
             $this->licencieService->addPayment(
-                licencie:          $licencie,
-                mode:              PaymentMode::CB_ONLINE,
-                montant:           $montant,
-                reference:         'HA-' . $externalPaymentId,
-                note:              'Paiement en ligne HelloAsso',
-                datePaiement:      $this->paymentDate($payment),
-                confirmedBy:       null,
-                season:            $licencie->getSeason(),
+                licencie: $licencie,
+                mode: PaymentMode::CB_ONLINE,
+                montant: $montant,
+                reference: 'HA-' . $externalPaymentId,
+                note: 'Paiement en ligne HelloAsso',
+                datePaiement: $this->paymentDate($payment),
+                confirmedBy: null,
+                season: $licencie->getSeason(),
                 externalPaymentId: $externalPaymentId,
             );
         } catch (UniqueConstraintViolationException) {
@@ -92,7 +92,7 @@ final class HelloAssoPaymentRecorder
         }
 
         $this->logger->info('HelloAsso : paiement {payment} enregistré pour {licencie}.', [
-            'payment'  => $externalPaymentId,
+            'payment' => $externalPaymentId,
             'licencie' => (string) $licencie->getUuid(),
         ]);
 
@@ -182,8 +182,8 @@ final class HelloAssoPaymentRecorder
         if ($encaisse < $cotisation) {
             $this->logger->warning('HelloAsso : encaissement de {encaisse} € inférieur à la cotisation attendue de {attendu} € sur l\'intention {id}. La licence restera en attente.', [
                 'encaisse' => $encaisse,
-                'attendu'  => $cotisation,
-                'id'       => $checkoutIntentId,
+                'attendu' => $cotisation,
+                'id' => $checkoutIntentId,
             ]);
         }
 

@@ -50,32 +50,101 @@ class CleMouvement
 
     public function __construct()
     {
-        $this->createdAt     = new \DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
         $this->dateMouvement = new \DateTimeImmutable('today');
     }
 
-    public function getId(): int { return $this->id; }
+    public function getId(): int
+    {
+        return $this->id;
+    }
 
-    public function getDirigeant(): Dirigeant { return $this->dirigeant; }
-    public function setDirigeant(Dirigeant $dirigeant): static { $this->dirigeant = $dirigeant; return $this; }
+    public function getDirigeant(): Dirigeant
+    {
+        return $this->dirigeant;
+    }
 
-    public function getSeason(): Season { return $this->season; }
-    public function setSeason(Season $season): static { $this->season = $season; return $this; }
+    public function setDirigeant(Dirigeant $dirigeant): static
+    {
+        $this->dirigeant = $dirigeant;
 
-    public function getType(): CleMouvementType { return $this->type; }
-    public function setType(CleMouvementType $type): static { $this->type = $type; return $this; }
+        return $this;
+    }
 
-    public function getQuantite(): int { return $this->quantite; }
-    public function setQuantite(int $quantite): static { $this->quantite = $quantite; return $this; }
+    public function getSeason(): Season
+    {
+        return $this->season;
+    }
 
-    public function getDateMouvement(): \DateTimeImmutable { return $this->dateMouvement; }
-    public function setDateMouvement(\DateTimeImmutable $dateMouvement): static { $this->dateMouvement = $dateMouvement; return $this; }
+    public function setSeason(Season $season): static
+    {
+        $this->season = $season;
 
-    public function getNote(): ?string { return $this->note; }
-    public function setNote(?string $note): static { $this->note = $note; return $this; }
+        return $this;
+    }
 
-    public function getCreatedBy(): ?User { return $this->createdBy; }
-    public function setCreatedBy(?User $createdBy): static { $this->createdBy = $createdBy; return $this; }
+    public function getType(): CleMouvementType
+    {
+        return $this->type;
+    }
 
-    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+    public function setType(CleMouvementType $type): static
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    public function getQuantite(): int
+    {
+        return $this->quantite;
+    }
+
+    public function setQuantite(int $quantite): static
+    {
+        $this->quantite = $quantite;
+
+        return $this;
+    }
+
+    public function getDateMouvement(): \DateTimeImmutable
+    {
+        return $this->dateMouvement;
+    }
+
+    public function setDateMouvement(\DateTimeImmutable $dateMouvement): static
+    {
+        $this->dateMouvement = $dateMouvement;
+
+        return $this;
+    }
+
+    public function getNote(): ?string
+    {
+        return $this->note;
+    }
+
+    public function setNote(?string $note): static
+    {
+        $this->note = $note;
+
+        return $this;
+    }
+
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?User $createdBy): static
+    {
+        $this->createdBy = $createdBy;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
 }

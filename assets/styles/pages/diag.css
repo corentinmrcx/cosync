@@ -96,7 +96,7 @@
 .diag-btn-success {
     background: var(--color-success);
 }
-.diag-btn-success:hover { background: #16a34a; }
+.diag-btn-success:hover { background: var(--color-success-dark); }
 
 .diag-btn-outline {
     background: transparent;
@@ -108,7 +108,7 @@
 .diag-btn-danger {
     background: var(--color-danger);
 }
-.diag-btn-danger:hover:not(:disabled) { background: #dc2626; }
+.diag-btn-danger:hover:not(:disabled) { background: var(--color-danger-dark); }
 
 .diag-btn-disabled,
 .diag-btn:disabled {
@@ -129,13 +129,13 @@
 .diag-banner-active {
     background: var(--color-warning-bg);
     border-color: var(--color-warning);
-    color: #92400e;
+    color: var(--color-warning-text);
 }
 
 .diag-banner-inactive {
     background: var(--color-success-bg);
     border-color: var(--color-success);
-    color: #166534;
+    color: var(--color-success-text);
 }
 
 .diag-banner-dot {

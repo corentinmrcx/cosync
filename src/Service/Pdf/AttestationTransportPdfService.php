@@ -25,15 +25,15 @@ final class AttestationTransportPdfService
      */
     public function generate(AttestationTransportData $data, string $nom, string $prenom, string $seasonLabel): string
     {
-        $encode = fn(string $path): string => 'data:image/png;base64,' . base64_encode((string) file_get_contents($path));
+        $encode = fn (string $path): string => 'data:image/png;base64,' . base64_encode((string) file_get_contents($path));
 
         $html = $this->twig->render('pdf/attestation_transport.html.twig', [
-            'data'            => $data,
-            'nom'             => $nom,
-            'prenom'          => $prenom,
-            'seasonLabel'     => $seasonLabel,
-            'signedAt'        => new \DateTimeImmutable(),
-            'logoDataUrl'     => $encode($this->projectDir . '/public/images/logo/logo.png'),
+            'data' => $data,
+            'nom' => $nom,
+            'prenom' => $prenom,
+            'seasonLabel' => $seasonLabel,
+            'signedAt' => new \DateTimeImmutable(),
+            'logoDataUrl' => $encode($this->projectDir . '/public/images/logo/logo.png'),
             'foyerLogoDataUrl' => $encode($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
         ]);
 

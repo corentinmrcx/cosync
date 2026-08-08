@@ -55,12 +55,7 @@ final class StockService
             $tailleNorm = trim((string) $taille) ?: null;
             $disponible = $this->movementRepository->getCurrentStockByTaille($item, $tailleNorm);
             if ($quantite > $disponible) {
-                throw new \InvalidArgumentException(sprintf(
-                    'Stock insuffisant : %d en stock%s, impossible d\'en sortir %d.',
-                    $disponible,
-                    $tailleNorm !== null ? ' (taille ' . $tailleNorm . ')' : '',
-                    $quantite,
-                ));
+                throw new \InvalidArgumentException(sprintf('Stock insuffisant : %d en stock%s, impossible d\'en sortir %d.', $disponible, $tailleNorm !== null ? ' (taille ' . $tailleNorm . ')' : '', $quantite));
             }
         }
 
@@ -85,15 +80,15 @@ final class StockService
      * les règles métier (dotation = licencié au paiement confirmé) et la garde anti-négatif.
      *
      * @throws \InvalidArgumentException si l'action est invalide, le licencié manquant/non validé,
-     *                                   ou le stock insuffisant.
+     *                                   ou le stock insuffisant
      */
     public function recordManualMovement(StockItem $item, ManualMovementData $data, ?User $createdBy): StockMovement
     {
         $map = [
-            'entree'   => [StockMovementType::ENTREE, StockMovementSource::MANUEL],
-            'sortie'   => [StockMovementType::SORTIE, StockMovementSource::MANUEL],
+            'entree' => [StockMovementType::ENTREE, StockMovementSource::MANUEL],
+            'sortie' => [StockMovementType::SORTIE, StockMovementSource::MANUEL],
             'dotation' => [StockMovementType::SORTIE, StockMovementSource::DOTATION],
-            'rebut'    => [StockMovementType::REBUT,  StockMovementSource::MANUEL],
+            'rebut' => [StockMovementType::REBUT,  StockMovementSource::MANUEL],
         ];
 
         if (!isset($map[$data->action])) {
@@ -132,15 +127,12 @@ final class StockService
      * recalcule automatiquement le stock. Interdit sur les mouvements dotation/commande/SumUp :
      * ceux-ci se corrigent via leur écran dédié pour ne pas désynchroniser besoin ou commande.
      *
-     * @throws \InvalidArgumentException si le mouvement n'est pas d'origine manuelle.
+     * @throws \InvalidArgumentException si le mouvement n'est pas d'origine manuelle
      */
     public function deleteManualMovement(StockMovement $movement): void
     {
         if ($movement->getSource() !== StockMovementSource::MANUEL) {
-            throw new \InvalidArgumentException(
-                'Seuls les mouvements manuels peuvent être supprimés ici. '
-                . 'Corrigez une dotation ou une réception depuis son écran dédié.'
-            );
+            throw new \InvalidArgumentException('Seuls les mouvements manuels peuvent être supprimés ici. Corrigez une dotation ou une réception depuis son écran dédié.');
         }
 
         $this->em->remove($movement);
@@ -187,10 +179,7 @@ final class StockService
 
         $dossier = $licencie->getDossierClub();
         if ($dossier === null || $dossier->getStatus() !== LicenceStatus::VALIDATED) {
-            throw new \InvalidArgumentException(sprintf(
-                'La dotation ne peut être enregistrée qu\'après confirmation du paiement de %s.',
-                $licencie->getNomPrenom(),
-            ));
+            throw new \InvalidArgumentException(sprintf('La dotation ne peut être enregistrée qu\'après confirmation du paiement de %s.', $licencie->getNomPrenom()));
         }
 
         return $licencie;
@@ -201,7 +190,7 @@ final class StockService
      */
     public function getStockSummary(bool $includeArchived = false): array
     {
-        $items      = $this->itemRepository->findAllOrdered($includeArchived);
+        $items = $this->itemRepository->findAllOrdered($includeArchived);
         $categories = $this->categoryRepository->findAllOrderedByPosition();
 
         $byCategory = [];
@@ -219,14 +208,14 @@ final class StockService
             }
             $summary[] = [
                 'category' => $category,
-                'items'    => array_map($this->buildItemRowWithTailles(...), $catItems),
+                'items' => array_map($this->buildItemRowWithTailles(...), $catItems),
             ];
         }
 
         if (!empty($byCategory[0])) {
             $summary[] = [
                 'category' => null,
-                'items'    => array_map($this->buildItemRowWithTailles(...), $byCategory[0]),
+                'items' => array_map($this->buildItemRowWithTailles(...), $byCategory[0]),
             ];
         }
 
@@ -248,8 +237,8 @@ final class StockService
     {
         $items = $this->itemRepository->findAllOrdered();
 
-        $alertes     = [];
-        $nbRuptures  = 0;
+        $alertes = [];
+        $nbRuptures = 0;
         $valeurStock = 0.0;
 
         foreach ($items as $item) {
@@ -266,7 +255,7 @@ final class StockService
 
             if ($stock <= 0) {
                 $alertes[] = ['item' => $item, 'stock' => $stock, 'status' => 'danger'];
-                $nbRuptures++;
+                ++$nbRuptures;
             } elseif ($stock <= $seuil) {
                 $alertes[] = ['item' => $item, 'stock' => $stock, 'status' => 'warning'];
             }
@@ -279,11 +268,11 @@ final class StockService
         );
 
         return [
-            'nbArticles'  => count($items),
-            'nbAlertes'   => count($alertes) - $nbRuptures, // stock bas uniquement (une rupture n'est pas aussi une alerte)
-            'nbRuptures'  => $nbRuptures,
+            'nbArticles' => count($items),
+            'nbAlertes' => count($alertes) - $nbRuptures, // stock bas uniquement (une rupture n'est pas aussi une alerte)
+            'nbRuptures' => $nbRuptures,
             'valeurStock' => $valeurStock,
-            'alertes'     => $alertes,
+            'alertes' => $alertes,
         ];
     }
 
@@ -302,7 +291,7 @@ final class StockService
      */
     public function getInventaireData(): array
     {
-        $items      = $this->itemRepository->findAllOrdered();
+        $items = $this->itemRepository->findAllOrdered();
         $categories = $this->categoryRepository->findAllOrderedByPosition();
 
         $byCategory = [];
@@ -361,7 +350,7 @@ final class StockService
      */
     private function buildItemRowWithTailles(StockItem $item): array
     {
-        $tailles    = $this->buildTailleRows($item);
+        $tailles = $this->buildTailleRows($item);
         $taillesMap = [];
         foreach ($tailles as $row) {
             if ($row['taille'] !== '—') {
@@ -376,8 +365,8 @@ final class StockService
     /** @return array{item: StockItem, stock: int, status: string} */
     private function buildItemRow(StockItem $item): array
     {
-        $stock  = $this->movementRepository->getCurrentStock($item);
-        $seuil  = $item->getAlertSeuil();
+        $stock = $this->movementRepository->getCurrentStock($item);
+        $seuil = $item->getAlertSeuil();
         $status = 'ok';
 
         if ($seuil !== null) {

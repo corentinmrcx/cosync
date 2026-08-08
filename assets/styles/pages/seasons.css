@@ -541,7 +541,7 @@
     transition: background 0.15s;
 }
 
-.season-list-btn-delete:hover { background: #fecaca; }
+.season-list-btn-delete:hover { background: var(--color-danger-hover); }
 
 .season-list-empty {
     padding: 2rem 1.5rem;

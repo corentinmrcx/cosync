@@ -36,6 +36,7 @@ final class ImportNatureLicenceTest extends ImportIntegrationTestCase
         return $season;
     }
 
+    /** @return list<string> */
     private function ligne(string $numero, ?string $nature): array
     {
         $base = ['MARTIN', 'Kevin', $numero, 'Libre / Senior', 'Joueur', '12/04/2003', 'kevin@example.fr', '0670290965', '', '', ''];
@@ -43,6 +44,10 @@ final class ImportNatureLicenceTest extends ImportIntegrationTestCase
         return $nature === null ? $base : [...$base, $nature];
     }
 
+    /**
+     * @param list<string>       $headers
+     * @param list<list<string>> $rows
+     */
     private function importer(Season $season, array $headers, array $rows): void
     {
         $this->service(ImportService::class)->importFromXlsx($this->makeXlsx($headers, $rows), $season);
@@ -172,7 +177,7 @@ final class ImportNatureLicenceTest extends ImportIntegrationTestCase
         $this->importer($season, self::HEADERS, [$this->ligne('111', 'Renouvellement')]);
 
         /** @var LicencieRepository $repo */
-        $repo     = $this->service(LicencieRepository::class);
+        $repo = $this->service(LicencieRepository::class);
         $licencie = $repo->findByNumLicence('111', $season);
         $licencie->setNatureLicence(NatureLicence::NOUVELLE_DEMANDE)->setNatureManuelle(true);
         $this->em->flush();

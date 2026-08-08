@@ -15,7 +15,6 @@ use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
-use App\Service\CotisationResolver;
 use App\Service\Import\DataSanitizer;
 use App\Service\Mail\MailerService;
 use App\Service\Stock\DotationBesoinService;
@@ -39,10 +38,10 @@ final class LicencieService
      */
     public function create(LicencieCreateData $data, Season $season): Licencie
     {
-        $nom    = mb_strtoupper(trim((string) $data->nom), 'UTF-8');
+        $nom = mb_strtoupper(trim((string) $data->nom), 'UTF-8');
         $prenom = mb_convert_case(trim((string) $data->prenom), MB_CASE_TITLE, 'UTF-8');
-        $email  = $this->sanitizer->sanitizeEmail($data->email);
-        $phone  = $this->sanitizer->sanitizePhone($data->telephone);
+        $email = $this->sanitizer->sanitizeEmail($data->email);
+        $phone = $this->sanitizer->sanitizePhone($data->telephone);
         $numLicence = $data->numLicence !== null && trim($data->numLicence) !== ''
             ? $this->sanitizer->sanitizeNumLicence($data->numLicence)
             : null;
@@ -53,11 +52,7 @@ final class LicencieService
 
         $existing = $this->licencieRepo->findByNomPrenomNaissance($nom, $prenom, $data->dateNaissance, $season);
         if ($existing !== null) {
-            throw new \DomainException(sprintf(
-                '%s %s (né(e) le %s) existe déjà dans cette saison.',
-                $nom, $prenom,
-                $data->dateNaissance->format('d/m/Y'),
-            ));
+            throw new \DomainException(sprintf('%s %s (né(e) le %s) existe déjà dans cette saison.', $nom, $prenom, $data->dateNaissance->format('d/m/Y')));
         }
 
         $licencie = new Licencie();
@@ -96,10 +91,10 @@ final class LicencieService
      */
     public function editIdentity(Licencie $licencie, LicencieIdentityData $data): void
     {
-        $nom    = mb_strtoupper(trim((string) $data->nom), 'UTF-8');
+        $nom = mb_strtoupper(trim((string) $data->nom), 'UTF-8');
         $prenom = mb_convert_case(trim((string) $data->prenom), MB_CASE_TITLE, 'UTF-8');
-        $email  = $this->sanitizer->sanitizeEmail($data->email);
-        $phone  = $this->sanitizer->sanitizePhone($data->telephone);
+        $email = $this->sanitizer->sanitizeEmail($data->email);
+        $phone = $this->sanitizer->sanitizePhone($data->telephone);
         $numLicence = $data->numLicence !== null && trim($data->numLicence) !== ''
             ? $this->sanitizer->sanitizeNumLicence($data->numLicence)
             : null;
@@ -193,7 +188,7 @@ final class LicencieService
         $this->em->persist($transaction);
         $this->em->flush();
 
-        $expected  = (float) $this->cotisationResolver->resolve($licencie);
+        $expected = (float) $this->cotisationResolver->resolve($licencie);
         $totalPaid = $this->transactionRepo->sumByLicencieAndSeason($licencie, $season);
 
         if ($totalPaid >= $expected) {

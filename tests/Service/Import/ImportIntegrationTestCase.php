@@ -74,7 +74,7 @@ abstract class ImportIntegrationTestCase extends KernelTestCase
     protected function makeXlsx(array $headers, array $rows): UploadedFile
     {
         $spreadsheet = new Spreadsheet();
-        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet = $spreadsheet->getActiveSheet();
         $sheet->fromArray([$headers, ...$rows], null, 'A1');
 
         $path = tempnam(sys_get_temp_dir(), 'cosync_import_') . '.xlsx';

@@ -75,7 +75,7 @@ final class ImportServiceDematerialiseeTest extends ImportIntegrationTestCase
         // Aucun mail parti → aucune date d'envoi ni statut « Lien envoyé » : le dossier reste « Importé ».
         /** @var LicencieRepository $licencies */
         $licencies = $this->service(LicencieRepository::class);
-        $huvelle   = $licencies->findByNumLicence('9603089611', $season);
+        $huvelle = $licencies->findByNumLicence('9603089611', $season);
         self::assertNull($huvelle?->getLinkSentAt());
         self::assertSame(LicenceStatus::IMPORTED, $huvelle?->getDossierClub()?->getStatus());
     }
@@ -114,7 +114,7 @@ final class ImportServiceDematerialiseeTest extends ImportIntegrationTestCase
         /** @var DirigeantRepository $dirigeants */
         $dirigeants = $this->service(DirigeantRepository::class);
 
-        $licencie  = $licencies->findByNumLicence('2543060379', $season);
+        $licencie = $licencies->findByNumLicence('2543060379', $season);
         $dirigeant = $dirigeants->findByNumLicence('2543060379', $season);
 
         self::assertNotNull($licencie, 'CUSSANT doit exister comme licencié (ligne Joueur)');

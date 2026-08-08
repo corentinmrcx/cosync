@@ -42,7 +42,7 @@ final class HelloAssoSyncPaiementsCommand extends Command
         }
 
         $enregistres = 0;
-        $echecs      = 0;
+        $echecs = 0;
 
         foreach ($dossiers as $dossier) {
             $intentId = $dossier->getHelloassoCheckoutIntentId();

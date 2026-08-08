@@ -69,6 +69,7 @@ class Season
     public function setLabel(string $label): static
     {
         $this->label = $label;
+
         return $this;
     }
 
@@ -80,6 +81,7 @@ class Season
     public function setCotisationDefaut(int $cotisationDefaut): static
     {
         $this->cotisationDefaut = $cotisationDefaut;
+
         return $this;
     }
 
@@ -91,6 +93,7 @@ class Season
     public function setAttestationCleText(?string $attestationCleText): static
     {
         $this->attestationCleText = $attestationCleText;
+
         return $this;
     }
 
@@ -102,6 +105,7 @@ class Season
     public function setIban(?string $iban): static
     {
         $this->iban = $this->normaliser($iban);
+
         return $this;
     }
 
@@ -113,6 +117,7 @@ class Season
     public function setBic(?string $bic): static
     {
         $this->bic = $this->normaliser($bic);
+
         return $this;
     }
 
@@ -124,6 +129,7 @@ class Season
     public function setTitulaireCompte(?string $titulaireCompte): static
     {
         $this->titulaireCompte = $this->normaliser($titulaireCompte);
+
         return $this;
     }
 

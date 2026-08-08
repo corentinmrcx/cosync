@@ -16,8 +16,8 @@ final class DotationResolverTest extends StockIntegrationTestCase
     public function testResolutionParCategorieEtTailleDepuisLeDossier(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $modele = $this->makeModele($season, 'Sénior');
         $this->addLigne($modele, $item, 1);
         $this->affecterCategorie($season, $modele, $cat);
@@ -36,7 +36,7 @@ final class DotationResolverTest extends StockIntegrationTestCase
     public function testAffectationIndividuelleEcraseLaCategorie(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
+        $cat = $this->makeCategory('SENIOR');
 
         $itemCat = $this->makeItem('Maillot', StockItemVetementType::HAUT);
         $modeleCat = $this->makeModele($season, 'Standard');
@@ -61,9 +61,9 @@ final class DotationResolverTest extends StockIntegrationTestCase
     public function testGroupeDeChoixSansChoixPrendLaPremiereOption(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
-        $sweat  = $this->makeItem('Sweat', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $sweat = $this->makeItem('Sweat', StockItemVetementType::HAUT);
 
         $modele = $this->makeModele($season, 'Au choix');
         $this->addLigne($modele, $veste, 1, 'haut-au-choix');
@@ -83,8 +83,8 @@ final class DotationResolverTest extends StockIntegrationTestCase
     public function testModeleInactifNeDotePersonne(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
 
         $modele = $this->makeModele($season, 'Kit en préparation');
         $modele->setActif(false);
@@ -102,7 +102,7 @@ final class DotationResolverTest extends StockIntegrationTestCase
     public function testAPrioriteEgaleLaDerniereAffectationGagne(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
+        $cat = $this->makeCategory('SENIOR');
 
         $premier = $this->makeModele($season, 'Premier');
         $this->addLigne($premier, $this->makeItem('Veste', StockItemVetementType::HAUT), 1);
@@ -126,7 +126,7 @@ final class DotationResolverTest extends StockIntegrationTestCase
     public function testSansAffectationAucuneDotation(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
+        $cat = $this->makeCategory('SENIOR');
         $licencie = $this->makeLicencie($season, $cat, null, 'L');
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);

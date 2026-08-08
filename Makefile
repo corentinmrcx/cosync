@@ -3,6 +3,7 @@ COMPOSE_PROD = docker compose -f docker-compose.prod.yml
 
 .PHONY: up down build bash db-migrate db-reset assets watch cache-clear logs setup-dirs \
         test test-setup \
+        lint lint-php lint-css lint-js fix stan check \
         prod-up prod-down prod-build prod-deploy prod-migrate prod-migrate-dry prod-bash prod-db prod-logs \
         prod-backup prod-backup-list prod-restore prod-init
 
@@ -57,6 +58,31 @@ test-setup:
 
 test:
 	$(COMPOSE) exec php vendor/bin/phpunit
+
+# ── Qualité ──────────────────────────────────────────────────────────────────
+# Ces contrôles sont ceux que le CI rejoue sur chaque push : les faire passer en
+# local évite un aller-retour. `make check` = tout ce que la CI vérifie.
+
+stan:
+	$(COMPOSE) exec -T php php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress
+
+lint-php:
+	$(COMPOSE) exec -T php vendor/bin/php-cs-fixer fix --dry-run --diff --show-progress=none
+
+lint-css:
+	npm run lint:css
+
+lint-js:
+	npm run lint:js
+
+lint: lint-php lint-css lint-js
+
+fix:
+	$(COMPOSE) exec -T php vendor/bin/php-cs-fixer fix --show-progress=none
+	npm run fix:css
+	npm run fix:js
+
+check: test stan lint
 
 # ── Production (VPS) ─────────────────────────────────────────────────────────
 

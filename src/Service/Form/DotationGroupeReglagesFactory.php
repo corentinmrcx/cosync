@@ -18,7 +18,7 @@ final class DotationGroupeReglagesFactory
 {
     public function fromRequest(Request $request): DotationGroupeReglagesData
     {
-        $brut    = (array) ($request->request->all()['reglages'] ?? []);
+        $brut = (array) ($request->request->all()['reglages'] ?? []);
         $parLigne = [];
 
         foreach ($brut as $ligneId => $champs) {

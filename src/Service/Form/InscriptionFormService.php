@@ -74,7 +74,7 @@ final class InscriptionFormService
 
             if ($document !== null) {
                 $signature = $this->signatureService->signerParLicencie($document, $licencie, $signatureDataUrl);
-                $chemin    = $signature->getDrivePath();
+                $chemin = $signature->getDrivePath();
 
                 // Convention du projet : un chemin absolu = PDF encore en local, un autre
                 // format = ID Drive. Seuls les fichiers locaux sont joignables au mail.
@@ -113,7 +113,7 @@ final class InscriptionFormService
             );
         } catch (\Throwable $e) {
             $this->logger->error('Mail de confirmation d\'inscription non envoyé ({uuid}) : {message}', [
-                'uuid'    => (string) $licencie->getUuid(),
+                'uuid' => (string) $licencie->getUuid(),
                 'message' => $e->getMessage(),
             ]);
         }

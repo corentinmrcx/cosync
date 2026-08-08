@@ -68,7 +68,7 @@
 }
 
 .dirigeants-row:last-child { border-bottom: none; }
-.dirigeants-row:hover { background: #fff8f8; }
+.dirigeants-row:hover { background: var(--color-row-hover); }
 
 .dirigeants-table td {
     padding: 0.875rem 1rem;
@@ -148,7 +148,7 @@
     font-weight: 500;
 }
 
-.dirigeant-sync-banner strong { color: #166534; }
+.dirigeant-sync-banner strong { color: var(--color-success-text); }
 
 /* — Lien formulaire — */
 .dirigeant-show-link-status {

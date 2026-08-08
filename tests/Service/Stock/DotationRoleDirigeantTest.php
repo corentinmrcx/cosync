@@ -53,7 +53,7 @@ final class DotationRoleDirigeantTest extends StockIntegrationTestCase
         $this->affecterRole($season, $kitChef, DirigeantRole::RESPONSABLE_FOOT);
 
         $unCoach = $this->makeDirigeant($season, DirigeantRole::RESPONSABLE_EQUIPE);
-        $unChef  = $this->makeDirigeant($season, DirigeantRole::RESPONSABLE_FOOT);
+        $unChef = $this->makeDirigeant($season, DirigeantRole::RESPONSABLE_FOOT);
 
         /** @var Dirigeant $unCoach */
         $unCoach = $this->reload($unCoach);
@@ -108,7 +108,7 @@ final class DotationRoleDirigeantTest extends StockIntegrationTestCase
     public function testUnLicencieNEstJamaisCapteParUneCibleRole(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
+        $cat = $this->makeCategory('SENIOR');
 
         $kitCoach = $this->makeModele($season, 'Kit responsable équipe');
         $this->addLigne($kitCoach, $this->makeItem('Coupe-vent'));

@@ -91,7 +91,7 @@ final class DirigeantService
     private function normalize(DirigeantData $data): array
     {
         return [
-            'nom'    => mb_strtoupper(trim((string) $data->nom), 'UTF-8'),
+            'nom' => mb_strtoupper(trim((string) $data->nom), 'UTF-8'),
             'prenom' => mb_convert_case(trim((string) $data->prenom), MB_CASE_TITLE, 'UTF-8'),
         ];
     }
@@ -101,6 +101,7 @@ final class DirigeantService
         if ($raw === null || trim($raw) === '') {
             return null;
         }
+
         return $this->sanitizer->sanitizeNumLicence($raw);
     }
 }

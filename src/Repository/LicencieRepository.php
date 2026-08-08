@@ -27,7 +27,11 @@ class LicencieRepository extends ServiceEntityRepository
         return $this->findOneBy(['numLicence' => $numLicence, 'season' => $season]);
     }
 
-    /** Licenciés dont le paiement est confirmé — éligibles aux dotations */
+    /**
+     * Licenciés dont le paiement est confirmé — éligibles aux dotations.
+     *
+     * @return Licencie[]
+     */
     public function findValidatedBySeason(Season $season): array
     {
         return $this->createQueryBuilder('l')

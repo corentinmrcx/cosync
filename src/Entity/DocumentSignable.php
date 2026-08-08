@@ -97,25 +97,82 @@ class DocumentSignable
         $this->dirigeants = new ArrayCollection();
     }
 
-    public function getId(): int { return $this->id; }
+    public function getId(): int
+    {
+        return $this->id;
+    }
 
-    public function getSeason(): Season { return $this->season; }
-    public function setSeason(Season $season): static { $this->season = $season; return $this; }
+    public function getSeason(): Season
+    {
+        return $this->season;
+    }
 
-    public function getCode(): string { return $this->code; }
-    public function setCode(string $code): static { $this->code = $code; return $this; }
+    public function setSeason(Season $season): static
+    {
+        $this->season = $season;
 
-    public function getTitre(): string { return $this->titre; }
-    public function setTitre(string $titre): static { $this->titre = $titre; return $this; }
+        return $this;
+    }
 
-    public function getLibelle(): string { return $this->libelle; }
-    public function setLibelle(string $libelle): static { $this->libelle = $libelle; return $this; }
+    public function getCode(): string
+    {
+        return $this->code;
+    }
 
-    public function getContenuHtml(): ?string { return $this->contenuHtml; }
-    public function setContenuHtml(?string $contenuHtml): static { $this->contenuHtml = $contenuHtml; return $this; }
+    public function setCode(string $code): static
+    {
+        $this->code = $code;
 
-    public function getCible(): DocumentCible { return $this->cible; }
-    public function setCible(DocumentCible $cible): static { $this->cible = $cible; return $this; }
+        return $this;
+    }
+
+    public function getTitre(): string
+    {
+        return $this->titre;
+    }
+
+    public function setTitre(string $titre): static
+    {
+        $this->titre = $titre;
+
+        return $this;
+    }
+
+    public function getLibelle(): string
+    {
+        return $this->libelle;
+    }
+
+    public function setLibelle(string $libelle): static
+    {
+        $this->libelle = $libelle;
+
+        return $this;
+    }
+
+    public function getContenuHtml(): ?string
+    {
+        return $this->contenuHtml;
+    }
+
+    public function setContenuHtml(?string $contenuHtml): static
+    {
+        $this->contenuHtml = $contenuHtml;
+
+        return $this;
+    }
+
+    public function getCible(): DocumentCible
+    {
+        return $this->cible;
+    }
+
+    public function setCible(DocumentCible $cible): static
+    {
+        $this->cible = $cible;
+
+        return $this;
+    }
 
     /** @return DirigeantRole[] */
     public function getRoles(): array
@@ -138,7 +195,10 @@ class DocumentSignable
     }
 
     /** @return Collection<int, Dirigeant> */
-    public function getDirigeants(): Collection { return $this->dirigeants; }
+    public function getDirigeants(): Collection
+    {
+        return $this->dirigeants;
+    }
 
     public function addDirigeant(Dirigeant $dirigeant): static
     {
@@ -163,20 +223,55 @@ class DocumentSignable
         return $this;
     }
 
-    public function isActif(): bool { return $this->actif; }
-    public function setActif(bool $actif): static { $this->actif = $actif; return $this; }
+    public function isActif(): bool
+    {
+        return $this->actif;
+    }
 
-    public function getSortOrder(): int { return $this->sortOrder; }
-    public function setSortOrder(int $sortOrder): static { $this->sortOrder = $sortOrder; return $this; }
+    public function setActif(bool $actif): static
+    {
+        $this->actif = $actif;
+
+        return $this;
+    }
+
+    public function getSortOrder(): int
+    {
+        return $this->sortOrder;
+    }
+
+    public function setSortOrder(int $sortOrder): static
+    {
+        $this->sortOrder = $sortOrder;
+
+        return $this;
+    }
 
     /** @return string[] */
-    public function getDriveSegments(): array { return $this->driveSegments; }
+    public function getDriveSegments(): array
+    {
+        return $this->driveSegments;
+    }
 
     /** @param string[] $driveSegments */
-    public function setDriveSegments(array $driveSegments): static { $this->driveSegments = $driveSegments; return $this; }
+    public function setDriveSegments(array $driveSegments): static
+    {
+        $this->driveSegments = $driveSegments;
 
-    public function getFilePrefix(): string { return $this->filePrefix; }
-    public function setFilePrefix(string $filePrefix): static { $this->filePrefix = $filePrefix; return $this; }
+        return $this;
+    }
+
+    public function getFilePrefix(): string
+    {
+        return $this->filePrefix;
+    }
+
+    public function setFilePrefix(string $filePrefix): static
+    {
+        $this->filePrefix = $filePrefix;
+
+        return $this;
+    }
 
     /** Le document vise-t-il tout le monde, faute de rôle ou de personne désignée ? */
     public function viseTousLesDirigeants(): bool
@@ -202,5 +297,8 @@ class DocumentSignable
         return $this->dirigeants->contains($dirigeant);
     }
 
-    public function __toString(): string { return $this->titre; }
+    public function __toString(): string
+    {
+        return $this->titre;
+    }
 }

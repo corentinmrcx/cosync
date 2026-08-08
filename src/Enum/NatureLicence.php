@@ -11,15 +11,15 @@ namespace App\Enum;
 enum NatureLicence: string
 {
     case NOUVELLE_DEMANDE = 'nouvelle_demande';
-    case CHANGEMENT_CLUB  = 'changement_club';
-    case RENOUVELLEMENT   = 'renouvellement';
+    case CHANGEMENT_CLUB = 'changement_club';
+    case RENOUVELLEMENT = 'renouvellement';
 
     public function label(): string
     {
         return match ($this) {
             self::NOUVELLE_DEMANDE => 'Nouvelle demande',
-            self::CHANGEMENT_CLUB  => 'Changement de club',
-            self::RENOUVELLEMENT   => 'Renouvellement',
+            self::CHANGEMENT_CLUB => 'Changement de club',
+            self::RENOUVELLEMENT => 'Renouvellement',
         };
     }
 
@@ -45,11 +45,11 @@ enum NatureLicence: string
         }
 
         return match (true) {
-            str_contains($normalized, 'renouvellement')  => self::RENOUVELLEMENT,
-            str_contains($normalized, 'changement')      => self::CHANGEMENT_CLUB,
-            str_contains($normalized, 'mutation')        => self::CHANGEMENT_CLUB,
+            str_contains($normalized, 'renouvellement') => self::RENOUVELLEMENT,
+            str_contains($normalized, 'changement') => self::CHANGEMENT_CLUB,
+            str_contains($normalized, 'mutation') => self::CHANGEMENT_CLUB,
             str_contains($normalized, 'nouvelle demande') => self::NOUVELLE_DEMANDE,
-            default                                      => null,
+            default => null,
         };
     }
 

@@ -19,7 +19,7 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
     {
         return [
             'navbar_current_season' => $this->seasonContext->getCurrentSeason(),
-            'navbar_seasons'        => $this->seasonRepository->findBy([], ['createdAt' => 'DESC']),
+            'navbar_seasons' => $this->seasonRepository->findBy([], ['createdAt' => 'DESC']),
         ];
     }
 

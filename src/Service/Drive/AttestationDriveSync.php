@@ -50,5 +50,4 @@ final class AttestationDriveSync
 
         return true;
     }
-
 }

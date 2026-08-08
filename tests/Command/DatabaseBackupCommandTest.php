@@ -113,9 +113,9 @@ final class DatabaseBackupCommandTest extends KernelTestCase
 
         $service = new DatabaseBackupService(
             projectDir: \dirname($reference->backupDirectory(), 2),
-            database:   'base_qui_nexiste_pas',
-            user:       'utilisateur_inexistant',
-            password:   'mauvais',
+            database: 'base_qui_nexiste_pas',
+            user: 'utilisateur_inexistant',
+            password: 'mauvais',
         );
 
         $avant = $service->listerDumps();
@@ -137,7 +137,7 @@ final class DatabaseBackupCommandTest extends KernelTestCase
     {
         self::bootKernel();
 
-        $avant  = $this->dumpsPresents();
+        $avant = $this->dumpsPresents();
         $tester = new CommandTester((new Application(self::$kernel))->find('app:db:backup'));
         $tester->execute($options);
 

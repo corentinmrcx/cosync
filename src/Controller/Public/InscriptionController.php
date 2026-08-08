@@ -56,15 +56,15 @@ class InscriptionController extends AbstractController
         }
 
         return $this->render('public/inscription/form.html.twig', [
-            'licencie'        => $licencie,
-            'montant'         => $cotisationResolver->resolve($licencie),
+            'licencie' => $licencie,
+            'montant' => $cotisationResolver->resolve($licencie),
             'libelleVirement' => $cotisationResolver->libelleVirement($licencie),
             'dotationGroupes' => $resolver->getChoiceGroups($licencie),
             // Personnalisations dues sans qu'aucune question de choix ne soit posée :
             // groupe à option unique (nouveau licencié) ou article fixe personnalisé.
-            'dotationAutos'   => $resolver->getAutoPersonnalisationRequests($licencie),
+            'dotationAutos' => $resolver->getAutoPersonnalisationRequests($licencie),
             'personnalisationMaxDefaut' => DotationModeleService::PERSONNALISATION_MAX_DEFAUT,
-            'documents'       => $this->documentResolver->manquantsPourLicencie($licencie),
+            'documents' => $this->documentResolver->manquantsPourLicencie($licencie),
         ]);
     }
 
@@ -79,12 +79,14 @@ class InscriptionController extends AbstractController
 
         if (!$this->isCsrfTokenValid('inscription_submit', $request->request->get('_token'))) {
             $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
         $dotation = $dotationFactory->fromRequest($request, $licencie);
         if ($dotation === null) {
             $this->addFlash('error', 'Vérifiez votre choix de dotation et le texte à personnaliser, puis confirmez son orthographe.');
+
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
@@ -92,6 +94,7 @@ class InscriptionController extends AbstractController
 
         if ($data === null) {
             $this->addFlash('error', 'Formulaire incomplet, veuillez remplir tous les champs.');
+
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
@@ -122,9 +125,9 @@ class InscriptionController extends AbstractController
         $montant = $cotisationResolver->resolve($licencie);
 
         return $this->render('public/inscription/confirmation.html.twig', [
-            'licencie'        => $licencie,
-            'dossier'         => $licencie->getDossierClub(),
-            'montant'         => $montant,
+            'licencie' => $licencie,
+            'dossier' => $licencie->getDossierClub(),
+            'montant' => $montant,
             'libelleVirement' => $cotisationResolver->libelleVirement($licencie),
             // Seule une transaction réellement enregistrée autorise à annoncer un paiement reçu.
             'paiementRecu' => $transactionRepo->sumByLicencieAndSeason($licencie, $licencie->getSeason()) >= (float) $montant,
@@ -134,9 +137,9 @@ class InscriptionController extends AbstractController
     private function buildFormData(Request $request, Licencie $licencie, bool $isJeune, DotationChoixData $dotation): ?InscriptionFormData
     {
         $tailleHaut = $request->request->get('taille_haut', '');
-        $tailleBas  = $request->request->get('taille_bas', '');
-        $pointure   = $request->request->get('pointure', '');
-        $photoRaw   = $request->request->get('autorisation_photo');
+        $tailleBas = $request->request->get('taille_bas', '');
+        $pointure = $request->request->get('pointure', '');
+        $photoRaw = $request->request->get('autorisation_photo');
 
         if ($tailleHaut === '' || $tailleBas === '' || $pointure === '' || $photoRaw === null) {
             return null;
@@ -155,7 +158,7 @@ class InscriptionController extends AbstractController
             $modes = [PaymentMode::CB_ONLINE];
         } elseif ($multiPayment) {
             $rawModes = (array) ($request->request->all()['payment_intentions'] ?? []);
-            $modes    = [];
+            $modes = [];
             foreach ($rawModes as $raw) {
                 $m = PaymentMode::tryFrom((string) $raw);
                 if ($m === null) {
@@ -168,33 +171,33 @@ class InscriptionController extends AbstractController
             }
         } else {
             $rawMode = $request->request->get('payment_intention', '');
-            $single  = PaymentMode::tryFrom($rawMode);
+            $single = PaymentMode::tryFrom($rawMode);
             if ($single === null) {
                 return null;
             }
             $modes = [$single];
         }
 
-        $transportDirig     = null;
-        $transportParent    = null;
+        $transportDirig = null;
+        $transportParent = null;
         $autorisationAccident = null;
-        $volontaireTransport  = null;
-        $attestationData      = null;
+        $volontaireTransport = null;
+        $attestationData = null;
 
         if ($isJeune) {
-            $dirigRaw    = $request->request->get('autorisation_transport_dirigeants');
-            $parentRaw   = $request->request->get('autorisation_transport_parents');
+            $dirigRaw = $request->request->get('autorisation_transport_dirigeants');
+            $parentRaw = $request->request->get('autorisation_transport_parents');
             $accidentRaw = $request->request->get('autorisation_accident');
-            $volRaw      = $request->request->get('volontaire_transport');
+            $volRaw = $request->request->get('volontaire_transport');
 
             if ($dirigRaw === null || $parentRaw === null || $accidentRaw === null || $volRaw === null) {
                 return null;
             }
 
-            $transportDirig      = $dirigRaw === '1';
-            $transportParent     = $parentRaw === '1';
+            $transportDirig = $dirigRaw === '1';
+            $transportParent = $parentRaw === '1';
             $autorisationAccident = $accidentRaw === '1';
-            $volontaireTransport  = $volRaw === '1';
+            $volontaireTransport = $volRaw === '1';
 
             if ($volontaireTransport) {
                 $attestationData = $this->attestationFactory->fromRequest($request);
@@ -205,19 +208,19 @@ class InscriptionController extends AbstractController
         }
 
         return new InscriptionFormData(
-            tailleHaut:                      $tailleHaut,
-            tailleBas:                       $tailleBas,
-            pointure:                        $pointure,
-            autorisationPhoto:               $photoRaw === '1',
+            tailleHaut: $tailleHaut,
+            tailleBas: $tailleBas,
+            pointure: $pointure,
+            autorisationPhoto: $photoRaw === '1',
             autorisationTransportDirigeants: $transportDirig,
-            autorisationTransportParents:    $transportParent,
-            autorisationAccident:            $autorisationAccident,
-            volontaireTransport:             $volontaireTransport,
-            documentSignatures:              $documentSignatures,
-            paymentIntentions:               $modes,
-            attestationTransport:            $attestationData,
-            dotationChoix:                   $dotation->choix,
-            dotationPersonnalisation:        $dotation->personnalisation,
+            autorisationTransportParents: $transportParent,
+            autorisationAccident: $autorisationAccident,
+            volontaireTransport: $volontaireTransport,
+            documentSignatures: $documentSignatures,
+            paymentIntentions: $modes,
+            attestationTransport: $attestationData,
+            dotationChoix: $dotation->choix,
+            dotationPersonnalisation: $dotation->personnalisation,
         );
     }
 
@@ -232,7 +235,7 @@ class InscriptionController extends AbstractController
     {
         // Lecture défensive : une valeur scalaire doit être rejetée comme signature
         // manquante, pas provoquer une réponse 400 incompréhensible pour le licencié.
-        $brut     = $request->request->all()['signature_data'] ?? null;
+        $brut = $request->request->all()['signature_data'] ?? null;
         $soumises = is_array($brut) ? $brut : [];
         $retenues = [];
 
@@ -267,9 +270,9 @@ class InscriptionController extends AbstractController
         }
 
         return $this->render('public/inscription/completer.html.twig', [
-            'licencie'  => $licencie,
+            'licencie' => $licencie,
             'manquants' => $manquants,
-            'isJeune'   => $licencie->getCategory()->isJeune(),
+            'isJeune' => $licencie->getCategory()->isJeune(),
         ]);
     }
 
@@ -284,6 +287,7 @@ class InscriptionController extends AbstractController
 
         if (!$this->isCsrfTokenValid('inscription_completer', $request->request->get('_token'))) {
             $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+
             return $this->redirectToRoute('public_inscription_completer', ['uuid' => $uuid]);
         }
 
@@ -295,6 +299,7 @@ class InscriptionController extends AbstractController
         $data = $this->buildCompletionData($request, $manquants);
         if ($data === null) {
             $this->addFlash('error', 'Merci de répondre à toutes les questions.');
+
             return $this->redirectToRoute('public_inscription_completer', ['uuid' => $uuid]);
         }
 

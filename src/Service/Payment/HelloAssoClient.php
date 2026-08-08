@@ -54,22 +54,22 @@ final class HelloAssoClient
         $centimes = $montantEuros * 100;
 
         $body = [
-            'totalAmount'      => $centimes,
-            'initialAmount'    => $centimes,
-            'itemName'         => $this->buildItemName($licencie),
-            'backUrl'          => $errorUrl,
-            'errorUrl'         => $errorUrl,
-            'returnUrl'        => $returnUrl,
+            'totalAmount' => $centimes,
+            'initialAmount' => $centimes,
+            'itemName' => $this->buildItemName($licencie),
+            'backUrl' => $errorUrl,
+            'errorUrl' => $errorUrl,
+            'returnUrl' => $returnUrl,
             'containsDonation' => false,
-            'payer'            => $this->buildPayer($licencie),
-            'metadata'         => ['licencie_uuid' => (string) $licencie->getUuid()],
+            'payer' => $this->buildPayer($licencie),
+            'metadata' => ['licencie_uuid' => (string) $licencie->getUuid()],
         ];
 
         $data = $this->request('POST', sprintf('/v5/organizations/%s/checkout-intents', $this->organizationSlug), [
             'json' => $body,
         ]);
 
-        $id          = $data['id'] ?? null;
+        $id = $data['id'] ?? null;
         $redirectUrl = $data['redirectUrl'] ?? null;
 
         if ($id === null || !is_string($redirectUrl) || $redirectUrl === '') {
@@ -110,9 +110,9 @@ final class HelloAssoClient
         try {
             $response = $this->httpClient->request('POST', $this->baseUrl . '/oauth2/token', [
                 'headers' => ['Content-Type' => 'application/x-www-form-urlencoded'],
-                'body'    => [
-                    'grant_type'    => 'client_credentials',
-                    'client_id'     => $this->clientId,
+                'body' => [
+                    'grant_type' => 'client_credentials',
+                    'client_id' => $this->clientId,
                     'client_secret' => $this->clientSecret,
                 ],
             ]);
@@ -155,11 +155,7 @@ final class HelloAssoClient
 
             return $response->toArray();
         } catch (HttpExceptionInterface $e) {
-            throw new HelloAssoException(
-                sprintf('Appel HelloAsso %s %s en échec : %s%s', $method, $path, $e->getMessage(), $this->detailsErreur($e)),
-                0,
-                $e,
-            );
+            throw new HelloAssoException(sprintf('Appel HelloAsso %s %s en échec : %s%s', $method, $path, $e->getMessage(), $this->detailsErreur($e)), 0, $e);
         }
     }
 
@@ -200,7 +196,7 @@ final class HelloAssoClient
     {
         $payer = [
             'firstName' => $licencie->getPrenom(),
-            'lastName'  => $licencie->getNom(),
+            'lastName' => $licencie->getNom(),
         ];
 
         $email = $licencie->getEmail();

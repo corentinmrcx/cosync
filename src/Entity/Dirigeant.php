@@ -105,81 +105,288 @@ class Dirigeant
 
     public function __construct()
     {
-        $this->uuid       = Uuid::v4();
+        $this->uuid = Uuid::v4();
         $this->importedAt = new \DateTimeImmutable();
     }
 
-    public function getUuid(): Uuid { return $this->uuid; }
+    public function getUuid(): Uuid
+    {
+        return $this->uuid;
+    }
 
-    public function getNumLicence(): ?string { return $this->numLicence; }
-    public function setNumLicence(?string $numLicence): static { $this->numLicence = $numLicence; return $this; }
+    public function getNumLicence(): ?string
+    {
+        return $this->numLicence;
+    }
 
-    public function getNom(): string { return $this->nom; }
-    public function setNom(string $nom): static { $this->nom = $nom; return $this; }
+    public function setNumLicence(?string $numLicence): static
+    {
+        $this->numLicence = $numLicence;
 
-    public function getPrenom(): string { return $this->prenom; }
-    public function setPrenom(string $prenom): static { $this->prenom = $prenom; return $this; }
+        return $this;
+    }
 
-    public function getNomPrenom(): string { return $this->nom . ' ' . $this->prenom; }
+    public function getNom(): string
+    {
+        return $this->nom;
+    }
 
-    public function getEmail(): ?string { return $this->email; }
-    public function setEmail(?string $email): static { $this->email = $email; return $this; }
+    public function setNom(string $nom): static
+    {
+        $this->nom = $nom;
 
-    public function getTelephone(): ?string { return $this->telephone; }
-    public function setTelephone(?string $telephone): static { $this->telephone = $telephone; return $this; }
+        return $this;
+    }
 
-    public function getDateNaissance(): ?\DateTimeImmutable { return $this->dateNaissance; }
-    public function setDateNaissance(?\DateTimeImmutable $dateNaissance): static { $this->dateNaissance = $dateNaissance; return $this; }
+    public function getPrenom(): string
+    {
+        return $this->prenom;
+    }
 
-    public function getRole(): DirigeantRole { return $this->role; }
-    public function setRole(DirigeantRole $role): static { $this->role = $role; return $this; }
+    public function setPrenom(string $prenom): static
+    {
+        $this->prenom = $prenom;
 
-    public function getTailleHaut(): ?string { return $this->tailleHaut; }
-    public function setTailleHaut(?string $tailleHaut): static { $this->tailleHaut = $tailleHaut; return $this; }
+        return $this;
+    }
 
-    public function getTailleBas(): ?string { return $this->tailleBas; }
-    public function setTailleBas(?string $tailleBas): static { $this->tailleBas = $tailleBas; return $this; }
+    public function getNomPrenom(): string
+    {
+        return $this->nom . ' ' . $this->prenom;
+    }
 
-    public function getPointure(): ?string { return $this->pointure; }
-    public function setPointure(?string $pointure): static { $this->pointure = $pointure; return $this; }
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
 
-    public function getAutorisationPhoto(): ?bool { return $this->autorisationPhoto; }
-    public function setAutorisationPhoto(?bool $autorisationPhoto): static { $this->autorisationPhoto = $autorisationPhoto; return $this; }
+    public function setEmail(?string $email): static
+    {
+        $this->email = $email;
 
-    public function getVolontaireTransport(): ?bool { return $this->volontaireTransport; }
-    public function setVolontaireTransport(?bool $volontaireTransport): static { $this->volontaireTransport = $volontaireTransport; return $this; }
+        return $this;
+    }
 
-    public function getAttestationTransportDriveId(): ?string { return $this->attestationTransportDriveId; }
-    public function setAttestationTransportDriveId(?string $attestationTransportDriveId): static { $this->attestationTransportDriveId = $attestationTransportDriveId; return $this; }
+    public function getTelephone(): ?string
+    {
+        return $this->telephone;
+    }
 
-    public function getAttestationCleSignePath(): ?string { return $this->attestationCleSignePath; }
-    public function setAttestationCleSignePath(?string $attestationCleSignePath): static { $this->attestationCleSignePath = $attestationCleSignePath; return $this; }
+    public function setTelephone(?string $telephone): static
+    {
+        $this->telephone = $telephone;
 
-    public function getAttestationCleSignedAt(): ?\DateTimeImmutable { return $this->attestationCleSignedAt; }
-    public function setAttestationCleSignedAt(?\DateTimeImmutable $attestationCleSignedAt): static { $this->attestationCleSignedAt = $attestationCleSignedAt; return $this; }
+        return $this;
+    }
 
-    public function getAttestationCleTokenExpiresAt(): ?\DateTimeImmutable { return $this->attestationCleTokenExpiresAt; }
-    public function setAttestationCleTokenExpiresAt(?\DateTimeImmutable $attestationCleTokenExpiresAt): static { $this->attestationCleTokenExpiresAt = $attestationCleTokenExpiresAt; return $this; }
+    public function getDateNaissance(): ?\DateTimeImmutable
+    {
+        return $this->dateNaissance;
+    }
 
-    public function getTeam(): ?Team { return $this->team; }
-    public function setTeam(?Team $team): static { $this->team = $team; return $this; }
+    public function setDateNaissance(?\DateTimeImmutable $dateNaissance): static
+    {
+        $this->dateNaissance = $dateNaissance;
 
-    public function getSeason(): Season { return $this->season; }
-    public function setSeason(Season $season): static { $this->season = $season; return $this; }
+        return $this;
+    }
 
-    public function getLicencie(): ?Licencie { return $this->licencie; }
-    public function setLicencie(?Licencie $licencie): static { $this->licencie = $licencie; return $this; }
+    public function getRole(): DirigeantRole
+    {
+        return $this->role;
+    }
 
-    public function isCreatedManually(): bool { return $this->createdManually; }
-    public function setCreatedManually(bool $createdManually): static { $this->createdManually = $createdManually; return $this; }
+    public function setRole(DirigeantRole $role): static
+    {
+        $this->role = $role;
 
-    public function getImportedAt(): \DateTimeImmutable { return $this->importedAt; }
+        return $this;
+    }
 
-    public function getFormTokenExpiresAt(): ?\DateTimeImmutable { return $this->formTokenExpiresAt; }
-    public function setFormTokenExpiresAt(?\DateTimeImmutable $formTokenExpiresAt): static { $this->formTokenExpiresAt = $formTokenExpiresAt; return $this; }
+    public function getTailleHaut(): ?string
+    {
+        return $this->tailleHaut;
+    }
 
-    public function getFormCompletedAt(): ?\DateTimeImmutable { return $this->formCompletedAt; }
-    public function setFormCompletedAt(?\DateTimeImmutable $formCompletedAt): static { $this->formCompletedAt = $formCompletedAt; return $this; }
+    public function setTailleHaut(?string $tailleHaut): static
+    {
+        $this->tailleHaut = $tailleHaut;
+
+        return $this;
+    }
+
+    public function getTailleBas(): ?string
+    {
+        return $this->tailleBas;
+    }
+
+    public function setTailleBas(?string $tailleBas): static
+    {
+        $this->tailleBas = $tailleBas;
+
+        return $this;
+    }
+
+    public function getPointure(): ?string
+    {
+        return $this->pointure;
+    }
+
+    public function setPointure(?string $pointure): static
+    {
+        $this->pointure = $pointure;
+
+        return $this;
+    }
+
+    public function getAutorisationPhoto(): ?bool
+    {
+        return $this->autorisationPhoto;
+    }
+
+    public function setAutorisationPhoto(?bool $autorisationPhoto): static
+    {
+        $this->autorisationPhoto = $autorisationPhoto;
+
+        return $this;
+    }
+
+    public function getVolontaireTransport(): ?bool
+    {
+        return $this->volontaireTransport;
+    }
+
+    public function setVolontaireTransport(?bool $volontaireTransport): static
+    {
+        $this->volontaireTransport = $volontaireTransport;
+
+        return $this;
+    }
+
+    public function getAttestationTransportDriveId(): ?string
+    {
+        return $this->attestationTransportDriveId;
+    }
+
+    public function setAttestationTransportDriveId(?string $attestationTransportDriveId): static
+    {
+        $this->attestationTransportDriveId = $attestationTransportDriveId;
+
+        return $this;
+    }
+
+    public function getAttestationCleSignePath(): ?string
+    {
+        return $this->attestationCleSignePath;
+    }
+
+    public function setAttestationCleSignePath(?string $attestationCleSignePath): static
+    {
+        $this->attestationCleSignePath = $attestationCleSignePath;
+
+        return $this;
+    }
+
+    public function getAttestationCleSignedAt(): ?\DateTimeImmutable
+    {
+        return $this->attestationCleSignedAt;
+    }
+
+    public function setAttestationCleSignedAt(?\DateTimeImmutable $attestationCleSignedAt): static
+    {
+        $this->attestationCleSignedAt = $attestationCleSignedAt;
+
+        return $this;
+    }
+
+    public function getAttestationCleTokenExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->attestationCleTokenExpiresAt;
+    }
+
+    public function setAttestationCleTokenExpiresAt(?\DateTimeImmutable $attestationCleTokenExpiresAt): static
+    {
+        $this->attestationCleTokenExpiresAt = $attestationCleTokenExpiresAt;
+
+        return $this;
+    }
+
+    public function getTeam(): ?Team
+    {
+        return $this->team;
+    }
+
+    public function setTeam(?Team $team): static
+    {
+        $this->team = $team;
+
+        return $this;
+    }
+
+    public function getSeason(): Season
+    {
+        return $this->season;
+    }
+
+    public function setSeason(Season $season): static
+    {
+        $this->season = $season;
+
+        return $this;
+    }
+
+    public function getLicencie(): ?Licencie
+    {
+        return $this->licencie;
+    }
+
+    public function setLicencie(?Licencie $licencie): static
+    {
+        $this->licencie = $licencie;
+
+        return $this;
+    }
+
+    public function isCreatedManually(): bool
+    {
+        return $this->createdManually;
+    }
+
+    public function setCreatedManually(bool $createdManually): static
+    {
+        $this->createdManually = $createdManually;
+
+        return $this;
+    }
+
+    public function getImportedAt(): \DateTimeImmutable
+    {
+        return $this->importedAt;
+    }
+
+    public function getFormTokenExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->formTokenExpiresAt;
+    }
+
+    public function setFormTokenExpiresAt(?\DateTimeImmutable $formTokenExpiresAt): static
+    {
+        $this->formTokenExpiresAt = $formTokenExpiresAt;
+
+        return $this;
+    }
+
+    public function getFormCompletedAt(): ?\DateTimeImmutable
+    {
+        return $this->formCompletedAt;
+    }
+
+    public function setFormCompletedAt(?\DateTimeImmutable $formCompletedAt): static
+    {
+        $this->formCompletedAt = $formCompletedAt;
+
+        return $this;
+    }
 
     public function isFormTokenValid(): bool
     {

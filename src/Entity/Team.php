@@ -30,6 +30,8 @@ class Team
     /**
      * Catégories FFF jouant dans cette équipe.
      * Utilisé pour l'auto-assignation à l'import et le filtrage du dashboard.
+     *
+     * @var Collection<int, Category>
      */
     #[ORM\ManyToMany(targetEntity: Category::class)]
     #[ORM\JoinTable(name: 'team_category')]
@@ -53,6 +55,7 @@ class Team
     public function setName(string $name): static
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -64,6 +67,7 @@ class Team
     public function setSeason(Season $season): static
     {
         $this->season = $season;
+
         return $this;
     }
 
@@ -75,6 +79,7 @@ class Team
     public function setCotisation(?int $cotisation): static
     {
         $this->cotisation = $cotisation;
+
         return $this;
     }
 
@@ -89,12 +94,14 @@ class Team
         if (!$this->categories->contains($category)) {
             $this->categories->add($category);
         }
+
         return $this;
     }
 
     public function removeCategory(Category $category): static
     {
         $this->categories->removeElement($category);
+
         return $this;
     }
 }

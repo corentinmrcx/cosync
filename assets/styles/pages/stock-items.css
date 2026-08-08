@@ -460,15 +460,6 @@
 .stock-mouvements-filter-select,
 .stock-mouvements-filter-input {
     width: 100%;
-}
-
-@media (min-width: 640px) {
-    .stock-mouvements-filter-select,
-    .stock-mouvements-filter-input { width: auto; }
-}
-
-.stock-mouvements-filter-select,
-.stock-mouvements-filter-input {
     padding: 0.4rem 0.625rem;
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-md);
@@ -476,6 +467,11 @@
     font-family: var(--font-sans);
     color: var(--color-text-body);
     background: var(--color-bg-page);
+}
+
+@media (min-width: 640px) {
+    .stock-mouvements-filter-select,
+    .stock-mouvements-filter-input { width: auto; }
 }
 
 .stock-mouvements-filter-btn {
@@ -719,7 +715,7 @@
     box-sizing: border-box;
 }
 
-.stock-categories-input-icon     { max-width: 70px; text-align: center; font-size: 1.25rem; }
+.stock-categories-input-icon     { max-width: 70px; text-align: center; font-size: var(--font-size-xl); }
 .stock-categories-input-position { max-width: 80px; }
 
 .stock-categories-submit {
@@ -768,7 +764,7 @@
     padding: 0.75rem 1rem;
 }
 
-.stock-categories-item-icon { font-size: 1.25rem; min-width: 1.5rem; text-align: center; }
+.stock-categories-item-icon { font-size: var(--font-size-xl); min-width: 1.5rem; text-align: center; }
 .stock-categories-item-name { flex: 1; font-weight: 600; color: var(--color-text-base); font-size: var(--font-size-sm); }
 .stock-categories-item-position { font-size: var(--font-size-xs); color: var(--color-text-muted); }
 

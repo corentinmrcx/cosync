@@ -53,14 +53,14 @@ final class ClubHouseScreensTest extends WebTestCase
         $this->loginAdmin($client);
 
         $dirigeant = $this->makeDirigeant();
-        $crawler   = $client->request('GET', '/admin/club-house/cles');
-        $token     = $crawler->filter('form[action$="cles/mouvement"] input[name="_token"]')->attr('value');
+        $crawler = $client->request('GET', '/admin/club-house/cles');
+        $token = $crawler->filter('form[action$="cles/mouvement"] input[name="_token"]')->attr('value');
 
         $client->request('POST', '/admin/club-house/cles/mouvement', [
-            '_token'         => $token,
-            'dirigeant'      => (string) $dirigeant->getUuid(),
-            'type'           => 'remise',
-            'quantite'       => '2',
+            '_token' => $token,
+            'dirigeant' => (string) $dirigeant->getUuid(),
+            'type' => 'remise',
+            'quantite' => '2',
             'date_mouvement' => '2026-03-15',
         ]);
 
@@ -77,13 +77,13 @@ final class ClubHouseScreensTest extends WebTestCase
         $this->makeMouvement($dirigeant, CleMouvementType::REMISE, 1, '2026-01-10');
 
         $crawler = $client->request('GET', '/admin/club-house/cles');
-        $token   = $crawler->filter('form[action$="cles/mouvement"] input[name="_token"]')->attr('value');
+        $token = $crawler->filter('form[action$="cles/mouvement"] input[name="_token"]')->attr('value');
 
         $client->request('POST', '/admin/club-house/cles/mouvement', [
-            '_token'         => $token,
-            'dirigeant'      => (string) $dirigeant->getUuid(),
-            'type'           => 'restitution',
-            'quantite'       => '5',
+            '_token' => $token,
+            'dirigeant' => (string) $dirigeant->getUuid(),
+            'type' => 'restitution',
+            'quantite' => '5',
             'date_mouvement' => '2026-03-15',
         ]);
 
@@ -99,10 +99,10 @@ final class ClubHouseScreensTest extends WebTestCase
         $dirigeant = $this->makeDirigeant();
 
         $client->request('POST', '/admin/club-house/cles/mouvement', [
-            '_token'    => 'jeton-bidon',
+            '_token' => 'jeton-bidon',
             'dirigeant' => (string) $dirigeant->getUuid(),
-            'type'      => 'remise',
-            'quantite'  => '1',
+            'type' => 'remise',
+            'quantite' => '1',
         ]);
 
         self::assertResponseRedirects('/admin/club-house/cles');
@@ -119,7 +119,7 @@ final class ClubHouseScreensTest extends WebTestCase
         $uuid = (string) $dirigeant->getUuid();
 
         $crawler = $client->request('GET', '/admin/club-house/cles');
-        $token   = $crawler->filter('form[action$="envoyer-lien"] input[name="_token"]')->attr('value');
+        $token = $crawler->filter('form[action$="envoyer-lien"] input[name="_token"]')->attr('value');
 
         $client->request('POST', '/admin/club-house/cles/' . $uuid . '/attestation/envoyer-lien', [
             '_token' => $token,
@@ -159,8 +159,8 @@ final class ClubHouseScreensTest extends WebTestCase
         $token = $crawler->filter('#attestation-form input[name="_token"]')->attr('value');
 
         $client->request('POST', '/admin/club-house/attestation', [
-            '_token'           => $token,
-            'attestation_cle_text'  => '<p>La commune met le local à disposition.</p>',
+            '_token' => $token,
+            'attestation_cle_text' => '<p>La commune met le local à disposition.</p>',
         ]);
 
         self::assertResponseRedirects('/admin/club-house/attestation');

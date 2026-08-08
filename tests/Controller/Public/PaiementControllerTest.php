@@ -62,8 +62,8 @@ final class PaiementControllerTest extends WebTestCase
 
     public function testUnFormulaireNonSoumisNAccedePasAuPaiement(): void
     {
-        $client   = static::createClient();
-        $em       = static::getContainer()->get(EntityManagerInterface::class);
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
         $licencie = $this->createLicencie($em, formulaireSoumis: false);
 
         $crawler = $client->request('GET', '/inscription/' . $licencie->getUuid() . '/paiement/erreur');
@@ -75,8 +75,8 @@ final class PaiementControllerTest extends WebTestCase
 
     public function testLaPageErreurRassureSurLInscriptionEtProposeDeReessayer(): void
     {
-        $client   = static::createClient();
-        $em       = static::getContainer()->get(EntityManagerInterface::class);
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
         $licencie = $this->createLicencie($em);
 
         $crawler = $client->request('GET', '/inscription/' . $licencie->getUuid() . '/paiement/erreur');
@@ -91,8 +91,8 @@ final class PaiementControllerTest extends WebTestCase
     /** On n'annonce jamais un encaissement au licencié : le retour reste au conditionnel. */
     public function testLaPageDeRetourNAnnonceJamaisUnPaiementConfirme(): void
     {
-        $client   = static::createClient();
-        $em       = static::getContainer()->get(EntityManagerInterface::class);
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
         $licencie = $this->createLicencie($em);
 
         $crawler = $client->request('GET', '/inscription/' . $licencie->getUuid() . '/paiement/retour');
@@ -106,8 +106,8 @@ final class PaiementControllerTest extends WebTestCase
 
     public function testLeCheckoutSansJetonCsrfNeLanceAucunPaiement(): void
     {
-        $client   = static::createClient();
-        $em       = static::getContainer()->get(EntityManagerInterface::class);
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
         $licencie = $this->createLicencie($em);
 
         $uuid = (string) $licencie->getUuid();
@@ -120,8 +120,8 @@ final class PaiementControllerTest extends WebTestCase
     /** HelloAsso indisponible : l'inscription reste intacte et le licencié est renvoyé sans erreur 500. */
     public function testUnPaiementIndisponibleRenvoieVersLaConfirmationSansRienValider(): void
     {
-        $client   = static::createClient();
-        $em       = static::getContainer()->get(EntityManagerInterface::class);
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
         $licencie = $this->createLicencie($em);
 
         $uuid = (string) $licencie->getUuid();
@@ -136,8 +136,8 @@ final class PaiementControllerTest extends WebTestCase
 
     public function testLaConfirmationProposeLePaiementParCarteTantQueRienNEstPaye(): void
     {
-        $client   = static::createClient();
-        $em       = static::getContainer()->get(EntityManagerInterface::class);
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
         $licencie = $this->createLicencie($em);
 
         $crawler = $client->request('GET', '/inscription/' . $licencie->getUuid() . '/confirmation');

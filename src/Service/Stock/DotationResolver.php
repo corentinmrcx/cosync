@@ -57,17 +57,17 @@ final class DotationResolver
     public function resolveDotation(Licencie|Dirigeant $person): array
     {
         $retenues = $this->retainedLines($person, $this->storedChoices($person));
-        $textes   = $this->storedPersonnalisations($person);
+        $textes = $this->storedPersonnalisations($person);
 
         $out = [];
         foreach ($retenues as $ligne) {
             $item = $ligne->getStockItem();
             $out[] = [
-                'stockItem'   => $item,
-                'quantite'    => $ligne->getQuantite(),
+                'stockItem' => $item,
+                'quantite' => $ligne->getQuantite(),
                 'obligatoire' => $ligne->isObligatoire(),
                 'groupeChoix' => $ligne->getGroupeChoix(),
-                'taille'      => $this->sizeFor($person, $item->getTypeVetement()),
+                'taille' => $this->sizeFor($person, $item->getTypeVetement()),
                 // Un texte périmé, laissé sur une option qui n'exige plus de personnalisation,
                 // ne doit jamais remonter jusqu'au flocage.
                 'personnalisation' => $ligne->isPersonnalisationRequise()
@@ -98,7 +98,7 @@ final class DotationResolver
             return [];
         }
 
-        $nature  = $this->natureOf($person);
+        $nature = $this->natureOf($person);
         $groupes = [];
         foreach ($modele->getLignes() as $ligne) {
             if ($ligne->getGroupeChoix() === null || !$ligne->getEligibilite()->accepte($nature)) {
@@ -211,7 +211,7 @@ final class DotationResolver
             return [];
         }
 
-        $nature  = $this->natureOf($person);
+        $nature = $this->natureOf($person);
         $simples = [];
         $groupes = [];
         foreach ($modele->getLignes() as $ligne) {
@@ -230,7 +230,7 @@ final class DotationResolver
         // correction de la nature de licence par l'admin.
         $retenues = $simples;
         foreach ($groupes as $groupe => $lignes) {
-            $voulu   = isset($choix[$groupe]) ? (int) $choix[$groupe] : null;
+            $voulu = isset($choix[$groupe]) ? (int) $choix[$groupe] : null;
             $choisie = null;
             foreach ($lignes as $ligne) {
                 if ($voulu !== null && $ligne->getStockItem()->getId() === $voulu) {
@@ -292,8 +292,8 @@ final class DotationResolver
 
         if ($person instanceof Dirigeant) {
             return match ($type) {
-                StockItemVetementType::HAUT       => $person->getTailleHaut(),
-                StockItemVetementType::BAS        => $person->getTailleBas(),
+                StockItemVetementType::HAUT => $person->getTailleHaut(),
+                StockItemVetementType::BAS => $person->getTailleBas(),
                 StockItemVetementType::CHAUSSURES => $person->getPointure(),
             };
         }
@@ -304,8 +304,8 @@ final class DotationResolver
         }
 
         return match ($type) {
-            StockItemVetementType::HAUT       => $dossier->getTailleHaut(),
-            StockItemVetementType::BAS        => $dossier->getTailleBas(),
+            StockItemVetementType::HAUT => $dossier->getTailleHaut(),
+            StockItemVetementType::BAS => $dossier->getTailleBas(),
             StockItemVetementType::CHAUSSURES => $dossier->getPointure(),
         };
     }

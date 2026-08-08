@@ -119,17 +119,17 @@ final class DocumentPdfTemplateTest extends KernelTestCase
         self::getContainer()->get(RequestStack::class)->push($request);
 
         return self::getContainer()->get(Environment::class)->render('pdf/document_signe.html.twig', [
-            'prenom'           => 'Kevin',
-            'nom'              => 'MARTIN',
-            'season'           => $document->getSeason(),
-            'documentTitle'    => $document->getTitre(),
-            'documentLabel'    => $document->getLibelle(),
-            'reglementHtml'    => $document->getContenuHtml(),
+            'prenom' => 'Kevin',
+            'nom' => 'MARTIN',
+            'season' => $document->getSeason(),
+            'documentTitle' => $document->getTitre(),
+            'documentLabel' => $document->getLibelle(),
+            'reglementHtml' => $document->getContenuHtml(),
             'signatureDataUrl' => 'data:image/png;base64,iVBORw0KGgo=',
-            'signedAt'         => new \DateTimeImmutable('2026-08-01'),
-            'logoDataUrl'      => 'data:image/png;base64,iVBORw0KGgo=',
+            'signedAt' => new \DateTimeImmutable('2026-08-01'),
+            'logoDataUrl' => 'data:image/png;base64,iVBORw0KGgo=',
             'foyerLogoDataUrl' => 'data:image/png;base64,iVBORw0KGgo=',
-            'previewMode'      => false,
+            'previewMode' => false,
         ]);
     }
 }

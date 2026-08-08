@@ -12,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class HelloAssoWebhookControllerTest extends WebTestCase
 {
+    /** @param array<string, string> $headers */
     private function post(KernelBrowser $client, string $body, array $headers = []): void
     {
         $client->request('POST', '/webhook/helloasso', [], [], array_merge(
@@ -55,8 +56,8 @@ final class HelloAssoWebhookControllerTest extends WebTestCase
 
         $this->post($client, json_encode([
             'eventType' => 'Payment',
-            'data'      => [
-                'id'    => 999,
+            'data' => [
+                'id' => 999,
                 'state' => 'Authorized',
                 'order' => ['checkoutIntentId' => 123456],
             ],

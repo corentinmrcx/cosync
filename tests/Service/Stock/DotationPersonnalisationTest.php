@@ -34,11 +34,15 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         return $repo->findForLicencie($licencie);
     }
 
-    /** Kit avec un t-shirt floqué imposé (option unique éligible). @return array{0: Licencie} */
+    /**
+     * Kit avec un t-shirt floqué imposé (option unique éligible).
+     *
+     * @return array{0: Licencie}
+     */
     private function licencieAvecTshirtFloque(string $texte = 'Coco', ?int $max = null): array
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
+        $cat = $this->makeCategory('SENIOR');
         $tshirt = $this->makeItem('T-shirt', StockItemVetementType::HAUT);
 
         $modele = $this->makeModele($season, 'Dotation 2026');
@@ -77,7 +81,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
 
         // Le licencié (ou l'admin) corrige la faute de frappe dans le dossier.
         $dossier = $licencie->getDossierClub();
-        $cles    = array_keys($dossier->getDotationPersonnalisation());
+        $cles = array_keys($dossier->getDotationPersonnalisation());
         $dossier->setDotationPersonnalisation([$cles[0] => 'Coco']);
         $this->em->flush();
 
@@ -100,7 +104,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
 
         // Le dossier change après la remise : le vêtement est déjà floqué, on n'y touche plus.
         $dossier = $licencie->getDossierClub();
-        $cles    = array_keys($dossier->getDotationPersonnalisation());
+        $cles = array_keys($dossier->getDotationPersonnalisation());
         $dossier->setDotationPersonnalisation([$cles[0] => 'Autre chose']);
         $this->em->flush();
 
@@ -114,8 +118,8 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     public function testTextePerimeSurUneOptionNonPersonnaliseeNeRemontePas(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $tshirt = $this->makeItem('T-shirt', StockItemVetementType::HAUT);
 
         $modele = $this->makeModele($season, 'Dotation 2026');
@@ -170,10 +174,10 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     public function testUneOptionDeChoixNeRessortPasEnPersonnalisationAutomatique(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $tshirt = $this->makeItem('T-shirt', StockItemVetementType::HAUT);
-        $sac    = $this->makeItem('Sac à dos', null);
+        $sac = $this->makeItem('Sac à dos', null);
 
         $modele = $this->makeModele($season, 'Dotation 2026');
         // Première option du groupe, floquée : c'est elle que le repli de retainedLines() faisait
@@ -203,8 +207,8 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     public function testUnGroupeAutoResoluRessortEnPersonnalisationAutomatique(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $tshirt = $this->makeItem('T-shirt', StockItemVetementType::HAUT);
 
         $modele = $this->makeModele($season, 'Dotation 2026');
@@ -231,7 +235,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         [$licencie] = $this->licencieAvecTshirtFloque('Coco');
         $this->besoinService()->recomputeForLicencie($licencie);
 
-        $season   = $licencie->getSeason();
+        $season = $licencie->getSeason();
         $flocages = $this->besoinService()->getFlocages($season);
 
         self::assertCount(1, $flocages);

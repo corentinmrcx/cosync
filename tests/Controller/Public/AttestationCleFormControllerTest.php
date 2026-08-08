@@ -22,7 +22,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testLeFormulaireAfficheCeQueLaPersonneAtteste(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant();
         $this->remise($dirigeant, 2, '2026-01-10');
 
@@ -38,7 +38,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testLeRecepisseNImposePasDeLectureAvantDeCocher(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant();
         $this->remise($dirigeant, 1, '2026-01-10');
 
@@ -50,13 +50,13 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testLaSignatureEnregistreLeDocumentEtConsommeLeLien(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant();
         $this->remise($dirigeant, 1, '2026-01-10');
         $uuid = (string) $dirigeant->getUuid();
 
         $client->request('POST', '/attestation-cle/' . $uuid, [
-            '_token'         => $this->tokenFor($client, $uuid),
+            '_token' => $this->tokenFor($client, $uuid),
             'signature_data' => self::SIGNATURE,
         ]);
 
@@ -72,7 +72,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testLaSignatureNeTouchePasAuDossierDirigeant(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant();
         $this->remise($dirigeant, 1, '2026-01-10');
         $uuid = (string) $dirigeant->getUuid();
@@ -80,7 +80,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
         $formTokenAvant = $this->reload($uuid)->getFormTokenExpiresAt();
 
         $client->request('POST', '/attestation-cle/' . $uuid, [
-            '_token'         => $this->tokenFor($client, $uuid),
+            '_token' => $this->tokenFor($client, $uuid),
             'signature_data' => self::SIGNATURE,
         ]);
 
@@ -95,7 +95,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testUneSignatureManquanteEstRejetee(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant();
         $this->remise($dirigeant, 1, '2026-01-10');
         $uuid = (string) $dirigeant->getUuid();
@@ -110,13 +110,13 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testUneSignatureMalformeeEstRejetee(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant();
         $this->remise($dirigeant, 1, '2026-01-10');
         $uuid = (string) $dirigeant->getUuid();
 
         $client->request('POST', '/attestation-cle/' . $uuid, [
-            '_token'         => $this->tokenFor($client, $uuid),
+            '_token' => $this->tokenFor($client, $uuid),
             'signature_data' => 'javascript:alert(1)',
         ]);
 
@@ -126,7 +126,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testUnLienExpireNAfficheAucunFormulaire(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant(tokenExpiresAt: new \DateTimeImmutable('-1 day'));
 
         $crawler = $client->request('GET', '/attestation-cle/' . $dirigeant->getUuid());
@@ -138,7 +138,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testUnSignataireAJourEstRedirigeVersLaConfirmation(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant();
         $this->remise($dirigeant, 1, '2026-01-10');
         $this->marquerSignee($dirigeant, '2026-01-11');
@@ -150,7 +150,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testUneCleRemiseApresSignatureRouvreLeFormulaire(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant();
         $this->remise($dirigeant, 1, '2026-01-10');
         $this->marquerSignee($dirigeant, '2026-01-11');
@@ -173,7 +173,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
     public function testLaRouteEstPubliqueSansAuthentification(): void
     {
-        $client    = static::createClient();
+        $client = static::createClient();
         $dirigeant = $this->createDirigeant();
         $this->remise($dirigeant, 1, '2026-01-10');
 

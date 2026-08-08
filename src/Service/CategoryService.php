@@ -46,11 +46,7 @@ class CategoryService
     {
         $count = $this->licencieRepo->countByCategory($category);
         if ($count > 0) {
-            throw new \RuntimeException(sprintf(
-                'Impossible de supprimer "%s" : utilisée par %d licencié(s).',
-                $category->getCode(),
-                $count,
-            ));
+            throw new \RuntimeException(sprintf('Impossible de supprimer "%s" : utilisée par %d licencié(s).', $category->getCode(), $count));
         }
 
         foreach ($this->teamRepo->findByCategory($category) as $team) {

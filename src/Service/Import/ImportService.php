@@ -41,6 +41,7 @@ final class ImportService
         $rows = $this->readFirstNonEmptySheet($file);
         if (count($rows) < 2) {
             $result->addError(0, 'Le fichier est vide ou ne contient pas de données.');
+
             return $result;
         }
 
@@ -49,14 +50,15 @@ final class ImportService
         $layout = $this->layoutResolver->resolve($columns);
         if ($layout === null) {
             $result->addError(1, 'Format de fichier non reconnu. Utilisez un export FootClubs « Licences dématérialisées » ou « Éditions et extractions ».');
+
             return $result;
         }
-        $result->layoutLabel  = $layout->label();
+        $result->layoutLabel = $layout->label();
         $result->emailAutoSend = $layout->sendsEmailOnCreate();
 
-        $pendingLicencies  = [];
+        $pendingLicencies = [];
         $pendingDirigeants = [];
-        $newLicencies      = [];
+        $newLicencies = [];
 
         foreach (array_slice($rows, 1) as $offset => $row) {
             $lineNumber = $offset + 2;
@@ -65,9 +67,9 @@ final class ImportService
                 $data = $layout->map($row, $columns);
 
                 match ($data->type) {
-                    ImportRowType::LICENCIE  => $this->processLicencieRow($data, $season, $result, $lineNumber, $pendingLicencies, $newLicencies),
+                    ImportRowType::LICENCIE => $this->processLicencieRow($data, $season, $result, $lineNumber, $pendingLicencies, $newLicencies),
                     ImportRowType::DIRIGEANT => $this->processDirigeantRow($data, $season, $result, $lineNumber, $pendingDirigeants),
-                    ImportRowType::SKIP      => null,
+                    ImportRowType::SKIP => null,
                 };
             } catch (\Throwable $e) {
                 $result->addError($lineNumber, $e->getMessage());
@@ -79,6 +81,7 @@ final class ImportService
         } catch (\Throwable) {
             $this->em->clear();
             $result->addError(0, 'Une erreur est survenue lors de l\'enregistrement. Aucune donnée n\'a été importée.');
+
             return $result;
         }
 
@@ -90,7 +93,7 @@ final class ImportService
     }
 
     /**
-     * @param ImportRowData[] $newLicencies
+     * @param Licencie[] $newLicencies
      */
     private function sendInscriptionLinks(array $newLicencies, ImportResultData $result): void
     {
@@ -103,10 +106,10 @@ final class ImportService
                 $this->mailerService->sendInscriptionLink($licencie);
                 $licencie->setLinkSentAt(new \DateTimeImmutable());
                 $licencie->getDossierClub()?->setStatus(LicenceStatus::LINK_SENT);
-                $result->emailsSent++;
+                ++$result->emailsSent;
                 $sent = true;
             } catch (\Throwable) {
-                $result->emailsFailed++;
+                ++$result->emailsFailed;
             }
         }
 
@@ -127,12 +130,13 @@ final class ImportService
         array &$pendingLicencies,
         array &$newLicencies,
     ): void {
-        $nom    = $data->nom;
+        $nom = $data->nom;
         $prenom = $data->prenom;
 
         $rawDate = trim((string) $data->rawDateNaissance);
         if ($rawDate === '') {
             $result->addError($lineNumber, "Date de naissance manquante pour $nom $prenom.");
+
             return;
         }
         $dateNaissance = $this->sanitizer->sanitizeDateNaissance($rawDate);
@@ -140,32 +144,36 @@ final class ImportService
         $rawCategorie = trim((string) $data->rawCategoryOrRole);
         if ($rawCategorie === '') {
             $result->addError($lineNumber, "Sous catégorie manquante pour $nom $prenom.");
+
             return;
         }
         $codeCategorie = $this->sanitizer->sanitizeSousCategorie($rawCategorie);
-        $category      = $this->categoryRepository->findOneBy(['code' => $codeCategorie]);
+        $category = $this->categoryRepository->findOneBy(['code' => $codeCategorie]);
         if ($category === null) {
             $result->addError($lineNumber, "Catégorie inconnue \"$codeCategorie\" pour $nom $prenom. Ajoutez-la via app:seed-referential.");
+
             return;
         }
 
         $rawNumLicence = trim((string) $data->rawNumLicence);
         if ($rawNumLicence === '') {
             $result->addError($lineNumber, "Numéro de personne manquant pour $nom $prenom.");
+
             return;
         }
         $numLicence = $this->sanitizer->sanitizeNumLicence($rawNumLicence);
 
         if (isset($pendingLicencies[$numLicence])) {
             $result->addNotice($lineNumber, "Doublon ignoré : $nom $prenom (n°$numLicence) apparaît plusieurs fois dans le fichier.");
+
             return;
         }
 
-        $email      = $this->sanitizer->sanitizeEmail($data->rawEmail);
-        $telephone  = $this->sanitizer->sanitizePhone($data->rawTelephone);
-        $voieRue    = $this->nullableTrim($data->rawVoieRue);
+        $email = $this->sanitizer->sanitizeEmail($data->rawEmail);
+        $telephone = $this->sanitizer->sanitizePhone($data->rawTelephone);
+        $voieRue = $this->nullableTrim($data->rawVoieRue);
         $codePostal = $this->nullableTrim($data->rawCodePostal);
-        $ville      = $this->nullableTrim($data->rawVille);
+        $ville = $this->nullableTrim($data->rawVille);
 
         $nature = $this->natureResolver->resolve($data->rawNature, $numLicence, $season);
         if ($nature !== null && $this->natureResolver->contredit($nature, $numLicence, $season)) {
@@ -214,7 +222,7 @@ final class ImportService
             if ($nature !== null && !$licencie->isNatureManuelle()) {
                 $licencie->setNatureLicence($nature);
             }
-            $result->updated++;
+            ++$result->updated;
             $this->countNature($licencie, $result);
 
             return;
@@ -249,16 +257,16 @@ final class ImportService
         $this->em->persist($dossier);
 
         $newLicencies[] = $licencie;
-        $result->created++;
+        ++$result->created;
         $this->countNature($licencie, $result);
     }
 
     private function countNature(Licencie $licencie, ImportResultData $result): void
     {
         match ($licencie->estNouveau()) {
-            true  => $result->nouveaux++,
+            true => $result->nouveaux++,
             false => $result->renouvellements++,
-            null  => $result->natureInconnue++,
+            null => $result->natureInconnue++,
         };
     }
 
@@ -272,20 +280,21 @@ final class ImportService
         int $lineNumber,
         array &$pendingDirigeants,
     ): void {
-        $nom    = $data->nom;
+        $nom = $data->nom;
         $prenom = $data->prenom;
 
         $rawNumLicence = trim((string) $data->rawNumLicence);
-        $numLicence    = $rawNumLicence !== '' ? $this->sanitizer->sanitizeNumLicence($rawNumLicence) : null;
+        $numLicence = $rawNumLicence !== '' ? $this->sanitizer->sanitizeNumLicence($rawNumLicence) : null;
 
         if ($numLicence !== null && isset($pendingDirigeants[$numLicence])) {
             $result->addNotice($lineNumber, "Doublon ignoré : $nom $prenom (n°$numLicence) apparaît plusieurs fois dans le fichier.");
+
             return;
         }
 
-        $email         = $this->sanitizer->sanitizeEmail($data->rawEmail);
-        $telephone     = $this->sanitizer->sanitizePhone($data->rawTelephone);
-        $rawDate       = trim((string) $data->rawDateNaissance);
+        $email = $this->sanitizer->sanitizeEmail($data->rawEmail);
+        $telephone = $this->sanitizer->sanitizePhone($data->rawTelephone);
+        $rawDate = trim((string) $data->rawDateNaissance);
         $dateNaissance = $rawDate !== '' ? $this->sanitizer->sanitizeDateNaissance($rawDate) : null;
 
         $dirigeant = ($numLicence !== null ? $this->dirigeantRepository->findByNumLicence($numLicence, $season) : null)
@@ -314,7 +323,7 @@ final class ImportService
             }
             // Le rôle n'est jamais touché par l'import : la sous-catégorie FFF (« Dirigeante »,
             // « Jeune Arbitre »…) ne dit rien du rôle interne au club, que l'admin seul attribue.
-            $result->updated++;
+            ++$result->updated;
 
             return;
         }
@@ -330,7 +339,7 @@ final class ImportService
         $dirigeant->setSeason($season);
 
         $this->em->persist($dirigeant);
-        $result->created++;
+        ++$result->created;
     }
 
     private function nullableTrim(?string $value): ?string

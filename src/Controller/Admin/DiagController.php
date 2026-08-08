@@ -28,7 +28,7 @@ class DiagController extends AbstractController
 
         return $this->render('admin/diag/index.html.twig', [
             'betaActive' => $this->betaModeService->isActive(),
-            'diagEmail'  => $this->betaModeService->getRedirectEmail(),
+            'diagEmail' => $this->betaModeService->getRedirectEmail(),
         ]);
     }
 
@@ -41,6 +41,7 @@ class DiagController extends AbstractController
 
         if (!$this->isCsrfTokenValid('test_mail', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_diag_index');
         }
 
@@ -48,6 +49,7 @@ class DiagController extends AbstractController
 
         if ($to === false) {
             $this->addFlash('error', 'Adresse email invalide.');
+
             return $this->redirectToRoute('admin_diag_index');
         }
 
@@ -70,6 +72,7 @@ class DiagController extends AbstractController
 
         if (!$this->isCsrfTokenValid('test_validation_mail', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_diag_index');
         }
 
@@ -77,6 +80,7 @@ class DiagController extends AbstractController
 
         if ($to === false) {
             $this->addFlash('error', 'Adresse email invalide.');
+
             return $this->redirectToRoute('admin_diag_index');
         }
 
@@ -102,6 +106,7 @@ class DiagController extends AbstractController
 
         if (!$this->isCsrfTokenValid('beta_enable', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_diag_index');
         }
 
@@ -120,6 +125,7 @@ class DiagController extends AbstractController
 
         if (!$this->isCsrfTokenValid('beta_disable', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_diag_index');
         }
 
@@ -138,22 +144,25 @@ class DiagController extends AbstractController
 
         if (!$this->betaModeService->isActive()) {
             $this->addFlash('error', 'La purge n\'est disponible qu\'en mode beta.');
+
             return $this->redirectToRoute('admin_diag_index');
         }
 
         if (!$this->isCsrfTokenValid('purge', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_diag_index');
         }
 
         if ($request->request->get('confirmation') !== 'SUPPRIMER') {
             $this->addFlash('error', 'Confirmation incorrecte. Aucune donnée supprimée.');
+
             return $this->redirectToRoute('admin_diag_index');
         }
 
         try {
             $counts = $this->purgeService->purgeAll();
-            $total  = array_sum($counts);
+            $total = array_sum($counts);
             $this->addFlash('success', sprintf('%d enregistrements supprimés. La base est vide et prête pour de nouvelles données de test.', $total));
         } catch (\Throwable $e) {
             $this->addFlash('error', 'Erreur lors de la purge : ' . $e->getMessage());
@@ -165,7 +174,7 @@ class DiagController extends AbstractController
     private function requireDiagAccess(): ?Response
     {
         /** @var User $user */
-        $user      = $this->getUser();
+        $user = $this->getUser();
         $diagEmail = $this->betaModeService->getRedirectEmail();
 
         if ($diagEmail === '' || $user->getEmail() !== $diagEmail) {

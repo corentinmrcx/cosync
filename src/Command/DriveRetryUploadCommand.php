@@ -97,28 +97,28 @@ final class DriveRetryUploadCommand extends Command
         $missing = 0;
 
         foreach ($items as $item) {
-            $nom       = $label($item);
+            $nom = $label($item);
             $localPath = $path($item);
 
             if ($localPath === null || !file_exists($localPath)) {
                 $io->warning(sprintf('[%s] Fichier local introuvable : %s', $nom, $localPath));
-                $missing++;
+                ++$missing;
                 continue;
             }
 
             if ($sync($item)) {
                 $io->text(sprintf('<info>✓</info> [%s] Uploadé → %s', $nom, $path($item)));
-                $success++;
+                ++$success;
             } else {
                 $io->text(sprintf('<comment>✗</comment> [%s] Échec, conservé en local.', $nom));
-                $failure++;
+                ++$failure;
             }
         }
 
         $io->newLine();
         $io->definitionList(
-            ['Uploadés'       => $success],
-            ['Échecs'         => $failure],
+            ['Uploadés' => $success],
+            ['Échecs' => $failure],
             ['Fichier absent' => $missing],
         );
 

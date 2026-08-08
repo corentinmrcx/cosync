@@ -3,7 +3,6 @@
 namespace App\Tests\Service\Document;
 
 use App\Entity\Dirigeant;
-use App\Entity\DocumentSignable;
 use App\Entity\Season;
 use App\Enum\DirigeantRole;
 use App\Service\Document\DocumentRequirementResolver;
@@ -27,16 +26,16 @@ final class DocumentRequirementResolverTest extends KernelTestCase
     protected function setUp(): void
     {
         self::bootKernel();
-        $this->em       = self::getContainer()->get(EntityManagerInterface::class);
+        $this->em = self::getContainer()->get(EntityManagerInterface::class);
         $this->fixtures = new DocumentFixtures($this->em);
         $this->resolver = self::getContainer()->get(DocumentRequirementResolver::class);
     }
 
     public function testUnDocumentSansCiblageEstDemandeATousLesDirigeants(): void
     {
-        $season      = $this->season();
+        $season = $this->season();
         $responsable = $this->dirigeant($season, 'DUPONT', DirigeantRole::RESPONSABLE_FOOT);
-        $benevole    = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
+        $benevole = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
 
         $this->fixtures->documentDirigeant($season);
         $this->em->flush();
@@ -47,9 +46,9 @@ final class DocumentRequirementResolverTest extends KernelTestCase
 
     public function testUnDocumentCibleParRoleNeVaQuAuxPorteursDeCeRole(): void
     {
-        $season      = $this->season();
+        $season = $this->season();
         $responsable = $this->dirigeant($season, 'DUPONT', DirigeantRole::RESPONSABLE_EQUIPE);
-        $benevole    = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
+        $benevole = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
 
         $this->fixtures->documentDirigeant($season, roles: [DirigeantRole::RESPONSABLE_EQUIPE]);
         $this->em->flush();
@@ -61,8 +60,8 @@ final class DocumentRequirementResolverTest extends KernelTestCase
     public function testUnDocumentCibleNommementNeVaQuALaPersonneDesignee(): void
     {
         $season = $this->season();
-        $marie  = $this->dirigeant($season, 'DUPONT', DirigeantRole::DIRIGEANT);
-        $kevin  = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
+        $marie = $this->dirigeant($season, 'DUPONT', DirigeantRole::DIRIGEANT);
+        $kevin = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
 
         $this->fixtures->documentDirigeant($season, code: 'charte_communication', dirigeants: [$marie]);
         $this->em->flush();
@@ -73,10 +72,10 @@ final class DocumentRequirementResolverTest extends KernelTestCase
 
     public function testRoleEtDesignationSAdditionnent(): void
     {
-        $season      = $this->season();
+        $season = $this->season();
         $responsable = $this->dirigeant($season, 'DUPONT', DirigeantRole::RESPONSABLE_EQUIPE);
-        $marie       = $this->dirigeant($season, 'LAGRANGE', DirigeantRole::DIRIGEANT);
-        $kevin       = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
+        $marie = $this->dirigeant($season, 'LAGRANGE', DirigeantRole::DIRIGEANT);
+        $kevin = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
 
         $this->fixtures->documentDirigeant(
             $season,
@@ -92,7 +91,7 @@ final class DocumentRequirementResolverTest extends KernelTestCase
 
     public function testUnDocumentInactifNEstDemandeAPersonne(): void
     {
-        $season    = $this->season();
+        $season = $this->season();
         $dirigeant = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
 
         $this->fixtures->documentDirigeant($season, actif: false);
@@ -103,9 +102,9 @@ final class DocumentRequirementResolverTest extends KernelTestCase
 
     public function testUnDocumentDUneAutreSaisonNEstPasDemande(): void
     {
-        $saisonCourante   = $this->season('2025-2026');
+        $saisonCourante = $this->season('2025-2026');
         $saisonPrecedente = $this->season('2024-2025');
-        $dirigeant        = $this->dirigeant($saisonCourante, 'MARTIN', DirigeantRole::DIRIGEANT);
+        $dirigeant = $this->dirigeant($saisonCourante, 'MARTIN', DirigeantRole::DIRIGEANT);
 
         $this->fixtures->documentDirigeant($saisonPrecedente);
         $this->em->flush();
@@ -115,7 +114,7 @@ final class DocumentRequirementResolverTest extends KernelTestCase
 
     public function testUnDocumentSigneDisparaitDesManquantsMaisResteAttendu(): void
     {
-        $season    = $this->season();
+        $season = $this->season();
         $dirigeant = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
 
         $document = $this->fixtures->documentDirigeant($season);
@@ -133,8 +132,8 @@ final class DocumentRequirementResolverTest extends KernelTestCase
     public function testLesDirigeantsEnAttenteExcluentCeuxQuiOntSigne(): void
     {
         $season = $this->season();
-        $marie  = $this->dirigeant($season, 'DUPONT', DirigeantRole::DIRIGEANT);
-        $kevin  = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
+        $marie = $this->dirigeant($season, 'DUPONT', DirigeantRole::DIRIGEANT);
+        $kevin = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
 
         $document = $this->fixtures->documentDirigeant($season);
         $this->em->flush();
@@ -152,7 +151,7 @@ final class DocumentRequirementResolverTest extends KernelTestCase
 
     public function testUnDocumentLicencieNEstPasDemandeAuxDirigeants(): void
     {
-        $season    = $this->season();
+        $season = $this->season();
         $dirigeant = $this->dirigeant($season, 'MARTIN', DirigeantRole::DIRIGEANT);
 
         $this->fixtures->documentLicencie($season);

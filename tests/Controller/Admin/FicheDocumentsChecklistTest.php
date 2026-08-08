@@ -29,9 +29,9 @@ final class FicheDocumentsChecklistTest extends WebTestCase
         $this->loginAdmin($client);
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $fixtures  = new DocumentFixtures($em);
+        $fixtures = new DocumentFixtures($em);
         $reglement = $fixtures->documentDirigeant($this->season);
-        $charte    = $fixtures->documentDirigeant(
+        $charte = $fixtures->documentDirigeant(
             $this->season,
             code: 'charte_communication',
             titre: 'Charte communication',
@@ -55,7 +55,6 @@ final class FicheDocumentsChecklistTest extends WebTestCase
         self::assertStringContainsString('Archivé sur Drive', $html);
         self::assertStringContainsString('Charte communication', $html);
         self::assertStringContainsString('En attente', $html, 'La charte non signée reste en attente.');
-        self::assertNotNull($charte->getId());
     }
 
     public function testLaFicheDirigeantSignaleUnUploadDriveEnAttente(): void
@@ -64,7 +63,7 @@ final class FicheDocumentsChecklistTest extends WebTestCase
         $this->loginAdmin($client);
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $fixtures  = new DocumentFixtures($em);
+        $fixtures = new DocumentFixtures($em);
         $reglement = $fixtures->documentDirigeant($this->season);
 
         $dirigeant = (new Dirigeant())
@@ -89,7 +88,7 @@ final class FicheDocumentsChecklistTest extends WebTestCase
         $this->loginAdmin($client);
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $fixtures  = new DocumentFixtures($em);
+        $fixtures = new DocumentFixtures($em);
         $reglement = $fixtures->documentLicencie($this->season);
 
         $category = (new Category())->setCode('SENIOR')->setLabel('Séniors')->setIsEcoleFoot(false);
@@ -140,7 +139,7 @@ final class FicheDocumentsChecklistTest extends WebTestCase
 
     private function loginAdmin(KernelBrowser $client): void
     {
-        $em   = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $user = (new User())->setEmail('admin-fiches@example.com')->setPassword('x');
 
         $this->season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);

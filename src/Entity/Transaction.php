@@ -66,6 +66,7 @@ class Transaction
     public function setLicencie(Licencie $licencie): static
     {
         $this->licencie = $licencie;
+
         return $this;
     }
 
@@ -77,6 +78,7 @@ class Transaction
     public function setMontant(string $montant): static
     {
         $this->montant = $montant;
+
         return $this;
     }
 
@@ -88,6 +90,7 @@ class Transaction
     public function setMode(PaymentMode $mode): static
     {
         $this->mode = $mode;
+
         return $this;
     }
 
@@ -99,6 +102,7 @@ class Transaction
     public function setReference(?string $reference): static
     {
         $this->reference = $reference;
+
         return $this;
     }
 
@@ -110,6 +114,7 @@ class Transaction
     public function setNote(?string $note): static
     {
         $this->note = $note;
+
         return $this;
     }
 
@@ -121,6 +126,7 @@ class Transaction
     public function setExternalPaymentId(?string $externalPaymentId): static
     {
         $this->externalPaymentId = $externalPaymentId;
+
         return $this;
     }
 
@@ -132,6 +138,7 @@ class Transaction
     public function setDatePaiement(\DateTimeImmutable $datePaiement): static
     {
         $this->datePaiement = $datePaiement;
+
         return $this;
     }
 
@@ -143,6 +150,7 @@ class Transaction
     public function setConfirmedBy(?User $confirmedBy): static
     {
         $this->confirmedBy = $confirmedBy;
+
         return $this;
     }
 
@@ -154,6 +162,7 @@ class Transaction
     public function setSeason(Season $season): static
     {
         $this->season = $season;
+
         return $this;
     }
 }

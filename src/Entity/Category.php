@@ -43,6 +43,7 @@ class Category
     public function setCode(string $code): static
     {
         $this->code = $code;
+
         return $this;
     }
 
@@ -54,6 +55,7 @@ class Category
     public function setLabel(string $label): static
     {
         $this->label = $label;
+
         return $this;
     }
 
@@ -71,6 +73,7 @@ class Category
     public function setIsEcoleFoot(bool $isEcoleFoot): static
     {
         $this->isEcoleFoot = $isEcoleFoot;
+
         return $this;
     }
 
@@ -82,6 +85,7 @@ class Category
     public function setMinYear(?int $minYear): static
     {
         $this->minYear = $minYear;
+
         return $this;
     }
 
@@ -93,6 +97,7 @@ class Category
     public function setMaxYear(?int $maxYear): static
     {
         $this->maxYear = $maxYear;
+
         return $this;
     }
 }

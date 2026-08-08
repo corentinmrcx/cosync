@@ -209,9 +209,11 @@
 .document-preview-content h2,
 .document-preview-content h3 { font-weight: 700; color: var(--color-text-base); margin-top: 0.875rem; margin-bottom: 0.25rem; }
 .document-preview-content h1 { font-size: var(--font-size-base); }
+
 .document-preview-content h2,
 .document-preview-content h3 { font-size: var(--font-size-sm); }
 .document-preview-content p  { margin-bottom: 0.5rem; }
+
 .document-preview-content ul,
 .document-preview-content ol { padding-left: 1.25rem; margin-bottom: 0.5rem; }
 

@@ -46,11 +46,11 @@ class DirigeantController extends AbstractController
         }
 
         return $this->render('public/dirigeant/form.html.twig', [
-            'dirigeant'     => $dirigeant,
-            'needTaille'    => $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null,
-            'needPhoto'     => $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null,
+            'dirigeant' => $dirigeant,
+            'needTaille' => $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null,
+            'needPhoto' => $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null,
             'needTransport' => $dirigeant->getVolontaireTransport() === null,
-            'documents'     => $this->documentResolver->manquantsPourDirigeant($dirigeant),
+            'documents' => $this->documentResolver->manquantsPourDirigeant($dirigeant),
         ]);
     }
 
@@ -69,6 +69,7 @@ class DirigeantController extends AbstractController
 
         if (!$this->isCsrfTokenValid('dirigeant_submit', $request->request->get('_token'))) {
             $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+
             return $this->redirectToRoute('public_dirigeant_show', ['uuid' => $uuid]);
         }
 
@@ -76,6 +77,7 @@ class DirigeantController extends AbstractController
 
         if ($data === null) {
             $this->addFlash('error', 'Formulaire incomplet, veuillez remplir tous les champs.');
+
             return $this->redirectToRoute('public_dirigeant_show', ['uuid' => $uuid]);
         }
 
@@ -101,18 +103,18 @@ class DirigeantController extends AbstractController
     private function buildFormData(Request $request, Dirigeant $dirigeant): ?DirigeantPublicFormData
     {
         // Flags recalculés côté serveur (jamais à partir du client)
-        $needTaille    = $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null;
-        $needPhoto     = $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null;
+        $needTaille = $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null;
+        $needPhoto = $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null;
         $needTransport = $dirigeant->getVolontaireTransport() === null;
 
         $tailleHaut = null;
-        $tailleBas  = null;
-        $pointure   = null;
+        $tailleBas = null;
+        $pointure = null;
 
         if ($needTaille) {
             $tailleHaut = $request->request->get('taille_haut', '');
-            $tailleBas  = $request->request->get('taille_bas', '');
-            $pointure   = $request->request->get('pointure', '');
+            $tailleBas = $request->request->get('taille_bas', '');
+            $pointure = $request->request->get('pointure', '');
 
             if ($tailleHaut === '' || $tailleBas === '' || $pointure === '') {
                 return null;
@@ -133,7 +135,7 @@ class DirigeantController extends AbstractController
         // Sinon on conserve la valeur existante (cas d'une simple complétion,
         // ex. l'ajout d'une charte sur un dossier déjà rempli).
         $volontaireTransport = $dirigeant->getVolontaireTransport() ?? false;
-        $attestationData     = null;
+        $attestationData = null;
 
         if ($needTransport) {
             $volRaw = $request->request->get('volontaire_transport');
@@ -157,13 +159,13 @@ class DirigeantController extends AbstractController
         }
 
         return new DirigeantPublicFormData(
-            tailleHaut:          $tailleHaut,
-            tailleBas:           $tailleBas,
-            pointure:            $pointure,
-            autorisationPhoto:   $autorisationPhoto,
+            tailleHaut: $tailleHaut,
+            tailleBas: $tailleBas,
+            pointure: $pointure,
+            autorisationPhoto: $autorisationPhoto,
             volontaireTransport: $volontaireTransport,
             attestationTransport: $attestationData,
-            documentSignatures:  $documentSignatures,
+            documentSignatures: $documentSignatures,
         );
     }
 
@@ -178,7 +180,7 @@ class DirigeantController extends AbstractController
     {
         // Lecture défensive : une valeur scalaire doit être rejetée comme signature
         // manquante, pas provoquer une réponse 400 incompréhensible pour le signataire.
-        $brut     = $request->request->all()['signature_data'] ?? null;
+        $brut = $request->request->all()['signature_data'] ?? null;
         $soumises = is_array($brut) ? $brut : [];
         $retenues = [];
 

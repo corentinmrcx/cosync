@@ -49,7 +49,7 @@ class DirigeantController extends AbstractController
             return $this->redirectToRoute('admin_dirigeants_list', $restored);
         }
 
-        $search      = trim((string) $request->query->get('search', ''));
+        $search = trim((string) $request->query->get('search', ''));
         $currentTeam = null;
         $currentRole = null;
 
@@ -63,31 +63,31 @@ class DirigeantController extends AbstractController
 
         $filterGroups = [
             [
-                'name'     => 'team',
-                'label'    => 'Équipe',
+                'name' => 'team',
+                'label' => 'Équipe',
                 'allLabel' => 'Toutes',
-                'options'  => array_map(fn(Team $t) => ['value' => $t->getId(), 'label' => $t->getName()], $teamRepo->findBySeason($season)),
-                'current'  => $currentTeam?->getId(),
+                'options' => array_map(fn (Team $t) => ['value' => $t->getId(), 'label' => $t->getName()], $teamRepo->findBySeason($season)),
+                'current' => $currentTeam?->getId(),
             ],
             [
-                'name'     => 'role',
-                'label'    => 'Rôle',
+                'name' => 'role',
+                'label' => 'Rôle',
                 'allLabel' => 'Tous',
-                'options'  => DirigeantRole::options(),
-                'current'  => $currentRole?->value,
+                'options' => DirigeantRole::options(),
+                'current' => $currentRole?->value,
             ],
         ];
 
         return $this->render('admin/dirigeants/list.html.twig', [
-            'dirigeants'        => $dirigeantRepo->findBySeasonWithFilters(
+            'dirigeants' => $dirigeantRepo->findBySeasonWithFilters(
                 $season,
                 $search ?: null,
                 $currentTeam?->getId(),
                 $currentRole,
             ),
-            'season'            => $season,
-            'search'            => $search,
-            'filterGroups'      => $filterGroups,
+            'season' => $season,
+            'search' => $search,
+            'filterGroups' => $filterGroups,
             'activeFilterCount' => ($currentTeam ? 1 : 0) + ($currentRole ? 1 : 0),
         ]);
     }
@@ -115,6 +115,7 @@ class DirigeantController extends AbstractController
                     ? $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant. Lien envoyé par email.'
                     : $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant (aucune adresse email renseignée).';
                 $this->addFlash('success', $message);
+
                 return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
             } catch (\DomainException $e) {
                 $this->addFlash('error', $e->getMessage());
@@ -122,9 +123,9 @@ class DirigeantController extends AbstractController
         }
 
         return $this->render('admin/dirigeants/form.html.twig', [
-            'form'           => $form,
-            'dirigeant'      => null,
-            'roleOptions'    => DirigeantRole::options(),
+            'form' => $form,
+            'dirigeant' => null,
+            'roleOptions' => DirigeantRole::options(),
             'licenciesSizes' => $this->buildLicenciesSizes($licencieRepo, $season),
         ]);
     }
@@ -142,34 +143,34 @@ class DirigeantController extends AbstractController
         }
 
         $history = [[
-            'date'  => $dirigeant->getImportedAt(),
+            'date' => $dirigeant->getImportedAt(),
             'label' => $dirigeant->isCreatedManually()
                 ? 'Dirigeant créé manuellement'
                 : 'Dirigeant importé depuis FootClubs',
-            'who'   => 'Admin',
+            'who' => 'Admin',
         ]];
 
         if ($dirigeant->getFormTokenExpiresAt() !== null) {
             $history[] = [
-                'date'  => $dirigeant->getFormTokenExpiresAt()->modify('-30 days'),
+                'date' => $dirigeant->getFormTokenExpiresAt()->modify('-30 days'),
                 'label' => 'Lien de formulaire envoyé par email',
-                'who'   => 'Système',
+                'who' => 'Système',
             ];
         }
 
         if ($dirigeant->getFormCompletedAt() !== null) {
             $history[] = [
-                'date'  => $dirigeant->getFormCompletedAt(),
+                'date' => $dirigeant->getFormCompletedAt(),
                 'label' => 'Formulaire équipement complété',
-                'who'   => $dirigeant->getNomPrenom(),
+                'who' => $dirigeant->getNomPrenom(),
             ];
         }
 
         if ($dirigeant->getAttestationCleSignedAt() !== null) {
             $history[] = [
-                'date'  => $dirigeant->getAttestationCleSignedAt(),
+                'date' => $dirigeant->getAttestationCleSignedAt(),
                 'label' => 'Attestation de remise de clés signée',
-                'who'   => $dirigeant->getNomPrenom(),
+                'who' => $dirigeant->getNomPrenom(),
             ];
         }
 
@@ -177,22 +178,22 @@ class DirigeantController extends AbstractController
 
         foreach ($signatures as $signature) {
             $history[] = [
-                'date'  => $signature->getSignedAt(),
+                'date' => $signature->getSignedAt(),
                 'label' => $signature->getDocument()->getTitre() . ' signé',
-                'who'   => $dirigeant->getNomPrenom(),
+                'who' => $dirigeant->getNomPrenom(),
             ];
         }
 
-        usort($history, fn(array $a, array $b) => $a['date'] <=> $b['date']);
+        usort($history, fn (array $a, array $b) => $a['date'] <=> $b['date']);
 
         return $this->render('admin/dirigeants/show.html.twig', [
-            'dirigeant'  => $dirigeant,
-            'dotations'  => $stockMovementRepo->findDotationsByDirigeant($dirigeant),
-            'history'    => $history,
-            'nbCles'     => $registre->getSolde($dirigeant),
+            'dirigeant' => $dirigeant,
+            'dotations' => $stockMovementRepo->findDotationsByDirigeant($dirigeant),
+            'history' => $history,
+            'nbCles' => $registre->getSolde($dirigeant),
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande à ce dirigeant.
-            'documents'  => $this->documentResolver->attendusPourDirigeant($dirigeant),
+            'documents' => $this->documentResolver->attendusPourDirigeant($dirigeant),
             'signatures' => $signatures,
             'dossierComplet' => $this->dossierCompletion->isComplete($dirigeant),
         ]);
@@ -212,6 +213,7 @@ class DirigeantController extends AbstractController
 
         if (!$this->isCsrfTokenValid('dirigeant_send_link_' . $uuid, $request->request->get('_token'))) {
             $this->addFlash('error', 'Requête invalide.');
+
             return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $uuid]);
         }
 
@@ -245,18 +247,18 @@ class DirigeantController extends AbstractController
         }
 
         $data = new DirigeantData();
-        $data->nom           = $dirigeant->getNom();
-        $data->prenom        = $dirigeant->getPrenom();
-        $data->email         = $dirigeant->getEmail();
-        $data->telephone     = $dirigeant->getTelephone();
+        $data->nom = $dirigeant->getNom();
+        $data->prenom = $dirigeant->getPrenom();
+        $data->email = $dirigeant->getEmail();
+        $data->telephone = $dirigeant->getTelephone();
         $data->dateNaissance = $dirigeant->getDateNaissance();
-        $data->role          = $dirigeant->getRole();
-        $data->tailleHaut    = $dirigeant->getTailleHaut();
-        $data->tailleBas     = $dirigeant->getTailleBas();
-        $data->pointure      = $dirigeant->getPointure();
-        $data->team          = $dirigeant->getTeam();
-        $data->numLicence    = $dirigeant->getNumLicence();
-        $data->licencie      = $dirigeant->getLicencie();
+        $data->role = $dirigeant->getRole();
+        $data->tailleHaut = $dirigeant->getTailleHaut();
+        $data->tailleBas = $dirigeant->getTailleBas();
+        $data->pointure = $dirigeant->getPointure();
+        $data->team = $dirigeant->getTeam();
+        $data->numLicence = $dirigeant->getNumLicence();
+        $data->licencie = $dirigeant->getLicencie();
 
         $form = $this->createForm(DirigeantType::class, $data, ['season' => $season]);
         $form->handleRequest($request);
@@ -265,6 +267,7 @@ class DirigeantController extends AbstractController
             try {
                 $dirigeantService->edit($dirigeant, $data);
                 $this->addFlash('success', 'Dossier de ' . $dirigeant->getNomPrenom() . ' mis à jour.');
+
                 return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
             } catch (\DomainException $e) {
                 $this->addFlash('error', $e->getMessage());
@@ -272,9 +275,9 @@ class DirigeantController extends AbstractController
         }
 
         return $this->render('admin/dirigeants/form.html.twig', [
-            'form'           => $form,
-            'dirigeant'      => $dirigeant,
-            'roleOptions'    => DirigeantRole::options(),
+            'form' => $form,
+            'dirigeant' => $dirigeant,
+            'roleOptions' => DirigeantRole::options(),
             'licenciesSizes' => $this->buildLicenciesSizes($licencieRepo, $season),
         ]);
     }
@@ -285,17 +288,18 @@ class DirigeantController extends AbstractController
         foreach ($licencieRepo->findBySeason($season) as $licencie) {
             $dossier = $licencie->getDossierClub();
             $map[(string) $licencie->getUuid()] = [
-                'nom'          => $licencie->getNom(),
-                'prenom'       => $licencie->getPrenom(),
-                'email'        => $licencie->getEmail(),
-                'telephone'    => $licencie->getTelephone(),
+                'nom' => $licencie->getNom(),
+                'prenom' => $licencie->getPrenom(),
+                'email' => $licencie->getEmail(),
+                'telephone' => $licencie->getTelephone(),
                 'dateNaissance' => $licencie->getDateNaissance()->format('Y-m-d'),
-                'numLicence'   => $licencie->getNumLicence(),
-                'tailleHaut'   => $dossier?->getTailleHaut(),
-                'tailleBas'    => $dossier?->getTailleBas(),
-                'pointure'     => $dossier?->getPointure(),
+                'numLicence' => $licencie->getNumLicence(),
+                'tailleHaut' => $dossier?->getTailleHaut(),
+                'tailleBas' => $dossier?->getTailleBas(),
+                'pointure' => $dossier?->getPointure(),
             ];
         }
+
         return json_encode($map, JSON_THROW_ON_ERROR);
     }
 }

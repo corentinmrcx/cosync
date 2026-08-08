@@ -33,10 +33,10 @@ final class DirigeantFormControllerTest extends WebTestCase
         $token = $crawler->filter('input[name="_token"]')->attr('value');
 
         $client->request('POST', '/dirigeant/' . $uuid, [
-            '_token'      => $token,
+            '_token' => $token,
             'taille_haut' => 'L',
-            'taille_bas'  => 'M',
-            'pointure'    => '42',
+            'taille_bas' => 'M',
+            'pointure' => '42',
         ]);
 
         // Ne doit PAS repartir sur le formulaire avec l'erreur « Formulaire incomplet ».
@@ -73,12 +73,12 @@ final class DirigeantFormControllerTest extends WebTestCase
         $client = static::createClient();
         $uuid = $this->createDirigeant(withTaille: true, reglementDejaSigne: false);
 
-        $crawler  = $client->request('GET', '/dirigeant/' . $uuid);
-        $token    = $crawler->filter('input[name="_token"]')->attr('value');
+        $crawler = $client->request('GET', '/dirigeant/' . $uuid);
+        $token = $crawler->filter('input[name="_token"]')->attr('value');
         $document = $this->documentId();
 
         $client->request('POST', '/dirigeant/' . $uuid, [
-            '_token'         => $token,
+            '_token' => $token,
             'signature_data' => [$document => 'pas-une-image'],
         ]);
 
@@ -91,17 +91,17 @@ final class DirigeantFormControllerTest extends WebTestCase
         $client = static::createClient();
         $uuid = $this->createDirigeant(withTaille: true, reglementDejaSigne: false);
 
-        $crawler  = $client->request('GET', '/dirigeant/' . $uuid);
-        $token    = $crawler->filter('input[name="_token"]')->attr('value');
+        $crawler = $client->request('GET', '/dirigeant/' . $uuid);
+        $token = $crawler->filter('input[name="_token"]')->attr('value');
         $document = $this->documentId();
 
         // Le client ajoute un id fantaisiste : il doit être ignoré, et seul le
         // document réellement attendu est enregistré.
         $client->request('POST', '/dirigeant/' . $uuid, [
-            '_token'         => $token,
+            '_token' => $token,
             'signature_data' => [
                 $document => self::SIGNATURE,
-                999999    => self::SIGNATURE,
+                999999 => self::SIGNATURE,
             ],
         ]);
 
@@ -133,7 +133,7 @@ final class DirigeantFormControllerTest extends WebTestCase
 
     private function createDirigeant(bool $withTaille, bool $reglementDejaSigne): string
     {
-        $em       = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $fixtures = new DocumentFixtures($em);
 
         $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);

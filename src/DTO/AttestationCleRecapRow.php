@@ -27,7 +27,7 @@ final class AttestationCleRecapRow
         return match (true) {
             !$this->isSigned() => 'Non',
             $this->aRenouveler => 'À renouveler',
-            default            => 'Oui',
+            default => 'Oui',
         };
     }
 
@@ -36,7 +36,7 @@ final class AttestationCleRecapRow
         return match (true) {
             !$this->isSigned() => 'non',
             $this->aRenouveler => 'renouveler',
-            default            => 'oui',
+            default => 'oui',
         };
     }
 }

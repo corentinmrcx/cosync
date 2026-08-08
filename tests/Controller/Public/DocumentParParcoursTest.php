@@ -25,7 +25,7 @@ final class DocumentParParcoursTest extends WebTestCase
     public function testLeParcoursDirigeantAfficheLeReglementDesDirigeants(): void
     {
         $client = static::createClient();
-        $uuid   = $this->createDirigeant();
+        $uuid = $this->createDirigeant();
 
         $client->request('GET', '/dirigeant/' . $uuid);
         $html = (string) $client->getResponse()->getContent();
@@ -39,7 +39,7 @@ final class DocumentParParcoursTest extends WebTestCase
     public function testLeParcoursLicencieAfficheToujoursLeReglementDesJoueurs(): void
     {
         $client = static::createClient();
-        $uuid   = $this->createLicencie();
+        $uuid = $this->createLicencie();
 
         $client->request('GET', '/inscription/' . $uuid);
         $html = (string) $client->getResponse()->getContent();
@@ -52,7 +52,7 @@ final class DocumentParParcoursTest extends WebTestCase
     public function testUnDocumentNonRedigeInviteAContacterLeClub(): void
     {
         $client = static::createClient();
-        $uuid   = $this->createDirigeant(texteDirigeant: null);
+        $uuid = $this->createDirigeant(texteDirigeant: null);
 
         $client->request('GET', '/dirigeant/' . $uuid);
         $html = (string) $client->getResponse()->getContent();
@@ -66,12 +66,12 @@ final class DocumentParParcoursTest extends WebTestCase
     public function testUnDocumentCibleNEstDemandeQuAuxPersonnesDesignees(): void
     {
         $client = static::createClient();
-        $em     = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $fixtures = new DocumentFixtures($em);
 
         $season = $this->makeSeason();
         $charge = $this->makeDirigeant($season, 'DUPONT', 'Marie');
-        $autre  = $this->makeDirigeant($season, 'MARTIN', 'Kevin');
+        $autre = $this->makeDirigeant($season, 'MARTIN', 'Kevin');
 
         $fixtures->documentDirigeant($season, contenuHtml: self::TEXTE_DIRIGEANTS);
 
@@ -92,7 +92,7 @@ final class DocumentParParcoursTest extends WebTestCase
         $em->flush();
 
         $uuidCharge = (string) $charge->getUuid();
-        $uuidAutre  = (string) $autre->getUuid();
+        $uuidAutre = (string) $autre->getUuid();
         $em->clear();
 
         $client->request('GET', '/dirigeant/' . $uuidCharge);
@@ -117,7 +117,7 @@ final class DocumentParParcoursTest extends WebTestCase
     public function testLeBootstrapAlpineDuParcoursDirigeantEstUnAttributValide(): void
     {
         $client = static::createClient();
-        $uuid   = $this->createDirigeant();
+        $uuid = $this->createDirigeant();
 
         $crawler = $client->request('GET', '/dirigeant/' . $uuid);
 
@@ -127,7 +127,7 @@ final class DocumentParParcoursTest extends WebTestCase
     public function testLeBootstrapAlpineDuParcoursLicencieEstUnAttributValide(): void
     {
         $client = static::createClient();
-        $uuid   = $this->createLicencie();
+        $uuid = $this->createLicencie();
 
         $crawler = $client->request('GET', '/inscription/' . $uuid);
 
@@ -157,12 +157,12 @@ final class DocumentParParcoursTest extends WebTestCase
     public function testUnDocumentCibleParRoleSuitLeRoleDuDirigeant(): void
     {
         $client = static::createClient();
-        $em     = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $fixtures = new DocumentFixtures($em);
 
-        $season      = $this->makeSeason();
+        $season = $this->makeSeason();
         $responsable = $this->makeDirigeant($season, 'DUPONT', 'Marie', DirigeantRole::RESPONSABLE_FOOT);
-        $benevole    = $this->makeDirigeant($season, 'MARTIN', 'Kevin', DirigeantRole::DIRIGEANT);
+        $benevole = $this->makeDirigeant($season, 'MARTIN', 'Kevin', DirigeantRole::DIRIGEANT);
 
         $fixtures->documentDirigeant(
             $season,
@@ -178,7 +178,7 @@ final class DocumentParParcoursTest extends WebTestCase
         $em->flush();
 
         $uuidResponsable = (string) $responsable->getUuid();
-        $uuidBenevole    = (string) $benevole->getUuid();
+        $uuidBenevole = (string) $benevole->getUuid();
         $em->clear();
 
         $client->request('GET', '/dirigeant/' . $uuidResponsable);
@@ -191,10 +191,10 @@ final class DocumentParParcoursTest extends WebTestCase
     public function testUnDocumentDesactiveNEstPlusDemande(): void
     {
         $client = static::createClient();
-        $em     = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $fixtures = new DocumentFixtures($em);
 
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season, 'MARTIN', 'Kevin');
 
         $fixtures->documentDirigeant($season, contenuHtml: self::TEXTE_DIRIGEANTS, actif: false);
@@ -213,9 +213,9 @@ final class DocumentParParcoursTest extends WebTestCase
 
     private function createDirigeant(?string $texteDirigeant = self::TEXTE_DIRIGEANTS): string
     {
-        $em       = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $fixtures = new DocumentFixtures($em);
-        $season   = $this->makeSeason();
+        $season = $this->makeSeason();
 
         $dirigeant = $this->makeDirigeant($season, 'MARTIN', 'Kevin');
 
@@ -234,9 +234,9 @@ final class DocumentParParcoursTest extends WebTestCase
 
     private function createLicencie(): string
     {
-        $em       = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $fixtures = new DocumentFixtures($em);
-        $season   = $this->makeSeason();
+        $season = $this->makeSeason();
         $category = (new Category())->setCode('SENIOR')->setLabel('Séniors')->setIsEcoleFoot(false);
 
         $licencie = (new Licencie())

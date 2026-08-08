@@ -26,10 +26,10 @@ class ConfigController extends AbstractController
 
         if ($season === null) {
             return $this->render('admin/config/index.html.twig', [
-                'form'        => null,
-                'season'      => null,
-                'teams'       => [],
-                'categories'  => [],
+                'form' => null,
+                'season' => null,
+                'teams' => [],
+                'categories' => [],
                 'newTeamForm' => null,
             ]);
         }
@@ -48,6 +48,7 @@ class ConfigController extends AbstractController
             $seasonService->update($season);
 
             $this->addFlash('success', sprintf('Saison "%s" mise à jour.', $season->getLabel()));
+
             return $this->redirectToRoute('admin_config_index');
         }
 
@@ -56,11 +57,11 @@ class ConfigController extends AbstractController
         ]);
 
         return $this->render('admin/config/index.html.twig', [
-            'form'        => $form,
-            'season'      => $season,
-            'teams'       => $teamRepo->findBySeason($season),
+            'form' => $form,
+            'season' => $season,
+            'teams' => $teamRepo->findBySeason($season),
             'newTeamForm' => $newTeamForm,
-            'categories'  => $categoryRepo->findBy([], ['minYear' => 'ASC']),
+            'categories' => $categoryRepo->findBy([], ['minYear' => 'ASC']),
         ]);
     }
 
@@ -99,16 +100,18 @@ class ConfigController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('edit_team_' . $team->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_config_index');
         }
 
-        $teamData    = $request->request->all('team');
-        $name        = trim($teamData['name'] ?? '');
+        $teamData = $request->request->all('team');
+        $name = trim($teamData['name'] ?? '');
         $categoryIds = $teamData['categories'] ?? [];
-        $cotisation  = trim((string) ($teamData['cotisation'] ?? ''));
+        $cotisation = trim((string) ($teamData['cotisation'] ?? ''));
 
         if ($name === '') {
             $this->addFlash('error', 'Le nom ne peut pas être vide.');
+
             return $this->redirectToRoute('admin_config_index');
         }
 
@@ -134,6 +137,7 @@ class ConfigController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('delete_team_' . $team->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_config_index');
         }
 

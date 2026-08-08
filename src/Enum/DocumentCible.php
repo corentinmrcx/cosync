@@ -17,7 +17,7 @@ enum DocumentCible: string
     public function label(): string
     {
         return match ($this) {
-            self::LICENCIE  => 'Licenciés',
+            self::LICENCIE => 'Licenciés',
             self::DIRIGEANT => 'Dirigeants',
         };
     }

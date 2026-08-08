@@ -69,7 +69,7 @@
 }
 
 .licencies-row:hover {
-    background: #fff8f8;
+    background: var(--color-row-hover);
 }
 
 .licencies-table td {

@@ -29,6 +29,7 @@ class CategoryController extends AbstractController
             } catch (\RuntimeException $e) {
                 $this->addFlash('error', $e->getMessage());
             }
+
             return $this->redirectToRoute('admin_categories_index');
         }
 
@@ -40,8 +41,8 @@ class CategoryController extends AbstractController
 
         return $this->render('admin/categories/index.html.twig', [
             'categories' => $categories,
-            'counts'     => $counts,
-            'form'       => $form,
+            'counts' => $counts,
+            'form' => $form,
         ]);
     }
 
@@ -50,6 +51,7 @@ class CategoryController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('delete_category_' . $category->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_categories_index');
         }
 

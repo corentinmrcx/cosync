@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Commande;
 use App\Entity\CommandeLigne;
+use App\Entity\User;
 use App\Enum\CommandeStatut;
 use App\Repository\CommandeRepository;
 use App\Service\Pdf\BonCommandePdfService;
@@ -15,6 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/admin/stock/commandes', name: 'admin_stock_commandes_')]
 class CommandeController extends AbstractController
@@ -34,13 +36,14 @@ class CommandeController extends AbstractController
         $season = $this->seasonContext->getCurrentSeason();
         if ($season === null) {
             $this->addFlash('warning', 'Créez une saison avant de gérer les commandes.');
+
             return $this->redirectToRoute('admin_seasons_new');
         }
 
         return $this->render('admin/stock/commandes/index.html.twig', [
-            'season'      => $season,
-            'aCommander'  => $this->achatService->computeACommander($season),
-            'commandes'   => $this->commandeRepository->findBySeason($season),
+            'season' => $season,
+            'aCommander' => $this->achatService->computeACommander($season),
+            'commandes' => $this->commandeRepository->findBySeason($season),
         ]);
     }
 
@@ -53,6 +56,7 @@ class CommandeController extends AbstractController
         }
         if (!$this->isCsrfTokenValid('commande_generer', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_commandes_index');
         }
 
@@ -80,6 +84,7 @@ class CommandeController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('commande_commander_' . $commande->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $commande->getId()]);
         }
 
@@ -97,31 +102,33 @@ class CommandeController extends AbstractController
     }
 
     #[Route('/lignes/{id}/recevoir', name: 'ligne_recevoir', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function ligneRecevoir(CommandeLigne $ligne, Request $request): Response
+    public function ligneRecevoir(CommandeLigne $ligne, Request $request, #[CurrentUser] ?User $user): Response
     {
         $commandeId = $ligne->getCommande()->getId();
         if (!$this->isCsrfTokenValid('commande_ligne_recevoir_' . $ligne->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $commandeId]);
         }
 
         $qty = (int) $request->request->get('quantite', 0);
-        $this->commandeService->recevoirLigne($ligne, $qty, $this->getUser());
+        $this->commandeService->recevoirLigne($ligne, $qty, $user);
         $this->addFlash('success', 'Réception enregistrée.');
 
         return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $commandeId]);
     }
 
     #[Route('/lignes/{id}/annuler-reception', name: 'ligne_annuler_reception', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function ligneAnnulerReception(CommandeLigne $ligne, Request $request): Response
+    public function ligneAnnulerReception(CommandeLigne $ligne, Request $request, #[CurrentUser] ?User $user): Response
     {
         $commandeId = $ligne->getCommande()->getId();
         if (!$this->isCsrfTokenValid('commande_ligne_annuler_' . $ligne->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $commandeId]);
         }
 
-        $this->commandeService->annulerReception($ligne, $this->getUser());
+        $this->commandeService->annulerReception($ligne, $user);
         $this->addFlash('success', 'Réception annulée, stock recalculé.');
 
         return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $commandeId]);
@@ -133,7 +140,7 @@ class CommandeController extends AbstractController
         $pdf = $this->pdfService->generate($commande);
 
         return new Response($pdf, Response::HTTP_OK, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf('attachment; filename="bon_commande_%d.pdf"', $commande->getId()),
         ]);
     }
@@ -143,12 +150,14 @@ class CommandeController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('commande_delete_' . $commande->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_commandes_index');
         }
 
         // On ne supprime qu'un brouillon (une commande passée a généré des mouvements)
         if ($commande->getStatut() !== CommandeStatut::BROUILLON) {
             $this->addFlash('error', 'Seul un brouillon peut être supprimé.');
+
             return $this->redirectToRoute('admin_stock_commandes_index');
         }
 

@@ -55,7 +55,7 @@ final class DriveUploadTerminateListener
                 }
             } catch (\Throwable $e) {
                 $this->logger->error('Échec archivage du document signé {id} : {message}', [
-                    'id'      => $signatureId,
+                    'id' => $signatureId,
                     'message' => $e->getMessage(),
                 ]);
             }
@@ -70,7 +70,7 @@ final class DriveUploadTerminateListener
                 }
             } catch (\Throwable $e) {
                 $this->logger->error('Échec sync attestation transport du dossier {id} : {message}', [
-                    'id'      => $dossierId,
+                    'id' => $dossierId,
                     'message' => $e->getMessage(),
                 ]);
             }
@@ -85,7 +85,7 @@ final class DriveUploadTerminateListener
                 }
             } catch (\Throwable $e) {
                 $this->logger->error('Échec sync attestation transport du dirigeant {uuid} : {message}', [
-                    'uuid'    => $dirigeantUuid,
+                    'uuid' => $dirigeantUuid,
                     'message' => $e->getMessage(),
                 ]);
             }
@@ -102,7 +102,7 @@ final class DriveUploadTerminateListener
                 }
             } catch (\Throwable $e) {
                 $this->logger->error('Échec sync attestation de remise du dirigeant {uuid} : {message}', [
-                    'uuid'    => $dirigeantUuid,
+                    'uuid' => $dirigeantUuid,
                     'message' => $e->getMessage(),
                 ]);
             }
@@ -117,7 +117,7 @@ final class DriveUploadTerminateListener
                 }
             } catch (\Throwable $e) {
                 $this->logger->error('Échec régénération du récapitulatif des détenteurs (saison {id}) : {message}', [
-                    'id'      => $seasonId,
+                    'id' => $seasonId,
                     'message' => $e->getMessage(),
                 ]);
             }

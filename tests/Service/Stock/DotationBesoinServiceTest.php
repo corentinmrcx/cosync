@@ -26,8 +26,8 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testRecomputeGenereLeBesoinALaBonneTaille(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $modele = $this->makeModele($season);
         $this->addLigne($modele, $item, 1);
         $this->affecterCategorie($season, $modele, $cat);
@@ -46,8 +46,8 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testRecomputeEstIdempotent(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $modele = $this->makeModele($season);
         $this->addLigne($modele, $item, 1);
         $this->affecterCategorie($season, $modele, $cat);
@@ -66,8 +66,8 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testRecomputePreserveUnBesoinDejaDonne(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $modele = $this->makeModele($season);
         $this->addLigne($modele, $item, 1);
         $this->affecterCategorie($season, $modele, $cat);
@@ -91,8 +91,8 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testTailleManuellePreserveeAuRecalcul(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $modele = $this->makeModele($season);
         $this->addLigne($modele, $item, 1);
         $this->affecterCategorie($season, $modele, $cat);
@@ -125,9 +125,9 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testGroupeChoixDonnePuisChangementDeChoixNeDuplique(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $itemA  = $this->makeItem('Veste rouge', StockItemVetementType::HAUT);
-        $itemB  = $this->makeItem('Veste bleue', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $itemA = $this->makeItem('Veste rouge', StockItemVetementType::HAUT);
+        $itemB = $this->makeItem('Veste bleue', StockItemVetementType::HAUT);
         $modele = $this->makeModele($season);
         $this->addLigne($modele, $itemA, 1, 'haut');
         $this->addLigne($modele, $itemB, 1, 'haut');
@@ -157,7 +157,7 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testRemiseCreeUnMouvementEtDecrementeLeStock(): void
     {
         $season = $this->makeSeason();
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $this->makeMovement($item, 2, StockMovementType::ENTREE, 'L'); // stock L = 2
         $besoin = $this->makeBesoin($season, $item, 'L', 1);
         $this->em->flush();
@@ -178,11 +178,11 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testFindBySeasonTriePersonneSansErreurDql(): void
     {
         $season = $this->makeSeason();
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
-        $cat    = $this->makeCategory('SENIOR');
-        $zoe    = $this->makeLicencie($season, $cat, null, 'L');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $zoe = $this->makeLicencie($season, $cat, null, 'L');
         $zoe->setNom('ZULU')->setPrenom('Zoe');
-        $amir   = $this->makeLicencie($season, $cat, null, 'M');
+        $amir = $this->makeLicencie($season, $cat, null, 'M');
         $amir->setNom('ALPHA')->setPrenom('Amir');
         $this->makeBesoin($season, $item, 'L', 1)->setLicencie($zoe);
         $this->makeBesoin($season, $item, 'M', 1)->setLicencie($amir);
@@ -198,9 +198,9 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testGetSuiviGroupesRenvoieLesPersonnesServiesEnFin(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $team   = $this->makeTeam($season, 'Séniors 1');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $team = $this->makeTeam($season, 'Séniors 1');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
 
         // ALPHA : encore à servir. MIKE : entièrement servi. ZULU : encore à servir.
         $alpha = $this->makeLicencie($season, $cat, $team, 'L');
@@ -229,9 +229,9 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testGetSuiviGroupesPersonnePartielleResteEnTete(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $team   = $this->makeTeam($season, 'Séniors 1');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $team = $this->makeTeam($season, 'Séniors 1');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
 
         // Une personne servie entièrement (WHISKEY) et une servie à moitié (BRAVO).
         $bravo = $this->makeLicencie($season, $cat, $team, 'L');
@@ -253,8 +253,8 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testRecalculNeTouchePasAuxBesoinsDUneAutreSaison(): void
     {
         $season = $this->makeSeason('2025-2026');
-        $cat    = $this->makeCategory('SENIOR');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $modele = $this->makeModele($season);
         $this->addLigne($modele, $item, 1);
         $this->affecterCategorie($season, $modele, $cat);
@@ -266,7 +266,7 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         // Un besoin d'une autre saison rattaché à la même personne ne doit jamais entrer
         // dans le périmètre du recalcul — sinon il serait supprimé comme caduc.
         $autreSaison = $this->makeSeason('2024-2025');
-        $etranger    = (new \App\Entity\DotationBesoin())
+        $etranger = (new \App\Entity\DotationBesoin())
             ->setSeason($autreSaison)
             ->setStockItem($this->makeItem('Sweat', StockItemVetementType::HAUT))
             ->setLicencie($licencie)
@@ -286,17 +286,17 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testStatutFicheLicencie(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $itemA  = $this->makeItem('Veste', StockItemVetementType::HAUT);
-        $itemB  = $this->makeItem('Short', StockItemVetementType::BAS);
+        $cat = $this->makeCategory('SENIOR');
+        $itemA = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $itemB = $this->makeItem('Short', StockItemVetementType::BAS);
         $modele = $this->makeModele($season);
         $this->addLigne($modele, $itemA, 1);
         $this->addLigne($modele, $itemB, 1);
         $this->affecterCategorie($season, $modele, $cat);
 
         $autreCat = $this->makeCategory('U11');
-        $sansKit  = $this->makeLicencie($season, $autreCat, null, 'M');
-        $prevu    = $this->makeLicencie($season, $cat, null, 'L');
+        $sansKit = $this->makeLicencie($season, $autreCat, null, 'M');
+        $prevu = $this->makeLicencie($season, $cat, null, 'L');
         $this->em->flush();
 
         // Sans kit applicable → null
@@ -327,7 +327,7 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testChangerTailleApresRemiseAjusteLeStock(): void
     {
         $season = $this->makeSeason();
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $this->makeMovement($item, 2, StockMovementType::ENTREE, 'L'); // stock L = 2
         $this->makeMovement($item, 2, StockMovementType::ENTREE, 'M'); // stock M = 2
         $besoin = $this->makeBesoin($season, $item, 'L', 1);
@@ -353,7 +353,7 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
     public function testAnnulationRemiseRetablitLeStock(): void
     {
         $season = $this->makeSeason();
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $this->makeMovement($item, 2, StockMovementType::ENTREE, 'L');
         $besoin = $this->makeBesoin($season, $item, 'L', 1);
         $this->em->flush();

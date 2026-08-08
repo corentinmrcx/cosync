@@ -63,17 +63,17 @@ final class PdfGeneratorService
         bool $previewMode = false,
     ): string {
         return $this->twig->render('pdf/document_signe.html.twig', [
-            'prenom'           => $prenom,
-            'nom'              => $nom,
-            'season'           => $document->getSeason(),
-            'documentTitle'    => $document->getTitre(),
-            'documentLabel'    => $document->getLibelle(),
-            'reglementHtml'    => $document->getContenuHtml(),
+            'prenom' => $prenom,
+            'nom' => $nom,
+            'season' => $document->getSeason(),
+            'documentTitle' => $document->getTitre(),
+            'documentLabel' => $document->getLibelle(),
+            'reglementHtml' => $document->getContenuHtml(),
             'signatureDataUrl' => $signatureDataUrl,
-            'signedAt'         => new \DateTimeImmutable(),
-            'logoDataUrl'      => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
+            'signedAt' => new \DateTimeImmutable(),
+            'logoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
             'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
-            'previewMode'      => $previewMode,
+            'previewMode' => $previewMode,
         ]);
     }
 

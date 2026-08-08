@@ -35,10 +35,10 @@ final class ConfigCoordonneesBancairesTest extends WebTestCase
         $season = $this->loginAdmin($client);
 
         $crawler = $client->request('GET', '/admin/config');
-        $form    = $crawler->filter('form[name="season"]')->form();
+        $form = $crawler->filter('form[name="season"]')->form();
 
-        $form['season[iban]']            = 'FR76 3000 4000 0300 0000 0000 143';
-        $form['season[bic]']             = 'BNPAFRPPXXX';
+        $form['season[iban]'] = 'FR76 3000 4000 0300 0000 0000 143';
+        $form['season[bic]'] = 'BNPAFRPPXXX';
         $form['season[titulaireCompte]'] = 'Association Test';
 
         $client->submit($form);
@@ -60,7 +60,7 @@ final class ConfigCoordonneesBancairesTest extends WebTestCase
         $season = $this->loginAdmin($client, iban: 'FR76 3000 4000 0300 0000 0000 143');
 
         $crawler = $client->request('GET', '/admin/config');
-        $form    = $crawler->filter('form[name="season"]')->form();
+        $form = $crawler->filter('form[name="season"]')->form();
 
         $form['season[iban]'] = '';
         $client->submit($form);
@@ -86,7 +86,7 @@ final class ConfigCoordonneesBancairesTest extends WebTestCase
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
         $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85)->setIban($iban);
-        $user   = (new User())->setEmail('admin-config@example.test')->setPassword('x');
+        $user = (new User())->setEmail('admin-config@example.test')->setPassword('x');
         $user->setSelectedSeason($season);
 
         $em->persist($season);

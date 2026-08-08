@@ -54,7 +54,7 @@
 .inscription-progress-segment {
     flex: 1;
     height: 4px;
-    border-radius: 99px;
+    border-radius: var(--radius-pill);
     background: rgba(255, 255, 255, 0.3);
     transition: background 0.3s;
 }
@@ -320,7 +320,7 @@
     text-align: center;
     text-transform: uppercase;
     color: var(--color-text-base);
-    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .inscription-flocage-check {
@@ -760,7 +760,7 @@
 
 /* — Page de confirmation — */
 .inscription-confirm-icon {
-    font-size: 3rem;
+    font-size: var(--font-size-4xl);
     text-align: center;
     margin-bottom: 1rem;
 }
@@ -818,7 +818,7 @@
 
 /* — Page expirée — */
 .inscription-expired-icon {
-    font-size: 2.5rem;
+    font-size: var(--font-size-3xl);
     text-align: center;
     margin-bottom: 1rem;
 }

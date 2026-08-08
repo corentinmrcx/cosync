@@ -34,7 +34,8 @@
         "allow-plugins": {
             "php-http/discovery": true,
             "symfony/flex": true,
-            "symfony/runtime": true
+            "symfony/runtime": true,
+            "phpstan/extension-installer": true
         },
         "bump-after-update": true,
         "sort-packages": true
@@ -69,7 +70,10 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
-        ]
+        ],
+        "stan": "phpstan analyse --no-progress",
+        "cs": "php-cs-fixer fix --dry-run --diff --show-progress=none",
+        "cs:fix": "php-cs-fixer fix --show-progress=none"
     },
     "conflict": {
         "symfony/symfony": "*"
@@ -82,6 +86,11 @@
     },
     "require-dev": {
         "dama/doctrine-test-bundle": "^8.6",
+        "friendsofphp/php-cs-fixer": "^3.68",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-doctrine": "^2.0",
+        "phpstan/phpstan-symfony": "^2.0",
         "phpunit/phpunit": "^12.5",
         "symfony/browser-kit": "7.4.*",
         "symfony/css-selector": "7.4.*",

@@ -7,12 +7,12 @@ use App\Entity\DotationAffectation;
 use App\Entity\DotationBesoin;
 use App\Entity\DotationModele;
 use App\Entity\DotationModeleLigne;
+use App\Entity\User;
 use App\Enum\DirigeantRole;
 use App\Enum\DotationEligibilite;
 use App\Repository\CategoryRepository;
 use App\Repository\DirigeantRepository;
 use App\Repository\DotationAffectationRepository;
-use App\Repository\DotationModeleLigneRepository;
 use App\Repository\DotationModeleRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockItemRepository;
@@ -27,6 +27,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Uid\Uuid;
 
 #[Route('/admin/stock/dotations', name: 'admin_stock_dotations_')]
@@ -35,7 +36,6 @@ class DotationController extends AbstractController
     public function __construct(
         private readonly SeasonContext $seasonContext,
         private readonly DotationModeleRepository $modeleRepository,
-        private readonly DotationModeleLigneRepository $ligneRepository,
         private readonly DotationAffectationRepository $affectationRepository,
         private readonly StockItemRepository $itemRepository,
         private readonly TeamRepository $teamRepository,
@@ -55,13 +55,14 @@ class DotationController extends AbstractController
         $season = $this->seasonContext->getCurrentSeason();
         if ($season === null) {
             $this->addFlash('warning', 'Créez une saison avant de gérer les dotations.');
+
             return $this->redirectToRoute('admin_seasons_new');
         }
 
         // L'index ne fait que lister : contenu et destinataires d'un kit se règlent sur sa page.
         return $this->render('admin/stock/dotations/index.html.twig', [
-            'season'       => $season,
-            'modeles'      => $this->modeleRepository->findBySeason($season),
+            'season' => $season,
+            'modeles' => $this->modeleRepository->findBySeason($season),
             'affectations' => $this->affectationRepository->findBySeason($season),
         ]);
     }
@@ -75,12 +76,14 @@ class DotationController extends AbstractController
         }
         if (!$this->isCsrfTokenValid('dotation_modele_new', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_index');
         }
 
         $nom = trim((string) $request->request->get('nom', ''));
         if ($nom === '') {
             $this->addFlash('error', 'Le nom du modèle est obligatoire.');
+
             return $this->redirectToRoute('admin_stock_dotations_index');
         }
 
@@ -98,6 +101,7 @@ class DotationController extends AbstractController
         if ($request->isMethod('POST')) {
             if (!$this->isCsrfTokenValid('dotation_modele_edit_' . $modele->getId(), $request->request->get('_token'))) {
                 $this->addFlash('error', 'Token CSRF invalide.');
+
                 return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
             }
             $nom = trim((string) $request->request->get('nom', ''));
@@ -107,6 +111,7 @@ class DotationController extends AbstractController
             $modele->setActif($request->request->get('actif') === '1');
             $this->em->flush();
             $this->addFlash('success', 'Modèle mis à jour.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
@@ -115,17 +120,17 @@ class DotationController extends AbstractController
         $affectations = $this->affectationRepository->findByModele($modele);
 
         return $this->render('admin/stock/dotations/form.html.twig', [
-            'modele'                    => $modele,
-            'articles'                  => $this->itemRepository->findAllOrdered(),
-            'eligibilites'              => DotationEligibilite::cases(),
+            'modele' => $modele,
+            'articles' => $this->itemRepository->findAllOrdered(),
+            'eligibilites' => DotationEligibilite::cases(),
             'personnalisationMaxDefaut' => DotationModeleService::PERSONNALISATION_MAX_DEFAUT,
-            'affectations'              => $affectations,
-            'apercu'                    => $this->preview->build($modele, $affectations),
-            'categories'                => $this->categoryRepository->findBy([], ['minYear' => 'ASC']),
-            'teams'                     => $this->teamRepository->findBySeason($season),
-            'licencies'                 => $this->licencieRepository->findValidatedBySeason($season),
-            'dirigeants'                => $this->dirigeantRepository->findBySeason($season),
-            'roles'                     => DirigeantRole::cases(),
+            'affectations' => $affectations,
+            'apercu' => $this->preview->build($modele, $affectations),
+            'categories' => $this->categoryRepository->findBy([], ['minYear' => 'ASC']),
+            'teams' => $this->teamRepository->findBySeason($season),
+            'licencies' => $this->licencieRepository->findValidatedBySeason($season),
+            'dirigeants' => $this->dirigeantRepository->findBySeason($season),
+            'roles' => DirigeantRole::cases(),
         ]);
     }
 
@@ -134,6 +139,7 @@ class DotationController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('dotation_choix_reglages_' . $modele->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
@@ -155,14 +161,16 @@ class DotationController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('dotation_choix_option_add_' . $modele->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
         $groupe = trim((string) $request->request->get('nom', ''));
-        $item   = $this->itemRepository->find((int) $request->request->get('stock_item_id'));
+        $item = $this->itemRepository->find((int) $request->request->get('stock_item_id'));
 
         if ($item === null) {
             $this->addFlash('error', 'Article introuvable.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
@@ -170,6 +178,7 @@ class DotationController extends AbstractController
             $this->modeleService->addOptionToGroupe($modele, $groupe, $item);
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
@@ -183,16 +192,18 @@ class DotationController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('dotation_choix_rename_' . $modele->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
-        $ancien  = trim((string) $request->request->get('ancien', ''));
+        $ancien = trim((string) $request->request->get('ancien', ''));
         $nouveau = trim((string) $request->request->get('nouveau', ''));
 
         try {
             $migres = $this->modeleService->renameGroupe($modele, $ancien, $nouveau);
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
@@ -208,6 +219,7 @@ class DotationController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('dotation_modele_delete_' . $modele->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_index');
         }
         $this->em->remove($modele);
@@ -222,12 +234,14 @@ class DotationController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('dotation_ligne_add_' . $modele->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
         $item = $this->itemRepository->find((int) $request->request->get('stock_item_id'));
         if ($item === null) {
             $this->addFlash('error', 'Article introuvable.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
@@ -248,23 +262,26 @@ class DotationController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('dotation_choix_add_' . $modele->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
         $nom = trim((string) $request->request->get('nom', ''));
         if ($nom === '') {
             $this->addFlash('error', 'Donnez un nom au choix (ex : « Veste »).');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
         $itemIds = array_unique(array_filter(array_map('intval', (array) $request->request->all('stock_item_ids'))));
         if (count($itemIds) < 2) {
             $this->addFlash('error', 'Un choix doit proposer au moins 2 articles.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
         $quantite = max(1, (int) $request->request->get('quantite', 1));
-        $ajoutes  = 0;
+        $ajoutes = 0;
         foreach ($itemIds as $itemId) {
             $item = $this->itemRepository->find($itemId);
             if ($item === null) {
@@ -285,6 +302,7 @@ class DotationController extends AbstractController
 
         if ($ajoutes < 2) {
             $this->addFlash('error', 'Articles introuvables : choix non créé.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
@@ -304,6 +322,7 @@ class DotationController extends AbstractController
         $nom = trim((string) $request->request->get('nom', ''));
         if (!$this->isCsrfTokenValid('dotation_choix_delete_' . $modele->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
@@ -324,6 +343,7 @@ class DotationController extends AbstractController
         $modeleId = $ligne->getModele()->getId();
         if (!$this->isCsrfTokenValid('dotation_ligne_reglages_' . $ligne->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
         }
 
@@ -347,12 +367,14 @@ class DotationController extends AbstractController
         $modeleId = $ligne->getModele()->getId();
         if (!$this->isCsrfTokenValid('dotation_ligne_delete_' . $ligne->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
         }
         try {
             $this->modeleService->removeLigne($ligne);
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
         }
 
@@ -370,12 +392,14 @@ class DotationController extends AbstractController
         }
         if (!$this->isCsrfTokenValid('dotation_affectation_new', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_index');
         }
 
         $modele = $this->modeleRepository->find((int) $request->request->get('modele_id'));
         if ($modele === null) {
             $this->addFlash('error', 'Modèle introuvable.');
+
             return $this->redirectToRoute('admin_stock_dotations_index');
         }
 
@@ -407,6 +431,7 @@ class DotationController extends AbstractController
 
         if ($cible !== 'default' && $affectation->priorite() === 0) {
             $this->addFlash('error', 'Cible invalide pour cette affectation.');
+
             return $this->redirectToRoute('admin_stock_dotations_index');
         }
 
@@ -425,6 +450,7 @@ class DotationController extends AbstractController
         $modeleId = $affectation->getModele()->getId();
         if (!$this->isCsrfTokenValid('dotation_affectation_delete_' . $affectation->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
         }
         $this->em->remove($affectation);
@@ -445,10 +471,10 @@ class DotationController extends AbstractController
         $this->besoinService->syncTaillesFromDossiers($season);
 
         return $this->render('admin/stock/dotations/suivi.html.twig', [
-            'season'         => $season,
-            'groupes'        => $this->besoinService->getSuiviGroupes($season),
+            'season' => $season,
+            'groupes' => $this->besoinService->getSuiviGroupes($season),
             'taillesConnues' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'],
-            'pointures'      => array_map('strval', range(28, 48)),
+            'pointures' => array_map('strval', range(28, 48)),
         ]);
     }
 
@@ -461,6 +487,7 @@ class DotationController extends AbstractController
         }
         if (!$this->isCsrfTokenValid('dotation_recalculer', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_suivi');
         }
 
@@ -471,14 +498,15 @@ class DotationController extends AbstractController
     }
 
     #[Route('/besoins/{id}/taille', name: 'besoin_taille', methods: ['POST'])]
-    public function besoinTaille(DotationBesoin $besoin, Request $request): Response
+    public function besoinTaille(DotationBesoin $besoin, Request $request, #[CurrentUser] ?User $user): Response
     {
         if (!$this->isCsrfTokenValid('dotation_besoin_taille_' . $besoin->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_suivi');
         }
 
-        $this->besoinService->updateTaille($besoin, (string) $request->request->get('taille', ''), $this->getUser());
+        $this->besoinService->updateTaille($besoin, (string) $request->request->get('taille', ''), $user);
         $this->addFlash('success', sprintf('Taille mise à jour pour %s.', $besoin->getNomPrenom()));
 
         return $this->redirectToRoute('admin_stock_dotations_suivi');
@@ -489,6 +517,7 @@ class DotationController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('dotation_besoin_personnalisation_' . $besoin->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_suivi');
         }
 
@@ -511,20 +540,21 @@ class DotationController extends AbstractController
         }
 
         return $this->render('admin/stock/dotations/flocage.html.twig', [
-            'season'  => $season,
+            'season' => $season,
             'besoins' => $this->besoinService->getFlocages($season),
         ]);
     }
 
     #[Route('/besoins/{id}/remise', name: 'besoin_remise', methods: ['POST'])]
-    public function besoinRemise(DotationBesoin $besoin, Request $request): Response
+    public function besoinRemise(DotationBesoin $besoin, Request $request, #[CurrentUser] ?User $user): Response
     {
         if (!$this->isCsrfTokenValid('dotation_besoin_remise_' . $besoin->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_suivi');
         }
 
-        $this->besoinService->markGiven($besoin, $this->getUser());
+        $this->besoinService->markGiven($besoin, $user);
         $this->addFlash('success', sprintf('Dotation remise à %s.', $besoin->getNomPrenom()));
 
         return $this->redirectToRoute('admin_stock_dotations_suivi');
@@ -535,6 +565,7 @@ class DotationController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('dotation_besoin_annuler_' . $besoin->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_stock_dotations_suivi');
         }
 

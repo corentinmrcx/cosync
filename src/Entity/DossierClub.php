@@ -52,11 +52,19 @@ class DossierClub
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $attestationTransportDriveId = null;
 
-    /** Modes de paiement déclarés par le licencié dans le formulaire (stockés comme tableau de valeurs string) */
+    /**
+     * Modes de paiement déclarés par le licencié dans le formulaire (stockés comme tableau de valeurs string).
+     *
+     * @var list<string>
+     */
     #[ORM\Column(type: 'json')]
     private array $paymentIntentions = [];
 
-    /** Choix de dotation faits au formulaire : { groupeChoix: stockItemId }. Null si aucun choix proposé. */
+    /**
+     * Choix de dotation faits au formulaire : { groupeChoix: stockItemId }. Null si aucun choix proposé.
+     *
+     * @var array<string, int|string>|null
+     */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $dotationChoix = null;
 
@@ -64,6 +72,8 @@ class DossierClub
      * Textes de personnalisation saisis au formulaire : { groupeChoix: texte }.
      * Même espace de clés que dotationChoix — les deux se lisent côte à côte, et le texte
      * survit à un changement d'option à l'intérieur du groupe.
+     *
+     * @var array<string, string>|null
      */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $dotationPersonnalisation = null;
@@ -106,6 +116,7 @@ class DossierClub
     public function setLicencie(Licencie $licencie): static
     {
         $this->licencie = $licencie;
+
         return $this;
     }
 
@@ -117,6 +128,7 @@ class DossierClub
     public function setTailleHaut(?string $tailleHaut): static
     {
         $this->tailleHaut = $tailleHaut;
+
         return $this;
     }
 
@@ -128,6 +140,7 @@ class DossierClub
     public function setTailleBas(?string $tailleBas): static
     {
         $this->tailleBas = $tailleBas;
+
         return $this;
     }
 
@@ -139,6 +152,7 @@ class DossierClub
     public function setPointure(?string $pointure): static
     {
         $this->pointure = $pointure;
+
         return $this;
     }
 
@@ -150,6 +164,7 @@ class DossierClub
     public function setAutorisationPhoto(?bool $autorisationPhoto): static
     {
         $this->autorisationPhoto = $autorisationPhoto;
+
         return $this;
     }
 
@@ -161,6 +176,7 @@ class DossierClub
     public function setAutorisationTransportDirigeants(?bool $autorisationTransportDirigeants): static
     {
         $this->autorisationTransportDirigeants = $autorisationTransportDirigeants;
+
         return $this;
     }
 
@@ -172,6 +188,7 @@ class DossierClub
     public function setAutorisationTransportParents(?bool $autorisationTransportParents): static
     {
         $this->autorisationTransportParents = $autorisationTransportParents;
+
         return $this;
     }
 
@@ -179,7 +196,7 @@ class DossierClub
     public function getPaymentIntentions(): array
     {
         return array_map(
-            fn(string $v) => PaymentMode::from($v),
+            fn (string $v) => PaymentMode::from($v),
             $this->paymentIntentions,
         );
     }
@@ -187,7 +204,8 @@ class DossierClub
     /** @param PaymentMode[] $modes */
     public function setPaymentIntentions(array $modes): static
     {
-        $this->paymentIntentions = array_map(fn(PaymentMode $m) => $m->value, $modes);
+        $this->paymentIntentions = array_map(fn (PaymentMode $m) => $m->value, $modes);
+
         return $this;
     }
 
@@ -201,6 +219,7 @@ class DossierClub
     public function setDotationChoix(?array $dotationChoix): static
     {
         $this->dotationChoix = $dotationChoix ?: null;
+
         return $this;
     }
 
@@ -214,6 +233,7 @@ class DossierClub
     public function setDotationPersonnalisation(?array $dotationPersonnalisation): static
     {
         $this->dotationPersonnalisation = $dotationPersonnalisation ?: null;
+
         return $this;
     }
 
@@ -225,6 +245,7 @@ class DossierClub
     public function setFormCompletedAt(?\DateTimeImmutable $formCompletedAt): static
     {
         $this->formCompletedAt = $formCompletedAt;
+
         return $this;
     }
 
@@ -236,6 +257,7 @@ class DossierClub
     public function setAutorisationAccident(?bool $autorisationAccident): static
     {
         $this->autorisationAccident = $autorisationAccident;
+
         return $this;
     }
 
@@ -247,6 +269,7 @@ class DossierClub
     public function setVolontaireTransport(?bool $volontaireTransport): static
     {
         $this->volontaireTransport = $volontaireTransport;
+
         return $this;
     }
 
@@ -258,6 +281,7 @@ class DossierClub
     public function setAttestationTransportDriveId(?string $attestationTransportDriveId): static
     {
         $this->attestationTransportDriveId = $attestationTransportDriveId;
+
         return $this;
     }
 
@@ -269,6 +293,7 @@ class DossierClub
     public function setHelloassoCheckoutIntentId(?string $helloassoCheckoutIntentId): static
     {
         $this->helloassoCheckoutIntentId = $helloassoCheckoutIntentId;
+
         return $this;
     }
 
@@ -280,6 +305,7 @@ class DossierClub
     public function setHelloassoCheckoutStartedAt(?\DateTimeImmutable $helloassoCheckoutStartedAt): static
     {
         $this->helloassoCheckoutStartedAt = $helloassoCheckoutStartedAt;
+
         return $this;
     }
 
@@ -291,6 +317,7 @@ class DossierClub
     public function setStatus(LicenceStatus $status): static
     {
         $this->status = $status;
+
         return $this;
     }
 }

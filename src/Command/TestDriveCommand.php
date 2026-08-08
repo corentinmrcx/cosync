@@ -32,6 +32,7 @@ final class TestDriveCommand extends Command
         $io->section('2. Vérification du fichier credentials');
         if (!file_exists($this->credentialsPath)) {
             $io->error(sprintf('Fichier introuvable : %s', $this->credentialsPath));
+
             return Command::FAILURE;
         }
         $io->success('Fichier credentials trouvé.');
@@ -48,13 +49,14 @@ final class TestDriveCommand extends Command
             $io->success('Authentification OK.');
         } catch (\Throwable $e) {
             $io->error('Échec authentification : ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
         $io->section('4. Dossiers partagés avec le Service Account');
         try {
             $shared = $service->files->listFiles([
-                'q'      => "sharedWithMe = true and mimeType = 'application/vnd.google-apps.folder'",
+                'q' => "sharedWithMe = true and mimeType = 'application/vnd.google-apps.folder'",
                 'fields' => 'files(id, name)',
                 'pageSize' => 20,
             ]);
@@ -70,6 +72,7 @@ final class TestDriveCommand extends Command
             }
         } catch (\Throwable $e) {
             $io->error('Erreur listFiles : ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
@@ -79,22 +82,23 @@ final class TestDriveCommand extends Command
             $io->success(sprintf('Dossier trouvé : "%s"', $folder->getName()));
         } catch (\Throwable $e) {
             $io->error('Accès direct échoué : ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
         $io->section('6. Test création sous-dossier');
         try {
-            $q       = "name = '_test_cosync' and '{$this->rootFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+            $q = "name = '_test_cosync' and '{$this->rootFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
             $results = $service->files->listFiles([
-                'q'                         => $q,
-                'fields'                    => 'files(id)',
-                'pageSize'                  => 1,
-                'supportsAllDrives'         => true,
+                'q' => $q,
+                'fields' => 'files(id)',
+                'pageSize' => 1,
+                'supportsAllDrives' => true,
                 'includeItemsFromAllDrives' => true,
             ]);
 
             if (count($results->getFiles()) === 0) {
-                $meta    = new Drive\DriveFile(['name' => '_test_cosync', 'mimeType' => 'application/vnd.google-apps.folder', 'parents' => [$this->rootFolderId]]);
+                $meta = new Drive\DriveFile(['name' => '_test_cosync', 'mimeType' => 'application/vnd.google-apps.folder', 'parents' => [$this->rootFolderId]]);
                 $created = $service->files->create($meta, ['fields' => 'id', 'supportsAllDrives' => true]);
                 $io->success('Sous-dossier de test créé (ID: ' . $created->getId() . ')');
                 try {
@@ -108,10 +112,12 @@ final class TestDriveCommand extends Command
             }
         } catch (\Throwable $e) {
             $io->error('Échec : ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
         $io->success('Tout est opérationnel. L\'upload Drive devrait fonctionner.');
+
         return Command::SUCCESS;
     }
 }

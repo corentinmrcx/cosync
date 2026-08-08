@@ -87,7 +87,7 @@ final class MailerServiceTest extends KernelTestCase
         $licencie = $this->seedLicencie();
         self::getContainer()->get(MailerService::class)->sendInscriptionLink($licencie);
 
-        $message      = $this->messagesEnvoyes()[0];
+        $message = $this->messagesEnvoyes()[0];
         $destinataire = $message->getTo()[0]->getAddress();
 
         self::assertNotSame('kevin.martin@example.test', $destinataire, 'Le mail ne doit jamais atteindre le licencié en beta');
@@ -152,7 +152,7 @@ final class MailerServiceTest extends KernelTestCase
 
     /* ── Outils ── */
 
-/**
+    /**
      * Le transport est null:// en test : rien ne part, mais le MessageLoggerListener
      * de framework.test conserve les messages, ce qui les rend assertables.
      *
@@ -160,7 +160,14 @@ final class MailerServiceTest extends KernelTestCase
      */
     private function messagesEnvoyes(): array
     {
-        return self::getMailerMessages();
+        return array_map(self::asEmail(...), self::getMailerMessages());
+    }
+
+    private static function asEmail(\Symfony\Component\Mime\RawMessage $message): \Symfony\Component\Mime\Email
+    {
+        self::assertInstanceOf(\Symfony\Component\Mime\Email::class, $message);
+
+        return $message;
     }
 
     private function diagEmail(): string
@@ -175,7 +182,7 @@ final class MailerServiceTest extends KernelTestCase
     ): Licencie {
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $season   = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
+        $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
         $category = (new Category())->setCode($code)->setLabel($code)->setIsEcoleFoot($code !== 'SENIOR');
 
         $licencie = (new Licencie())

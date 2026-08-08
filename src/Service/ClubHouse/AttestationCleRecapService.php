@@ -2,8 +2,8 @@
 
 namespace App\Service\ClubHouse;
 
-use App\DTO\CleDetention;
 use App\DTO\AttestationCleRecapRow;
+use App\DTO\CleDetention;
 use App\Entity\Season;
 
 /**
@@ -26,8 +26,7 @@ final class AttestationCleRecapService
     {
         $detentions = $this->registre->getDetenteursActuels($season);
 
-        usort($detentions, static fn (CleDetention $a, CleDetention $b): int
-            => [$a->dirigeant->getNom(), $a->dirigeant->getPrenom()]
+        usort($detentions, static fn (CleDetention $a, CleDetention $b): int => [$a->dirigeant->getNom(), $a->dirigeant->getPrenom()]
            <=> [$b->dirigeant->getNom(), $b->dirigeant->getPrenom()]);
 
         return array_map(

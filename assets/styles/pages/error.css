@@ -29,7 +29,7 @@
 }
 
 .error-code {
-    font-size: 3.5rem;
+    font-size: var(--font-size-5xl);
     font-weight: 900;
     line-height: 1;
     color: var(--color-primary);

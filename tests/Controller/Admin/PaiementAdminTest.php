@@ -32,16 +32,16 @@ final class PaiementAdminTest extends WebTestCase
     public function testUnPaiementSaisiEstEnregistreAvecTousSesChamps(): void
     {
         $client = static::createClient();
-        $admin  = $this->loginAdmin($client);
-        $uuid   = $this->seedLicencie();
+        $admin = $this->loginAdmin($client);
+        $uuid = $this->seedLicencie();
 
         $client->request('POST', '/admin/licencies/' . $uuid . '/ajouter-paiement', [
-            '_token'        => $this->token($client, $uuid, '/ajouter-paiement'),
-            'mode'          => 'cheque',
-            'montant'       => '40,50',
+            '_token' => $this->token($client, $uuid, '/ajouter-paiement'),
+            'mode' => 'cheque',
+            'montant' => '40,50',
             'date_paiement' => '2026-03-15',
-            'reference'     => 'Chèque n°123456',
-            'note'          => 'Remis au local',
+            'reference' => 'Chèque n°123456',
+            'note' => 'Remis au local',
         ]);
 
         self::assertResponseRedirects();
@@ -82,6 +82,7 @@ final class PaiementAdminTest extends WebTestCase
 
         $messages = self::getMailerMessages();
         self::assertCount(1, $messages, 'Un seul mail de validation, à l\'atteinte du solde');
+        self::assertInstanceOf(\Symfony\Component\Mime\Email::class, $messages[0]);
         self::assertSame('kevin.martin@example.test', $messages[0]->getTo()[0]->getAddress());
         self::assertStringContainsString('validée', $messages[0]->getSubject());
     }
@@ -119,9 +120,9 @@ final class PaiementAdminTest extends WebTestCase
         $uuid = $this->seedLicencie();
 
         $client->request('POST', '/admin/licencies/' . $uuid . '/ajouter-paiement', [
-            '_token'        => $this->token($client, $uuid, '/ajouter-paiement'),
-            'mode'          => 'bitcoin',
-            'montant'       => '85',
+            '_token' => $this->token($client, $uuid, '/ajouter-paiement'),
+            'mode' => 'bitcoin',
+            'montant' => '85',
             'date_paiement' => '2026-03-15',
         ]);
 
@@ -135,9 +136,9 @@ final class PaiementAdminTest extends WebTestCase
         $uuid = $this->seedLicencie();
 
         $client->request('POST', '/admin/licencies/' . $uuid . '/ajouter-paiement', [
-            '_token'        => 'jeton-bidon',
-            'mode'          => 'especes',
-            'montant'       => '85',
+            '_token' => 'jeton-bidon',
+            'mode' => 'especes',
+            'montant' => '85',
             'date_paiement' => '2026-03-15',
         ]);
 
@@ -169,8 +170,8 @@ final class PaiementAdminTest extends WebTestCase
     {
         $client = static::createClient();
         $this->loginAdmin($client);
-        $uuid   = $this->seedLicencie();
-        $autre  = $this->seedLicencie(email: 'autre@example.test');
+        $uuid = $this->seedLicencie();
+        $autre = $this->seedLicencie(email: 'autre@example.test');
 
         $this->payer($client, $uuid, '40');
         $id = $this->transactionsDe($uuid)[0]->getId();
@@ -206,7 +207,7 @@ final class PaiementAdminTest extends WebTestCase
     public function testLesRoutesDePaiementExigentUneAuthentification(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedLicencie();
+        $uuid = $this->seedLicencie();
 
         $client->request('POST', '/admin/licencies/' . $uuid . '/valider-manuellement', ['_token' => 'x']);
 
@@ -220,9 +221,9 @@ final class PaiementAdminTest extends WebTestCase
     private function payer(KernelBrowser $client, string $uuid, string $montant): void
     {
         $client->request('POST', '/admin/licencies/' . $uuid . '/ajouter-paiement', [
-            '_token'        => $this->token($client, $uuid, '/ajouter-paiement'),
-            'mode'          => 'especes',
-            'montant'       => $montant,
+            '_token' => $this->token($client, $uuid, '/ajouter-paiement'),
+            'mode' => 'especes',
+            'montant' => $montant,
             'date_paiement' => '2026-03-15',
         ]);
     }
@@ -234,7 +235,7 @@ final class PaiementAdminTest extends WebTestCase
     private function token(KernelBrowser $client, string $uuid, string $actionSuffixe): string
     {
         $crawler = $client->request('GET', '/admin/licencies/' . $uuid);
-        $champ   = $crawler->filter('form[action$="' . $actionSuffixe . '"] input[name="_token"]');
+        $champ = $crawler->filter('form[action$="' . $actionSuffixe . '"] input[name="_token"]');
 
         self::assertGreaterThan(0, $champ->count(), sprintf('Formulaire %s introuvable sur la fiche.', $actionSuffixe));
 
@@ -263,7 +264,7 @@ final class PaiementAdminTest extends WebTestCase
 
     private function loginAdmin(KernelBrowser $client): User
     {
-        $em   = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $user = (new User())->setEmail('admin-paiement@example.test')->setPassword('x');
 
         $em->persist($user);
@@ -279,7 +280,7 @@ final class PaiementAdminTest extends WebTestCase
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $season   = $em->getRepository(Season::class)->findOneBy(['label' => '2025-2026'])
+        $season = $em->getRepository(Season::class)->findOneBy(['label' => '2025-2026'])
             ?? (new Season())->setLabel('2025-2026')->setCotisationDefaut(self::COTISATION);
         $category = $em->getRepository(Category::class)->findOneBy(['code' => 'SENIOR'])
             ?? (new Category())->setCode('SENIOR')->setLabel('Séniors')->setIsEcoleFoot(false);

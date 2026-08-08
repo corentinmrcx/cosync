@@ -103,16 +103,16 @@ final class HelloAssoPaymentRecorderTest extends KernelTestCase
     private function intentAvecPaiement(Licencie $licencie, string $state, int $paymentId = 55555): array
     {
         return [
-            'id'       => self::INTENT_ID,
+            'id' => self::INTENT_ID,
             'metadata' => ['licencie_uuid' => (string) $licencie->getUuid()],
-            'order'    => [
-                'id'       => 4242,
-                'amount'   => ['total' => 8500],
+            'order' => [
+                'id' => 4242,
+                'amount' => ['total' => 8500],
                 'payments' => [[
-                    'id'     => $paymentId,
+                    'id' => $paymentId,
                     'amount' => 8500,
-                    'date'   => '2026-08-05T10:12:00+02:00',
-                    'state'  => $state,
+                    'date' => '2026-08-05T10:12:00+02:00',
+                    'state' => $state,
                 ]],
             ],
         ];
@@ -176,9 +176,9 @@ final class HelloAssoPaymentRecorderTest extends KernelTestCase
     {
         $this->makeLicencie();
         $recorder = $this->makeRecorder([
-            'id'       => self::INTENT_ID,
+            'id' => self::INTENT_ID,
             'metadata' => ['licencie_uuid' => '00000000-0000-4000-8000-000000000000'],
-            'order'    => ['payments' => [['id' => 1, 'amount' => 8500, 'state' => 'Authorized']]],
+            'order' => ['payments' => [['id' => 1, 'amount' => 8500, 'state' => 'Authorized']]],
         ]);
 
         self::assertFalse($recorder->recordFromCheckoutIntent(self::INTENT_ID));

@@ -38,10 +38,10 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
      */
     private function contexte(?NatureLicence $nature = NatureLicence::RENOUVELLEMENT): array
     {
-        $season  = $this->makeSeason();
-        $cat     = $this->makeCategory('SENIOR');
-        $veste   = $this->makeItem('Veste', StockItemVetementType::HAUT);
-        $tshirt  = $this->makeItem('T-shirt', StockItemVetementType::HAUT);
+        $season = $this->makeSeason();
+        $cat = $this->makeCategory('SENIOR');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $tshirt = $this->makeItem('T-shirt', StockItemVetementType::HAUT);
         $etrange = $this->makeItem('Article hors kit', StockItemVetementType::HAUT);
 
         $modele = $this->makeModele($season, 'Dotation 2026');
@@ -97,9 +97,9 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
         [$licencie, $veste, $tshirt] = $this->contexte(NatureLicence::NOUVELLE_DEMANDE);
 
         $data = $this->factory()->fromRequest($this->request([
-            'dotation_choix'            => ['Dotation' => (string) $tshirt->getId()],
+            'dotation_choix' => ['Dotation' => (string) $tshirt->getId()],
             'dotation_personnalisation' => ['Dotation' => 'Coco'],
-            'flocage_confirme'          => '1',
+            'flocage_confirme' => '1',
         ]), $licencie);
 
         self::assertNotNull($data);
@@ -128,7 +128,7 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
         [$licencie, , $tshirt] = $this->contexte();
 
         self::assertNull($this->factory()->fromRequest($this->request([
-            'dotation_choix'   => ['Dotation' => (string) $tshirt->getId()],
+            'dotation_choix' => ['Dotation' => (string) $tshirt->getId()],
             'flocage_confirme' => '1',
         ]), $licencie));
     }
@@ -138,9 +138,9 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
         [$licencie, , $tshirt] = $this->contexte();
 
         $data = $this->factory()->fromRequest($this->request([
-            'dotation_choix'            => ['Dotation' => (string) $tshirt->getId()],
+            'dotation_choix' => ['Dotation' => (string) $tshirt->getId()],
             'dotation_personnalisation' => ['Dotation' => '  Coco   Bel '],
-            'flocage_confirme'          => '1',
+            'flocage_confirme' => '1',
         ]), $licencie);
 
         self::assertNotNull($data);
@@ -152,9 +152,9 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
         [$licencie, , $tshirt] = $this->contexte();
 
         self::assertNull($this->factory()->fromRequest($this->request([
-            'dotation_choix'            => ['Dotation' => (string) $tshirt->getId()],
+            'dotation_choix' => ['Dotation' => (string) $tshirt->getId()],
             'dotation_personnalisation' => ['Dotation' => str_repeat('A', 16)], // max 15
-            'flocage_confirme'          => '1',
+            'flocage_confirme' => '1',
         ]), $licencie));
     }
 
@@ -165,9 +165,9 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
         foreach (['<script>', 'A@B', 'Coco#1', 'Emoji 🎉'] as $texte) {
             self::assertNull(
                 $this->factory()->fromRequest($this->request([
-                    'dotation_choix'            => ['Dotation' => (string) $tshirt->getId()],
+                    'dotation_choix' => ['Dotation' => (string) $tshirt->getId()],
                     'dotation_personnalisation' => ['Dotation' => $texte],
-                    'flocage_confirme'          => '1',
+                    'flocage_confirme' => '1',
                 ]), $licencie),
                 sprintf('« %s » ne doit pas partir en flocage.', $texte),
             );
@@ -179,9 +179,9 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
         [$licencie, , $tshirt] = $this->contexte();
 
         $data = $this->factory()->fromRequest($this->request([
-            'dotation_choix'            => ['Dotation' => (string) $tshirt->getId()],
+            'dotation_choix' => ['Dotation' => (string) $tshirt->getId()],
             'dotation_personnalisation' => ['Dotation' => "Jean-Léo D'A"],
-            'flocage_confirme'          => '1',
+            'flocage_confirme' => '1',
         ]), $licencie);
 
         self::assertNotNull($data);
@@ -194,7 +194,7 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
 
         self::assertNull(
             $this->factory()->fromRequest($this->request([
-                'dotation_choix'            => ['Dotation' => (string) $tshirt->getId()],
+                'dotation_choix' => ['Dotation' => (string) $tshirt->getId()],
                 'dotation_personnalisation' => ['Dotation' => 'Coco'],
             ]), $licencie),
             'Sans contrôle serveur, la case de confirmation ne serait qu\'un ornement.',
@@ -203,8 +203,8 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
 
     public function testSansKitLeDtoEstVideMaisValide(): void
     {
-        $season   = $this->makeSeason();
-        $cat      = $this->makeCategory('SENIOR');
+        $season = $this->makeSeason();
+        $cat = $this->makeCategory('SENIOR');
         $licencie = $this->makeLicencie($season, $cat, null, 'L');
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);

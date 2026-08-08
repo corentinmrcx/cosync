@@ -27,7 +27,7 @@ final class AttestationCleRecapTemplateTest extends KernelTestCase
         self::getContainer()->get(RequestStack::class)->push($request);
 
         return self::getContainer()->get(Environment::class)->render('pdf/attestation_cle_recap.html.twig', [
-            'rows'        => $rows,
+            'rows' => $rows,
             'saisonLabel' => '2025-2026',
             'logoDataUrl' => 'data:image/png;base64,iVBORw0KGgo=',
             'generatedAt' => new \DateTimeImmutable('2026-08-01 10:00:00'),

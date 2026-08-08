@@ -27,8 +27,8 @@ final class DirigeantDossierCompletionTest extends KernelTestCase
     protected function setUp(): void
     {
         self::bootKernel();
-        $this->em         = self::getContainer()->get(EntityManagerInterface::class);
-        $this->fixtures   = new DocumentFixtures($this->em);
+        $this->em = self::getContainer()->get(EntityManagerInterface::class);
+        $this->fixtures = new DocumentFixtures($this->em);
         $this->completion = self::getContainer()->get(DirigeantDossierCompletion::class);
     }
 
@@ -121,7 +121,7 @@ final class DirigeantDossierCompletionTest extends KernelTestCase
     /** @return array{0: Dirigeant, 1: \App\Entity\DocumentSignable} */
     private function makeDirigeantLieAuLicencie(bool $licencieSigne): array
     {
-        $season   = $this->makeSeason();
+        $season = $this->makeSeason();
         $category = (new Category())->setCode('SENIOR')->setLabel('Séniors')->setIsEcoleFoot(false);
 
         $licencie = (new Licencie())
@@ -142,7 +142,7 @@ final class DirigeantDossierCompletionTest extends KernelTestCase
             ->setLicencie($licencie)
             ->setVolontaireTransport(false);
 
-        $reglementJoueurs    = $this->fixtures->documentLicencie($season);
+        $reglementJoueurs = $this->fixtures->documentLicencie($season);
         $reglementDirigeants = $this->fixtures->documentDirigeant($season);
 
         $this->em->persist($season);

@@ -53,6 +53,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $season = (new Season())->setLabel($label)->setCotisationDefaut(85);
         $this->em->persist($season);
+
         return $season;
     }
 
@@ -60,6 +61,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $cat = (new Category())->setCode($code)->setLabel($code)->setIsEcoleFoot(false);
         $this->em->persist($cat);
+
         return $cat;
     }
 
@@ -67,6 +69,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $team = (new Team())->setName($name)->setSeason($season);
         $this->em->persist($team);
+
         return $team;
     }
 
@@ -74,6 +77,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $f = (new Fournisseur())->setNom($nom);
         $this->em->persist($f);
+
         return $f;
     }
 
@@ -84,6 +88,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     ): StockItem {
         $item = (new StockItem())->setNom($nom)->setTypeVetement($type)->setFournisseur($fournisseur);
         $this->em->persist($item);
+
         return $item;
     }
 
@@ -91,6 +96,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $m = (new DotationModele())->setSeason($season)->setNom($nom);
         $this->em->persist($m);
+
         return $m;
     }
 
@@ -112,6 +118,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
             ->setPersonnalisationMaxLength($maxLength);
         $modele->addLigne($ligne);
         $this->em->persist($ligne);
+
         return $ligne;
     }
 
@@ -119,6 +126,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $a = (new DotationAffectation())->setSeason($s)->setModele($m)->setCategory($c);
         $this->em->persist($a);
+
         return $a;
     }
 
@@ -126,6 +134,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $a = (new DotationAffectation())->setSeason($s)->setModele($m)->setLicencie($l);
         $this->em->persist($a);
+
         return $a;
     }
 
@@ -191,6 +200,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
             ->setQuantite($qte)
             ->setStatut($statut);
         $this->em->persist($b);
+
         return $b;
     }
 
@@ -213,6 +223,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         $commande->addLigne($ligne);
         $this->em->persist($commande);
         $this->em->persist($ligne);
+
         return $ligne;
     }
 
@@ -223,6 +234,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         $id = $entity instanceof Licencie || $entity instanceof Dirigeant ? $entity->getUuid() : $entity->getId();
         $this->em->flush();
         $this->em->clear();
+
         return $this->em->find($class, $id);
     }
 }

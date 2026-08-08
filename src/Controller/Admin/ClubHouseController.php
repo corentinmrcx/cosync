@@ -24,8 +24,8 @@ class ClubHouseController extends AbstractController
         }
 
         return $this->render('admin/clubhouse/index.html.twig', [
-            'season'  => $season,
-            'stats'   => $registre->getStats($season),
+            'season' => $season,
+            'stats' => $registre->getStats($season),
             'recents' => $mouvementRepo->findRecentBySeason($season, 5),
         ]);
     }

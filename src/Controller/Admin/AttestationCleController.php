@@ -60,7 +60,7 @@ class AttestationCleController extends AbstractController
         }
 
         return new Response($pdfService->generatePreview($season), Response::HTTP_OK, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="attestation_cle_apercu.pdf"',
         ]);
     }
@@ -76,7 +76,7 @@ class AttestationCleController extends AbstractController
         $pdf = $pdfService->generate($season, $recapService->buildRows($season));
 
         return new Response($pdf, Response::HTTP_OK, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf(
                 'attachment; filename="detenteurs_cles_%s.pdf"',
                 str_replace('/', '-', $season->getLabel()),

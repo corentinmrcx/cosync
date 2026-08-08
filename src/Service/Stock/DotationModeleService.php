@@ -151,10 +151,7 @@ final class DotationModeleService
                 }
             }
             if ($restantes < 2) {
-                throw new \DomainException(sprintf(
-                    'Un choix doit garder au moins 2 options. Retirez le choix « %s » en entier si vous n\'en voulez plus.',
-                    $groupe,
-                ));
+                throw new \DomainException(sprintf('Un choix doit garder au moins 2 options. Retirez le choix « %s » en entier si vous n\'en voulez plus.', $groupe));
             }
         }
 
@@ -168,8 +165,8 @@ final class DotationModeleService
      * `.dotationPersonnalisation`, `DotationBesoin.groupeChoix`) : renommer les lignes sans
      * migrer les réponses orphelinerait tout ce qui a déjà été saisi.
      *
-     * @throws \DomainException si le nouveau nom est vide ou déjà porté par un autre groupe
      * @return int nombre de dossiers de licenciés migrés
+     * @throws \DomainException si le nouveau nom est vide ou déjà porté par un autre groupe
      */
     public function renameGroupe(DotationModele $modele, string $ancien, string $nouveau): int
     {
@@ -227,7 +224,7 @@ final class DotationModeleService
                 continue;
             }
 
-            $choix  = $dossier->getDotationChoix() ?? [];
+            $choix = $dossier->getDotationChoix() ?? [];
             $textes = $dossier->getDotationPersonnalisation() ?? [];
             if (!array_key_exists($ancien, $choix) && !array_key_exists($ancien, $textes)) {
                 continue;

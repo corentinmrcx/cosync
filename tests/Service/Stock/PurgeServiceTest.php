@@ -5,11 +5,11 @@ namespace App\Tests\Service\Stock;
 use App\Entity\CleMouvement;
 use App\Entity\Dirigeant;
 use App\Entity\StockCategory;
-use App\Tests\Support\DocumentFixtures;
 use App\Enum\CleMouvementType;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementType;
 use App\Service\PurgeService;
+use App\Tests\Support\DocumentFixtures;
 
 final class PurgeServiceTest extends StockIntegrationTestCase
 {
@@ -22,9 +22,9 @@ final class PurgeServiceTest extends StockIntegrationTestCase
     {
         // — Sème la chaîne complète, y compris dotations + commandes (ce qui faisait échouer l'ancienne purge) —
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory();
-        $team   = $this->makeTeam($season);
-        $four   = $this->makeFournisseur();
+        $cat = $this->makeCategory();
+        $team = $this->makeTeam($season);
+        $four = $this->makeFournisseur();
 
         $sc = (new StockCategory())->setName('Maillots');
         $this->em->persist($sc);
@@ -49,7 +49,7 @@ final class PurgeServiceTest extends StockIntegrationTestCase
         // Documents signables et signatures : ajoutés après l'écriture initiale de la purge,
         // ils référencent season, licencie et dirigeant — donc bloquent la purge s'ils sont oubliés.
         $documents = new DocumentFixtures($this->em);
-        $docLicencie  = $documents->documentLicencie($season);
+        $docLicencie = $documents->documentLicencie($season);
         $docDirigeant = $documents->documentDirigeant($season, dirigeants: [$dirigeant]);
         $documents->signerParLicencie($docLicencie, $licencie);
         $documents->signerParDirigeant($docDirigeant, $dirigeant);
@@ -68,7 +68,7 @@ final class PurgeServiceTest extends StockIntegrationTestCase
 
         // Référentiels présents avant purge (conservés ensuite).
         $categoriesAvant = $this->rowCount('category');
-        $usersAvant      = $this->rowCount('"user"');
+        $usersAvant = $this->rowCount('"user"');
 
         self::assertGreaterThan(0, $this->rowCount('dotation_besoin'), 'Le besoin doit exister avant purge.');
         self::assertGreaterThan(0, $this->rowCount('commande_ligne'), 'La ligne de commande doit exister avant purge.');

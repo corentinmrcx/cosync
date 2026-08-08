@@ -74,11 +74,7 @@ final class DatabaseBackupService
         if (!$process->isSuccessful()) {
             @unlink($path);
 
-            throw new \RuntimeException(sprintf(
-                'pg_dump a échoué (code %d) : %s',
-                $process->getExitCode() ?? -1,
-                trim($process->getErrorOutput()) ?: 'aucune sortie d\'erreur',
-            ));
+            throw new \RuntimeException(sprintf('pg_dump a échoué (code %d) : %s', $process->getExitCode() ?? -1, trim($process->getErrorOutput()) ?: 'aucune sortie d\'erreur'));
         }
 
         $taille = file_exists($path) ? (int) filesize($path) : 0;
@@ -86,10 +82,7 @@ final class DatabaseBackupService
         if ($taille < self::TAILLE_MINIMALE_OCTETS) {
             @unlink($path);
 
-            throw new \RuntimeException(sprintf(
-                'Le dump produit ne fait que %d octets : sauvegarde considérée comme invalide.',
-                $taille,
-            ));
+            throw new \RuntimeException(sprintf('Le dump produit ne fait que %d octets : sauvegarde considérée comme invalide.', $taille));
         }
 
         return $path;
@@ -102,7 +95,7 @@ final class DatabaseBackupService
      */
     public function purgerAnciens(int $joursRetention = 30): array
     {
-        $limite    = (new \DateTimeImmutable(sprintf('-%d days', $joursRetention)))->getTimestamp();
+        $limite = (new \DateTimeImmutable(sprintf('-%d days', $joursRetention)))->getTimestamp();
         $supprimes = [];
 
         foreach ($this->listerDumps() as $path) {

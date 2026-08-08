@@ -10,23 +10,24 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
+/** @extends AbstractType<CategoryCreateData> */
 class CategoryCreateType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('code', TextType::class, [
-                'label'       => 'Code FootClubs',
+                'label' => 'Code FootClubs',
                 'constraints' => [new NotBlank(message: 'Le code est requis.')],
-                'attr'        => ['placeholder' => 'ex: U20', 'style' => 'text-transform:uppercase'],
+                'attr' => ['placeholder' => 'ex: U20', 'style' => 'text-transform:uppercase'],
             ])
             ->add('label', TextType::class, [
-                'label'       => 'Libellé',
+                'label' => 'Libellé',
                 'constraints' => [new NotBlank(message: 'Le libellé est requis.')],
-                'attr'        => ['placeholder' => 'ex: U20'],
+                'attr' => ['placeholder' => 'ex: U20'],
             ])
             ->add('isEcoleFoot', CheckboxType::class, [
-                'label'    => 'École de foot (U6–U13) — affiche les autorisations de transport',
+                'label' => 'École de foot (U6–U13) — affiche les autorisations de transport',
                 'required' => false,
             ]);
     }

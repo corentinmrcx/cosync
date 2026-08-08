@@ -38,14 +38,14 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testChaqueChampDuFormulaireSeniorArriveEnBase(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid, [
-            'taille_haut'        => 'XL',
-            'taille_bas'         => 'S',
-            'pointure'           => '44',
+            'taille_haut' => 'XL',
+            'taille_bas' => 'S',
+            'pointure' => '44',
             'autorisation_photo' => '0',
-            'payment_intention'  => 'cheque',
+            'payment_intention' => 'cheque',
         ]));
 
         self::assertResponseRedirects('/inscription/' . $uuid . '/confirmation');
@@ -65,7 +65,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnSeniorNaPasDAutorisationsDeTransport(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid));
 
@@ -81,10 +81,10 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testLeMultiPaiementEnregistreTousLesModesChoisis(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $payload = $this->payloadSenior($client, $uuid, [
-            'multi_payment'      => '1',
+            'multi_payment' => '1',
             'payment_intentions' => ['especes', 'pass_sport'],
         ]);
         unset($payload['payment_intention']);
@@ -105,7 +105,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testLePaiementParCarteEnregistreLInscriptionAvantDeRediriger(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $payload = $this->payloadSenior($client, $uuid, ['pay_online' => '1']);
         unset($payload['payment_intention']);
@@ -122,7 +122,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnModeDePaiementInconnuRejetteLaSoumission(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid, [
             'payment_intention' => 'bitcoin',
@@ -135,7 +135,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnJetonCsrfInvalideRejetteLaSoumission(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid, [
             '_token' => 'jeton-bidon',
@@ -150,15 +150,15 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testLesQuatreAutorisationsDUnJeuneSontEnregistreesTellesQuePostees(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedJeune();
+        $uuid = $this->seedJeune();
 
         // Quatre réponses volontairement dissemblables : une permutation doit se voir.
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid, [
-            'autorisation_photo'                => '1',
-            'autorisation_accident'             => '0',
+            'autorisation_photo' => '1',
+            'autorisation_accident' => '0',
             'autorisation_transport_dirigeants' => '1',
-            'autorisation_transport_parents'    => '0',
-            'volontaire_transport'              => '0',
+            'autorisation_transport_parents' => '0',
+            'volontaire_transport' => '0',
         ]));
 
         self::assertResponseRedirects('/inscription/' . $uuid . '/confirmation');
@@ -176,21 +176,21 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnJeuneVolontaireAuTransportGenereSonAttestation(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedJeune();
+        $uuid = $this->seedJeune();
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid, [
-            'autorisation_photo'                => '1',
-            'autorisation_accident'             => '1',
+            'autorisation_photo' => '1',
+            'autorisation_accident' => '1',
             'autorisation_transport_dirigeants' => '1',
-            'autorisation_transport_parents'    => '1',
-            'volontaire_transport'              => '1',
-            'attestation_nom_conducteur'        => 'DUPONT',
-            'attestation_prenom_conducteur'     => 'Claire',
-            'attestation_num_permis'            => '123456789',
-            'attestation_assurance'             => 'MAIF, 12 rue des Sports',
-            'attestation_date_ct'               => '2025-06-01',
-            'attestation_engagement'            => '1',
-            'attestation_signature_data'        => self::SIGNATURE,
+            'autorisation_transport_parents' => '1',
+            'volontaire_transport' => '1',
+            'attestation_nom_conducteur' => 'DUPONT',
+            'attestation_prenom_conducteur' => 'Claire',
+            'attestation_num_permis' => '123456789',
+            'attestation_assurance' => 'MAIF, 12 rue des Sports',
+            'attestation_date_ct' => '2025-06-01',
+            'attestation_engagement' => '1',
+            'attestation_signature_data' => self::SIGNATURE,
         ]));
 
         self::assertResponseRedirects('/inscription/' . $uuid . '/confirmation');
@@ -211,12 +211,12 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUneAutorisationManquanteChezUnJeuneRejetteLaSoumission(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedJeune();
+        $uuid = $this->seedJeune();
 
         $payload = $this->payloadSenior($client, $uuid, [
-            'autorisation_accident'             => '1',
+            'autorisation_accident' => '1',
             'autorisation_transport_dirigeants' => '1',
-            'volontaire_transport'              => '0',
+            'volontaire_transport' => '0',
         ]);
         // autorisation_transport_parents jamais postée
 
@@ -229,13 +229,13 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnVolontaireSansAttestationValideRejetteLaSoumission(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedJeune();
+        $uuid = $this->seedJeune();
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid, [
-            'autorisation_accident'             => '1',
+            'autorisation_accident' => '1',
             'autorisation_transport_dirigeants' => '1',
-            'autorisation_transport_parents'    => '1',
-            'volontaire_transport'              => '1',
+            'autorisation_transport_parents' => '1',
+            'volontaire_transport' => '1',
             // aucun champ attestation_*
         ]));
 
@@ -248,11 +248,11 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testLeLienEstConsommeParLaSoumission(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid));
 
-        $em       = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $em->clear();
         $licencie = $em->find(Licencie::class, Uuid::fromString($uuid));
 
@@ -263,7 +263,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnDeuxiemeAccesRedirigeVersLaConfirmation(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid));
         $client->request('GET', '/inscription/' . $uuid);
@@ -274,8 +274,8 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     /** Rejouer la soumission ne doit pas réécrire un dossier déjà rempli. */
     public function testUneDeuxiemeSoumissionEstRefusee(): void
     {
-        $client  = static::createClient();
-        $uuid    = $this->seedSenior();
+        $client = static::createClient();
+        $uuid = $this->seedSenior();
         $payload = $this->payloadSenior($client, $uuid, ['taille_haut' => 'XL']);
 
         $client->request('POST', '/inscription/' . $uuid, $payload);
@@ -294,7 +294,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnLienExpireNAfficheAucunFormulaire(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior(expiration: new \DateTimeImmutable('-1 day'));
+        $uuid = $this->seedSenior(expiration: new \DateTimeImmutable('-1 day'));
 
         $crawler = $client->request('GET', '/inscription/' . $uuid);
 
@@ -305,15 +305,15 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnLienExpireRefuseLaSoumission(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior(expiration: new \DateTimeImmutable('-1 day'));
+        $uuid = $this->seedSenior(expiration: new \DateTimeImmutable('-1 day'));
 
         $client->request('POST', '/inscription/' . $uuid, [
-            '_token'             => 'peu-importe',
-            'taille_haut'        => 'L',
-            'taille_bas'         => 'M',
-            'pointure'           => '42',
+            '_token' => 'peu-importe',
+            'taille_haut' => 'L',
+            'taille_bas' => 'M',
+            'pointure' => '42',
             'autorisation_photo' => '1',
-            'payment_intention'  => 'especes',
+            'payment_intention' => 'especes',
         ]);
 
         self::assertResponseIsSuccessful();
@@ -325,12 +325,13 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testLaSoumissionEnvoieUnAccuseDeReceptionAuLicencie(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid));
 
         $messages = self::getMailerMessages();
         self::assertCount(1, $messages);
+        self::assertInstanceOf(\Symfony\Component\Mime\Email::class, $messages[0]);
         self::assertSame('kevin.martin@example.test', $messages[0]->getTo()[0]->getAddress());
         self::assertStringContainsString('Inscription bien reçue', $messages[0]->getSubject());
     }
@@ -338,7 +339,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnLicencieSansEmailSoumetQuandMemeSonDossier(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior(email: null);
+        $uuid = $this->seedSenior(email: null);
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid));
 
@@ -355,7 +356,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testUnEchecDEnvoiNeFaitPasPerdreLInscription(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         // Transport en panne : toute tentative d'envoi lève.
         self::getContainer()->set('mailer.mailer', new class implements MailerInterface {
@@ -382,7 +383,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testLOptionVirementDisparaitQuandLaSaisonNaPasDIban(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior();
+        $uuid = $this->seedSenior();
 
         $html = (string) $client->request('GET', '/inscription/' . $uuid)->html();
 
@@ -392,7 +393,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     public function testLeFormulaireAfficheLIbanDeLaSaison(): void
     {
         $client = static::createClient();
-        $uuid   = $this->seedSenior(iban: 'FR76 3000 4000 0300 0000 0000 143');
+        $uuid = $this->seedSenior(iban: 'FR76 3000 4000 0300 0000 0000 143');
 
         $html = (string) $client->request('GET', '/inscription/' . $uuid)->html();
 
@@ -422,15 +423,15 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     private function payloadSenior(KernelBrowser $client, string $uuid, array $extra = []): array
     {
         $crawler = $client->request('GET', '/inscription/' . $uuid);
-        $champ   = $crawler->filter('input[name="_token"]');
+        $champ = $crawler->filter('input[name="_token"]');
 
         return array_merge([
-            '_token'             => $champ->count() > 0 ? $champ->attr('value') : '',
-            'taille_haut'        => 'L',
-            'taille_bas'         => 'M',
-            'pointure'           => '42',
+            '_token' => $champ->count() > 0 ? $champ->attr('value') : '',
+            'taille_haut' => 'L',
+            'taille_bas' => 'M',
+            'pointure' => '42',
             'autorisation_photo' => '1',
-            'payment_intention'  => 'especes',
+            'payment_intention' => 'especes',
         ], $extra);
     }
 
@@ -466,7 +467,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     ): string {
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $season   = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85)->setIban($iban);
+        $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85)->setIban($iban);
         $category = (new Category())->setCode($code)->setLabel($label)->setIsEcoleFoot($code !== 'SENIOR');
 
         $licencie = (new Licencie())

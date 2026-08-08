@@ -14,7 +14,7 @@ enum PaymentMode: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::CB_ONLINE => 'Carte bancaire en ligne (HelloAsso)',
             self::CHEQUE => 'Chèque',
             self::ESPECES => 'Espèces',

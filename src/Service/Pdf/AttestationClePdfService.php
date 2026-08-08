@@ -31,14 +31,14 @@ final class AttestationClePdfService
         ?\DateTimeImmutable $remiseLe = null,
     ): string {
         $html = $this->twig->render('pdf/attestation_cle_signee.html.twig', [
-            'prenom'           => $dirigeant->getPrenom(),
-            'nom'              => $dirigeant->getNom(),
-            'season'           => $dirigeant->getSeason(),
-            'nbCles'           => $nbCles,
-            'remiseLe'         => $remiseLe,
+            'prenom' => $dirigeant->getPrenom(),
+            'nom' => $dirigeant->getNom(),
+            'season' => $dirigeant->getSeason(),
+            'nbCles' => $nbCles,
+            'remiseLe' => $remiseLe,
             'signatureDataUrl' => $signatureDataUrl,
-            'signedAt'         => new \DateTimeImmutable(),
-            'logoDataUrl'      => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
+            'signedAt' => new \DateTimeImmutable(),
+            'logoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
             'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
         ]);
 
@@ -57,16 +57,16 @@ final class AttestationClePdfService
     public function generatePreview(Season $season): string
     {
         $html = $this->twig->render('pdf/attestation_cle_signee.html.twig', [
-            'prenom'           => 'Prénom',
-            'nom'              => 'NOM',
-            'season'           => $season,
-            'nbCles'           => 1,
-            'remiseLe'         => new \DateTimeImmutable(),
+            'prenom' => 'Prénom',
+            'nom' => 'NOM',
+            'season' => $season,
+            'nbCles' => 1,
+            'remiseLe' => new \DateTimeImmutable(),
             'signatureDataUrl' => '',
-            'signedAt'         => new \DateTimeImmutable(),
-            'logoDataUrl'      => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
+            'signedAt' => new \DateTimeImmutable(),
+            'logoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
             'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
-            'previewMode'      => true,
+            'previewMode' => true,
         ]);
 
         return $this->renderPdf($html);

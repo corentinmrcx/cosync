@@ -34,7 +34,7 @@ final class CleRegistreServiceTest extends KernelTestCase
 
     public function testLeSoldeRetombeAZeroApresRestitutionEtPerte(): void
     {
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season);
 
         $this->remise($dirigeant, 2, '2026-01-10');
@@ -53,7 +53,7 @@ final class CleRegistreServiceTest extends KernelTestCase
 
     public function testDetenteurDepuisEstLaDateDeLaRemiseQuiRelanceLaDetention(): void
     {
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season);
 
         $this->remise($dirigeant, 1, '2026-01-10');
@@ -89,7 +89,7 @@ final class CleRegistreServiceTest extends KernelTestCase
 
     public function testUneAttestationSigneeEstComptabiliseePourLesDetenteurs(): void
     {
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season);
         $this->remise($dirigeant, 1, '2026-01-10');
         $this->marquerSignee($dirigeant, '2026-01-11');
@@ -102,7 +102,7 @@ final class CleRegistreServiceTest extends KernelTestCase
 
     public function testUneCleRemiseApresSignatureRendLAttestationARenouveler(): void
     {
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season);
         $this->remise($dirigeant, 1, '2026-01-10');
         $this->marquerSignee($dirigeant, '2026-01-11');
@@ -122,7 +122,7 @@ final class CleRegistreServiceTest extends KernelTestCase
 
     public function testUneRestitutionApresSignatureNeDeclenchePasDeResignature(): void
     {
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season);
         $this->remise($dirigeant, 2, '2026-01-10');
         $this->marquerSignee($dirigeant, '2026-01-11');
@@ -137,7 +137,7 @@ final class CleRegistreServiceTest extends KernelTestCase
 
     public function testUnNonSignataireNEstPasMarqueARenouveler(): void
     {
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season);
         $this->remise($dirigeant, 1, '2026-01-10');
 
@@ -149,12 +149,12 @@ final class CleRegistreServiceTest extends KernelTestCase
 
     public function testLaDetentionIndividuelleEgaleCelleCalculeeSurLaSaison(): void
     {
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season);
         $this->remise($dirigeant, 2, '2026-01-10');
         $this->mouvement($dirigeant, CleMouvementType::RESTITUTION, 1, '2026-02-01');
 
-        $parSaison    = $this->detentionDe($season, $dirigeant);
+        $parSaison = $this->detentionDe($season, $dirigeant);
         $individuelle = $this->service->getDetentionDe($dirigeant);
 
         self::assertSame($parSaison->solde, $individuelle->solde);
@@ -164,7 +164,7 @@ final class CleRegistreServiceTest extends KernelTestCase
 
     public function testUneRestitutionSuperieureAuSoldeEstRefusee(): void
     {
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season);
         $this->remise($dirigeant, 1, '2026-01-10');
 
@@ -179,7 +179,7 @@ final class CleRegistreServiceTest extends KernelTestCase
 
     public function testUneQuantiteNulleOuNegativeEstRefusee(): void
     {
-        $season    = $this->makeSeason();
+        $season = $this->makeSeason();
         $dirigeant = $this->makeDirigeant($season);
 
         $this->expectException(\InvalidArgumentException::class);

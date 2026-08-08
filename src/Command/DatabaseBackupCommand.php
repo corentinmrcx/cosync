@@ -62,7 +62,7 @@ final class DatabaseBackupCommand extends Command
             $io->note('Copie Drive ignorée (--sans-drive).');
         } else {
             $segments = $this->backupService->driveSegments();
-            $driveId  = $this->driveUploader->uploadToRoot(
+            $driveId = $this->driveUploader->uploadToRoot(
                 $path,
                 $segments,
                 $nomFichier,

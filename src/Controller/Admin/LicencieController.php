@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
+use App\Entity\User;
 use App\Enum\LicenceStatus;
 use App\Enum\NatureLicence;
 use App\Enum\PaymentMode;
@@ -21,6 +22,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Uid\Uuid;
 
 #[Route('/admin/licencies', name: 'admin_licencies_')]
@@ -49,7 +51,7 @@ class LicencieController extends AbstractController
             return $this->redirectToRoute('admin_licencies_list', $restored);
         }
 
-        $currentTeam   = null;
+        $currentTeam = null;
         $currentStatus = null;
         $currentNature = null;
 
@@ -63,10 +65,10 @@ class LicencieController extends AbstractController
             $currentNature = NatureLicence::tryFrom($request->query->get('nature'));
         }
 
-        $search  = trim((string) $request->query->get('search', ''));
-        $page    = max(1, (int) $request->query->get('page', 1));
+        $search = trim((string) $request->query->get('search', ''));
+        $page = max(1, (int) $request->query->get('page', 1));
         $perPage = 25;
-        $offset  = ($page - 1) * $perPage;
+        $offset = ($page - 1) * $perPage;
 
         $total = $licencieRepo->countWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature);
         $pages = (int) ceil($total / $perPage);
@@ -75,37 +77,37 @@ class LicencieController extends AbstractController
 
         $filterGroups = [
             [
-                'name'     => 'team',
-                'label'    => 'Équipe',
+                'name' => 'team',
+                'label' => 'Équipe',
                 'allLabel' => 'Toutes',
-                'options'  => array_map(fn($t) => ['value' => $t->getId(), 'label' => $t->getName()], $teams),
-                'current'  => $currentTeam?->getId(),
+                'options' => array_map(fn ($t) => ['value' => $t->getId(), 'label' => $t->getName()], $teams),
+                'current' => $currentTeam?->getId(),
             ],
             [
-                'name'     => 'status',
-                'label'    => 'Statut',
+                'name' => 'status',
+                'label' => 'Statut',
                 'allLabel' => 'Tous',
-                'options'  => array_map(fn(LicenceStatus $s) => ['value' => $s->value, 'label' => $s->label()], LicenceStatus::cases()),
-                'current'  => $currentStatus?->value,
+                'options' => array_map(fn (LicenceStatus $s) => ['value' => $s->value, 'label' => $s->label()], LicenceStatus::cases()),
+                'current' => $currentStatus?->value,
             ],
             [
-                'name'     => 'nature',
-                'label'    => 'Nature',
+                'name' => 'nature',
+                'label' => 'Nature',
                 'allLabel' => 'Toutes',
-                'options'  => array_map(fn(NatureLicence $n) => ['value' => $n->value, 'label' => $n->label()], NatureLicence::cases()),
-                'current'  => $currentNature?->value,
+                'options' => array_map(fn (NatureLicence $n) => ['value' => $n->value, 'label' => $n->label()], NatureLicence::cases()),
+                'current' => $currentNature?->value,
             ],
         ];
 
         return $this->render('admin/licencies/list.html.twig', [
-            'licencies'         => $licencieRepo->findWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature, $perPage, $offset),
-            'season'            => $season,
-            'search'            => $search,
-            'filterGroups'      => $filterGroups,
+            'licencies' => $licencieRepo->findWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature, $perPage, $offset),
+            'season' => $season,
+            'search' => $search,
+            'filterGroups' => $filterGroups,
             'activeFilterCount' => ($currentTeam ? 1 : 0) + ($currentStatus ? 1 : 0) + ($currentNature ? 1 : 0),
-            'total'             => $total,
-            'page'              => $page,
-            'pages'             => $pages,
+            'total' => $total,
+            'page' => $page,
+            'pages' => $pages,
         ]);
     }
 
@@ -130,6 +132,7 @@ class LicencieController extends AbstractController
                 $licencie = $licencieService->create($data, $season);
             } catch (\DomainException $e) {
                 $this->addFlash('error', $e->getMessage());
+
                 return $this->render('admin/licencies/new.html.twig', ['form' => $form]);
             }
 
@@ -167,16 +170,16 @@ class LicencieController extends AbstractController
         }
 
         $data = new LicencieIdentityData();
-        $data->nom          = $licencie->getNom();
-        $data->prenom       = $licencie->getPrenom();
+        $data->nom = $licencie->getNom();
+        $data->prenom = $licencie->getPrenom();
         $data->dateNaissance = $licencie->getDateNaissance();
-        $data->category     = $licencie->getCategory();
-        $data->email        = $licencie->getEmail();
-        $data->telephone    = $licencie->getTelephone();
-        $data->voieRue      = $licencie->getVoieRue();
-        $data->codePostal   = $licencie->getCodePostal();
-        $data->ville        = $licencie->getVille();
-        $data->numLicence   = $licencie->getNumLicence();
+        $data->category = $licencie->getCategory();
+        $data->email = $licencie->getEmail();
+        $data->telephone = $licencie->getTelephone();
+        $data->voieRue = $licencie->getVoieRue();
+        $data->codePostal = $licencie->getCodePostal();
+        $data->ville = $licencie->getVille();
+        $data->numLicence = $licencie->getNumLicence();
 
         $form = $this->createForm(LicencieIdentityType::class, $data);
         $form->handleRequest($request);
@@ -185,6 +188,7 @@ class LicencieController extends AbstractController
             try {
                 $licencieService->editIdentity($licencie, $data);
                 $this->addFlash('success', 'Identité de ' . $licencie->getNomPrenom() . ' mise à jour.');
+
                 return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
             } catch (\DomainException $e) {
                 $this->addFlash('error', $e->getMessage());
@@ -192,7 +196,7 @@ class LicencieController extends AbstractController
         }
 
         return $this->render('admin/licencies/identity.html.twig', [
-            'form'     => $form,
+            'form' => $form,
             'licencie' => $licencie,
         ]);
     }
@@ -214,21 +218,21 @@ class LicencieController extends AbstractController
             throw $this->createNotFoundException('Licencié introuvable.');
         }
 
-        $season       = $seasonContext->getCurrentSeason();
+        $season = $seasonContext->getCurrentSeason();
         $transactions = $season ? $transactionRepo->findAllByLicencieAndSeason($licencie, $season) : [];
-        $totalPaid    = $season ? $transactionRepo->sumByLicencieAndSeason($licencie, $season) : 0.0;
+        $totalPaid = $season ? $transactionRepo->sumByLicencieAndSeason($licencie, $season) : 0.0;
 
-        $montant         = $cotisationResolver->resolve($licencie);
+        $montant = $cotisationResolver->resolve($licencie);
         $remainingAmount = max(0, (float) $montant - $totalPaid);
 
         $history = [
             [
-                'date'   => $licencie->getImportedAt(),
+                'date' => $licencie->getImportedAt(),
                 'format' => 'd/m/Y à H:i',
-                'label'  => $licencie->isCreatedManually()
+                'label' => $licencie->isCreatedManually()
                     ? 'Licencié créé manuellement'
                     : 'Licencié importé depuis FootClubs',
-                'who'    => 'Admin',
+                'who' => 'Admin',
             ],
         ];
 
@@ -243,32 +247,32 @@ class LicencieController extends AbstractController
 
         foreach ($transactions as $t) {
             $history[] = [
-                'date'   => $t->getDatePaiement(),
+                'date' => $t->getDatePaiement(),
                 'format' => 'd/m/Y',
-                'label'  => sprintf('Paiement enregistré — %s %s €', $t->getMode()->label(), $t->getMontant()),
+                'label' => sprintf('Paiement enregistré — %s %s €', $t->getMode()->label(), $t->getMontant()),
                 // Pas de dirigeant sur un encaissement en ligne : c'est HelloAsso qui l'a confirmé.
-                'who'    => $t->getConfirmedBy()?->getEmail() ?? ($t->getMode() === PaymentMode::CB_ONLINE ? 'HelloAsso' : 'Admin'),
+                'who' => $t->getConfirmedBy()?->getEmail() ?? ($t->getMode() === PaymentMode::CB_ONLINE ? 'HelloAsso' : 'Admin'),
             ];
         }
 
         usort($history, static fn (array $a, array $b): int => $a['date'] <=> $b['date']);
 
         return $this->render('admin/licencies/show.html.twig', [
-            'licencie'        => $licencie,
-            'transactions'    => $transactions,
-            'totalPaid'       => $totalPaid,
+            'licencie' => $licencie,
+            'transactions' => $transactions,
+            'totalPaid' => $totalPaid,
             'remainingAmount' => $remainingAmount,
-            'season'          => $season,
-            'montant'         => $montant,
-            'paymentModes'    => PaymentMode::cases(),
-            'dotations'       => $stockMovementRepo->findDotationsByLicencie($licencie),
-            'dotationStatut'  => $dotationBesoinService->statutFicheLicencie($licencie),
-            'history'         => $history,
+            'season' => $season,
+            'montant' => $montant,
+            'paymentModes' => PaymentMode::cases(),
+            'dotations' => $stockMovementRepo->findDotationsByLicencie($licencie),
+            'dotationStatut' => $dotationBesoinService->statutFicheLicencie($licencie),
+            'history' => $history,
             'autorisationsManquantes' => $completionService->hasMissing($licencie),
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande.
-            'documents'       => $this->documentResolver->attendusPourLicencie($licencie),
-            'signatures'      => $this->documentResolver->signaturesParDocumentPourLicencie($licencie),
+            'documents' => $this->documentResolver->attendusPourLicencie($licencie),
+            'signatures' => $this->documentResolver->signaturesParDocumentPourLicencie($licencie),
         ]);
     }
 
@@ -293,10 +297,10 @@ class LicencieController extends AbstractController
         $dossier = $licencie->getDossierClub();
 
         $form = $this->createForm(LicencieEditType::class, $licencie, [
-            'season'         => $season,
-            'taille_haut'    => $dossier?->getTailleHaut(),
-            'taille_bas'     => $dossier?->getTailleBas(),
-            'pointure'       => $dossier?->getPointure(),
+            'season' => $season,
+            'taille_haut' => $dossier?->getTailleHaut(),
+            'taille_bas' => $dossier?->getTailleBas(),
+            'pointure' => $dossier?->getPointure(),
             'nature_licence' => $licencie->getNatureLicence(),
         ]);
         $form->handleRequest($request);
@@ -311,11 +315,12 @@ class LicencieController extends AbstractController
             );
 
             $this->addFlash('success', 'Dossier de ' . $licencie->getNomPrenom() . ' mis à jour.');
+
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
         return $this->render('admin/licencies/edit.html.twig', [
-            'form'     => $form,
+            'form' => $form,
             'licencie' => $licencie,
         ]);
     }
@@ -327,6 +332,7 @@ class LicencieController extends AbstractController
         LicencieRepository $licencieRepo,
         SeasonContext $seasonContext,
         LicencieService $licencieService,
+        #[CurrentUser] ?User $user,
     ): Response {
         if (!$this->isCsrfTokenValid('add_payment_' . $uuid, $request->request->get('_token'))) {
             throw $this->createAccessDeniedException('Token CSRF invalide.');
@@ -340,15 +346,17 @@ class LicencieController extends AbstractController
         $season = $seasonContext->getCurrentSeason();
         if ($season === null) {
             $this->addFlash('error', 'Aucune saison sélectionnée.');
+
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
         }
 
-        $mode    = PaymentMode::tryFrom($request->request->get('mode', ''));
+        $mode = PaymentMode::tryFrom($request->request->get('mode', ''));
         $montant = (float) str_replace(',', '.', $request->request->get('montant', '0'));
         $dateRaw = $request->request->get('date_paiement', '');
 
         if ($mode === null || $montant <= 0 || $dateRaw === '') {
             $this->addFlash('error', 'Mode, montant ou date invalide.');
+
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
         }
 
@@ -356,6 +364,7 @@ class LicencieController extends AbstractController
             $date = new \DateTimeImmutable($dateRaw);
         } catch (\Exception) {
             $this->addFlash('error', 'Date invalide.');
+
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
         }
 
@@ -366,7 +375,7 @@ class LicencieController extends AbstractController
             $request->request->get('reference') ?: null,
             $request->request->get('note') ?: null,
             $date,
-            $this->getUser(),
+            $user,
             $season,
         );
 
@@ -423,6 +432,7 @@ class LicencieController extends AbstractController
         $licencieService->validateManually($licencie);
 
         $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' validée manuellement.');
+
         return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
     }
 
@@ -441,6 +451,7 @@ class LicencieController extends AbstractController
 
         if ($licencie->getEmail() === null) {
             $this->addFlash('error', 'Ce licencié n\'a pas d\'adresse email renseignée.');
+
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
         }
 
@@ -474,11 +485,13 @@ class LicencieController extends AbstractController
 
         if ($licencie->getEmail() === null) {
             $this->addFlash('error', 'Ce licencié n\'a pas d\'adresse email renseignée.');
+
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
         }
 
         if (!$completionService->hasMissing($licencie)) {
             $this->addFlash('error', 'Aucune autorisation manquante pour ce licencié.');
+
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
         }
 

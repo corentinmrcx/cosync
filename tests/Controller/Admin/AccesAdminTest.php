@@ -131,7 +131,7 @@ final class AccesAdminTest extends WebTestCase
     {
         $client = static::createClient();
 
-        $em   = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $user = (new User())->setEmail('admin-acces@example.test')->setPassword('x');
         $em->persist($user);
         $em->flush();
@@ -152,10 +152,10 @@ final class AccesAdminTest extends WebTestCase
         $router = self::getContainer()->get(RouterInterface::class);
 
         $couvertes = array_map(static fn (array $cas): string => $cas[0], iterator_to_array(self::pagesAdmin()));
-        $oubliees  = [];
+        $oubliees = [];
 
         foreach ($router->getRouteCollection() as $route) {
-            $path    = $route->getPath();
+            $path = $route->getPath();
             $methods = $route->getMethods();
 
             if (!str_starts_with($path, '/admin') || str_contains($path, '{')) {

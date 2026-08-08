@@ -11,19 +11,20 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
+/** @extends AbstractType<StockCategory> */
 class StockCategoryType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('name', TextType::class, [
-                'label'       => 'Nom',
+                'label' => 'Nom',
                 'constraints' => [new NotBlank(), new Length(max: 100)],
-                'attr'        => ['placeholder' => 'ex: Buvette'],
+                'attr' => ['placeholder' => 'ex: Buvette'],
             ])
             ->add('position', IntegerType::class, [
                 'label' => 'Ordre d\'affichage',
-                'attr'  => ['placeholder' => '0'],
+                'attr' => ['placeholder' => '0'],
             ]);
     }
 

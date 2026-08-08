@@ -30,7 +30,7 @@ class SeasonController extends AbstractController
         $stats = [];
         foreach ($seasons as $season) {
             $stats[$season->getId()] = [
-                'licencies'  => $licencieRepo->count(['season' => $season]),
+                'licencies' => $licencieRepo->count(['season' => $season]),
                 'dirigeants' => $dirigeantRepo->count(['season' => $season]),
             ];
         }
@@ -38,7 +38,7 @@ class SeasonController extends AbstractController
         return $this->render('admin/seasons/list.html.twig', [
             'seasons' => $seasons,
             'current' => $current,
-            'stats'   => $stats,
+            'stats' => $stats,
         ]);
     }
 
@@ -46,7 +46,7 @@ class SeasonController extends AbstractController
     public function new(Request $request, SeasonService $seasonService): Response
     {
         $season = new Season();
-        $form   = $this->createForm(SeasonType::class, $season);
+        $form = $this->createForm(SeasonType::class, $season);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -56,6 +56,7 @@ class SeasonController extends AbstractController
             try {
                 $seasonService->create($season);
                 $this->addFlash('success', sprintf('Saison "%s" créée.', $season->getLabel()));
+
                 return $this->redirectToRoute('admin_config_index');
             } catch (\DomainException $e) {
                 $this->addFlash('error', $e->getMessage());
@@ -63,7 +64,7 @@ class SeasonController extends AbstractController
         }
 
         return $this->render('admin/seasons/form.html.twig', [
-            'form'  => $form,
+            'form' => $form,
             'title' => 'Nouvelle saison',
         ]);
     }
@@ -79,16 +80,18 @@ class SeasonController extends AbstractController
     ): Response {
         if (!$this->isCsrfTokenValid('season_delete_' . $season->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_seasons_list');
         }
 
         $current = $seasonContext->getCurrentSeason();
         if ($current !== null && $current->getId() === $season->getId()) {
             $this->addFlash('error', 'Impossible de supprimer la saison active. Activez d\'abord une autre saison.');
+
             return $this->redirectToRoute('admin_seasons_list');
         }
 
-        $licencieCount  = $licencieRepo->count(['season' => $season]);
+        $licencieCount = $licencieRepo->count(['season' => $season]);
         $dirigeantCount = $dirigeantRepo->count(['season' => $season]);
 
         if ($licencieCount > 0 || $dirigeantCount > 0) {
@@ -98,6 +101,7 @@ class SeasonController extends AbstractController
                 $licencieCount,
                 $dirigeantCount,
             ));
+
             return $this->redirectToRoute('admin_seasons_list');
         }
 
@@ -113,6 +117,7 @@ class SeasonController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('season_switch_' . $season->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_dashboard');
         }
 

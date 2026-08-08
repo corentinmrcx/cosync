@@ -32,6 +32,7 @@ class StockCategory
     public function setName(string $name): static
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -43,6 +44,7 @@ class StockCategory
     public function setPosition(int $position): static
     {
         $this->position = $position;
+
         return $this;
     }
 }

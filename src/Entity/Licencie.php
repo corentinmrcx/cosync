@@ -101,6 +101,7 @@ class Licencie
     public function setNumLicence(?string $numLicence): static
     {
         $this->numLicence = $numLicence;
+
         return $this;
     }
 
@@ -112,6 +113,7 @@ class Licencie
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
+
         return $this;
     }
 
@@ -123,6 +125,7 @@ class Licencie
     public function setPrenom(string $prenom): static
     {
         $this->prenom = $prenom;
+
         return $this;
     }
 
@@ -139,6 +142,7 @@ class Licencie
     public function setDateNaissance(\DateTimeImmutable $dateNaissance): static
     {
         $this->dateNaissance = $dateNaissance;
+
         return $this;
     }
 
@@ -150,6 +154,7 @@ class Licencie
     public function setEmail(?string $email): static
     {
         $this->email = $email;
+
         return $this;
     }
 
@@ -161,6 +166,7 @@ class Licencie
     public function setTelephone(?string $telephone): static
     {
         $this->telephone = $telephone;
+
         return $this;
     }
 
@@ -172,6 +178,7 @@ class Licencie
     public function setVoieRue(?string $voieRue): static
     {
         $this->voieRue = $voieRue;
+
         return $this;
     }
 
@@ -183,6 +190,7 @@ class Licencie
     public function setCodePostal(?string $codePostal): static
     {
         $this->codePostal = $codePostal;
+
         return $this;
     }
 
@@ -194,6 +202,7 @@ class Licencie
     public function setVille(?string $ville): static
     {
         $this->ville = $ville;
+
         return $this;
     }
 
@@ -205,6 +214,7 @@ class Licencie
     public function setCategory(Category $category): static
     {
         $this->category = $category;
+
         return $this;
     }
 
@@ -216,6 +226,7 @@ class Licencie
     public function setTeam(?Team $team): static
     {
         $this->team = $team;
+
         return $this;
     }
 
@@ -227,6 +238,7 @@ class Licencie
     public function setSeason(Season $season): static
     {
         $this->season = $season;
+
         return $this;
     }
 
@@ -238,6 +250,7 @@ class Licencie
     public function setFormTokenExpiresAt(?\DateTimeImmutable $formTokenExpiresAt): static
     {
         $this->formTokenExpiresAt = $formTokenExpiresAt;
+
         return $this;
     }
 
@@ -255,6 +268,7 @@ class Licencie
     public function setLinkSentAt(?\DateTimeImmutable $linkSentAt): static
     {
         $this->linkSentAt = $linkSentAt;
+
         return $this;
     }
 
@@ -266,6 +280,7 @@ class Licencie
     public function setCreatedManually(bool $createdManually): static
     {
         $this->createdManually = $createdManually;
+
         return $this;
     }
 
@@ -277,6 +292,7 @@ class Licencie
     public function setNatureLicence(?NatureLicence $natureLicence): static
     {
         $this->natureLicence = $natureLicence;
+
         return $this;
     }
 
@@ -288,6 +304,7 @@ class Licencie
     public function setNatureManuelle(bool $natureManuelle): static
     {
         $this->natureManuelle = $natureManuelle;
+
         return $this;
     }
 

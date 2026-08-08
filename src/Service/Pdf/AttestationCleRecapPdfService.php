@@ -29,7 +29,7 @@ final class AttestationCleRecapPdfService
     {
         $logoPath = $this->projectDir . '/public/images/logo/logo.png';
         $html = $this->twig->render('pdf/attestation_cle_recap.html.twig', [
-            'rows'        => $rows,
+            'rows' => $rows,
             'saisonLabel' => $season->getLabel(),
             'logoDataUrl' => is_file($logoPath)
                 ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($logoPath))

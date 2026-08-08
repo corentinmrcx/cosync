@@ -52,13 +52,13 @@ final class DotationBesoinService
 
         foreach ($this->licencieRepository->findValidatedBySeason($season) as $licencie) {
             if ($this->recomputeForLicencie($licencie)) {
-                $count++;
+                ++$count;
             }
         }
 
         foreach ($this->dirigeantRepository->findBySeason($season) as $dirigeant) {
             if ($this->dossierCompletion->isComplete($dirigeant) && $this->recomputeForDirigeant($dirigeant)) {
-                $count++;
+                ++$count;
             }
         }
 
@@ -87,7 +87,7 @@ final class DotationBesoinService
                 : null;
         }
 
-        $total  = count($besoins);
+        $total = count($besoins);
         $donnes = count(array_filter(
             $besoins,
             static fn (DotationBesoin $b): bool => $b->getStatut() === DotationBesoinStatut::DONNE,
@@ -95,8 +95,8 @@ final class DotationBesoinService
 
         $statut = match (true) {
             $donnes === $total => 'remise',
-            $donnes === 0      => 'attente',
-            default            => 'partielle',
+            $donnes === 0 => 'attente',
+            default => 'partielle',
         };
 
         return ['statut' => $statut, 'donnes' => $donnes, 'total' => $total];
@@ -104,7 +104,7 @@ final class DotationBesoinService
 
     /**
      * @param DotationBesoin[] $existants
-     * @return bool true si la personne est concernée par au moins une dotation (modèle résolu non vide).
+     * @return bool true si la personne est concernée par au moins une dotation (modèle résolu non vide)
      */
     private function recompute(Licencie|Dirigeant $person, array $existants): bool
     {
@@ -247,7 +247,7 @@ final class DotationBesoinService
                 continue;
             }
 
-            $person   = $besoin->getLicencie() ?? $besoin->getDirigeant();
+            $person = $besoin->getLicencie() ?? $besoin->getDirigeant();
             $resolved = $person !== null
                 ? $this->resolver->sizeFor($person, $besoin->getStockItem()->getTypeVetement())
                 : null;
@@ -277,9 +277,9 @@ final class DotationBesoinService
         /** @var array<string, array<string, list<DotationBesoin>>> $parEquipe */
         $parEquipe = [];
         foreach ($this->besoinRepository->findBySeason($season) as $besoin) {
-            $equipe   = $besoin->getTeamName() ?? 'Sans équipe';
+            $equipe = $besoin->getTeamName() ?? 'Sans équipe';
             $personne = $besoin->getLicencie() ?? $besoin->getDirigeant();
-            $cle      = $personne !== null ? (string) $personne->getUuid() : 'inconnu';
+            $cle = $personne !== null ? (string) $personne->getUuid() : 'inconnu';
             $parEquipe[$equipe][$cle][] = $besoin;
         }
         ksort($parEquipe);
@@ -309,15 +309,15 @@ final class DotationBesoinService
                 foreach ($besoinsPersonne as $b) {
                     $ordonnes[] = $b;
                     if ($b->getStatut() !== DotationBesoinStatut::DONNE) {
-                        $restants++;
+                        ++$restants;
                     }
                 }
             }
 
             $groupes[] = [
-                'nom'      => $nom,
-                'besoins'  => $ordonnes,
-                'total'    => count($ordonnes),
+                'nom' => $nom,
+                'besoins' => $ordonnes,
+                'total' => count($ordonnes),
                 'restants' => $restants,
             ];
         }
@@ -341,6 +341,7 @@ final class DotationBesoinService
             }
             $besoin->setTaille($taille)->setTailleManuelle($taille !== null);
             $this->em->flush();
+
             return;
         }
 

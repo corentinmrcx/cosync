@@ -22,9 +22,9 @@ class UserController extends AbstractController
     public function list(UserRepository $userRepo): Response
     {
         return $this->render('admin/config/utilisateurs/list.html.twig', [
-            'users'     => $userRepo->findBy([], ['email' => 'ASC']),
+            'users' => $userRepo->findBy([], ['email' => 'ASC']),
             'diagEmail' => $this->betaModeService->getRedirectEmail(),
-            'isDiag'    => $this->isDiagUser(),
+            'isDiag' => $this->isDiagUser(),
         ]);
     }
 
@@ -45,13 +45,14 @@ class UserController extends AbstractController
             $em->flush();
 
             $this->addFlash('success', sprintf('Utilisateur "%s" créé.', $user->getEmail()));
+
             return $this->redirectToRoute('admin_users_list');
         }
 
         return $this->render('admin/config/utilisateurs/form.html.twig', [
-            'form'  => $form,
+            'form' => $form,
             'title' => 'Nouvel utilisateur',
-            'user'  => null,
+            'user' => null,
         ]);
     }
 
@@ -65,7 +66,7 @@ class UserController extends AbstractController
         $canChangePassword = $this->canChangePasswordFor($user);
 
         $form = $this->createForm(UserType::class, $user, [
-            'is_new'             => false,
+            'is_new' => false,
             'can_change_password' => $canChangePassword,
         ]);
         $form->handleRequest($request);
@@ -81,13 +82,14 @@ class UserController extends AbstractController
             $em->flush();
 
             $this->addFlash('success', sprintf('Utilisateur "%s" mis à jour.', $user->getEmail()));
+
             return $this->redirectToRoute('admin_users_list');
         }
 
         return $this->render('admin/config/utilisateurs/form.html.twig', [
-            'form'              => $form,
-            'title'             => sprintf('Modifier "%s"', $user->getEmail()),
-            'user'              => $user,
+            'form' => $form,
+            'title' => sprintf('Modifier "%s"', $user->getEmail()),
+            'user' => $user,
             'canChangePassword' => $canChangePassword,
         ]);
     }
@@ -103,12 +105,14 @@ class UserController extends AbstractController
         $currentUser = $this->getUser();
         if ($currentUser->getId() === $user->getId()) {
             $this->addFlash('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+
             return $this->redirectToRoute('admin_users_list');
         }
 
         $diagEmail = $this->betaModeService->getRedirectEmail();
         if ($diagEmail !== '' && $user->getEmail() === $diagEmail) {
             $this->addFlash('error', 'Le compte super-admin ne peut pas être supprimé.');
+
             return $this->redirectToRoute('admin_users_list');
         }
 
@@ -117,6 +121,7 @@ class UserController extends AbstractController
         $em->flush();
 
         $this->addFlash('success', sprintf('Utilisateur "%s" supprimé.', $email));
+
         return $this->redirectToRoute('admin_users_list');
     }
 
@@ -125,6 +130,7 @@ class UserController extends AbstractController
         $diagEmail = $this->betaModeService->getRedirectEmail();
         /** @var User $currentUser */
         $currentUser = $this->getUser();
+
         return $diagEmail !== '' && $currentUser->getEmail() === $diagEmail;
     }
 
@@ -135,6 +141,7 @@ class UserController extends AbstractController
         }
 
         $diagEmail = $this->betaModeService->getRedirectEmail();
+
         return $target->getEmail() !== $diagEmail;
     }
 }

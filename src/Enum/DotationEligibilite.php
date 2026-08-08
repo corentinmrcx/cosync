@@ -11,15 +11,15 @@ namespace App\Enum;
  */
 enum DotationEligibilite: string
 {
-    case TOUS            = 'tous';
-    case NOUVEAUX        = 'nouveaux';
+    case TOUS = 'tous';
+    case NOUVEAUX = 'nouveaux';
     case RENOUVELLEMENTS = 'renouvellements';
 
     public function label(): string
     {
         return match ($this) {
-            self::TOUS            => 'Tout le monde',
-            self::NOUVEAUX        => 'Nouveaux licenciés uniquement',
+            self::TOUS => 'Tout le monde',
+            self::NOUVEAUX => 'Nouveaux licenciés uniquement',
             self::RENOUVELLEMENTS => 'Renouvellements uniquement',
         };
     }
@@ -33,8 +33,8 @@ enum DotationEligibilite: string
     public function accepte(?NatureLicence $nature): bool
     {
         return match ($this) {
-            self::TOUS            => true,
-            self::NOUVEAUX        => $nature !== null && $nature->estNouveau(),
+            self::TOUS => true,
+            self::NOUVEAUX => $nature !== null && $nature->estNouveau(),
             self::RENOUVELLEMENTS => $nature === null || !$nature->estNouveau(),
         };
     }

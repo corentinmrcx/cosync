@@ -54,11 +54,11 @@ class InscriptionDemoController extends AbstractController
         $montant = $season->getCotisationDefaut();
 
         return $this->render('public/inscription/form.html.twig', [
-            'licencie'        => $licencie,
-            'montant'         => $montant,
+            'licencie' => $licencie,
+            'montant' => $montant,
             'libelleVirement' => $cotisationResolver->libelleVirement($licencie),
-            'documents'       => $documents,
-            'demo'            => true,
+            'documents' => $documents,
+            'demo' => true,
         ]);
     }
 

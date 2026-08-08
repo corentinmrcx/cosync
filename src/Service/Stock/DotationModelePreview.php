@@ -78,12 +78,12 @@ final class DotationModelePreview
             return [true, true];
         }
 
-        $licencies  = false;
+        $licencies = false;
         $dirigeants = false;
 
         foreach ($affectations as $affectation) {
             $versDirigeant = $affectation->getDirigeant() !== null || $affectation->getRole() !== null;
-            $versLicencie  = $affectation->getCategory() !== null
+            $versLicencie = $affectation->getCategory() !== null
                 || $affectation->getTeam() !== null
                 || $affectation->getLicencie() !== null;
 
@@ -93,7 +93,7 @@ final class DotationModelePreview
                 $licencies = true;
             } else {
                 // Défaut saison : tout le monde, joueurs comme encadrement.
-                $licencies  = true;
+                $licencies = true;
                 $dirigeants = true;
             }
         }
@@ -108,9 +108,9 @@ final class DotationModelePreview
         ?NatureLicence $nature,
         bool $peutChoisir,
     ): DotationApercuProfil {
-        $fixes     = [];
+        $fixes = [];
         $eligibles = [];
-        $tous      = [];
+        $tous = [];
 
         foreach ($modele->getLignes() as $ligne) {
             $groupe = $ligne->getGroupeChoix();
@@ -127,9 +127,9 @@ final class DotationModelePreview
             }
         }
 
-        $imposes   = [];
+        $imposes = [];
         $questions = [];
-        $alertes   = [];
+        $alertes = [];
 
         foreach (array_keys($tous) as $groupe) {
             $options = $eligibles[$groupe] ?? [];

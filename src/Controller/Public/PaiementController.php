@@ -123,7 +123,7 @@ class PaiementController extends AbstractController
 
         return $this->render('public/paiement/erreur.html.twig', [
             'licencie' => $licencie,
-            'montant'  => $cotisationResolver->resolve($licencie),
+            'montant' => $cotisationResolver->resolve($licencie),
         ]);
     }
 
@@ -146,7 +146,7 @@ class PaiementController extends AbstractController
             $this->logger->error('HelloAsso : création de l\'intention de paiement impossible : {message}', [
                 'message' => $e->getMessage(),
             ]);
-            $this->addFlash('error', "Le paiement en ligne est momentanément indisponible. Votre inscription est bien enregistrée, vous pouvez réessayer ou régler autrement.");
+            $this->addFlash('error', 'Le paiement en ligne est momentanément indisponible. Votre inscription est bien enregistrée, vous pouvez réessayer ou régler autrement.');
 
             return $this->redirectToRoute('public_inscription_confirmation', ['uuid' => $uuid]);
         }

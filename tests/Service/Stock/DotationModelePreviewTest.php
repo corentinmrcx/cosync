@@ -82,7 +82,7 @@ final class DotationModelePreviewTest extends TestCase
     public function testUnKitAttribueAUnRoleNAnnonceQueLeProfilDirigeant(): void
     {
         $modele = $this->modele($this->ligne('Polo'));
-        $role   = $this->affectation(static fn (DotationAffectation $a) => $a->setRole(DirigeantRole::RESPONSABLE_FOOT));
+        $role = $this->affectation(static fn (DotationAffectation $a) => $a->setRole(DirigeantRole::RESPONSABLE_FOOT));
 
         $profils = array_column((new DotationModelePreview())->build($modele, [$role]), 'nom');
 

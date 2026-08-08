@@ -118,12 +118,12 @@ final class DocumentSignableCrudTest extends WebTestCase
         $token = $crawler->filter('form#document-form input[name="_token"]')->attr('value');
 
         $client->request('POST', '/admin/config/documents/nouveau', [
-            '_token'       => $token,
-            'titre'        => 'Charte d\'engagement — Communication',
-            'libelle'      => 'la charte d\'engagement communication du Foyer de Soudron',
-            'cible'        => 'dirigeant',
+            '_token' => $token,
+            'titre' => 'Charte d\'engagement — Communication',
+            'libelle' => 'la charte d\'engagement communication du Foyer de Soudron',
+            'cible' => 'dirigeant',
             'contenu_html' => '<p>Je m engage.</p>',
-            'actif'        => '1',
+            'actif' => '1',
         ]);
 
         self::assertResponseRedirects('/admin/config/documents');
@@ -142,22 +142,22 @@ final class DocumentSignableCrudTest extends WebTestCase
         $this->loginAdmin($client);
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $fixtures  = new DocumentFixtures($em);
-        $joueurs   = $fixtures->documentLicencie($this->season, contenuHtml: '<p>Texte joueurs</p>');
+        $fixtures = new DocumentFixtures($em);
+        $joueurs = $fixtures->documentLicencie($this->season, contenuHtml: '<p>Texte joueurs</p>');
         $dirigeant = $fixtures->documentDirigeant($this->season, contenuHtml: '<p>Texte dirigeants</p>');
         $em->flush();
 
-        $url     = '/admin/config/documents/' . $dirigeant->getId() . '/modifier';
+        $url = '/admin/config/documents/' . $dirigeant->getId() . '/modifier';
         $crawler = $client->request('GET', $url);
-        $token   = $crawler->filter('form#document-form input[name="_token"]')->attr('value');
+        $token = $crawler->filter('form#document-form input[name="_token"]')->attr('value');
 
         $client->request('POST', $url, [
-            '_token'       => $token,
-            'titre'        => 'Règlement intérieur des dirigeants',
-            'libelle'      => 'le règlement intérieur des dirigeants du Foyer de Soudron',
-            'cible'        => 'dirigeant',
+            '_token' => $token,
+            'titre' => 'Règlement intérieur des dirigeants',
+            'libelle' => 'le règlement intérieur des dirigeants du Foyer de Soudron',
+            'cible' => 'dirigeant',
             'contenu_html' => '<p>Texte dirigeants v2</p>',
-            'actif'        => '1',
+            'actif' => '1',
         ]);
 
         self::assertResponseRedirects('/admin/config/documents');
@@ -178,10 +178,10 @@ final class DocumentSignableCrudTest extends WebTestCase
         $id = $document->getId();
 
         $client->request('POST', '/admin/config/documents/' . $id . '/modifier', [
-            '_token'       => 'invalide',
-            'titre'        => 'Piraté',
-            'libelle'      => 'le document piraté',
-            'cible'        => 'dirigeant',
+            '_token' => 'invalide',
+            'titre' => 'Piraté',
+            'libelle' => 'le document piraté',
+            'cible' => 'dirigeant',
             'contenu_html' => '<p>Piraté</p>',
         ]);
 
@@ -213,8 +213,8 @@ final class DocumentSignableCrudTest extends WebTestCase
         $this->loginAdmin($client);
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $fixtures  = new DocumentFixtures($em);
-        $document  = $fixtures->documentDirigeant($this->season);
+        $fixtures = new DocumentFixtures($em);
+        $document = $fixtures->documentDirigeant($this->season);
         $dirigeant = (new \App\Entity\Dirigeant())
             ->setNom('MARTIN')->setPrenom('Kevin')->setSeason($this->season);
 
@@ -265,18 +265,18 @@ final class DocumentSignableCrudTest extends WebTestCase
         $fixtures->signerParDirigeant($document, $dejaSigne);
         $em->flush();
 
-        $url     = '/admin/config/documents/' . $document->getId() . '/relancer';
+        $url = '/admin/config/documents/' . $document->getId() . '/relancer';
         $crawler = $client->request('GET', $url);
-        $html    = (string) $client->getResponse()->getContent();
+        $html = (string) $client->getResponse()->getContent();
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('MARTIN', $html);
         self::assertStringContainsString('LAGRANGE', $html);
         self::assertStringNotContainsString('DUPONT', $html, 'Qui a signé n\'est pas relancé.');
 
-        $uuidRelance   = $aRelancer->getUuid();
+        $uuidRelance = $aRelancer->getUuid();
         $uuidSansEmail = $sansEmail->getUuid();
-        $token         = $crawler->filter('form#relance-form input[name="_token"]')->attr('value');
+        $token = $crawler->filter('form#relance-form input[name="_token"]')->attr('value');
 
         $client->request('POST', $url, ['_token' => $token]);
 
@@ -379,7 +379,7 @@ final class DocumentSignableCrudTest extends WebTestCase
 
     private function loginAdmin(KernelBrowser $client): void
     {
-        $em   = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $user = (new User())->setEmail('admin-documents@example.com')->setPassword('x');
 
         $this->makeSeason();

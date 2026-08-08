@@ -14,67 +14,68 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\LessThan;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
+/** @extends AbstractType<LicencieIdentityData> */
 class LicencieIdentityType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('nom', TextType::class, [
-                'label'       => 'Nom',
+                'label' => 'Nom',
                 'constraints' => [new NotBlank(message: 'Le nom est requis.')],
-                'attr'        => ['placeholder' => 'DUPONT'],
+                'attr' => ['placeholder' => 'DUPONT'],
             ])
             ->add('prenom', TextType::class, [
-                'label'       => 'Prénom',
+                'label' => 'Prénom',
                 'constraints' => [new NotBlank(message: 'Le prénom est requis.')],
-                'attr'        => ['placeholder' => 'Thomas'],
+                'attr' => ['placeholder' => 'Thomas'],
             ])
             ->add('dateNaissance', DateType::class, [
-                'label'       => 'Date de naissance',
-                'widget'      => 'single_text',
-                'input'       => 'datetime_immutable',
-                'attr'        => ['max' => (new \DateTimeImmutable('yesterday'))->format('Y-m-d')],
+                'label' => 'Date de naissance',
+                'widget' => 'single_text',
+                'input' => 'datetime_immutable',
+                'attr' => ['max' => (new \DateTimeImmutable('yesterday'))->format('Y-m-d')],
                 'constraints' => [
                     new NotBlank(message: 'La date de naissance est requise.'),
                     new LessThan(value: 'today', message: 'La date de naissance doit être dans le passé.'),
                 ],
             ])
             ->add('category', EntityType::class, [
-                'class'        => Category::class,
-                'choice_label' => fn(Category $c): string => $c->getCode(),
-                'label'        => 'Catégorie',
-                'placeholder'  => '— Sélectionner —',
-                'constraints'  => [new NotBlank(message: 'La catégorie est requise.')],
+                'class' => Category::class,
+                'choice_label' => fn (Category $c): string => $c->getCode(),
+                'label' => 'Catégorie',
+                'placeholder' => '— Sélectionner —',
+                'constraints' => [new NotBlank(message: 'La catégorie est requise.')],
             ])
             ->add('email', EmailType::class, [
-                'label'    => 'Email',
+                'label' => 'Email',
                 'required' => false,
-                'attr'     => ['placeholder' => 'parent@email.fr'],
+                'attr' => ['placeholder' => 'parent@email.fr'],
             ])
             ->add('telephone', TextType::class, [
-                'label'    => 'Téléphone',
+                'label' => 'Téléphone',
                 'required' => false,
-                'attr'     => ['placeholder' => '06 12 34 56 78'],
+                'attr' => ['placeholder' => '06 12 34 56 78'],
             ])
             ->add('voieRue', TextType::class, [
-                'label'    => 'Adresse',
+                'label' => 'Adresse',
                 'required' => false,
-                'attr'     => ['placeholder' => '12 rue de la Mairie'],
+                'attr' => ['placeholder' => '12 rue de la Mairie'],
             ])
             ->add('codePostal', TextType::class, [
-                'label'    => 'Code postal',
+                'label' => 'Code postal',
                 'required' => false,
-                'attr'     => ['placeholder' => '51320'],
+                'attr' => ['placeholder' => '51320'],
             ])
             ->add('ville', TextType::class, [
-                'label'    => 'Ville',
+                'label' => 'Ville',
                 'required' => false,
-                'attr'     => ['placeholder' => 'Soudron'],
+                'attr' => ['placeholder' => 'Soudron'],
             ])
             ->add('numLicence', TextType::class, [
-                'label'    => 'Numéro FootClubs',
+                'label' => 'Numéro FootClubs',
                 'required' => false,
-                'attr'     => ['placeholder' => 'Ex : 123456'],
+                'attr' => ['placeholder' => 'Ex : 123456'],
             ])
         ;
     }

@@ -44,6 +44,7 @@ final class MailerService
             }
             throw new \RuntimeException('Beta mode actif mais aucun destinataire de secours (DIAG_EMAIL non configuré).');
         }
+
         return $real;
     }
 
@@ -52,6 +53,7 @@ final class MailerService
         if ($this->betaModeService->isActive()) {
             return "[BETA → {$realEmail}] {$subject}";
         }
+
         return $subject;
     }
 
@@ -75,7 +77,7 @@ final class MailerService
         );
 
         $realEmail = $licencie->getEmail();
-        $subject   = 'Finalisez votre dossier — Foyer de Soudron';
+        $subject = 'Finalisez votre dossier — Foyer de Soudron';
 
         $email = (new TemplatedEmail())
             ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
@@ -84,7 +86,7 @@ final class MailerService
             ->htmlTemplate('email/inscription_link.html.twig')
             ->context([
                 'licencie' => $licencie,
-                'url'      => $url,
+                'url' => $url,
             ]);
 
         $this->mailer->send($email);
@@ -121,11 +123,11 @@ final class MailerService
             ->subject($this->resolveSubject($subject, $realEmail))
             ->htmlTemplate('email/inscription_confirmation.html.twig')
             ->context([
-                'licencie'        => $licencie,
-                'montant'         => $montant,
-                'intentions'      => $licencie->getDossierClub()?->getPaymentIntentions() ?? [],
+                'licencie' => $licencie,
+                'montant' => $montant,
+                'intentions' => $licencie->getDossierClub()?->getPaymentIntentions() ?? [],
                 'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
-                'url'             => $url,
+                'url' => $url,
                 'documentsJoints' => count($pdfsJoints),
             ]);
 
@@ -147,7 +149,7 @@ final class MailerService
     private function attachementsRetenus(array $fichiers): array
     {
         $retenus = [];
-        $total   = 0;
+        $total = 0;
 
         foreach ($fichiers as $chemin => $nom) {
             if (!is_file($chemin)) {
@@ -181,7 +183,7 @@ final class MailerService
         );
 
         $realEmail = $licencie->getEmail();
-        $subject   = 'Une précision à apporter à votre dossier — Foyer de Soudron';
+        $subject = 'Une précision à apporter à votre dossier — Foyer de Soudron';
 
         $email = (new TemplatedEmail())
             ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
@@ -190,7 +192,7 @@ final class MailerService
             ->htmlTemplate('email/completion_link.html.twig')
             ->context([
                 'licencie' => $licencie,
-                'url'      => $url,
+                'url' => $url,
             ]);
 
         $this->mailer->send($email);
@@ -205,7 +207,7 @@ final class MailerService
         );
 
         $realEmail = $dirigeant->getEmail();
-        $subject   = 'Finalisez votre dossier dirigeant — Foyer de Soudron';
+        $subject = 'Finalisez votre dossier dirigeant — Foyer de Soudron';
 
         $email = (new TemplatedEmail())
             ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
@@ -214,7 +216,7 @@ final class MailerService
             ->htmlTemplate('email/dirigeant_link.html.twig')
             ->context([
                 'dirigeant' => $dirigeant,
-                'url'       => $url,
+                'url' => $url,
             ]);
 
         $this->mailer->send($email);
@@ -229,7 +231,7 @@ final class MailerService
         );
 
         $realEmail = $dirigeant->getEmail();
-        $subject   = 'Attestation de remise de clés à signer — Foyer de Soudron';
+        $subject = 'Attestation de remise de clés à signer — Foyer de Soudron';
 
         $email = (new TemplatedEmail())
             ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
@@ -238,7 +240,7 @@ final class MailerService
             ->htmlTemplate('email/attestation_cle_link.html.twig')
             ->context([
                 'dirigeant' => $dirigeant,
-                'url'       => $url,
+                'url' => $url,
             ]);
 
         $this->mailer->send($email);
@@ -257,9 +259,9 @@ final class MailerService
             ->htmlTemplate('email/validation.html.twig')
             ->context([
                 'licencie' => [
-                    'prenom'   => $isJeune ? 'Thomas' : 'Kévin',
-                    'nom'      => $isJeune ? 'DUPONT' : 'MARTIN',
-                    'season'   => ['label' => '2025-2026'],
+                    'prenom' => $isJeune ? 'Thomas' : 'Kévin',
+                    'nom' => $isJeune ? 'DUPONT' : 'MARTIN',
+                    'season' => ['label' => '2025-2026'],
                     'category' => ['isJeune' => $isJeune],
                 ],
             ]);
@@ -270,7 +272,7 @@ final class MailerService
     public function sendValidation(Licencie $licencie): void
     {
         $realEmail = $licencie->getEmail();
-        $subject   = $licencie->getCategory()->isJeune()
+        $subject = $licencie->getCategory()->isJeune()
             ? 'Licence de ' . $licencie->getPrenom() . ' validée — Foyer de Soudron'
             : 'Votre licence est validée — Foyer de Soudron';
 

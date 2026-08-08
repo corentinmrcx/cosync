@@ -78,7 +78,7 @@ final class InscriptionDotationControllerTest extends WebTestCase
         ['uuid' => $uuid, 'tshirt' => $tshirtId] = $this->seed(NatureLicence::RENOUVELLEMENT);
 
         $crawler = $client->request('GET', '/inscription/' . $uuid);
-        $xData   = $crawler->filter('.inscription-page')->attr('x-data');
+        $xData = $crawler->filter('.inscription-page')->attr('x-data');
 
         preg_match('/dotationFlocages: (\{.*?\}\]\})/', $xData, $m);
         self::assertNotEmpty($m, 'dotationFlocages doit être présent dans le x-data.');
@@ -114,7 +114,7 @@ final class InscriptionDotationControllerTest extends WebTestCase
 
         $client->request('POST', '/inscription/' . $uuid, $this->payload($client, $uuid, $tshirtId, [
             'dotation_personnalisation' => ['Dotation' => 'Coco'],
-            'flocage_confirme'          => '1',
+            'flocage_confirme' => '1',
         ]));
 
         self::assertResponseRedirects();
@@ -158,7 +158,7 @@ final class InscriptionDotationControllerTest extends WebTestCase
 
         $client->request('POST', '/inscription/' . $uuid, $this->payload($client, $uuid, $etrangerId, [
             'dotation_personnalisation' => ['Dotation' => 'Coco'],
-            'flocage_confirme'          => '1',
+            'flocage_confirme' => '1',
         ]));
 
         self::assertResponseRedirects('/inscription/' . $uuid);
@@ -172,7 +172,7 @@ final class InscriptionDotationControllerTest extends WebTestCase
 
         $client->request('POST', '/inscription/' . $uuid, $this->payload($client, $uuid, $tshirtId, [
             'dotation_personnalisation' => ['Dotation' => str_repeat('A', self::MAX_FLOCAGE + 1)],
-            'flocage_confirme'          => '1',
+            'flocage_confirme' => '1',
         ]));
 
         self::assertResponseRedirects('/inscription/' . $uuid);
@@ -206,16 +206,16 @@ final class InscriptionDotationControllerTest extends WebTestCase
     private function payload(KernelBrowser $client, string $uuid, ?int $choixId, array $extra): array
     {
         $crawler = $client->request('GET', '/inscription/' . $uuid);
-        $token   = $crawler->filter('input[name="_token"]')->attr('value');
+        $token = $crawler->filter('input[name="_token"]')->attr('value');
 
         return array_merge([
-            '_token'             => $token,
-            'taille_haut'        => 'L',
-            'taille_bas'         => 'M',
-            'pointure'           => '42',
+            '_token' => $token,
+            'taille_haut' => 'L',
+            'taille_bas' => 'M',
+            'pointure' => '42',
             'autorisation_photo' => '1',
-            'payment_intention'  => 'especes',
-            'dotation_choix'     => ['Dotation' => (string) $choixId],
+            'payment_intention' => 'especes',
+            'dotation_choix' => ['Dotation' => (string) $choixId],
         ], $extra);
     }
 
@@ -237,11 +237,11 @@ final class InscriptionDotationControllerTest extends WebTestCase
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $season   = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
+        $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
         $category = (new Category())->setCode('SENIOR')->setLabel('Séniors')->setIsEcoleFoot(false);
 
-        $veste    = (new StockItem())->setNom('Veste')->setTypeVetement(StockItemVetementType::HAUT);
-        $tshirt   = (new StockItem())->setNom('T-shirt')->setTypeVetement(StockItemVetementType::HAUT);
+        $veste = (new StockItem())->setNom('Veste')->setTypeVetement(StockItemVetementType::HAUT);
+        $tshirt = (new StockItem())->setNom('T-shirt')->setTypeVetement(StockItemVetementType::HAUT);
         $etranger = (new StockItem())->setNom('Article hors kit')->setTypeVetement(StockItemVetementType::HAUT);
 
         $modele = (new DotationModele())->setSeason($season)->setNom('Dotation 2026');
@@ -277,9 +277,9 @@ final class InscriptionDotationControllerTest extends WebTestCase
         $em->flush();
 
         $ids = [
-            'uuid'     => (string) $licencie->getUuid(),
-            'veste'    => $veste->getId(),
-            'tshirt'   => $tshirt->getId(),
+            'uuid' => (string) $licencie->getUuid(),
+            'veste' => $veste->getId(),
+            'tshirt' => $tshirt->getId(),
             'etranger' => $etranger->getId(),
         ];
         $em->clear();

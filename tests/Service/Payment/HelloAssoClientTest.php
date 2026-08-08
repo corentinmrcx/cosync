@@ -64,7 +64,7 @@ final class HelloAssoClientTest extends TestCase
             );
         }, self::BASE_URL);
 
-        $client   = new HelloAssoClient($httpClient, new ArrayAdapter(), self::BASE_URL, 'client-id', 'client-secret', 'foyer-de-soudron');
+        $client = new HelloAssoClient($httpClient, new ArrayAdapter(), self::BASE_URL, 'client-id', 'client-secret', 'foyer-de-soudron');
         $licencie = $this->makeLicencie();
 
         $intent = $client->createCheckoutIntent($licencie, 85, 'https://cosync.test/retour', 'https://cosync.test/erreur');
@@ -128,7 +128,7 @@ final class HelloAssoClientTest extends TestCase
             );
         }, self::BASE_URL);
 
-        $client   = new HelloAssoClient($httpClient, new ArrayAdapter(), self::BASE_URL, 'id', 'secret', 'slug');
+        $client = new HelloAssoClient($httpClient, new ArrayAdapter(), self::BASE_URL, 'id', 'secret', 'slug');
         $licencie = $this->makeLicencie();
 
         $client->createCheckoutIntent($licencie, 85, 'https://cosync.test/r', 'https://cosync.test/e');

@@ -57,7 +57,7 @@ class DocumentSignableController extends AbstractController
             $signes = $signatureRepo->countByDocument($document);
 
             $stats[$document->getId()] = [
-                'signes'    => $signes,
+                'signes' => $signes,
                 'concernes' => $document->getCible() === DocumentCible::DIRIGEANT
                     ? null
                     : $licenciesDeLaSaison,
@@ -68,9 +68,9 @@ class DocumentSignableController extends AbstractController
         }
 
         return $this->render('admin/documents/list.html.twig', [
-            'season'    => $season,
+            'season' => $season,
             'documents' => $documents,
-            'stats'     => $stats,
+            'stats' => $stats,
         ]);
     }
 
@@ -86,6 +86,7 @@ class DocumentSignableController extends AbstractController
         if ($request->isMethod('POST')) {
             if (!$this->isCsrfTokenValid('document_new', $request->request->get('_token'))) {
                 $this->addFlash('error', 'Token CSRF invalide.');
+
                 return $this->redirectToRoute('admin_documents_new');
             }
 
@@ -100,12 +101,12 @@ class DocumentSignableController extends AbstractController
         }
 
         return $this->render('admin/documents/form.html.twig', [
-            'document'   => null,
-            'season'     => $season,
+            'document' => null,
+            'season' => $season,
             'formAction' => $this->generateUrl('admin_documents_new'),
-            'csrfId'     => 'document_new',
-            'apercuUrl'  => null,
-            'roles'      => DirigeantRole::cases(),
+            'csrfId' => 'document_new',
+            'apercuUrl' => null,
+            'roles' => DirigeantRole::cases(),
             'dirigeants' => $dirigeantRepo->findBySeason($season),
         ]);
     }
@@ -118,6 +119,7 @@ class DocumentSignableController extends AbstractController
         if ($request->isMethod('POST')) {
             if (!$this->isCsrfTokenValid($csrfId, $request->request->get('_token'))) {
                 $this->addFlash('error', 'Token CSRF invalide.');
+
                 return $this->redirectToRoute('admin_documents_edit', ['id' => $document->getId()]);
             }
 
@@ -128,12 +130,12 @@ class DocumentSignableController extends AbstractController
         }
 
         return $this->render('admin/documents/form.html.twig', [
-            'document'   => $document,
-            'season'     => $document->getSeason(),
+            'document' => $document,
+            'season' => $document->getSeason(),
             'formAction' => $this->generateUrl('admin_documents_edit', ['id' => $document->getId()]),
-            'csrfId'     => $csrfId,
-            'apercuUrl'  => $this->generateUrl('admin_documents_apercu', ['id' => $document->getId()]),
-            'roles'      => DirigeantRole::cases(),
+            'csrfId' => $csrfId,
+            'apercuUrl' => $this->generateUrl('admin_documents_apercu', ['id' => $document->getId()]),
+            'roles' => DirigeantRole::cases(),
             'dirigeants' => $dirigeantRepo->findBySeason($document->getSeason()),
         ]);
     }
@@ -142,7 +144,7 @@ class DocumentSignableController extends AbstractController
     public function apercu(DocumentSignable $document, PdfGeneratorService $pdfGenerator): Response
     {
         return new Response($pdfGenerator->generatePreview($document), Response::HTTP_OK, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf(
                 'inline; filename="apercu-%s-%s.pdf"',
                 $document->getCode(),
@@ -156,6 +158,7 @@ class DocumentSignableController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('document_toggle_' . $document->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_documents_list');
         }
 
@@ -174,6 +177,7 @@ class DocumentSignableController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('document_delete_' . $document->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
+
             return $this->redirectToRoute('admin_documents_list');
         }
 
@@ -208,6 +212,7 @@ class DocumentSignableController extends AbstractController
     {
         if ($document->getCible() !== DocumentCible::DIRIGEANT) {
             $this->addFlash('error', 'La relance groupée ne concerne que les documents destinés aux dirigeants.');
+
             return $this->redirectToRoute('admin_documents_list');
         }
 
@@ -216,6 +221,7 @@ class DocumentSignableController extends AbstractController
         if ($request->isMethod('POST')) {
             if (!$this->isCsrfTokenValid('document_relancer_' . $document->getId(), $request->request->get('_token'))) {
                 $this->addFlash('error', 'Token CSRF invalide.');
+
                 return $this->redirectToRoute('admin_documents_relancer', ['id' => $document->getId()]);
             }
 
@@ -224,12 +230,12 @@ class DocumentSignableController extends AbstractController
 
             foreach ($enAttente as $dirigeant) {
                 if ($dirigeant->getEmail() === null) {
-                    $sansEmail++;
+                    ++$sansEmail;
                     continue;
                 }
 
                 $linkService->send($dirigeant);
-                $envoyes++;
+                ++$envoyes;
             }
 
             $this->addFlash('success', sprintf(
@@ -242,7 +248,7 @@ class DocumentSignableController extends AbstractController
         }
 
         return $this->render('admin/documents/relancer.html.twig', [
-            'document'  => $document,
+            'document' => $document,
             'enAttente' => $enAttente,
         ]);
     }
@@ -257,13 +263,13 @@ class DocumentSignableController extends AbstractController
         )));
 
         return new DocumentSignableData(
-            titre:       trim((string) $request->request->get('titre', '')),
-            libelle:     trim((string) $request->request->get('libelle', '')),
+            titre: trim((string) $request->request->get('titre', '')),
+            libelle: trim((string) $request->request->get('libelle', '')),
             contenuHtml: $request->request->get('contenu_html') ?: null,
-            cible:       $cible,
-            roles:       $roles,
-            dirigeants:  array_map('strval', $request->request->all('dirigeants')),
-            actif:       $request->request->get('actif') === '1',
+            cible: $cible,
+            roles: $roles,
+            dirigeants: array_map('strval', $request->request->all('dirigeants')),
+            actif: $request->request->get('actif') === '1',
         );
     }
 }

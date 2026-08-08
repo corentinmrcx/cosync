@@ -31,7 +31,7 @@
     color: var(--color-text-base);
     margin: 0;
     min-width: 0;
-    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .licencie-show-subtitle {
@@ -281,7 +281,7 @@
     font-size: var(--font-size-xs);
     font-weight: 700;
     padding: 0.125rem 0.5rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--color-warning-bg);
     color: var(--color-warning);
     flex-shrink: 0;
@@ -291,7 +291,7 @@
     font-size: var(--font-size-xs);
     font-weight: 700;
     padding: 0.125rem 0.5rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--color-success-bg);
     color: var(--color-success);
     flex-shrink: 0;
@@ -301,7 +301,7 @@
     font-size: var(--font-size-xs);
     font-weight: 700;
     padding: 0.125rem 0.5rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--color-danger-bg);
     color: var(--color-danger);
     flex-shrink: 0;
@@ -311,7 +311,7 @@
     font-size: var(--font-size-xs);
     font-weight: 600;
     padding: 0.125rem 0.5rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--color-bg-muted);
     color: var(--color-text-muted);
     flex-shrink: 0;
@@ -342,7 +342,7 @@
     margin-top: auto;
 }
 
-.licencie-show-confirm-full:hover { background: #16a34a; }
+.licencie-show-confirm-full:hover { background: var(--color-success-dark); }
 
 /* — État paiement validé — */
 .licencie-show-validated {
@@ -530,7 +530,7 @@
 }
 
 .licencie-modal-submit:hover {
-    background: #16a34a;
+    background: var(--color-success-dark);
 }
 
 .licencie-show-dotations-table {
@@ -615,7 +615,7 @@
     }
 
     .licencie-payments-bilan-label {
-        font-size: 0.65rem;
+        font-size: var(--font-size-2xs);
     }
 
     /* Liste des paiements : padding réduit */

@@ -24,7 +24,7 @@ final class ListFilterMemory
      */
     public function restoreOrRemember(string $listKey, Request $request, array $params): ?array
     {
-        $session  = $request->getSession();
+        $session = $request->getSession();
         $storeKey = self::SESSION_PREFIX . $listKey;
 
         $hasExplicitState = false;

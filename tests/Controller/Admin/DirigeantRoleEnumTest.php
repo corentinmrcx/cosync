@@ -22,7 +22,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
 
     public function testLeChampRoleProposeLesTroisRolesSansPouvoirEnCreer(): void
     {
-        $client  = static::createClient();
+        $client = static::createClient();
         $this->loginAdmin($client);
         $crawler = $client->request('GET', '/admin/dirigeants/nouveau');
 
@@ -62,7 +62,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
     /** Non-régression : ailleurs, la prop garde sa valeur par défaut et la création reste possible. */
     public function testLesAutresCombobxGardentLaCreationActivee(): void
     {
-        $client  = static::createClient();
+        $client = static::createClient();
         $this->loginAdmin($client);
         $crawler = $client->request('GET', '/admin/stock/items/nouveau');
 
@@ -152,11 +152,11 @@ final class DirigeantRoleEnumTest extends WebTestCase
     private function submitNouveauDirigeant(KernelBrowser $client, string $role): void
     {
         $crawler = $client->request('GET', '/admin/dirigeants/nouveau');
-        $form    = $crawler->selectButton('Ajouter le dirigeant')->form();
+        $form = $crawler->selectButton('Ajouter le dirigeant')->form();
 
-        $form['dirigeant[nom]']    = 'BUREAU';
+        $form['dirigeant[nom]'] = 'BUREAU';
         $form['dirigeant[prenom]'] = 'Martine';
-        $form['dirigeant[role]']   = $role;
+        $form['dirigeant[role]'] = $role;
 
         $client->submit($form);
     }
@@ -172,7 +172,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
 
     private function makeDirigeant(string $nom, DirigeantRole $role): Dirigeant
     {
-        $em        = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $dirigeant = (new Dirigeant())->setNom($nom)->setPrenom('Test')->setSeason($this->season)->setRole($role);
         $em->persist($dirigeant);
         $em->flush();
@@ -185,7 +185,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
         $this->season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user         = (new User())->setEmail('admin-role@example.com')->setPassword('x');
+        $user = (new User())->setEmail('admin-role@example.com')->setPassword('x');
 
         $em->persist($this->season);
         $em->persist($user);

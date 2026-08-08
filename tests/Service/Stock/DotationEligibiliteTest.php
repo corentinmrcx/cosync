@@ -27,9 +27,9 @@ final class DotationEligibiliteTest extends StockIntegrationTestCase
     private function kitVesteOuTshirt(): array
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
+        $cat = $this->makeCategory('SENIOR');
 
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $tshirt = $this->makeItem('T-shirt', StockItemVetementType::HAUT);
 
         $modele = $this->makeModele($season, 'Dotation 2026');
@@ -138,8 +138,8 @@ final class DotationEligibiliteTest extends StockIntegrationTestCase
     public function testGroupeSansAucuneOptionEligibleNeProduitRien(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $fixe   = $this->makeItem('Short', StockItemVetementType::BAS);
+        $cat = $this->makeCategory('SENIOR');
+        $fixe = $this->makeItem('Short', StockItemVetementType::BAS);
 
         $modele = $this->makeModele($season, 'Dotation 2026');
         $this->addLigne($modele, $fixe, 1);
@@ -159,7 +159,7 @@ final class DotationEligibiliteTest extends StockIntegrationTestCase
     public function testLigneFixeReserveeAuxNouveauxNEstPasDueAUnRenouvellement(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
+        $cat = $this->makeCategory('SENIOR');
 
         $modele = $this->makeModele($season, 'Dotation 2026');
         // Un sac de bienvenue n'a de sens que pour une première licence au club.

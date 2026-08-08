@@ -27,11 +27,11 @@ final class DriveRetryUploadCommandTest extends KernelTestCase
     public function testUnDocumentEnLocalEstDetecte(): void
     {
         self::bootKernel();
-        $enAttente    = $this->makeSignature('MARTIN', '/var/www/html/var/pdfs/abc_reglement_dirigeant.pdf');
+        $enAttente = $this->makeSignature('MARTIN', '/var/www/html/var/pdfs/abc_reglement_dirigeant.pdf');
         $dejaSurDrive = $this->makeSignature('DUPONT', 'drive-file-id');
 
         $trouves = self::getContainer()->get(DocumentSignatureRepository::class)->findWithLocalPath();
-        $ids     = array_map(static fn (DocumentSignature $s): int => $s->getId(), $trouves);
+        $ids = array_map(static fn (DocumentSignature $s): int => $s->getId(), $trouves);
 
         self::assertContains($enAttente->getId(), $ids);
         self::assertNotContains($dejaSurDrive->getId(), $ids, 'Un document déjà archivé n\'est pas à rattraper.');
@@ -66,7 +66,7 @@ final class DriveRetryUploadCommandTest extends KernelTestCase
     private function runCommand(): CommandTester
     {
         $command = (new Application(self::$kernel))->find('app:drive-retry-upload');
-        $tester  = new CommandTester($command);
+        $tester = new CommandTester($command);
         $tester->execute([]);
 
         return $tester;
@@ -74,7 +74,7 @@ final class DriveRetryUploadCommandTest extends KernelTestCase
 
     private function makeSignature(string $nom, string $drivePath): DocumentSignature
     {
-        $em       = self::getContainer()->get(EntityManagerInterface::class);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
         $fixtures = new DocumentFixtures($em);
 
         $dirigeant = (new Dirigeant())

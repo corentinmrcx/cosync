@@ -52,32 +52,116 @@ class DotationModeleLigne
     #[ORM\Column(nullable: true)]
     private ?int $personnalisationMaxLength = null;
 
-    public function getId(): int { return $this->id; }
+    public function getId(): int
+    {
+        return $this->id;
+    }
 
-    public function getModele(): DotationModele { return $this->modele; }
-    public function setModele(DotationModele $modele): static { $this->modele = $modele; return $this; }
+    public function getModele(): DotationModele
+    {
+        return $this->modele;
+    }
 
-    public function getStockItem(): StockItem { return $this->stockItem; }
-    public function setStockItem(StockItem $stockItem): static { $this->stockItem = $stockItem; return $this; }
+    public function setModele(DotationModele $modele): static
+    {
+        $this->modele = $modele;
 
-    public function getQuantite(): int { return $this->quantite; }
-    public function setQuantite(int $quantite): static { $this->quantite = $quantite; return $this; }
+        return $this;
+    }
 
-    public function isObligatoire(): bool { return $this->obligatoire; }
-    public function setObligatoire(bool $obligatoire): static { $this->obligatoire = $obligatoire; return $this; }
+    public function getStockItem(): StockItem
+    {
+        return $this->stockItem;
+    }
 
-    public function getGroupeChoix(): ?string { return $this->groupeChoix; }
-    public function setGroupeChoix(?string $groupeChoix): static { $this->groupeChoix = $groupeChoix; return $this; }
+    public function setStockItem(StockItem $stockItem): static
+    {
+        $this->stockItem = $stockItem;
 
-    public function getEligibilite(): DotationEligibilite { return $this->eligibilite; }
-    public function setEligibilite(DotationEligibilite $eligibilite): static { $this->eligibilite = $eligibilite; return $this; }
+        return $this;
+    }
 
-    public function isPersonnalisationRequise(): bool { return $this->personnalisationRequise; }
-    public function setPersonnalisationRequise(bool $requise): static { $this->personnalisationRequise = $requise; return $this; }
+    public function getQuantite(): int
+    {
+        return $this->quantite;
+    }
 
-    public function getPersonnalisationLabel(): ?string { return $this->personnalisationLabel; }
-    public function setPersonnalisationLabel(?string $label): static { $this->personnalisationLabel = $label; return $this; }
+    public function setQuantite(int $quantite): static
+    {
+        $this->quantite = $quantite;
 
-    public function getPersonnalisationMaxLength(): ?int { return $this->personnalisationMaxLength; }
-    public function setPersonnalisationMaxLength(?int $max): static { $this->personnalisationMaxLength = $max; return $this; }
+        return $this;
+    }
+
+    public function isObligatoire(): bool
+    {
+        return $this->obligatoire;
+    }
+
+    public function setObligatoire(bool $obligatoire): static
+    {
+        $this->obligatoire = $obligatoire;
+
+        return $this;
+    }
+
+    public function getGroupeChoix(): ?string
+    {
+        return $this->groupeChoix;
+    }
+
+    public function setGroupeChoix(?string $groupeChoix): static
+    {
+        $this->groupeChoix = $groupeChoix;
+
+        return $this;
+    }
+
+    public function getEligibilite(): DotationEligibilite
+    {
+        return $this->eligibilite;
+    }
+
+    public function setEligibilite(DotationEligibilite $eligibilite): static
+    {
+        $this->eligibilite = $eligibilite;
+
+        return $this;
+    }
+
+    public function isPersonnalisationRequise(): bool
+    {
+        return $this->personnalisationRequise;
+    }
+
+    public function setPersonnalisationRequise(bool $requise): static
+    {
+        $this->personnalisationRequise = $requise;
+
+        return $this;
+    }
+
+    public function getPersonnalisationLabel(): ?string
+    {
+        return $this->personnalisationLabel;
+    }
+
+    public function setPersonnalisationLabel(?string $label): static
+    {
+        $this->personnalisationLabel = $label;
+
+        return $this;
+    }
+
+    public function getPersonnalisationMaxLength(): ?int
+    {
+        return $this->personnalisationMaxLength;
+    }
+
+    public function setPersonnalisationMaxLength(?int $max): static
+    {
+        $this->personnalisationMaxLength = $max;
+
+        return $this;
+    }
 }
