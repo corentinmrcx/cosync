@@ -4,6 +4,7 @@ namespace App\Controller\Public;
 
 use App\DTO\AttestationCleSignatureData;
 use App\Repository\DirigeantRepository;
+use App\Security\CsrfGuard;
 use App\Service\AttestationCleFormService;
 use App\Service\ClubHouse\CleRegistreService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,16 +21,23 @@ use Symfony\Component\Uid\Uuid;
 #[Route('/attestation-cle', name: 'public_attestation_cle_')]
 class AttestationCleController extends AbstractController
 {
+    public function __construct(
+        private readonly DirigeantRepository $dirigeantRepo,
+        private readonly CleRegistreService $registre,
+        private readonly AttestationCleFormService $formService,
+        private readonly CsrfGuard $csrf,
+    ) {}
+
     #[Route('/{uuid}', name: 'show', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
-    public function show(string $uuid, DirigeantRepository $dirigeantRepo, CleRegistreService $registre): Response
+    public function show(string $uuid): Response
     {
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null) {
             return $this->render('public/attestation_cle/expired.html.twig');
         }
 
-        $detention = $registre->getDetentionDe($dirigeant);
+        $detention = $this->registre->getDetentionDe($dirigeant);
 
         // Déjà signé ET toujours exact : rien à resigner.
         if ($detention->attestationAJour()) {
@@ -51,20 +59,14 @@ class AttestationCleController extends AbstractController
     public function submit(
         string $uuid,
         Request $request,
-        DirigeantRepository $dirigeantRepo,
-        AttestationCleFormService $formService,
     ): Response {
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null || !$dirigeant->isAttestationCleTokenValid()) {
             return $this->render('public/attestation_cle/expired.html.twig');
         }
 
-        if (!$this->isCsrfTokenValid('attestation_cle_submit', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
-
-            return $this->redirectToRoute('public_attestation_cle_show', ['uuid' => $uuid]);
-        }
+        $this->csrf->valider('attestation_cle_submit', $request);
 
         $data = $this->buildSignatureData($request);
 
@@ -74,15 +76,15 @@ class AttestationCleController extends AbstractController
             return $this->redirectToRoute('public_attestation_cle_show', ['uuid' => $uuid]);
         }
 
-        $formService->submit($dirigeant, $data);
+        $this->formService->submit($dirigeant, $data);
 
         return $this->redirectToRoute('public_attestation_cle_confirmation', ['uuid' => $uuid]);
     }
 
     #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
-    public function confirmation(string $uuid, DirigeantRepository $dirigeantRepo): Response
+    public function confirmation(string $uuid): Response
     {
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null || $dirigeant->getAttestationCleSignedAt() === null) {
             return $this->render('public/attestation_cle/expired.html.twig');

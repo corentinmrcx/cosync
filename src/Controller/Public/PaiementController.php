@@ -4,6 +4,7 @@ namespace App\Controller\Public;
 
 use App\Entity\Licencie;
 use App\Repository\LicencieRepository;
+use App\Security\CsrfGuard;
 use App\Service\CotisationResolver;
 use App\Service\Payment\HelloAssoClient;
 use App\Service\Payment\HelloAssoException;
@@ -29,6 +30,11 @@ use Symfony\Component\Uid\Uuid;
 class PaiementController extends AbstractController
 {
     public function __construct(
+        private readonly HelloAssoClient $client,
+        private readonly CotisationResolver $cotisationResolver,
+        private readonly EntityManagerInterface $em,
+        private readonly HelloAssoPaymentRecorder $recorder,
+        private readonly CsrfGuard $csrf,
         private readonly LicencieRepository $licencieRepo,
         private readonly LoggerInterface $logger,
     ) {}
@@ -38,9 +44,6 @@ class PaiementController extends AbstractController
     public function checkout(
         string $uuid,
         Request $request,
-        HelloAssoClient $client,
-        CotisationResolver $cotisationResolver,
-        EntityManagerInterface $em,
     ): Response {
         $licencie = $this->findSubmittedLicencie($uuid);
 
@@ -48,13 +51,9 @@ class PaiementController extends AbstractController
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        if (!$this->isCsrfTokenValid('paiement_helloasso', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+        $this->csrf->valider('paiement_helloasso', $request);
 
-            return $this->redirectToRoute('public_inscription_confirmation', ['uuid' => $uuid]);
-        }
-
-        return $this->startCheckout($licencie, $client, $cotisationResolver, $em);
+        return $this->startCheckout($licencie, $this->client, $this->cotisationResolver, $this->em);
     }
 
     /**
@@ -65,9 +64,6 @@ class PaiementController extends AbstractController
     #[Route('/demarrer', name: 'checkout_start', methods: ['GET'])]
     public function checkoutStart(
         string $uuid,
-        HelloAssoClient $client,
-        CotisationResolver $cotisationResolver,
-        EntityManagerInterface $em,
     ): Response {
         $licencie = $this->findSubmittedLicencie($uuid);
 
@@ -75,7 +71,7 @@ class PaiementController extends AbstractController
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        return $this->startCheckout($licencie, $client, $cotisationResolver, $em);
+        return $this->startCheckout($licencie, $this->client, $this->cotisationResolver, $this->em);
     }
 
     /**
@@ -86,7 +82,7 @@ class PaiementController extends AbstractController
      * si le licencié ferme l'onglet trop tôt.
      */
     #[Route('/retour', name: 'return', methods: ['GET'])]
-    public function retour(string $uuid, HelloAssoPaymentRecorder $recorder): Response
+    public function retour(string $uuid): Response
     {
         $licencie = $this->findSubmittedLicencie($uuid);
 
@@ -98,7 +94,7 @@ class PaiementController extends AbstractController
 
         if ($intentId !== null) {
             try {
-                $recorder->recordFromCheckoutIntent($intentId);
+                $this->recorder->recordFromCheckoutIntent($intentId);
             } catch (HelloAssoException $e) {
                 // Sans réponse de HelloAsso on n'enregistre rien : le webhook ou la commande de
                 // réconciliation rattraperont l'encaissement.
@@ -113,7 +109,7 @@ class PaiementController extends AbstractController
 
     /** Paiement abandonné ou refusé. L'inscription, elle, est bien enregistrée. */
     #[Route('/erreur', name: 'error', methods: ['GET'])]
-    public function erreur(string $uuid, CotisationResolver $cotisationResolver): Response
+    public function erreur(string $uuid): Response
     {
         $licencie = $this->findSubmittedLicencie($uuid);
 
@@ -123,7 +119,7 @@ class PaiementController extends AbstractController
 
         return $this->render('public/paiement/erreur.html.twig', [
             'licencie' => $licencie,
-            'montant' => $cotisationResolver->resolve($licencie),
+            'montant' => $this->cotisationResolver->resolve($licencie),
         ]);
     }
 

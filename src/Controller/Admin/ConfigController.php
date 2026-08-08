@@ -8,6 +8,7 @@ use App\Form\SeasonType;
 use App\Form\TeamSetupType;
 use App\Repository\CategoryRepository;
 use App\Repository\TeamRepository;
+use App\Security\CsrfGuard;
 use App\Service\SeasonContext;
 use App\Service\SeasonService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,10 +20,19 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin/config', name: 'admin_config_')]
 class ConfigController extends AbstractController
 {
+    public function __construct(
+        private readonly SeasonContext $seasonContext,
+        private readonly SeasonService $seasonService,
+        private readonly TeamRepository $teamRepo,
+        private readonly CategoryRepository $categoryRepo,
+        private readonly EntityManagerInterface $em,
+        private readonly CsrfGuard $csrf,
+    ) {}
+
     #[Route('', name: 'index', methods: ['GET', 'POST'])]
-    public function index(Request $request, SeasonContext $seasonContext, SeasonService $seasonService, TeamRepository $teamRepo, CategoryRepository $categoryRepo): Response
+    public function index(Request $request): Response
     {
-        $season = $seasonContext->getCurrentSeason();
+        $season = $this->seasonContext->getCurrentSeason();
 
         if ($season === null) {
             return $this->render('admin/config/index.html.twig', [
@@ -45,7 +55,7 @@ class ConfigController extends AbstractController
             $startYear = (int) $form->get('startYear')->getData();
             $season->setLabel($startYear . '-' . ($startYear + 1));
 
-            $seasonService->update($season);
+            $this->seasonService->update($season);
 
             $this->addFlash('success', sprintf('Saison "%s" mise à jour.', $season->getLabel()));
 
@@ -59,16 +69,16 @@ class ConfigController extends AbstractController
         return $this->render('admin/config/index.html.twig', [
             'form' => $form,
             'season' => $season,
-            'teams' => $teamRepo->findBySeason($season),
+            'teams' => $this->teamRepo->findBySeason($season),
             'newTeamForm' => $newTeamForm,
-            'categories' => $categoryRepo->findBy([], ['minYear' => 'ASC']),
+            'categories' => $this->categoryRepo->findBy([], ['minYear' => 'ASC']),
         ]);
     }
 
     #[Route('/equipes/nouveau', name: 'teams_new', methods: ['POST'])]
-    public function teamNew(Request $request, SeasonContext $seasonContext, EntityManagerInterface $em): Response
+    public function teamNew(Request $request): Response
     {
-        $season = $seasonContext->getCurrentSeason();
+        $season = $this->seasonContext->getCurrentSeason();
         if ($season === null) {
             return $this->redirectToRoute('admin_config_index');
         }
@@ -85,8 +95,8 @@ class ConfigController extends AbstractController
             foreach ($data->categories as $category) {
                 $team->addCategory($category);
             }
-            $em->persist($team);
-            $em->flush();
+            $this->em->persist($team);
+            $this->em->flush();
             $this->addFlash('success', sprintf('Équipe "%s" créée.', $team->getName()));
         } else {
             $this->addFlash('error', 'Le nom de l\'équipe est obligatoire.');
@@ -96,13 +106,9 @@ class ConfigController extends AbstractController
     }
 
     #[Route('/equipes/{id}/modifier', name: 'teams_edit', methods: ['POST'])]
-    public function teamEdit(Team $team, Request $request, EntityManagerInterface $em, CategoryRepository $categoryRepo): Response
+    public function teamEdit(Team $team, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('edit_team_' . $team->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_config_index');
-        }
+        $this->csrf->valider('edit_team_' . $team->getId(), $request);
 
         $teamData = $request->request->all('team');
         $name = trim($teamData['name'] ?? '');
@@ -120,30 +126,26 @@ class ConfigController extends AbstractController
 
         $team->getCategories()->clear();
         foreach ($categoryIds as $catId) {
-            $cat = $categoryRepo->find((int) $catId);
+            $cat = $this->categoryRepo->find((int) $catId);
             if ($cat !== null) {
                 $team->addCategory($cat);
             }
         }
 
-        $em->flush();
+        $this->em->flush();
         $this->addFlash('success', sprintf('Équipe "%s" mise à jour.', $team->getName()));
 
         return $this->redirectToRoute('admin_config_index');
     }
 
     #[Route('/equipes/{id}/supprimer', name: 'teams_delete', methods: ['POST'])]
-    public function teamDelete(Team $team, Request $request, EntityManagerInterface $em): Response
+    public function teamDelete(Team $team, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('delete_team_' . $team->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_config_index');
-        }
+        $this->csrf->valider('delete_team_' . $team->getId(), $request);
 
         $name = $team->getName();
-        $em->remove($team);
-        $em->flush();
+        $this->em->remove($team);
+        $this->em->flush();
         $this->addFlash('success', sprintf('Équipe "%s" supprimée.', $name));
 
         return $this->redirectToRoute('admin_config_index');

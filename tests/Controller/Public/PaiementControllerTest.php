@@ -111,7 +111,9 @@ final class PaiementControllerTest extends WebTestCase
         $licencie = $this->createLicencie($em);
 
         $uuid = (string) $licencie->getUuid();
-        $client->request('POST', '/inscription/' . $uuid . '/paiement/checkout');
+        $client->request('POST', '/inscription/' . $uuid . '/paiement/checkout', [], [], [
+            'HTTP_REFERER' => '/inscription/' . $uuid . '/confirmation',
+        ]);
 
         self::assertResponseRedirects('/inscription/' . $uuid . '/confirmation');
         self::assertNull($this->reload($uuid)->getDossierClub()->getHelloassoCheckoutIntentId());

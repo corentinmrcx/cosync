@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
+use App\Security\CsrfGuard;
 use App\Service\BetaModeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,13 +17,19 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin/config/utilisateurs', name: 'admin_users_')]
 class UserController extends AbstractController
 {
-    public function __construct(private readonly BetaModeService $betaModeService) {}
+    public function __construct(
+        private readonly UserRepository $userRepo,
+        private readonly UserPasswordHasherInterface $hasher,
+        private readonly EntityManagerInterface $em,
+        private readonly CsrfGuard $csrf,
+        private readonly BetaModeService $betaModeService,
+    ) {}
 
     #[Route('', name: 'list')]
-    public function list(UserRepository $userRepo): Response
+    public function list(): Response
     {
         return $this->render('admin/config/utilisateurs/list.html.twig', [
-            'users' => $userRepo->findBy([], ['email' => 'ASC']),
+            'users' => $this->userRepo->findBy([], ['email' => 'ASC']),
             'diagEmail' => $this->betaModeService->getRedirectEmail(),
             'isDiag' => $this->isDiagUser(),
         ]);
@@ -31,18 +38,16 @@ class UserController extends AbstractController
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
     public function new(
         Request $request,
-        UserPasswordHasherInterface $hasher,
-        EntityManagerInterface $em,
     ): Response {
         $user = new User();
         $form = $this->createForm(UserType::class, $user, ['is_new' => true, 'can_change_password' => true]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $user->setPassword($hasher->hashPassword($user, $form->get('plainPassword')->getData()));
+            $user->setPassword($this->hasher->hashPassword($user, $form->get('plainPassword')->getData()));
 
-            $em->persist($user);
-            $em->flush();
+            $this->em->persist($user);
+            $this->em->flush();
 
             $this->addFlash('success', sprintf('Utilisateur "%s" créé.', $user->getEmail()));
 
@@ -60,8 +65,6 @@ class UserController extends AbstractController
     public function edit(
         User $user,
         Request $request,
-        UserPasswordHasherInterface $hasher,
-        EntityManagerInterface $em,
     ): Response {
         $canChangePassword = $this->canChangePasswordFor($user);
 
@@ -75,11 +78,11 @@ class UserController extends AbstractController
             if ($canChangePassword && $form->has('plainPassword')) {
                 $plain = $form->get('plainPassword')->getData();
                 if ($plain !== null && $plain !== '') {
-                    $user->setPassword($hasher->hashPassword($user, $plain));
+                    $user->setPassword($this->hasher->hashPassword($user, $plain));
                 }
             }
 
-            $em->flush();
+            $this->em->flush();
 
             $this->addFlash('success', sprintf('Utilisateur "%s" mis à jour.', $user->getEmail()));
 
@@ -95,11 +98,9 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
-    public function delete(User $user, Request $request, EntityManagerInterface $em): Response
+    public function delete(User $user, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('delete_user_' . $user->getId(), $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException('Token CSRF invalide.');
-        }
+        $this->csrf->valider('delete_user_' . $user->getId(), $request);
 
         /** @var User $currentUser */
         $currentUser = $this->getUser();
@@ -117,8 +118,8 @@ class UserController extends AbstractController
         }
 
         $email = $user->getEmail();
-        $em->remove($user);
-        $em->flush();
+        $this->em->remove($user);
+        $this->em->flush();
 
         $this->addFlash('success', sprintf('Utilisateur "%s" supprimé.', $email));
 

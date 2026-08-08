@@ -2,7 +2,9 @@
 
 namespace App\Controller\Admin;
 
+use App\Attribute\CurrentSeason;
 use App\DTO\DirigeantData;
+use App\Entity\Dirigeant;
 use App\Entity\Season;
 use App\Entity\Team;
 use App\Enum\DirigeantRole;
@@ -11,22 +13,32 @@ use App\Repository\DirigeantRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
+use App\Security\CsrfGuard;
 use App\Service\ClubHouse\CleRegistreService;
 use App\Service\DirigeantDossierCompletion;
 use App\Service\DirigeantService;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\ListFilterMemory;
 use App\Service\Mail\DirigeantLinkService;
-use App\Service\SeasonContext;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Uid\Uuid;
 
 #[Route('/admin/dirigeants', name: 'admin_dirigeants_')]
 class DirigeantController extends AbstractController
 {
     public function __construct(
+        private readonly ListFilterMemory $filterMemory,
+        private readonly DirigeantRepository $dirigeantRepo,
+        private readonly TeamRepository $teamRepo,
+        private readonly DirigeantService $dirigeantService,
+        private readonly LicencieRepository $licencieRepo,
+        private readonly StockMovementRepository $stockMovementRepo,
+        private readonly CleRegistreService $registre,
+        private readonly DirigeantLinkService $linkService,
+        private readonly CsrfGuard $csrf,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DirigeantDossierCompletion $dossierCompletion,
     ) {}
@@ -34,17 +46,9 @@ class DirigeantController extends AbstractController
     #[Route('', name: 'list')]
     public function list(
         Request $request,
-        DirigeantRepository $dirigeantRepo,
-        TeamRepository $teamRepo,
-        SeasonContext $seasonContext,
-        \App\Service\ListFilterMemory $filterMemory,
+        #[CurrentSeason] Season $season,
     ): Response {
-        $season = $seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
-        $restored = $filterMemory->restoreOrRemember('dirigeants', $request, ['team', 'role', 'search']);
+        $restored = $this->filterMemory->restoreOrRemember('dirigeants', $request, ['team', 'role', 'search']);
         if ($restored !== null) {
             return $this->redirectToRoute('admin_dirigeants_list', $restored);
         }
@@ -54,7 +58,7 @@ class DirigeantController extends AbstractController
         $currentRole = null;
 
         if ($request->query->has('team') && $request->query->get('team') !== '') {
-            $currentTeam = $teamRepo->find((int) $request->query->get('team'));
+            $currentTeam = $this->teamRepo->find((int) $request->query->get('team'));
         }
         if ($request->query->has('role') && $request->query->get('role') !== '') {
             // tryFrom : neutralise silencieusement un ancien id numérique encore mémorisé par ListFilterMemory.
@@ -66,7 +70,7 @@ class DirigeantController extends AbstractController
                 'name' => 'team',
                 'label' => 'Équipe',
                 'allLabel' => 'Toutes',
-                'options' => array_map(fn (Team $t) => ['value' => $t->getId(), 'label' => $t->getName()], $teamRepo->findBySeason($season)),
+                'options' => array_map(fn (Team $t) => ['value' => $t->getId(), 'label' => $t->getName()], $this->teamRepo->findBySeason($season)),
                 'current' => $currentTeam?->getId(),
             ],
             [
@@ -79,7 +83,7 @@ class DirigeantController extends AbstractController
         ];
 
         return $this->render('admin/dirigeants/list.html.twig', [
-            'dirigeants' => $dirigeantRepo->findBySeasonWithFilters(
+            'dirigeants' => $this->dirigeantRepo->findBySeasonWithFilters(
                 $season,
                 $search ?: null,
                 $currentTeam?->getId(),
@@ -95,22 +99,15 @@ class DirigeantController extends AbstractController
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
     public function new(
         Request $request,
-        SeasonContext $seasonContext,
-        DirigeantService $dirigeantService,
-        LicencieRepository $licencieRepo,
+        #[CurrentSeason] Season $season,
     ): Response {
-        $season = $seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
         $data = new DirigeantData();
         $form = $this->createForm(DirigeantType::class, $data, ['season' => $season]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $dirigeant = $dirigeantService->create($data, $season);
+                $dirigeant = $this->dirigeantService->create($data, $season);
                 $message = $dirigeant->getEmail() !== null
                     ? $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant. Lien envoyé par email.'
                     : $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant (aucune adresse email renseignée).';
@@ -126,22 +123,14 @@ class DirigeantController extends AbstractController
             'form' => $form,
             'dirigeant' => null,
             'roleOptions' => DirigeantRole::options(),
-            'licenciesSizes' => $this->buildLicenciesSizes($licencieRepo, $season),
+            'licenciesSizes' => $this->buildLicenciesSizes($this->licencieRepo, $season),
         ]);
     }
 
     #[Route('/{uuid}', name: 'show')]
     public function show(
-        string $uuid,
-        DirigeantRepository $dirigeantRepo,
-        StockMovementRepository $stockMovementRepo,
-        CleRegistreService $registre,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
     ): Response {
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
-        if ($dirigeant === null) {
-            throw $this->createNotFoundException('Dirigeant introuvable.');
-        }
-
         $history = [[
             'date' => $dirigeant->getImportedAt(),
             'label' => $dirigeant->isCreatedManually()
@@ -188,9 +177,9 @@ class DirigeantController extends AbstractController
 
         return $this->render('admin/dirigeants/show.html.twig', [
             'dirigeant' => $dirigeant,
-            'dotations' => $stockMovementRepo->findDotationsByDirigeant($dirigeant),
+            'dotations' => $this->stockMovementRepo->findDotationsByDirigeant($dirigeant),
             'history' => $history,
-            'nbCles' => $registre->getSolde($dirigeant),
+            'nbCles' => $this->registre->getSolde($dirigeant),
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande à ce dirigeant.
             'documents' => $this->documentResolver->attendusPourDirigeant($dirigeant),
@@ -201,51 +190,27 @@ class DirigeantController extends AbstractController
 
     #[Route('/{uuid}/envoyer-lien', name: 'send_link', methods: ['POST'])]
     public function sendLink(
-        string $uuid,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         Request $request,
-        DirigeantRepository $dirigeantRepo,
-        DirigeantLinkService $linkService,
     ): Response {
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
-        if ($dirigeant === null) {
-            throw $this->createNotFoundException('Dirigeant introuvable.');
-        }
-
-        if (!$this->isCsrfTokenValid('dirigeant_send_link_' . $uuid, $request->request->get('_token'))) {
-            $this->addFlash('error', 'Requête invalide.');
-
-            return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $uuid]);
-        }
+        $this->csrf->valider('dirigeant_send_link_' . $dirigeant->getUuid(), $request);
 
         try {
-            $linkService->send($dirigeant);
+            $this->linkService->send($dirigeant);
             $this->addFlash('success', 'Lien envoyé à ' . $dirigeant->getEmail() . '.');
         } catch (\LogicException $e) {
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $uuid]);
+        return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
     }
 
     #[Route('/{uuid}/modifier', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(
-        string $uuid,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         Request $request,
-        DirigeantRepository $dirigeantRepo,
-        SeasonContext $seasonContext,
-        DirigeantService $dirigeantService,
-        LicencieRepository $licencieRepo,
+        #[CurrentSeason] Season $season,
     ): Response {
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
-        if ($dirigeant === null) {
-            throw $this->createNotFoundException('Dirigeant introuvable.');
-        }
-
-        $season = $seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
         $data = new DirigeantData();
         $data->nom = $dirigeant->getNom();
         $data->prenom = $dirigeant->getPrenom();
@@ -265,7 +230,7 @@ class DirigeantController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $dirigeantService->edit($dirigeant, $data);
+                $this->dirigeantService->edit($dirigeant, $data);
                 $this->addFlash('success', 'Dossier de ' . $dirigeant->getNomPrenom() . ' mis à jour.');
 
                 return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
@@ -278,7 +243,7 @@ class DirigeantController extends AbstractController
             'form' => $form,
             'dirigeant' => $dirigeant,
             'roleOptions' => DirigeantRole::options(),
-            'licenciesSizes' => $this->buildLicenciesSizes($licencieRepo, $season),
+            'licenciesSizes' => $this->buildLicenciesSizes($this->licencieRepo, $season),
         ]);
     }
 

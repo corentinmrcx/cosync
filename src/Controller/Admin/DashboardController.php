@@ -10,11 +10,15 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin', name: 'admin_')]
 class DashboardController extends AbstractController
 {
+    public function __construct(
+        private readonly SeasonContext $seasonContext,
+    ) {}
+
     #[Route('/', name: 'dashboard')]
-    public function index(SeasonContext $seasonContext): Response
+    public function index(): Response
     {
         return $this->render('admin/dashboard.html.twig', [
-            'hasSeason' => $seasonContext->getCurrentSeason() !== null,
+            'hasSeason' => $this->seasonContext->getCurrentSeason() !== null,
         ]);
     }
 }

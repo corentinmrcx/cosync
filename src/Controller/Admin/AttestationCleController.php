@@ -2,11 +2,13 @@
 
 namespace App\Controller\Admin;
 
+use App\Attribute\CurrentSeason;
+use App\Entity\Season;
+use App\Security\CsrfGuard;
 use App\Service\ClubHouse\AttestationCleRecapService;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationClePdfService;
 use App\Service\Pdf\AttestationCleRecapPdfService;
-use App\Service\SeasonContext;
 use App\Service\SeasonService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,25 +24,21 @@ use Symfony\Component\Routing\Attribute\Route;
 class AttestationCleController extends AbstractController
 {
     public function __construct(
-        private readonly SeasonContext $seasonContext,
+        private readonly SeasonService $seasonService,
+        private readonly AttestationClePdfService $apercuPdfService,
+        private readonly AttestationCleRecapPdfService $recapPdfService,
+        private readonly AttestationCleRecapService $recapService,
+        private readonly PendingUploadQueue $queue,
+        private readonly CsrfGuard $csrf,
     ) {}
 
     #[Route('', name: 'edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, SeasonService $seasonService): Response
+    public function edit(Request $request, #[CurrentSeason] Season $season): Response
     {
-        $season = $this->seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
         if ($request->isMethod('POST')) {
-            if (!$this->isCsrfTokenValid('attestation_cle_text_' . $season->getId(), $request->request->get('_token'))) {
-                $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+            $this->csrf->valider('attestation_cle_text_' . $season->getId(), $request);
 
-                return $this->redirectToRoute('admin_clubhouse_attestation_edit');
-            }
-
-            $seasonService->updateAttestationCleText($season, $request->request->get('attestation_cle_text') ?: null);
+            $this->seasonService->updateAttestationCleText($season, $request->request->get('attestation_cle_text') ?: null);
             $this->addFlash('success', 'Attestation enregistrée.');
 
             return $this->redirectToRoute('admin_clubhouse_attestation_edit');
@@ -52,28 +50,18 @@ class AttestationCleController extends AbstractController
     }
 
     #[Route('/apercu', name: 'apercu', methods: ['GET'])]
-    public function apercu(AttestationClePdfService $pdfService): Response
+    public function apercu(#[CurrentSeason] Season $season): Response
     {
-        $season = $this->seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
-        return new Response($pdfService->generatePreview($season), Response::HTTP_OK, [
+        return new Response($this->apercuPdfService->generatePreview($season), Response::HTTP_OK, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="attestation_cle_apercu.pdf"',
         ]);
     }
 
     #[Route('/recapitulatif', name: 'recap', methods: ['GET'])]
-    public function recap(AttestationCleRecapService $recapService, AttestationCleRecapPdfService $pdfService): Response
+    public function recap(#[CurrentSeason] Season $season): Response
     {
-        $season = $this->seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
-        $pdf = $pdfService->generate($season, $recapService->buildRows($season));
+        $pdf = $this->recapPdfService->generate($season, $this->recapService->buildRows($season));
 
         return new Response($pdf, Response::HTTP_OK, [
             'Content-Type' => 'application/pdf',
@@ -85,20 +73,11 @@ class AttestationCleController extends AbstractController
     }
 
     #[Route('/recapitulatif/synchroniser', name: 'recap_sync', methods: ['POST'])]
-    public function recapSync(Request $request, PendingUploadQueue $queue): Response
+    public function recapSync(Request $request, #[CurrentSeason] Season $season): Response
     {
-        $season = $this->seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
+        $this->csrf->valider('attestation_cle_recap_sync', $request);
 
-        if (!$this->isCsrfTokenValid('attestation_cle_recap_sync', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
-
-            return $this->redirectToRoute('admin_clubhouse_attestation_edit');
-        }
-
-        $queue->enqueueAttestationCleRecap($season->getId());
+        $this->queue->enqueueAttestationCleRecap($season->getId());
         $this->addFlash('success', 'Le récapitulatif sera régénéré sur Drive dans quelques secondes.');
 
         return $this->redirectToRoute('admin_clubhouse_attestation_edit');

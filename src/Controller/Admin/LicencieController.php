@@ -2,8 +2,11 @@
 
 namespace App\Controller\Admin;
 
+use App\Attribute\CurrentSeason;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
+use App\Entity\Licencie;
+use App\Entity\Season;
 use App\Entity\User;
 use App\Enum\LicenceStatus;
 use App\Enum\NatureLicence;
@@ -12,41 +15,50 @@ use App\Form\LicencieCreateType;
 use App\Form\LicencieEditType;
 use App\Form\LicencieIdentityType;
 use App\Repository\LicencieRepository;
+use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
+use App\Security\CsrfGuard;
+use App\Service\CotisationResolver;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Form\AutorisationCompletionService;
 use App\Service\LicencieService;
+use App\Service\ListFilterMemory;
 use App\Service\Mail\InscriptionLinkService;
 use App\Service\SeasonContext;
+use App\Service\Stock\DotationBesoinService;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use Symfony\Component\Uid\Uuid;
 
 #[Route('/admin/licencies', name: 'admin_licencies_')]
 class LicencieController extends AbstractController
 {
     public function __construct(
+        private readonly ListFilterMemory $filterMemory,
+        private readonly StockMovementRepository $stockMovementRepo,
+        private readonly CotisationResolver $cotisationResolver,
+        private readonly DotationBesoinService $dotationBesoinService,
+        private readonly AutorisationCompletionService $completionService,
+        private readonly LicencieRepository $licencieRepo,
+        private readonly TeamRepository $teamRepo,
+        private readonly LicencieService $licencieService,
+        private readonly InscriptionLinkService $inscriptionLinkService,
+        private readonly TransactionRepository $transactionRepo,
+        private readonly SeasonContext $seasonContext,
+        private readonly CsrfGuard $csrf,
         private readonly DocumentRequirementResolver $documentResolver,
     ) {}
 
     #[Route('', name: 'list')]
     public function list(
         Request $request,
-        LicencieRepository $licencieRepo,
-        SeasonContext $seasonContext,
-        TeamRepository $teamRepo,
-        \App\Service\ListFilterMemory $filterMemory,
+        #[CurrentSeason] Season $season,
     ): Response {
-        $season = $seasonContext->getCurrentSeason();
-
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
-        $restored = $filterMemory->restoreOrRemember('licencies', $request, ['team', 'status', 'nature', 'search']);
+        $restored = $this->filterMemory->restoreOrRemember('licencies', $request, ['team', 'status', 'nature', 'search']);
         if ($restored !== null) {
             return $this->redirectToRoute('admin_licencies_list', $restored);
         }
@@ -56,7 +68,7 @@ class LicencieController extends AbstractController
         $currentNature = null;
 
         if ($request->query->has('team') && $request->query->get('team') !== '') {
-            $currentTeam = $teamRepo->find((int) $request->query->get('team'));
+            $currentTeam = $this->teamRepo->find((int) $request->query->get('team'));
         }
         if ($request->query->has('status') && $request->query->get('status') !== '') {
             $currentStatus = LicenceStatus::tryFrom($request->query->get('status'));
@@ -70,10 +82,10 @@ class LicencieController extends AbstractController
         $perPage = 25;
         $offset = ($page - 1) * $perPage;
 
-        $total = $licencieRepo->countWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature);
+        $total = $this->licencieRepo->countWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature);
         $pages = (int) ceil($total / $perPage);
 
-        $teams = $teamRepo->findBySeason($season);
+        $teams = $this->teamRepo->findBySeason($season);
 
         $filterGroups = [
             [
@@ -100,7 +112,7 @@ class LicencieController extends AbstractController
         ];
 
         return $this->render('admin/licencies/list.html.twig', [
-            'licencies' => $licencieRepo->findWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature, $perPage, $offset),
+            'licencies' => $this->licencieRepo->findWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature, $perPage, $offset),
             'season' => $season,
             'search' => $search,
             'filterGroups' => $filterGroups,
@@ -114,22 +126,15 @@ class LicencieController extends AbstractController
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
     public function new(
         Request $request,
-        SeasonContext $seasonContext,
-        LicencieService $licencieService,
-        InscriptionLinkService $inscriptionLinkService,
+        #[CurrentSeason] Season $season,
     ): Response {
-        $season = $seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
         $data = new LicencieCreateData();
         $form = $this->createForm(LicencieCreateType::class, $data, ['season' => $season]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $licencie = $licencieService->create($data, $season);
+                $licencie = $this->licencieService->create($data, $season);
             } catch (\DomainException $e) {
                 $this->addFlash('error', $e->getMessage());
 
@@ -138,7 +143,7 @@ class LicencieController extends AbstractController
 
             if ($form->get('sendLink')->getData() && $licencie->getEmail() !== null) {
                 try {
-                    $inscriptionLinkService->send($licencie);
+                    $this->inscriptionLinkService->send($licencie);
                     $this->addFlash('success', $licencie->getNomPrenom() . ' ajouté(e). Lien d\'inscription envoyé.');
                 } catch (\Throwable) {
                     $this->addFlash('warning', $licencie->getNomPrenom() . ' ajouté(e), mais l\'envoi du mail a échoué. Vérifiez la configuration SMTP.');
@@ -155,16 +160,9 @@ class LicencieController extends AbstractController
 
     #[Route('/{uuid}/identite', name: 'edit_identity', methods: ['GET', 'POST'])]
     public function editIdentity(
-        string $uuid,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
-        LicencieRepository $licencieRepo,
-        LicencieService $licencieService,
     ): Response {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
-        if ($licencie === null) {
-            throw $this->createNotFoundException('Licencié introuvable.');
-        }
-
         if (!$licencie->isCreatedManually()) {
             throw $this->createAccessDeniedException('La correction d\'identité n\'est disponible que pour les licenciés créés manuellement.');
         }
@@ -186,7 +184,7 @@ class LicencieController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $licencieService->editIdentity($licencie, $data);
+                $this->licencieService->editIdentity($licencie, $data);
                 $this->addFlash('success', 'Identité de ' . $licencie->getNomPrenom() . ' mise à jour.');
 
                 return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
@@ -203,26 +201,13 @@ class LicencieController extends AbstractController
 
     #[Route('/{uuid}', name: 'show')]
     public function show(
-        string $uuid,
-        LicencieRepository $licencieRepo,
-        TransactionRepository $transactionRepo,
-        \App\Repository\StockMovementRepository $stockMovementRepo,
-        SeasonContext $seasonContext,
-        \App\Service\CotisationResolver $cotisationResolver,
-        \App\Service\Stock\DotationBesoinService $dotationBesoinService,
-        \App\Service\Form\AutorisationCompletionService $completionService,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
     ): Response {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $season = $this->seasonContext->getCurrentSeason();
+        $transactions = $season ? $this->transactionRepo->findAllByLicencieAndSeason($licencie, $season) : [];
+        $totalPaid = $season ? $this->transactionRepo->sumByLicencieAndSeason($licencie, $season) : 0.0;
 
-        if ($licencie === null) {
-            throw $this->createNotFoundException('Licencié introuvable.');
-        }
-
-        $season = $seasonContext->getCurrentSeason();
-        $transactions = $season ? $transactionRepo->findAllByLicencieAndSeason($licencie, $season) : [];
-        $totalPaid = $season ? $transactionRepo->sumByLicencieAndSeason($licencie, $season) : 0.0;
-
-        $montant = $cotisationResolver->resolve($licencie);
+        $montant = $this->cotisationResolver->resolve($licencie);
         $remainingAmount = max(0, (float) $montant - $totalPaid);
 
         $history = [
@@ -265,10 +250,10 @@ class LicencieController extends AbstractController
             'season' => $season,
             'montant' => $montant,
             'paymentModes' => PaymentMode::cases(),
-            'dotations' => $stockMovementRepo->findDotationsByLicencie($licencie),
-            'dotationStatut' => $dotationBesoinService->statutFicheLicencie($licencie),
+            'dotations' => $this->stockMovementRepo->findDotationsByLicencie($licencie),
+            'dotationStatut' => $this->dotationBesoinService->statutFicheLicencie($licencie),
             'history' => $history,
-            'autorisationsManquantes' => $completionService->hasMissing($licencie),
+            'autorisationsManquantes' => $this->completionService->hasMissing($licencie),
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande.
             'documents' => $this->documentResolver->attendusPourLicencie($licencie),
@@ -278,22 +263,10 @@ class LicencieController extends AbstractController
 
     #[Route('/{uuid}/modifier', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(
-        string $uuid,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
-        LicencieRepository $licencieRepo,
-        SeasonContext $seasonContext,
-        LicencieService $licencieService,
+        #[CurrentSeason] Season $season,
     ): Response {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
-        if ($licencie === null) {
-            throw $this->createNotFoundException('Licencié introuvable.');
-        }
-
-        $season = $seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
         $dossier = $licencie->getDossierClub();
 
         $form = $this->createForm(LicencieEditType::class, $licencie, [
@@ -306,7 +279,7 @@ class LicencieController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $licencieService->edit(
+            $this->licencieService->edit(
                 $licencie,
                 $form->get('tailleHaut')->getData() ?: null,
                 $form->get('tailleBas')->getData() ?: null,
@@ -327,27 +300,17 @@ class LicencieController extends AbstractController
 
     #[Route('/{uuid}/ajouter-paiement', name: 'add_payment', methods: ['POST'])]
     public function addPayment(
-        string $uuid,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
-        LicencieRepository $licencieRepo,
-        SeasonContext $seasonContext,
-        LicencieService $licencieService,
         #[CurrentUser] ?User $user,
     ): Response {
-        if (!$this->isCsrfTokenValid('add_payment_' . $uuid, $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException('Token CSRF invalide.');
-        }
+        $this->csrf->valider('add_payment_' . $licencie->getUuid(), $request);
 
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
-        if ($licencie === null) {
-            throw $this->createNotFoundException('Licencié introuvable.');
-        }
-
-        $season = $seasonContext->getCurrentSeason();
+        $season = $this->seasonContext->getCurrentSeason();
         if ($season === null) {
             $this->addFlash('error', 'Aucune saison sélectionnée.');
 
-            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
         $mode = PaymentMode::tryFrom($request->request->get('mode', ''));
@@ -357,7 +320,7 @@ class LicencieController extends AbstractController
         if ($mode === null || $montant <= 0 || $dateRaw === '') {
             $this->addFlash('error', 'Mode, montant ou date invalide.');
 
-            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
         try {
@@ -365,10 +328,10 @@ class LicencieController extends AbstractController
         } catch (\Exception) {
             $this->addFlash('error', 'Date invalide.');
 
-            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
-        $licencieService->addPayment(
+        $this->licencieService->addPayment(
             $licencie,
             $mode,
             $montant,
@@ -382,7 +345,7 @@ class LicencieController extends AbstractController
         $this->addFlash('success', 'Paiement de ' . $licencie->getNomPrenom() . ' enregistré.');
 
         $isValidated = $licencie->getDossierClub()?->getStatus() === LicenceStatus::VALIDATED;
-        $params = ['uuid' => $uuid];
+        $params = ['uuid' => $licencie->getUuid()];
         if (!$isValidated) {
             $params['paymentsModal'] = '1';
         }
@@ -395,19 +358,15 @@ class LicencieController extends AbstractController
         string $uuid,
         int $id,
         Request $request,
-        TransactionRepository $transactionRepo,
-        LicencieService $licencieService,
     ): Response {
-        if (!$this->isCsrfTokenValid('delete_payment_' . $id, $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException('Token CSRF invalide.');
-        }
+        $this->csrf->valider('delete_payment_' . $id, $request);
 
-        $transaction = $transactionRepo->find($id);
+        $transaction = $this->transactionRepo->find($id);
         if ($transaction === null || (string) $transaction->getLicencie()->getUuid() !== $uuid) {
             throw $this->createNotFoundException('Paiement introuvable.');
         }
 
-        $licencieService->deletePayment($transaction);
+        $this->licencieService->deletePayment($transaction);
         $this->addFlash('success', 'Paiement supprimé.');
 
         return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid, 'paymentsModal' => '1']);
@@ -415,93 +374,65 @@ class LicencieController extends AbstractController
 
     #[Route('/{uuid}/valider-manuellement', name: 'validate_manually', methods: ['POST'])]
     public function validateManually(
-        string $uuid,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
-        LicencieRepository $licencieRepo,
-        LicencieService $licencieService,
     ): Response {
-        if (!$this->isCsrfTokenValid('validate_manually_' . $uuid, $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException('Token CSRF invalide.');
-        }
+        $this->csrf->valider('validate_manually_' . $licencie->getUuid(), $request);
 
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
-        if ($licencie === null) {
-            throw $this->createNotFoundException('Licencié introuvable.');
-        }
-
-        $licencieService->validateManually($licencie);
+        $this->licencieService->validateManually($licencie);
 
         $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' validée manuellement.');
 
-        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
     }
 
     #[Route('/{uuid}/send-link', name: 'send_link', methods: ['POST'])]
-    public function sendLink(string $uuid, LicencieRepository $licencieRepo, InscriptionLinkService $inscriptionLinkService, Request $request): Response
+    public function sendLink(#[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('send_link_' . $uuid, $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException('Token CSRF invalide.');
-        }
-
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
-
-        if ($licencie === null) {
-            throw $this->createNotFoundException('Licencié introuvable.');
-        }
+        $this->csrf->valider('send_link_' . $licencie->getUuid(), $request);
 
         if ($licencie->getEmail() === null) {
             $this->addFlash('error', 'Ce licencié n\'a pas d\'adresse email renseignée.');
 
-            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
         try {
-            $inscriptionLinkService->send($licencie);
+            $this->inscriptionLinkService->send($licencie);
             $this->addFlash('success', 'Lien d\'inscription envoyé à ' . $licencie->getEmail() . '.');
         } catch (\Throwable) {
             $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
         }
 
-        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
     }
 
     #[Route('/{uuid}/send-completion', name: 'send_completion', methods: ['POST'])]
     public function sendCompletion(
-        string $uuid,
-        LicencieRepository $licencieRepo,
-        InscriptionLinkService $inscriptionLinkService,
-        \App\Service\Form\AutorisationCompletionService $completionService,
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
     ): Response {
-        if (!$this->isCsrfTokenValid('send_completion_' . $uuid, $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException('Token CSRF invalide.');
-        }
-
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
-
-        if ($licencie === null) {
-            throw $this->createNotFoundException('Licencié introuvable.');
-        }
+        $this->csrf->valider('send_completion_' . $licencie->getUuid(), $request);
 
         if ($licencie->getEmail() === null) {
             $this->addFlash('error', 'Ce licencié n\'a pas d\'adresse email renseignée.');
 
-            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
-        if (!$completionService->hasMissing($licencie)) {
+        if (!$this->completionService->hasMissing($licencie)) {
             $this->addFlash('error', 'Aucune autorisation manquante pour ce licencié.');
 
-            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
         try {
-            $inscriptionLinkService->sendCompletion($licencie);
+            $this->inscriptionLinkService->sendCompletion($licencie);
             $this->addFlash('success', 'Lien de complétion envoyé à ' . $licencie->getEmail() . '.');
         } catch (\Throwable) {
             $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
         }
 
-        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid]);
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
     }
 }

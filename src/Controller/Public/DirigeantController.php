@@ -5,6 +5,7 @@ namespace App\Controller\Public;
 use App\DTO\DirigeantPublicFormData;
 use App\Entity\Dirigeant;
 use App\Repository\DirigeantRepository;
+use App\Security\CsrfGuard;
 use App\Service\DirigeantDossierCompletion;
 use App\Service\DirigeantFormService;
 use App\Service\Document\DocumentRequirementResolver;
@@ -23,15 +24,18 @@ class DirigeantController extends AbstractController
     private const SIGNATURE_MAX_LENGTH = 2_800_000;
 
     public function __construct(
+        private readonly DirigeantRepository $dirigeantRepo,
+        private readonly DirigeantFormService $formService,
+        private readonly CsrfGuard $csrf,
         private readonly AttestationTransportRequestFactory $attestationFactory,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DirigeantDossierCompletion $dossierCompletion,
     ) {}
 
     #[Route('/{uuid}', name: 'show', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
-    public function show(string $uuid, DirigeantRepository $dirigeantRepo): Response
+    public function show(string $uuid): Response
     {
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null) {
             return $this->render('public/dirigeant/expired.html.twig');
@@ -58,20 +62,14 @@ class DirigeantController extends AbstractController
     public function submit(
         string $uuid,
         Request $request,
-        DirigeantRepository $dirigeantRepo,
-        DirigeantFormService $formService,
     ): Response {
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null || !$dirigeant->isFormTokenValid()) {
             return $this->render('public/dirigeant/expired.html.twig');
         }
 
-        if (!$this->isCsrfTokenValid('dirigeant_submit', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
-
-            return $this->redirectToRoute('public_dirigeant_show', ['uuid' => $uuid]);
-        }
+        $this->csrf->valider('dirigeant_submit', $request);
 
         $data = $this->buildFormData($request, $dirigeant);
 
@@ -81,15 +79,15 @@ class DirigeantController extends AbstractController
             return $this->redirectToRoute('public_dirigeant_show', ['uuid' => $uuid]);
         }
 
-        $formService->submit($dirigeant, $data);
+        $this->formService->submit($dirigeant, $data);
 
         return $this->redirectToRoute('public_dirigeant_confirmation', ['uuid' => $uuid]);
     }
 
     #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
-    public function confirmation(string $uuid, DirigeantRepository $dirigeantRepo): Response
+    public function confirmation(string $uuid): Response
     {
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null || $dirigeant->getFormCompletedAt() === null) {
             return $this->render('public/dirigeant/expired.html.twig');

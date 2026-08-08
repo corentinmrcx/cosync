@@ -24,18 +24,21 @@ use Symfony\Component\Uid\Uuid;
  */
 class HelloAssoWebhookController extends AbstractController
 {
+    public function __construct(
+        private readonly HelloAssoWebhookVerifier $verifier,
+        private readonly HelloAssoPaymentRecorder $recorder,
+        private readonly LicencieRepository $licencieRepo,
+        private readonly LoggerInterface $logger,
+    ) {}
+
     #[Route('/webhook/helloasso', name: 'webhook_helloasso', methods: ['POST'])]
     public function __invoke(
         Request $request,
-        HelloAssoWebhookVerifier $verifier,
-        HelloAssoPaymentRecorder $recorder,
-        LicencieRepository $licencieRepo,
-        LoggerInterface $logger,
     ): Response {
         $raw = $request->getContent();
 
-        if (!$verifier->isTrusted($raw, $request->headers->get('x-ha-signature'))) {
-            $logger->warning('HelloAsso : notification rejetée, signature invalide.');
+        if (!$this->verifier->isTrusted($raw, $request->headers->get('x-ha-signature'))) {
+            $this->logger->warning('HelloAsso : notification rejetée, signature invalide.');
 
             return new Response('', Response::HTTP_UNAUTHORIZED);
         }
@@ -48,17 +51,17 @@ class HelloAssoWebhookController extends AbstractController
                 return new Response('', Response::HTTP_OK);
             }
 
-            $intentId = $this->resolveCheckoutIntentId($payload, $licencieRepo);
+            $intentId = $this->resolveCheckoutIntentId($payload, $this->licencieRepo);
 
             if ($intentId === null) {
-                $logger->info('HelloAsso : notification de paiement sans intention identifiable, ignorée.');
+                $this->logger->info('HelloAsso : notification de paiement sans intention identifiable, ignorée.');
 
                 return new Response('', Response::HTTP_OK);
             }
 
-            $recorder->recordFromCheckoutIntent($intentId);
+            $this->recorder->recordFromCheckoutIntent($intentId);
         } catch (\Throwable $e) {
-            $logger->error('HelloAsso : traitement de la notification en échec : {message}', [
+            $this->logger->error('HelloAsso : traitement de la notification en échec : {message}', [
                 'message' => $e->getMessage(),
                 'payload' => $raw,
             ]);

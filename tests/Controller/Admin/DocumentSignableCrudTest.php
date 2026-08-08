@@ -183,7 +183,7 @@ final class DocumentSignableCrudTest extends WebTestCase
             'libelle' => 'le document piraté',
             'cible' => 'dirigeant',
             'contenu_html' => '<p>Piraté</p>',
-        ]);
+        ], [], ['HTTP_REFERER' => '/admin/config/documents/' . $id . '/modifier']);
 
         self::assertResponseRedirects('/admin/config/documents/' . $id . '/modifier');
 

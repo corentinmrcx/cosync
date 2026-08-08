@@ -139,7 +139,7 @@ final class InscriptionParcoursCompletTest extends WebTestCase
 
         $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid, [
             '_token' => 'jeton-bidon',
-        ]));
+        ]), [], ['HTTP_REFERER' => '/inscription/' . $uuid]);
 
         self::assertResponseRedirects('/inscription/' . $uuid);
         self::assertNull($this->reloadDossier($uuid)->getFormCompletedAt());

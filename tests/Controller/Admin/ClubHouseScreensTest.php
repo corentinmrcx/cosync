@@ -103,7 +103,7 @@ final class ClubHouseScreensTest extends WebTestCase
             'dirigeant' => (string) $dirigeant->getUuid(),
             'type' => 'remise',
             'quantite' => '1',
-        ]);
+        ], [], ['HTTP_REFERER' => '/admin/club-house/cles']);
 
         self::assertResponseRedirects('/admin/club-house/cles');
         self::assertSame(0, $this->soldeDe($dirigeant));

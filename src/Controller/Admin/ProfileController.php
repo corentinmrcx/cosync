@@ -14,11 +14,14 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin/profil', name: 'admin_profile')]
 class ProfileController extends AbstractController
 {
+    public function __construct(
+        private readonly UserPasswordHasherInterface $hasher,
+        private readonly EntityManagerInterface $em,
+    ) {}
+
     #[Route('', name: '', methods: ['GET', 'POST'])]
     public function index(
         Request $request,
-        UserPasswordHasherInterface $hasher,
-        EntityManagerInterface $em,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -28,10 +31,10 @@ class ProfileController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $newPassword = $form->get('newPassword')->getData();
             if ($newPassword !== null && $newPassword !== '') {
-                $user->setPassword($hasher->hashPassword($user, $newPassword));
+                $user->setPassword($this->hasher->hashPassword($user, $newPassword));
             }
 
-            $em->flush();
+            $this->em->flush();
 
             $this->addFlash('success', 'Profil mis à jour.');
 

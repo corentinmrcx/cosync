@@ -21,17 +21,23 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 class InscriptionDemoController extends AbstractController
 {
+    public function __construct(
+        private readonly CotisationResolver $cotisationResolver,
+        private readonly SeasonRepository $seasonRepo,
+        private readonly DocumentSignableRepository $documentRepo,
+    ) {}
+
     #[Route('/inscription-demo', name: 'public_inscription_demo_show', methods: ['GET'])]
-    public function show(SeasonRepository $seasonRepo, DocumentSignableRepository $documentRepo, CotisationResolver $cotisationResolver): Response
+    public function show(): Response
     {
         // Saison réelle (lecture seule) pour afficher les vrais documents et le bon tarif
-        $season = $seasonRepo->findMostRecent();
+        $season = $this->seasonRepo->findMostRecent();
 
         // Le licencié de démo n'existe pas en base : aucune signature ne peut lui être
         // rattachée, tous les documents actifs de la saison sont donc à signer.
         $documents = $season === null
             ? []
-            : $documentRepo->findActifsByCible($season, DocumentCible::LICENCIE);
+            : $this->documentRepo->findActifsByCible($season, DocumentCible::LICENCIE);
 
         if ($season === null) {
             $season = (new Season())
@@ -56,7 +62,7 @@ class InscriptionDemoController extends AbstractController
         return $this->render('public/inscription/form.html.twig', [
             'licencie' => $licencie,
             'montant' => $montant,
-            'libelleVirement' => $cotisationResolver->libelleVirement($licencie),
+            'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
             'documents' => $documents,
             'demo' => true,
         ]);

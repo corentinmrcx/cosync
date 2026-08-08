@@ -13,24 +13,29 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin/import', name: 'admin_import_')]
 class ImportController extends AbstractController
 {
+    public function __construct(
+        private readonly SeasonContext $seasonContext,
+        private readonly ImportService $importService,
+    ) {}
+
     #[Route('', name: 'index', methods: ['GET'])]
-    public function index(SeasonContext $seasonContext): Response
+    public function index(): Response
     {
-        if ($seasonContext->getCurrentSeason() === null) {
+        if ($this->seasonContext->getCurrentSeason() === null) {
             $this->addFlash('warning', 'Créez une saison avant de pouvoir importer des licenciés.');
 
             return $this->redirectToRoute('admin_seasons_new');
         }
 
         return $this->render('admin/import/index.html.twig', [
-            'currentSeason' => $seasonContext->getCurrentSeason(),
+            'currentSeason' => $this->seasonContext->getCurrentSeason(),
         ]);
     }
 
     #[Route('', name: 'process', methods: ['POST'])]
-    public function process(Request $request, ImportService $importService, SeasonContext $seasonContext): Response
+    public function process(Request $request): Response
     {
-        $season = $seasonContext->getCurrentSeason();
+        $season = $this->seasonContext->getCurrentSeason();
 
         if ($season === null) {
             $this->addFlash('error', 'Aucune saison sélectionnée. Créez et activez une saison d\'abord.');
@@ -53,7 +58,7 @@ class ImportController extends AbstractController
         }
 
         try {
-            $result = $importService->importFromXlsx($file, $season);
+            $result = $this->importService->importFromXlsx($file, $season);
         } catch (\Throwable) {
             $this->addFlash('error', 'Une erreur inattendue est survenue pendant l\'import. Veuillez réessayer.');
 

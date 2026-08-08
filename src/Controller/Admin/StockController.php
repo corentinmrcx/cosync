@@ -20,6 +20,7 @@ use App\Repository\LicencieRepository;
 use App\Repository\StockCategoryRepository;
 use App\Repository\StockItemRepository;
 use App\Repository\StockMovementRepository;
+use App\Security\CsrfGuard;
 use App\Service\Pdf\InventairePdfService;
 use App\Service\SeasonContext;
 use App\Service\Stock\AchatService;
@@ -41,6 +42,8 @@ class StockController extends AbstractController
     private const CONTENANCES_EPICERIE = ['25cl', '33cl', '50cl', '75cl', '1L', '1,5L', '2L'];
 
     public function __construct(
+        private readonly InventairePdfService $pdfService,
+        private readonly CsrfGuard $csrf,
         private readonly StockService $stockService,
         private readonly StockItemRepository $itemRepository,
         private readonly StockMovementRepository $movementRepository,
@@ -99,10 +102,10 @@ class StockController extends AbstractController
     }
 
     #[Route('/inventaire.pdf', name: 'inventaire_pdf', methods: ['GET'])]
-    public function inventairePdf(InventairePdfService $pdfService): Response
+    public function inventairePdf(): Response
     {
         $season = $this->seasonContext->getCurrentSeason();
-        $pdf = $pdfService->generate($this->stockService->getInventaireData(), $season?->getLabel());
+        $pdf = $this->pdfService->generate($this->stockService->getInventaireData(), $season?->getLabel());
 
         return new Response($pdf, Response::HTTP_OK, [
             'Content-Type' => 'application/pdf',
@@ -183,11 +186,7 @@ class StockController extends AbstractController
     #[Route('/items/{id}/mouvement', name: 'items_movement', methods: ['POST'])]
     public function itemMovement(StockItem $item, Request $request, #[CurrentUser] ?User $user): Response
     {
-        if (!$this->isCsrfTokenValid('stock_movement_' . $item->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_stock_gestion');
-        }
+        $this->csrf->valider('stock_movement_' . $item->getId(), $request);
 
         $data = new ManualMovementData(
             action: (string) $request->request->get('action', ''),
@@ -216,11 +215,7 @@ class StockController extends AbstractController
     #[Route('/mouvements/{id}/supprimer', name: 'mouvements_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function mouvementDelete(StockMovement $movement, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('delete_stock_movement_' . $movement->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_stock_mouvements_list');
-        }
+        $this->csrf->valider('delete_stock_movement_' . $movement->getId(), $request);
 
         try {
             $this->stockService->deleteManualMovement($movement);
@@ -235,11 +230,7 @@ class StockController extends AbstractController
     #[Route('/items/{id}/supprimer', name: 'items_delete', methods: ['POST'])]
     public function itemDelete(StockItem $item, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('delete_stock_item_' . $item->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_stock_gestion');
-        }
+        $this->csrf->valider('delete_stock_item_' . $item->getId(), $request);
 
         $nom = $item->getNom();
 
@@ -271,11 +262,7 @@ class StockController extends AbstractController
     #[Route('/items/{id}/restaurer', name: 'items_restore', methods: ['POST'])]
     public function itemRestore(StockItem $item, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('restore_stock_item_' . $item->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_stock_gestion', ['archivés' => '1']);
-        }
+        $this->csrf->valider('restore_stock_item_' . $item->getId(), $request);
 
         $item->setActif(true);
         $this->em->flush();
@@ -363,11 +350,7 @@ class StockController extends AbstractController
     #[Route('/categories/{id}/supprimer', name: 'categories_delete', methods: ['POST'])]
     public function categoryDelete(StockCategory $category, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('delete_category_' . $category->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_stock_categories_list');
-        }
+        $this->csrf->valider('delete_category_' . $category->getId(), $request);
 
         $name = $category->getName();
         $this->em->remove($category);
@@ -388,11 +371,7 @@ class StockController extends AbstractController
     #[Route('/fournisseurs/nouveau', name: 'fournisseurs_new', methods: ['POST'])]
     public function fournisseurNew(Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('fournisseur_new', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_stock_fournisseurs_list');
-        }
+        $this->csrf->valider('fournisseur_new', $request);
 
         $nom = trim((string) $request->request->get('nom', ''));
         if ($nom === '') {
@@ -415,11 +394,7 @@ class StockController extends AbstractController
     #[Route('/fournisseurs/{id}/modifier', name: 'fournisseurs_edit', methods: ['POST'])]
     public function fournisseurEdit(Fournisseur $fournisseur, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('fournisseur_edit_' . $fournisseur->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_stock_fournisseurs_list');
-        }
+        $this->csrf->valider('fournisseur_edit_' . $fournisseur->getId(), $request);
 
         $nom = trim((string) $request->request->get('nom', ''));
         if ($nom !== '') {
@@ -438,11 +413,7 @@ class StockController extends AbstractController
     #[Route('/fournisseurs/{id}/supprimer', name: 'fournisseurs_delete', methods: ['POST'])]
     public function fournisseurDelete(Fournisseur $fournisseur, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('fournisseur_delete_' . $fournisseur->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_stock_fournisseurs_list');
-        }
+        $this->csrf->valider('fournisseur_delete_' . $fournisseur->getId(), $request);
 
         $nom = $fournisseur->getNom();
         $this->em->remove($fournisseur);

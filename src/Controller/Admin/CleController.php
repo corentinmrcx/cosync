@@ -2,14 +2,17 @@
 
 namespace App\Controller\Admin;
 
+use App\Attribute\CurrentSeason;
+use App\DTO\CleDetention;
 use App\DTO\CleMouvementData;
+use App\Entity\Season;
 use App\Entity\User;
 use App\Enum\CleMouvementType;
 use App\Repository\DirigeantRepository;
+use App\Security\CsrfGuard;
 use App\Service\ClubHouse\CleRegistreService;
 use App\Service\ListFilterMemory;
 use App\Service\Mail\AttestationCleLinkService;
-use App\Service\SeasonContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,20 +23,20 @@ use Symfony\Component\Uid\Uuid;
 #[Route('/admin/club-house/cles', name: 'admin_clubhouse_cles_')]
 class CleController extends AbstractController
 {
+    public function __construct(
+        private readonly CleRegistreService $registre,
+        private readonly DirigeantRepository $dirigeantRepo,
+        private readonly ListFilterMemory $filterMemory,
+        private readonly AttestationCleLinkService $linkService,
+        private readonly CsrfGuard $csrf,
+    ) {}
+
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(
         Request $request,
-        SeasonContext $seasonContext,
-        CleRegistreService $registre,
-        DirigeantRepository $dirigeantRepo,
-        ListFilterMemory $filterMemory,
+        #[CurrentSeason] Season $season,
     ): Response {
-        $season = $seasonContext->getCurrentSeason();
-        if ($season === null) {
-            return $this->redirectToRoute('admin_seasons_new');
-        }
-
-        $restored = $filterMemory->restoreOrRemember('clubhouse_cles', $request, ['statut', 'search']);
+        $restored = $this->filterMemory->restoreOrRemember('clubhouse_cles', $request, ['statut', 'search']);
         if ($restored !== null) {
             return $this->redirectToRoute('admin_clubhouse_cles_index', $restored);
         }
@@ -41,13 +44,13 @@ class CleController extends AbstractController
         $search = trim((string) $request->query->get('search', ''));
         $statut = (string) $request->query->get('statut', '');
 
-        $detentions = $registre->getDetentions($season);
+        $detentions = $this->registre->getDetentions($season);
 
         return $this->render('admin/clubhouse/cles.html.twig', [
             'season' => $season,
-            'stats' => $registre->getStats($season),
+            'stats' => $this->registre->getStats($season),
             'detentions' => $this->filterDetentions($detentions, $search, $statut),
-            'candidats' => $dirigeantRepo->findBySeason($season),
+            'candidats' => $this->dirigeantRepo->findBySeason($season),
             'search' => $search,
             'filterGroups' => [[
                 'name' => 'statut',
@@ -67,16 +70,10 @@ class CleController extends AbstractController
     #[Route('/mouvement', name: 'mouvement', methods: ['POST'])]
     public function mouvement(
         Request $request,
-        DirigeantRepository $dirigeantRepo,
-        CleRegistreService $registre,
     ): Response {
-        if (!$this->isCsrfTokenValid('cle_mouvement', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+        $this->csrf->valider('cle_mouvement', $request);
 
-            return $this->redirectToRoute('admin_clubhouse_cles_index');
-        }
-
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString((string) $request->request->get('dirigeant', '')));
+        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString((string) $request->request->get('dirigeant', '')));
         $type = CleMouvementType::tryFrom((string) $request->request->get('type', ''));
 
         if ($dirigeant === null || $type === null) {
@@ -96,7 +93,7 @@ class CleController extends AbstractController
             );
 
             $user = $this->getUser();
-            $registre->record($dirigeant, $data, $user instanceof User ? $user : null);
+            $this->registre->record($dirigeant, $data, $user instanceof User ? $user : null);
 
             $this->addFlash('success', sprintf(
                 '%s enregistrée pour %s.',
@@ -116,16 +113,10 @@ class CleController extends AbstractController
     public function sendAttestationCleLink(
         string $uuid,
         Request $request,
-        DirigeantRepository $dirigeantRepo,
-        AttestationCleLinkService $linkService,
     ): Response {
-        if (!$this->isCsrfTokenValid('attestation_cle_send_link_' . $uuid, $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+        $this->csrf->valider('attestation_cle_send_link_' . $uuid, $request);
 
-            return $this->redirectToRoute('admin_clubhouse_cles_index');
-        }
-
-        $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null) {
             $this->addFlash('error', 'Dirigeant introuvable.');
@@ -134,7 +125,7 @@ class CleController extends AbstractController
         }
 
         try {
-            $linkService->send($dirigeant);
+            $this->linkService->send($dirigeant);
             $this->addFlash('success', sprintf('Lien de signature envoyé à %s.', $dirigeant->getEmail()));
         } catch (\LogicException $e) {
             $this->addFlash('error', $e->getMessage());
@@ -144,9 +135,9 @@ class CleController extends AbstractController
     }
 
     /**
-     * @param \App\DTO\CleDetention[] $detentions
+     * @param CleDetention[] $detentions
      *
-     * @return \App\DTO\CleDetention[]
+     * @return CleDetention[]
      */
     private function filterDetentions(array $detentions, string $search, string $statut): array
     {

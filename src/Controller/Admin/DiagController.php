@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\User;
+use App\Security\CsrfGuard;
 use App\Service\BetaModeService;
 use App\Service\Mail\MailerService;
 use App\Service\PurgeService;
@@ -15,6 +16,8 @@ use Symfony\Component\Routing\Attribute\Route;
 class DiagController extends AbstractController
 {
     public function __construct(
+        private readonly MailerService $mailerService,
+        private readonly CsrfGuard $csrf,
         private readonly BetaModeService $betaModeService,
         private readonly PurgeService $purgeService,
     ) {}
@@ -33,17 +36,13 @@ class DiagController extends AbstractController
     }
 
     #[Route('/test-mail', name: 'test_mail', methods: ['POST'])]
-    public function testMail(Request $request, MailerService $mailerService): Response
+    public function testMail(Request $request): Response
     {
         if ($redirect = $this->requireDiagAccess()) {
             return $redirect;
         }
 
-        if (!$this->isCsrfTokenValid('test_mail', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_diag_index');
-        }
+        $this->csrf->valider('test_mail', $request);
 
         $to = filter_var(trim((string) $request->request->get('test_email', '')), FILTER_VALIDATE_EMAIL);
 
@@ -54,7 +53,7 @@ class DiagController extends AbstractController
         }
 
         try {
-            $mailerService->sendTestEmail($to);
+            $this->mailerService->sendTestEmail($to);
             $this->addFlash('success', sprintf('Mail de test envoyé à %s.', $to));
         } catch (\Throwable $e) {
             $this->addFlash('error', 'Échec d\'envoi : ' . $e->getMessage());
@@ -64,17 +63,13 @@ class DiagController extends AbstractController
     }
 
     #[Route('/test-validation-mail', name: 'test_validation_mail', methods: ['POST'])]
-    public function testValidationMail(Request $request, MailerService $mailerService): Response
+    public function testValidationMail(Request $request): Response
     {
         if ($redirect = $this->requireDiagAccess()) {
             return $redirect;
         }
 
-        if (!$this->isCsrfTokenValid('test_validation_mail', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_diag_index');
-        }
+        $this->csrf->valider('test_validation_mail', $request);
 
         $to = filter_var(trim((string) $request->request->get('test_email', '')), FILTER_VALIDATE_EMAIL);
 
@@ -87,7 +82,7 @@ class DiagController extends AbstractController
         $isJeune = $request->request->get('profil') === 'jeune';
 
         try {
-            $mailerService->sendValidationTest($to, $isJeune);
+            $this->mailerService->sendValidationTest($to, $isJeune);
             $profil = $isJeune ? 'jeune (Thomas DUPONT)' : 'senior (Kévin MARTIN)';
             $this->addFlash('success', sprintf('Mail de validation envoyé à %s (profil %s).', $to, $profil));
         } catch (\Throwable $e) {
@@ -104,11 +99,7 @@ class DiagController extends AbstractController
             return $redirect;
         }
 
-        if (!$this->isCsrfTokenValid('beta_enable', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_diag_index');
-        }
+        $this->csrf->valider('beta_enable', $request);
 
         $this->betaModeService->enable();
         $this->addFlash('success', 'Mode beta activé. Chaque mail sera redirigé vers la boite de l\'utilisateur connecté au moment de l\'action.');
@@ -123,11 +114,7 @@ class DiagController extends AbstractController
             return $redirect;
         }
 
-        if (!$this->isCsrfTokenValid('beta_disable', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_diag_index');
-        }
+        $this->csrf->valider('beta_disable', $request);
 
         $this->betaModeService->disable();
         $this->addFlash('success', 'Mode beta désactivé. Les mails partent désormais vers les vrais destinataires.');
@@ -148,11 +135,7 @@ class DiagController extends AbstractController
             return $this->redirectToRoute('admin_diag_index');
         }
 
-        if (!$this->isCsrfTokenValid('purge', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-
-            return $this->redirectToRoute('admin_diag_index');
-        }
+        $this->csrf->valider('purge', $request);
 
         if ($request->request->get('confirmation') !== 'SUPPRIMER') {
             $this->addFlash('error', 'Confirmation incorrecte. Aucune donnée supprimée.');

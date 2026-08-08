@@ -9,6 +9,7 @@ use App\Entity\Licencie;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TransactionRepository;
+use App\Security\CsrfGuard;
 use App\Service\CotisationResolver;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Form\AttestationTransportRequestFactory;
@@ -31,14 +32,22 @@ class InscriptionController extends AbstractController
     private const SIGNATURE_MAX_LENGTH = 2_800_000;
 
     public function __construct(
+        private readonly LicencieRepository $licencieRepo,
+        private readonly DotationResolver $resolver,
+        private readonly CotisationResolver $cotisationResolver,
+        private readonly InscriptionFormService $formService,
+        private readonly DotationChoixRequestFactory $dotationFactory,
+        private readonly TransactionRepository $transactionRepo,
+        private readonly AutorisationCompletionService $completionService,
+        private readonly CsrfGuard $csrf,
         private readonly AttestationTransportRequestFactory $attestationFactory,
         private readonly DocumentRequirementResolver $documentResolver,
     ) {}
 
     #[Route('/{uuid}', name: 'show', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
-    public function show(string $uuid, LicencieRepository $licencieRepo, DotationResolver $resolver, CotisationResolver $cotisationResolver): Response
+    public function show(string $uuid): Response
     {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null) {
             return $this->render('public/inscription/expired.html.twig');
@@ -57,33 +66,29 @@ class InscriptionController extends AbstractController
 
         return $this->render('public/inscription/form.html.twig', [
             'licencie' => $licencie,
-            'montant' => $cotisationResolver->resolve($licencie),
-            'libelleVirement' => $cotisationResolver->libelleVirement($licencie),
-            'dotationGroupes' => $resolver->getChoiceGroups($licencie),
+            'montant' => $this->cotisationResolver->resolve($licencie),
+            'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
+            'dotationGroupes' => $this->resolver->getChoiceGroups($licencie),
             // Personnalisations dues sans qu'aucune question de choix ne soit posée :
             // groupe à option unique (nouveau licencié) ou article fixe personnalisé.
-            'dotationAutos' => $resolver->getAutoPersonnalisationRequests($licencie),
+            'dotationAutos' => $this->resolver->getAutoPersonnalisationRequests($licencie),
             'personnalisationMaxDefaut' => DotationModeleService::PERSONNALISATION_MAX_DEFAUT,
             'documents' => $this->documentResolver->manquantsPourLicencie($licencie),
         ]);
     }
 
     #[Route('/{uuid}', name: 'submit', methods: ['POST'], requirements: ['uuid' => Requirement::UUID])]
-    public function submit(string $uuid, Request $request, LicencieRepository $licencieRepo, InscriptionFormService $formService, DotationChoixRequestFactory $dotationFactory): Response
+    public function submit(string $uuid, Request $request): Response
     {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || !$licencie->isFormTokenValid()) {
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        if (!$this->isCsrfTokenValid('inscription_submit', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+        $this->csrf->valider('inscription_submit', $request);
 
-            return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
-        }
-
-        $dotation = $dotationFactory->fromRequest($request, $licencie);
+        $dotation = $this->dotationFactory->fromRequest($request, $licencie);
         if ($dotation === null) {
             $this->addFlash('error', 'Vérifiez votre choix de dotation et le texte à personnaliser, puis confirmez son orthographe.');
 
@@ -98,7 +103,7 @@ class InscriptionController extends AbstractController
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
-        $formService->submit($licencie, $data);
+        $this->formService->submit($licencie, $data);
 
         // Paiement par carte : l'inscription est enregistrée d'abord (PDF, signature, Drive),
         // le licencié ne peut donc rien perdre s'il abandonne sur HelloAsso.
@@ -112,25 +117,22 @@ class InscriptionController extends AbstractController
     #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
     public function confirmation(
         string $uuid,
-        LicencieRepository $licencieRepo,
-        CotisationResolver $cotisationResolver,
-        TransactionRepository $transactionRepo,
     ): Response {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || $licencie->getDossierClub() === null) {
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        $montant = $cotisationResolver->resolve($licencie);
+        $montant = $this->cotisationResolver->resolve($licencie);
 
         return $this->render('public/inscription/confirmation.html.twig', [
             'licencie' => $licencie,
             'dossier' => $licencie->getDossierClub(),
             'montant' => $montant,
-            'libelleVirement' => $cotisationResolver->libelleVirement($licencie),
+            'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
             // Seule une transaction réellement enregistrée autorise à annoncer un paiement reçu.
-            'paiementRecu' => $transactionRepo->sumByLicencieAndSeason($licencie, $licencie->getSeason()) >= (float) $montant,
+            'paiementRecu' => $this->transactionRepo->sumByLicencieAndSeason($licencie, $licencie->getSeason()) >= (float) $montant,
         ]);
     }
 
@@ -256,15 +258,15 @@ class InscriptionController extends AbstractController
     }
 
     #[Route('/{uuid}/completer', name: 'completer', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
-    public function completer(string $uuid, LicencieRepository $licencieRepo, AutorisationCompletionService $completionService): Response
+    public function completer(string $uuid): Response
     {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || !$licencie->isFormTokenValid()) {
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        $manquants = $completionService->missingKeys($licencie);
+        $manquants = $this->completionService->missingKeys($licencie);
         if ($manquants === []) {
             return $this->render('public/inscription/completer_done.html.twig', ['rienAFaire' => true]);
         }
@@ -277,21 +279,17 @@ class InscriptionController extends AbstractController
     }
 
     #[Route('/{uuid}/completer', name: 'completer_submit', methods: ['POST'], requirements: ['uuid' => Requirement::UUID])]
-    public function completerSubmit(string $uuid, Request $request, LicencieRepository $licencieRepo, AutorisationCompletionService $completionService): Response
+    public function completerSubmit(string $uuid, Request $request): Response
     {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || !$licencie->isFormTokenValid()) {
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        if (!$this->isCsrfTokenValid('inscription_completer', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+        $this->csrf->valider('inscription_completer', $request);
 
-            return $this->redirectToRoute('public_inscription_completer', ['uuid' => $uuid]);
-        }
-
-        $manquants = $completionService->missingKeys($licencie);
+        $manquants = $this->completionService->missingKeys($licencie);
         if ($manquants === []) {
             return $this->render('public/inscription/completer_done.html.twig', ['rienAFaire' => true]);
         }
@@ -303,7 +301,7 @@ class InscriptionController extends AbstractController
             return $this->redirectToRoute('public_inscription_completer', ['uuid' => $uuid]);
         }
 
-        $completionService->apply($licencie, $data);
+        $this->completionService->apply($licencie, $data);
 
         return $this->render('public/inscription/completer_done.html.twig', ['rienAFaire' => false]);
     }
