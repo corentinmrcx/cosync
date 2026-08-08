@@ -5,6 +5,7 @@ namespace App\Form;
 use App\DTO\DirigeantData;
 use App\Entity\Licencie;
 use App\Entity\Team;
+use App\Enum\DirigeantRole;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -12,6 +13,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -66,6 +68,12 @@ class DirigeantType extends AbstractType
                 'constraints' => [
                     new LessThan(value: 'today', message: 'La date de naissance doit être dans le passé.'),
                 ],
+            ])
+            ->add('role', EnumType::class, [
+                'class'    => DirigeantRole::class,
+                'label'    => 'Rôle',
+                'required' => true,
+                'choice_label' => static fn(DirigeantRole $role) => $role->label(),
             ])
             ->add('team', EntityType::class, [
                 'class'         => Team::class,

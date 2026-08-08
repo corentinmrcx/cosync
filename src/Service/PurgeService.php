@@ -14,9 +14,8 @@ final class PurgeService
      * Vide toutes les données métier de la base, dans une transaction (tout ou rien).
      *
      * Conserve uniquement les référentiels requis par l'application :
-     *   - user           (comptes admin)
-     *   - category       (catégories FFF U6→SENIOR)
-     *   - dirigeant_role (rôles dirigeants)
+     *   - user     (comptes admin)
+     *   - category (catégories FFF U6→SENIOR)
      *
      * Les tables sont supprimées des feuilles vers les racines pour respecter les
      * clés étrangères, quelle que soit leur règle ON DELETE.

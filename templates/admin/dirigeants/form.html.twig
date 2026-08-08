@@ -96,57 +96,18 @@
 
         <div class="season-form-row">
 
-            <div class="season-form-field"
-                 x-data="roleCombobox(
-                     {{ rolesJson }},
-                     {{ dirigeant and dirigeant.role ? dirigeant.role.id : 'null' }},
-                     '{{ dirigeant and dirigeant.role ? dirigeant.role.label : '' }}',
-                     '{{ csrf_token('dirigeant_role_create') }}'
-                 )">
-                <label>Rôle</label>
-                <input type="hidden" name="roleId" :value="selectedId ?? ''">
-
-                <div class="combobox" @click.outside="open = false">
-                    <div class="combobox-input-wrap">
-                        <input type="text"
-                               class="combobox-input"
-                               placeholder="Rechercher ou créer un rôle…"
-                               x-model="query"
-                               @focus="open = true"
-                               @input="open = true"
-                               autocomplete="off">
-                        <button type="button"
-                                class="combobox-clear"
-                                x-show="selectedId !== null"
-                                @click="clear()"
-                                title="Effacer">×</button>
-                    </div>
-
-                    <div class="combobox-dropdown" x-show="open" x-cloak>
-                        <template x-if="filtered.length === 0 && !showCreate">
-                            <div class="combobox-empty">Aucun rôle trouvé</div>
-                        </template>
-
-                        <template x-for="role in filtered" :key="role.id">
-                            <button type="button"
-                                    class="combobox-option"
-                                    :class="selectedId === role.id ? 'combobox-option-selected' : ''"
-                                    @click="select(role)"
-                                    x-text="role.label">
-                            </button>
-                        </template>
-
-                        <template x-if="showCreate">
-                            <button type="button"
-                                    class="combobox-create"
-                                    @click="create()"
-                                    :disabled="creating">
-                                <span x-show="!creating">+ Créer « <span x-text="query"></span> »</span>
-                                <span x-show="creating">Création…</span>
-                            </button>
-                        </template>
-                    </div>
-                </div>
+            <div class="season-form-field">
+                {% do form.role.setRendered %}
+                {% include 'components/text-combobox.html.twig' with {
+                    name: field_name(form.role),
+                    label: 'Rôle',
+                    suggestions: roleOptions,
+                    current: form.role.vars.value,
+                    placeholder: 'Choisir un rôle…',
+                    required: true,
+                    allow_create: false,
+                } %}
+                {{ form_errors(form.role) }}
             </div>
 
             <div class="season-form-field">
@@ -247,63 +208,6 @@ document.addEventListener('DOMContentLoaded', function () {
     {% endif %}
 });
 
-function roleCombobox(roles, currentId, currentLabel, csrfToken) {
-    return {
-        roles: roles,
-        query: currentLabel || '',
-        selectedId: currentId,
-        open: false,
-        creating: false,
-
-        get filtered() {
-            if (!this.query) return this.roles;
-            const q = this.query.toLowerCase();
-            return this.roles.filter(r => r.label.toLowerCase().includes(q));
-        },
-
-        get showCreate() {
-            if (!this.query.trim()) return false;
-            return !this.roles.some(r => r.label.toLowerCase() === this.query.trim().toLowerCase());
-        },
-
-        select(role) {
-            this.selectedId = role.id;
-            this.query = role.label;
-            this.open = false;
-        },
-
-        clear() {
-            this.selectedId = null;
-            this.query = '';
-            this.open = false;
-        },
-
-        async create() {
-            if (this.creating) return;
-            this.creating = true;
-            try {
-                const res = await fetch('{{ path('admin_dirigeant_roles_create') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: JSON.stringify({ label: this.query.trim(), _token: csrfToken }),
-                });
-                const data = await res.json();
-                if (data.id) {
-                    if (!this.roles.some(r => r.id === data.id)) {
-                        this.roles.push(data);
-                        this.roles.sort((a, b) => a.label.localeCompare(b.label, 'fr'));
-                    }
-                    this.select(data);
-                }
-            } finally {
-                this.creating = false;
-            }
-        },
-    };
-}
 </script>
 {% endblock %}
 {% endblock %}

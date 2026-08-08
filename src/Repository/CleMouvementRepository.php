@@ -31,8 +31,6 @@ class CleMouvementRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('m')
             ->join('m.dirigeant', 'd')
             ->addSelect('d')
-            ->leftJoin('d.role', 'r')
-            ->addSelect('r')
             ->where('m.season = :season')
             ->setParameter('season', $season)
             ->orderBy('d.nom', 'ASC')

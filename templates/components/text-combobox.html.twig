@@ -2,21 +2,30 @@
   Composant combobox texte : suggestions depuis des valeurs existantes + saisie libre.
 
   Paramètres :
-    name        (string)       Nom de l'input (soumis dans le form)
-    label       (string)       Label affiché au-dessus
-    suggestions (string[])     Valeurs existantes proposées en autocomplète
-    current     (string|null)  Valeur pré-remplie (édition)
-    placeholder (string)       Placeholder de l'input
-    required    (bool)         Affiche une * et rend le champ requis (défaut : false)
+    name         (string)       Nom de l'input (soumis dans le form)
+    label        (string)       Label affiché au-dessus
+    suggestions  (array)        Valeurs proposées : soit des chaînes, soit des { value, label }
+    current      (string|null)  Valeur pré-remplie (édition) — la value, pas le label
+    placeholder  (string)       Placeholder de l'input
+    required     (bool)         Affiche une * et rend le champ requis (défaut : false)
+    allow_create (bool)         Autorise une valeur hors liste (défaut : true).
+                                À false, le champ devient un select cherchable : ni « + Créer »,
+                                ni suppression de suggestion, ni valeur libre.
 #}
-<div x-data="textCombobox({{ suggestions|json_encode }}, {{ current is not null ? current|json_encode : 'null' }})"
-     @click.outside="open = false">
+{% set combobox_allow_create = allow_create is not defined or allow_create %}
+
+<div x-data="textCombobox(
+         {{ suggestions|json_encode }},
+         {{ current is not null ? current|json_encode : 'null' }},
+         {{ combobox_allow_create ? 'true' : 'false' }}
+     )"
+     @click.outside="close()">
 
     <label class="combobox-label">
         {{ label }}{% if required is defined and required %} <span aria-hidden="true">*</span>{% endif %}
     </label>
 
-    <input type="hidden" name="{{ name }}" :value="query">
+    <input type="hidden" name="{{ name }}" :value="value">
 
     <div class="combobox">
         <div class="combobox-input-wrap">
@@ -24,7 +33,7 @@
                    class="combobox-input"
                    placeholder="{{ placeholder ?? '' }}"
                    x-model="query"
-                   @focus="open = filtered.length > 0"
+                   @focus="open = true"
                    @input="open = true"
                    autocomplete="off"
                    {% if required is defined and required %}required{% endif %}>
@@ -36,20 +45,24 @@
                     title="Effacer">×</button>
         </div>
 
-        <div class="combobox-dropdown" x-show="open && (filtered.length > 0 || showCreate)" x-cloak>
-            <template x-for="(item, i) in filtered" :key="i">
+        <div class="combobox-dropdown" x-show="open && (filtered.length > 0 || showCreate || showEmpty)" x-cloak>
+            <template x-for="option in filtered" :key="option.value">
                 <div class="combobox-option-row">
                     <button type="button"
                             class="combobox-option"
-                            :class="query === item ? 'combobox-option-selected' : ''"
-                            @mousedown.prevent="select(item)"
-                            x-text="item">
+                            :class="value === option.value ? 'combobox-option-selected' : ''"
+                            @mousedown.prevent="select(option)"
+                            x-text="option.label">
                     </button>
                     <button type="button"
                             class="combobox-option-delete"
-                            @mousedown.prevent="removeSuggestion(item)"
+                            x-show="allowCreate"
+                            @mousedown.prevent="removeSuggestion(option)"
                             title="Supprimer cette suggestion">×</button>
                 </div>
+            </template>
+            <template x-if="showEmpty">
+                <div class="combobox-empty">Aucun résultat</div>
             </template>
             <template x-if="showCreate">
                 <button type="button"

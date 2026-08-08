@@ -48,7 +48,7 @@
                         <tr class="dirigeants-row"
                             onclick="window.location='{{ path('admin_dirigeants_show', {uuid: dirigeant.uuid}) }}'">
                             <td class="dirigeants-td-name">{{ dirigeant.nomPrenom }}</td>
-                            <td class="dirigeants-col-role dirigeants-td-muted">{{ dirigeant.role ? dirigeant.role.label : '—' }}</td>
+                            <td class="dirigeants-col-role dirigeants-td-muted">{{ dirigeant.role.label() }}</td>
                             <td class="dirigeants-col-team dirigeants-td-muted">{{ dirigeant.team ? dirigeant.team.name : '—' }}</td>
                             <td class="dirigeants-col-email dirigeants-td-muted">{{ dirigeant.email ?? '—' }}</td>
                         </tr>

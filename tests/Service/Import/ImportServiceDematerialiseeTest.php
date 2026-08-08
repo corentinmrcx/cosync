@@ -3,6 +3,7 @@
 namespace App\Tests\Service\Import;
 
 use App\Entity\Season;
+use App\Enum\DirigeantRole;
 use App\Enum\LicenceStatus;
 use App\Repository\DirigeantRepository;
 use App\Repository\LicencieRepository;
@@ -121,7 +122,11 @@ final class ImportServiceDematerialiseeTest extends ImportIntegrationTestCase
         self::assertSame('VETERAN', $licencie->getCategory()->getCode());
     }
 
-    public function testRoleDirigeantDeriveDuSuffixe(): void
+    /**
+     * La sous-catégorie FFF (« Jeune Arbitre », « Educateur Fédéral »…) ne dit rien du rôle interne
+     * au club : tout dirigeant importé arrive en « Dirigeant », charge à l'admin de le promouvoir.
+     */
+    public function testUnDirigeantImporteArriveAvecLeRoleParDefaut(): void
     {
         $season = $this->seedSeasonAndCategories();
 
@@ -132,8 +137,30 @@ final class ImportServiceDematerialiseeTest extends ImportIntegrationTestCase
 
         $arbitre = $dirigeants->findByNumLicence('9603273997', $season);
         self::assertNotNull($arbitre);
-        self::assertNotNull($arbitre->getRole());
-        self::assertSame('Jeune Arbitre', $arbitre->getRole()->getLabel());
+        self::assertSame(DirigeantRole::DIRIGEANT, $arbitre->getRole());
+    }
+
+    /** Un rôle attribué à la main par l'admin survit à un ré-import du même fichier. */
+    public function testUnReimportNEcrasePasUnRoleAttribueALaMain(): void
+    {
+        $season = $this->seedSeasonAndCategories();
+
+        /** @var DirigeantRepository $dirigeants */
+        $dirigeants = $this->service(DirigeantRepository::class);
+
+        $this->service(ImportService::class)->importFromXlsx($this->fichierComplet(), $season);
+
+        $arbitre = $dirigeants->findByNumLicence('9603273997', $season);
+        self::assertNotNull($arbitre);
+        $arbitre->setRole(DirigeantRole::RESPONSABLE_FOOT);
+        $this->em->flush();
+        $this->em->clear();
+
+        $this->service(ImportService::class)->importFromXlsx($this->fichierComplet(), $season);
+
+        $arbitre = $dirigeants->findByNumLicence('9603273997', $season);
+        self::assertNotNull($arbitre);
+        self::assertSame(DirigeantRole::RESPONSABLE_FOOT, $arbitre->getRole());
     }
 
     public function testSeniorU20DevientSeniorEtFootLoisirEstReconnu(): void

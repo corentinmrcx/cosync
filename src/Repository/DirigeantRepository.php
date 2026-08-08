@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Dirigeant;
 use App\Entity\Season;
+use App\Enum\DirigeantRole;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
@@ -98,12 +99,11 @@ class DirigeantRepository extends ServiceEntityRepository
         Season $season,
         ?string $search,
         ?int $teamId,
-        ?int $roleId,
+        ?DirigeantRole $role,
     ): array {
         $qb = $this->createQueryBuilder('d')
-            ->leftJoin('d.role', 'r')
             ->leftJoin('d.team', 't')
-            ->addSelect('r', 't')
+            ->addSelect('t')
             ->where('d.season = :season')
             ->setParameter('season', $season)
             ->orderBy('d.nom', 'ASC')
@@ -119,9 +119,9 @@ class DirigeantRepository extends ServiceEntityRepository
                 ->setParameter('teamId', $teamId);
         }
 
-        if ($roleId !== null) {
-            $qb->andWhere('r.id = :roleId')
-                ->setParameter('roleId', $roleId);
+        if ($role !== null) {
+            $qb->andWhere('d.role = :role')
+                ->setParameter('role', $role);
         }
 
         return $qb->getQuery()->getResult();

@@ -5,7 +5,6 @@ namespace App\Service\Import;
 use App\DTO\ImportResultData;
 use App\DTO\ImportRowData;
 use App\Entity\Dirigeant;
-use App\Entity\DirigeantRole;
 use App\Entity\DossierClub;
 use App\Entity\Licencie;
 use App\Entity\Season;
@@ -13,7 +12,6 @@ use App\Enum\ImportRowType;
 use App\Enum\LicenceStatus;
 use App\Repository\CategoryRepository;
 use App\Repository\DirigeantRepository;
-use App\Repository\DirigeantRoleRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Service\Import\Layout\ImportLayoutResolver;
@@ -24,15 +22,11 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class ImportService
 {
-    /** @var array<string, DirigeantRole> */
-    private array $roleCache = [];
-
     public function __construct(
         private readonly DataSanitizer $sanitizer,
         private readonly ImportLayoutResolver $layoutResolver,
         private readonly LicencieRepository $licencieRepository,
         private readonly DirigeantRepository $dirigeantRepository,
-        private readonly DirigeantRoleRepository $dirigeantRoleRepository,
         private readonly CategoryRepository $categoryRepository,
         private readonly TeamRepository $teamRepository,
         private readonly EntityManagerInterface $em,
@@ -43,10 +37,6 @@ final class ImportService
     public function importFromXlsx(UploadedFile $file, Season $season): ImportResultData
     {
         $result = new ImportResultData();
-
-        // Réinitialise le cache de rôles à chaque import : les entités mises en cache appartiennent
-        // à l'EntityManager de l'import précédent et seraient détachées si le service est réutilisé.
-        $this->roleCache = [];
 
         $rows = $this->readFirstNonEmptySheet($file);
         if (count($rows) < 2) {
@@ -297,8 +287,6 @@ final class ImportService
         $telephone     = $this->sanitizer->sanitizePhone($data->rawTelephone);
         $rawDate       = trim((string) $data->rawDateNaissance);
         $dateNaissance = $rawDate !== '' ? $this->sanitizer->sanitizeDateNaissance($rawDate) : null;
-        $rawRole       = trim((string) $data->rawCategoryOrRole);
-        $role          = $rawRole !== '' ? $this->findOrCreateRole(mb_convert_case($rawRole, MB_CASE_TITLE, 'UTF-8')) : null;
 
         $dirigeant = ($numLicence !== null ? $this->dirigeantRepository->findByNumLicence($numLicence, $season) : null)
             ?? $this->dirigeantRepository->findByNomPrenomSaison($nom, $prenom, $season);
@@ -324,9 +312,8 @@ final class ImportService
             if ($dateNaissance !== null) {
                 $dirigeant->setDateNaissance($dateNaissance);
             }
-            if ($role !== null) {
-                $dirigeant->setRole($role);
-            }
+            // Le rôle n'est jamais touché par l'import : la sous-catégorie FFF (« Dirigeante »,
+            // « Jeune Arbitre »…) ne dit rien du rôle interne au club, que l'admin seul attribue.
             $result->updated++;
 
             return;
@@ -339,29 +326,11 @@ final class ImportService
         $dirigeant->setEmail($email);
         $dirigeant->setTelephone($telephone);
         $dirigeant->setDateNaissance($dateNaissance);
-        $dirigeant->setRole($role);
+        // Rôle par défaut (DirigeantRole::DIRIGEANT) : l'admin promeut ensuite depuis la fiche.
         $dirigeant->setSeason($season);
 
         $this->em->persist($dirigeant);
         $result->created++;
-    }
-
-    private function findOrCreateRole(string $label): DirigeantRole
-    {
-        if (isset($this->roleCache[$label])) {
-            return $this->roleCache[$label];
-        }
-
-        $role = $this->dirigeantRoleRepository->findByLabel($label);
-        if ($role === null) {
-            $role = new DirigeantRole();
-            $role->setLabel($label);
-            $this->em->persist($role);
-            // Pas de flush ici — le flush global en fin d'import s'en charge
-        }
-
-        $this->roleCache[$label] = $role;
-        return $role;
     }
 
     private function nullableTrim(?string $value): ?string

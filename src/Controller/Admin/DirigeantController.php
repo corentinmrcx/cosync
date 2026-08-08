@@ -3,12 +3,11 @@
 namespace App\Controller\Admin;
 
 use App\DTO\DirigeantData;
-use App\Entity\DirigeantRole;
 use App\Entity\Season;
 use App\Entity\Team;
+use App\Enum\DirigeantRole;
 use App\Form\DirigeantType;
 use App\Repository\DirigeantRepository;
-use App\Repository\DirigeantRoleRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
@@ -29,7 +28,6 @@ class DirigeantController extends AbstractController
     public function list(
         Request $request,
         DirigeantRepository $dirigeantRepo,
-        DirigeantRoleRepository $roleRepo,
         TeamRepository $teamRepo,
         SeasonContext $seasonContext,
         \App\Service\ListFilterMemory $filterMemory,
@@ -52,7 +50,8 @@ class DirigeantController extends AbstractController
             $currentTeam = $teamRepo->find((int) $request->query->get('team'));
         }
         if ($request->query->has('role') && $request->query->get('role') !== '') {
-            $currentRole = $roleRepo->find((int) $request->query->get('role'));
+            // tryFrom : neutralise silencieusement un ancien id numérique encore mémorisé par ListFilterMemory.
+            $currentRole = DirigeantRole::tryFrom((string) $request->query->get('role'));
         }
 
         $filterGroups = [
@@ -67,8 +66,8 @@ class DirigeantController extends AbstractController
                 'name'     => 'role',
                 'label'    => 'Rôle',
                 'allLabel' => 'Tous',
-                'options'  => array_map(fn(DirigeantRole $r) => ['value' => $r->getId(), 'label' => $r->getLabel()], $roleRepo->findAllOrdered()),
-                'current'  => $currentRole?->getId(),
+                'options'  => DirigeantRole::options(),
+                'current'  => $currentRole?->value,
             ],
         ];
 
@@ -77,7 +76,7 @@ class DirigeantController extends AbstractController
                 $season,
                 $search ?: null,
                 $currentTeam?->getId(),
-                $currentRole?->getId(),
+                $currentRole,
             ),
             'season'            => $season,
             'search'            => $search,
@@ -91,7 +90,6 @@ class DirigeantController extends AbstractController
         Request $request,
         SeasonContext $seasonContext,
         DirigeantService $dirigeantService,
-        DirigeantRoleRepository $roleRepo,
         LicencieRepository $licencieRepo,
     ): Response {
         $season = $seasonContext->getCurrentSeason();
@@ -104,9 +102,6 @@ class DirigeantController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $roleId = $request->request->get('roleId');
-            $data->role = $roleId ? $roleRepo->find((int) $roleId) : null;
-
             try {
                 $dirigeant = $dirigeantService->create($data, $season);
                 $message = $dirigeant->getEmail() !== null
@@ -122,7 +117,7 @@ class DirigeantController extends AbstractController
         return $this->render('admin/dirigeants/form.html.twig', [
             'form'           => $form,
             'dirigeant'      => null,
-            'rolesJson'      => $this->buildRolesJson($roleRepo),
+            'roleOptions'    => DirigeantRole::options(),
             'licenciesSizes' => $this->buildLicenciesSizes($licencieRepo, $season),
         ]);
     }
@@ -215,7 +210,6 @@ class DirigeantController extends AbstractController
         DirigeantRepository $dirigeantRepo,
         SeasonContext $seasonContext,
         DirigeantService $dirigeantService,
-        DirigeantRoleRepository $roleRepo,
         LicencieRepository $licencieRepo,
     ): Response {
         $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
@@ -246,9 +240,6 @@ class DirigeantController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $roleId = $request->request->get('roleId');
-            $data->role = $roleId ? $roleRepo->find((int) $roleId) : null;
-
             try {
                 $dirigeantService->edit($dirigeant, $data);
                 $this->addFlash('success', 'Dossier de ' . $dirigeant->getNomPrenom() . ' mis à jour.');
@@ -261,20 +252,9 @@ class DirigeantController extends AbstractController
         return $this->render('admin/dirigeants/form.html.twig', [
             'form'           => $form,
             'dirigeant'      => $dirigeant,
-            'rolesJson'      => $this->buildRolesJson($roleRepo),
+            'roleOptions'    => DirigeantRole::options(),
             'licenciesSizes' => $this->buildLicenciesSizes($licencieRepo, $season),
         ]);
-    }
-
-    private function buildRolesJson(DirigeantRoleRepository $roleRepo): string
-    {
-        return json_encode(
-            array_map(
-                fn(DirigeantRole $r) => ['id' => $r->getId(), 'label' => $r->getLabel()],
-                $roleRepo->findAllOrdered(),
-            ),
-            JSON_THROW_ON_ERROR,
-        );
     }
 
     private function buildLicenciesSizes(LicencieRepository $licencieRepo, Season $season): string

@@ -59,7 +59,6 @@ final class PurgeServiceTest extends StockIntegrationTestCase
 
         // Référentiels présents avant purge (conservés ensuite).
         $categoriesAvant = $this->rowCount('category');
-        $rolesAvant      = $this->rowCount('dirigeant_role');
         $usersAvant      = $this->rowCount('"user"');
 
         self::assertGreaterThan(0, $this->rowCount('dotation_besoin'), 'Le besoin doit exister avant purge.');
@@ -81,7 +80,6 @@ final class PurgeServiceTest extends StockIntegrationTestCase
 
         // Référentiels et comptes conservés intacts.
         self::assertSame($categoriesAvant, $this->rowCount('category'), 'Les catégories FFF sont conservées.');
-        self::assertSame($rolesAvant, $this->rowCount('dirigeant_role'), 'Les rôles dirigeants sont conservés.');
         self::assertSame($usersAvant, $this->rowCount('"user"'), 'Les comptes admin sont conservés.');
     }
 }

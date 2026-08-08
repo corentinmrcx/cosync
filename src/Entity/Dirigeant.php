@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\DirigeantRole;
 use App\Repository\DirigeantRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
@@ -32,9 +33,8 @@ class Dirigeant
     #[ORM\Column(type: 'date_immutable', nullable: true)]
     private ?\DateTimeImmutable $dateNaissance = null;
 
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?DirigeantRole $role = null;
+    #[ORM\Column(length: 32, enumType: DirigeantRole::class, options: ['default' => 'dirigeant'])]
+    private DirigeantRole $role = DirigeantRole::DIRIGEANT;
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $tailleHaut = null;
@@ -131,8 +131,8 @@ class Dirigeant
     public function getDateNaissance(): ?\DateTimeImmutable { return $this->dateNaissance; }
     public function setDateNaissance(?\DateTimeImmutable $dateNaissance): static { $this->dateNaissance = $dateNaissance; return $this; }
 
-    public function getRole(): ?DirigeantRole { return $this->role; }
-    public function setRole(?DirigeantRole $role): static { $this->role = $role; return $this; }
+    public function getRole(): DirigeantRole { return $this->role; }
+    public function setRole(DirigeantRole $role): static { $this->role = $role; return $this; }
 
     public function getTailleHaut(): ?string { return $this->tailleHaut; }
     public function setTailleHaut(?string $tailleHaut): static { $this->tailleHaut = $tailleHaut; return $this; }

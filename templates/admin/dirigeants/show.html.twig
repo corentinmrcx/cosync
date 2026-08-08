@@ -14,9 +14,7 @@
     <div class="licencie-show-header">
         <div>
             <h1 class="licencie-show-title">{{ dirigeant.nomPrenom }}</h1>
-            {% if dirigeant.role %}
-                <p class="dirigeant-show-role">{{ dirigeant.role }}</p>
-            {% endif %}
+            <p class="dirigeant-show-role">{{ dirigeant.role.label() }}</p>
         </div>
 
         <div class="licencie-show-header-actions">

@@ -47,11 +47,7 @@
                 <div x-show="step === 1" class="inscription-card">
                     <h1 class="inscription-welcome-name">Bonjour {{ dirigeant.prenom }} 👋</h1>
                     <p class="inscription-welcome-text">
-                        {% if dirigeant.role %}
-                            En tant que <strong>{{ dirigeant.role }}</strong> au <strong>Foyer de Soudron</strong>
-                        {% else %}
-                            En tant que dirigeant(e) au <strong>Foyer de Soudron</strong>
-                        {% endif %}
+                        En tant que <strong>{{ dirigeant.role.label() }}</strong> au <strong>Foyer de Soudron</strong>
                         pour la saison <strong>{{ dirigeant.season.label }}</strong>, merci de compléter votre dossier dirigeant.
                     </p>
                     <p class="inscription-welcome-text">

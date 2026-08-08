@@ -5,6 +5,7 @@ namespace App\Service;
 use App\DTO\DirigeantData;
 use App\Entity\Dirigeant;
 use App\Entity\Season;
+use App\Enum\DirigeantRole;
 use App\Repository\DirigeantRepository;
 use App\Service\Import\DataSanitizer;
 use App\Service\Mail\DirigeantLinkService;
@@ -75,7 +76,7 @@ final class DirigeantService
         $dirigeant->setEmail($this->sanitizer->sanitizeEmail($data->email));
         $dirigeant->setTelephone($this->sanitizer->sanitizePhone($data->telephone));
         $dirigeant->setDateNaissance($data->dateNaissance);
-        $dirigeant->setRole($data->role);
+        $dirigeant->setRole($data->role ?? DirigeantRole::DIRIGEANT);
         $dirigeant->setTailleHaut($data->tailleHaut ?: null);
         $dirigeant->setTailleBas($data->tailleBas ?: null);
         $dirigeant->setPointure($data->pointure ?: null);

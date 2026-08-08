@@ -103,7 +103,7 @@
                                     <span class="clubhouse-meta">{{ dirigeant.email }}</span>
                                 {% endif %}
                             </td>
-                            <td data-label="Rôle">{{ dirigeant.role ? dirigeant.role.label : '—' }}</td>
+                            <td data-label="Rôle">{{ dirigeant.role.label() }}</td>
                             <td data-label="Clés">
                                 {% if detention.estDetenteur %}
                                     <span class="clubhouse-cles-count">{{ detention.solde }}</span>
