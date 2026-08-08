@@ -88,7 +88,9 @@ final class AttestationCleFormControllerTest extends WebTestCase
 
         self::assertEquals($formTokenAvant, $apres->getFormTokenExpiresAt(), 'Le token du dossier dirigeant est indépendant.');
         self::assertNull($apres->getFormCompletedAt());
-        self::assertNull($apres->getReglementSignePath());
+        // L'attestation de clés suit son propre circuit : aucune signature de document
+        // signable ne doit lui être rattachée.
+        self::assertSame(0, $this->countDocumentSignatures());
     }
 
     public function testUneSignatureManquanteEstRejetee(): void
@@ -241,6 +243,16 @@ final class AttestationCleFormControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/attestation-cle/' . $uuid);
 
         return $crawler->filter('input[name="_token"]')->attr('value');
+    }
+
+    private function countDocumentSignatures(): int
+    {
+        return (int) self::getContainer()->get(EntityManagerInterface::class)
+            ->createQueryBuilder()
+            ->select('COUNT(s.id)')
+            ->from(\App\Entity\DocumentSignature::class, 's')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     private function reload(string $uuid): Dirigeant

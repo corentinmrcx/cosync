@@ -5,6 +5,8 @@ namespace App\Controller\Public;
 use App\Entity\Category;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Enum\DocumentCible;
+use App\Repository\DocumentSignableRepository;
 use App\Repository\SeasonRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,10 +21,16 @@ use Symfony\Component\Routing\Attribute\Route;
 class InscriptionDemoController extends AbstractController
 {
     #[Route('/inscription-demo', name: 'public_inscription_demo_show', methods: ['GET'])]
-    public function show(SeasonRepository $seasonRepo): Response
+    public function show(SeasonRepository $seasonRepo, DocumentSignableRepository $documentRepo): Response
     {
-        // Saison réelle (lecture seule) pour afficher le vrai règlement et le bon tarif
+        // Saison réelle (lecture seule) pour afficher les vrais documents et le bon tarif
         $season = $seasonRepo->findMostRecent();
+
+        // Le licencié de démo n'existe pas en base : aucune signature ne peut lui être
+        // rattachée, tous les documents actifs de la saison sont donc à signer.
+        $documents = $season === null
+            ? []
+            : $documentRepo->findActifsByCible($season, DocumentCible::LICENCIE);
 
         if ($season === null) {
             $season = (new Season())
@@ -45,9 +53,10 @@ class InscriptionDemoController extends AbstractController
         $montant = $season->getCotisationDefaut();
 
         return $this->render('public/inscription/form.html.twig', [
-            'licencie' => $licencie,
-            'montant'  => $montant,
-            'demo'     => true,
+            'licencie'  => $licencie,
+            'montant'   => $montant,
+            'documents' => $documents,
+            'demo'      => true,
         ]);
     }
 

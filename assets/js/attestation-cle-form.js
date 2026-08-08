@@ -1,4 +1,4 @@
-import { reglementSignature } from './reglement-signature.js';
+import { singleSignaturePad } from './signature-pad.js';
 
 /**
  * Formulaire public de signature de l'attestation de remise de clés.
@@ -7,7 +7,7 @@ import { reglementSignature } from './reglement-signature.js';
  */
 export function attestationCleForm() {
     return {
-        ...reglementSignature(),
+        ...singleSignaturePad(),
         submitting: false,
 
         init() {

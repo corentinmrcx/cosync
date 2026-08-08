@@ -5,10 +5,12 @@ namespace App\Controller\Public;
 use App\DTO\AutorisationCompletionData;
 use App\DTO\DotationChoixData;
 use App\DTO\InscriptionFormData;
+use App\Entity\Licencie;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TransactionRepository;
 use App\Service\CotisationResolver;
+use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Form\AttestationTransportRequestFactory;
 use App\Service\Form\AutorisationCompletionService;
 use App\Service\Form\DotationChoixRequestFactory;
@@ -24,8 +26,12 @@ use Symfony\Component\Uid\Uuid;
 #[Route('/inscription', name: 'public_inscription_')]
 class InscriptionController extends AbstractController
 {
+    /** Une signature manuscrite dépasse rarement 300 Ko ; au-delà, c'est une soumission suspecte. */
+    private const SIGNATURE_MAX_LENGTH = 2_800_000;
+
     public function __construct(
         private readonly AttestationTransportRequestFactory $attestationFactory,
+        private readonly DocumentRequirementResolver $documentResolver,
     ) {}
 
     #[Route('/{uuid}', name: 'show', methods: ['GET'])]
@@ -54,8 +60,9 @@ class InscriptionController extends AbstractController
             'dotationGroupes' => $resolver->getChoiceGroups($licencie),
             // Personnalisations dues sans qu'aucune question de choix ne soit posée :
             // groupe à option unique (nouveau licencié) ou article fixe personnalisé.
-            'dotationAutos'   => $resolver->getPersonnalisationRequests($licencie, []),
+            'dotationAutos'   => $resolver->getAutoPersonnalisationRequests($licencie),
             'personnalisationMaxDefaut' => DotationModeleService::PERSONNALISATION_MAX_DEFAUT,
+            'documents'       => $this->documentResolver->manquantsPourLicencie($licencie),
         ]);
     }
 
@@ -79,7 +86,7 @@ class InscriptionController extends AbstractController
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
-        $data = $this->buildFormData($request, $licencie->getCategory()->isJeune(), $dotation);
+        $data = $this->buildFormData($request, $licencie, $licencie->getCategory()->isJeune(), $dotation);
 
         if ($data === null) {
             $this->addFlash('error', 'Formulaire incomplet, veuillez remplir tous les champs.');
@@ -121,20 +128,20 @@ class InscriptionController extends AbstractController
         ]);
     }
 
-    private function buildFormData(Request $request, bool $isJeune, DotationChoixData $dotation): ?InscriptionFormData
+    private function buildFormData(Request $request, Licencie $licencie, bool $isJeune, DotationChoixData $dotation): ?InscriptionFormData
     {
-        $tailleHaut    = $request->request->get('taille_haut', '');
-        $tailleBas     = $request->request->get('taille_bas', '');
-        $pointure      = $request->request->get('pointure', '');
-        $photoRaw      = $request->request->get('autorisation_photo');
-        $signatureData = $request->request->get('signature_data', '');
+        $tailleHaut = $request->request->get('taille_haut', '');
+        $tailleBas  = $request->request->get('taille_bas', '');
+        $pointure   = $request->request->get('pointure', '');
+        $photoRaw   = $request->request->get('autorisation_photo');
 
-        if ($tailleHaut === '' || $tailleBas === '' || $pointure === ''
-            || $photoRaw === null || $signatureData === '') {
+        if ($tailleHaut === '' || $tailleBas === '' || $pointure === '' || $photoRaw === null) {
             return null;
         }
 
-        if (!str_starts_with($signatureData, 'data:image/') || strlen($signatureData) > 2_800_000) {
+        $documentSignatures = $this->collectDocumentSignatures($request, $licencie);
+
+        if ($documentSignatures === null) {
             return null;
         }
 
@@ -203,12 +210,43 @@ class InscriptionController extends AbstractController
             autorisationTransportParents:    $transportParent,
             autorisationAccident:            $autorisationAccident,
             volontaireTransport:             $volontaireTransport,
-            signatureData:                   $signatureData,
+            documentSignatures:              $documentSignatures,
             paymentIntentions:               $modes,
             attestationTransport:            $attestationData,
             dotationChoix:                   $dotation->choix,
             dotationPersonnalisation:        $dotation->personnalisation,
         );
+    }
+
+    /**
+     * Une signature par document réellement attendu. La liste est recalculée côté
+     * serveur : un id envoyé par le client mais non attendu est ignoré, et s'il manque
+     * une signature attendue, la soumission est rejetée.
+     *
+     * @return array<int, string>|null null si une signature attendue manque ou est invalide
+     */
+    private function collectDocumentSignatures(Request $request, Licencie $licencie): ?array
+    {
+        // Lecture défensive : une valeur scalaire doit être rejetée comme signature
+        // manquante, pas provoquer une réponse 400 incompréhensible pour le licencié.
+        $brut     = $request->request->all()['signature_data'] ?? null;
+        $soumises = is_array($brut) ? $brut : [];
+        $retenues = [];
+
+        foreach ($this->documentResolver->manquantsPourLicencie($licencie) as $document) {
+            $signature = $soumises[$document->getId()] ?? null;
+
+            if (!is_string($signature)
+                || $signature === ''
+                || !str_starts_with($signature, 'data:image/')
+                || strlen($signature) > self::SIGNATURE_MAX_LENGTH) {
+                return null;
+            }
+
+            $retenues[$document->getId()] = $signature;
+        }
+
+        return $retenues;
     }
 
     #[Route('/{uuid}/completer', name: 'completer', methods: ['GET'])]

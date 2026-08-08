@@ -15,7 +15,12 @@ final class InscriptionFormData
         public readonly ?bool $autorisationTransportParents,
         public readonly ?bool $autorisationAccident,
         public readonly ?bool $volontaireTransport,
-        public readonly string $signatureData,
+        /**
+         * Signatures des documents à signer, indexées par id de DocumentSignable.
+         *
+         * @var array<int, string> data URL base64 de la signature manuscrite
+         */
+        public readonly array $documentSignatures,
         /** @var PaymentMode[] */
         public readonly array $paymentIntentions,
         public readonly ?AttestationTransportData $attestationTransport = null,

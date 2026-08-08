@@ -20,13 +20,13 @@ class Season
     #[ORM\Column(options: ['default' => 0])]
     private int $cotisationDefaut = 0;
 
-    /** Règlement intérieur signé par les licenciés dans le parcours d'inscription */
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $reglementText = null;
-
-    /** Règlement intérieur propre aux dirigeants, signé dans le parcours dirigeant */
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $reglementDirigeantText = null;
+    /*
+     * Les textes des règlements intérieurs vivaient ici, une colonne par destinataire.
+     * Ils sont désormais portés par DocumentSignable, créé depuis l'admin : ajouter un
+     * document ne demande plus de migration. Les colonnes reglement_text et
+     * reglement_dirigeant_text subsistent en base, dé-mappées, le temps de valider la
+     * bascule en production (voir la migration Version20260807233000).
+     */
 
     /** Texte de l'attestation de remise signée par les détenteurs de clés du club house */
     #[ORM\Column(type: 'text', nullable: true)]
@@ -64,28 +64,6 @@ class Season
     public function setCotisationDefaut(int $cotisationDefaut): static
     {
         $this->cotisationDefaut = $cotisationDefaut;
-        return $this;
-    }
-
-    public function getReglementText(): ?string
-    {
-        return $this->reglementText;
-    }
-
-    public function setReglementText(?string $reglementText): static
-    {
-        $this->reglementText = $reglementText;
-        return $this;
-    }
-
-    public function getReglementDirigeantText(): ?string
-    {
-        return $this->reglementDirigeantText;
-    }
-
-    public function setReglementDirigeantText(?string $reglementDirigeantText): static
-    {
-        $this->reglementDirigeantText = $reglementDirigeantText;
         return $this;
     }
 

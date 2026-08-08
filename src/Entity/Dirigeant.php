@@ -56,13 +56,13 @@ class Dirigeant
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $attestationTransportDriveId = null;
 
-    /** Chemin local temporaire puis ID Drive du règlement intérieur signé */
-    #[ORM\Column(length: 500, nullable: true)]
-    private ?string $reglementSignePath = null;
-
-    /** Date de signature du règlement intérieur par le dirigeant */
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $reglementSignedAt = null;
+    /*
+     * Le règlement intérieur des dirigeants avait ici ses deux colonnes dédiées.
+     * Les signatures vivent désormais dans DocumentSignature, ce qui permet d'en
+     * demander un nombre quelconque (chartes par rôle) sans toucher au schéma.
+     * Les colonnes reglement_signe_path et reglement_signed_at subsistent en base,
+     * dé-mappées, le temps de valider la bascule (migration Version20260807233000).
+     */
 
     /** Chemin local temporaire puis ID Drive de l'attestation de remise de clés signée */
     #[ORM\Column(length: 500, nullable: true)]
@@ -152,12 +152,6 @@ class Dirigeant
     public function getAttestationTransportDriveId(): ?string { return $this->attestationTransportDriveId; }
     public function setAttestationTransportDriveId(?string $attestationTransportDriveId): static { $this->attestationTransportDriveId = $attestationTransportDriveId; return $this; }
 
-    public function getReglementSignePath(): ?string { return $this->reglementSignePath; }
-    public function setReglementSignePath(?string $reglementSignePath): static { $this->reglementSignePath = $reglementSignePath; return $this; }
-
-    public function getReglementSignedAt(): ?\DateTimeImmutable { return $this->reglementSignedAt; }
-    public function setReglementSignedAt(?\DateTimeImmutable $reglementSignedAt): static { $this->reglementSignedAt = $reglementSignedAt; return $this; }
-
     public function getAttestationCleSignePath(): ?string { return $this->attestationCleSignePath; }
     public function setAttestationCleSignePath(?string $attestationCleSignePath): static { $this->attestationCleSignePath = $attestationCleSignePath; return $this; }
 
@@ -194,25 +188,8 @@ class Dirigeant
     }
 
     /**
-     * Le règlement intérieur des dirigeants est-il signé ?
-     * Un dirigeant-joueur signe les deux règlements : celui des joueurs dans son
-     * parcours licencié, celui des dirigeants ici. Le dossier du licencié auquel
-     * il est rattaché ne l'exonère donc pas — ce sont deux documents distincts.
-     */
-    public function hasSignedReglement(): bool
-    {
-        return $this->reglementSignePath !== null;
-    }
-
-    /** Le dirigeant doit-il signer le règlement dans son formulaire public ? */
-    public function needsReglementSignature(): bool
-    {
-        return !$this->hasSignedReglement();
-    }
-
-    /**
      * L'attestation de remise de clés est-elle signée ?
-     * Volontairement hors de isPublicFormComplete() : elle ne concerne que les
+     * Volontairement hors de la complétude du dossier : elle ne concerne que les
      * détenteurs de clés, pas le parcours dirigeant standard.
      */
     public function hasSignedAttestationCle(): bool
@@ -227,22 +204,21 @@ class Dirigeant
     }
 
     /**
-     * Source de vérité de la complétude du dossier public dirigeant.
+     * Complétude des informations portées par le dirigeant lui-même.
      * - Transport : requis pour tous ; attestation requise si volontaire.
-     * - Règlement intérieur des dirigeants : requis pour tous, y compris les
-     *   dirigeants-joueurs (le règlement joueurs est un autre document).
      * - Dirigeant-joueur (lié à un licencié) : taille + droit image proviennent
      *   du dossier licencié → non requis ici.
+     *
+     * Les documents à signer n'entrent pas dans ce calcul : ils dépendent de la
+     * saison et du rôle, donc d'une requête. La complétude complète du dossier se
+     * demande à DirigeantDossierCompletion::isComplete().
      */
-    public function isPublicFormComplete(): bool
+    public function isBaseFormComplete(): bool
     {
         if ($this->volontaireTransport === null) {
             return false;
         }
         if ($this->volontaireTransport === true && $this->attestationTransportDriveId === null) {
-            return false;
-        }
-        if ($this->needsReglementSignature()) {
             return false;
         }
 

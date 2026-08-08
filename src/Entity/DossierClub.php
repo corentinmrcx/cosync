@@ -68,15 +68,12 @@ class DossierClub
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $dotationPersonnalisation = null;
 
-    #[ORM\Column]
-    private bool $isSigned = false;
-
-    /** Chemin Drive du PDF après upload */
-    #[ORM\Column(length: 500, nullable: true)]
-    private ?string $signaturePath = null;
-
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $signatureDate = null;
+    /*
+     * La signature du règlement intérieur vivait ici (is_signed, signature_path,
+     * signature_date). Elle est désormais une ligne de DocumentSignature, ce qui permet
+     * de demander plusieurs documents au même licencié. Les colonnes subsistent en base,
+     * dé-mappées, le temps de valider la bascule (migration Version20260807233000).
+     */
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $formCompletedAt = null;
@@ -209,39 +206,6 @@ class DossierClub
     public function setDotationPersonnalisation(?array $dotationPersonnalisation): static
     {
         $this->dotationPersonnalisation = $dotationPersonnalisation ?: null;
-        return $this;
-    }
-
-    public function isSigned(): bool
-    {
-        return $this->isSigned;
-    }
-
-    public function setIsSigned(bool $isSigned): static
-    {
-        $this->isSigned = $isSigned;
-        return $this;
-    }
-
-    public function getSignaturePath(): ?string
-    {
-        return $this->signaturePath;
-    }
-
-    public function setSignaturePath(?string $signaturePath): static
-    {
-        $this->signaturePath = $signaturePath;
-        return $this;
-    }
-
-    public function getSignatureDate(): ?\DateTimeImmutable
-    {
-        return $this->signatureDate;
-    }
-
-    public function setSignatureDate(?\DateTimeImmutable $signatureDate): static
-    {
-        $this->signatureDate = $signatureDate;
         return $this;
     }
 

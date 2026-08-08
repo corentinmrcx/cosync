@@ -3,14 +3,14 @@
 namespace App\EventListener;
 
 use App\Repository\DirigeantRepository;
+use App\Repository\DocumentSignatureRepository;
 use App\Repository\DossierClubRepository;
 use App\Repository\SeasonRepository;
-use App\Service\Drive\AttestationDriveSync;
 use App\Service\Drive\AttestationCleRecapDriveSync;
-use App\Service\Drive\DirigeantAttestationDriveSync;
+use App\Service\Drive\AttestationDriveSync;
 use App\Service\Drive\DirigeantAttestationCleDriveSync;
-use App\Service\Drive\DirigeantReglementDriveSync;
-use App\Service\Drive\DossierDriveSync;
+use App\Service\Drive\DirigeantAttestationDriveSync;
+use App\Service\Drive\DocumentSignatureDriveSync;
 use App\Service\Drive\PendingUploadQueue;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -23,6 +23,9 @@ use Symfony\Component\Uid\Uuid;
  * (kernel.terminate). Le licencié reçoit immédiatement sa page de confirmation,
  * l'upload se fait ensuite sans le bloquer ni dépendre de la disponibilité de
  * l'API Google.
+ *
+ * Chaque itération est isolée : l'échec d'un document ne doit jamais empêcher les
+ * suivants de partir.
  */
 #[AsEventListener(event: KernelEvents::TERMINATE)]
 final class DriveUploadTerminateListener
@@ -31,10 +34,10 @@ final class DriveUploadTerminateListener
         private readonly PendingUploadQueue $queue,
         private readonly DossierClubRepository $dossierRepository,
         private readonly DirigeantRepository $dirigeantRepository,
-        private readonly DossierDriveSync $driveSync,
+        private readonly DocumentSignatureRepository $signatureRepository,
+        private readonly DocumentSignatureDriveSync $documentDriveSync,
         private readonly AttestationDriveSync $attestationDriveSync,
         private readonly DirigeantAttestationDriveSync $dirigeantAttestationDriveSync,
-        private readonly DirigeantReglementDriveSync $dirigeantReglementDriveSync,
         private readonly SeasonRepository $seasonRepository,
         private readonly DirigeantAttestationCleDriveSync $dirigeantAttestationCleDriveSync,
         private readonly AttestationCleRecapDriveSync $attestationCleRecapDriveSync,
@@ -43,39 +46,45 @@ final class DriveUploadTerminateListener
 
     public function __invoke(TerminateEvent $event): void
     {
-        foreach ($this->queue->flush() as $dossierId) {
-            $dossier = $this->dossierRepository->find($dossierId);
+        foreach ($this->queue->flushDocumentSignatures() as $signatureId) {
+            try {
+                $signature = $this->signatureRepository->find($signatureId);
 
-            if ($dossier !== null) {
-                $this->driveSync->sync($dossier);
+                if ($signature !== null) {
+                    $this->documentDriveSync->sync($signature);
+                }
+            } catch (\Throwable $e) {
+                $this->logger->error('Échec archivage du document signé {id} : {message}', [
+                    'id'      => $signatureId,
+                    'message' => $e->getMessage(),
+                ]);
             }
         }
 
         foreach ($this->queue->flushAttestations() as $dossierId) {
-            $dossier = $this->dossierRepository->find($dossierId);
+            try {
+                $dossier = $this->dossierRepository->find($dossierId);
 
-            if ($dossier !== null) {
-                $this->attestationDriveSync->sync($dossier);
+                if ($dossier !== null) {
+                    $this->attestationDriveSync->sync($dossier);
+                }
+            } catch (\Throwable $e) {
+                $this->logger->error('Échec sync attestation transport du dossier {id} : {message}', [
+                    'id'      => $dossierId,
+                    'message' => $e->getMessage(),
+                ]);
             }
         }
 
         foreach ($this->queue->flushDirigeantAttestations() as $dirigeantUuid) {
-            $dirigeant = $this->dirigeantRepository->findByUuid(Uuid::fromString($dirigeantUuid));
-
-            if ($dirigeant !== null) {
-                $this->dirigeantAttestationDriveSync->sync($dirigeant);
-            }
-        }
-
-        foreach ($this->queue->flushDirigeantReglements() as $dirigeantUuid) {
             try {
                 $dirigeant = $this->dirigeantRepository->findByUuid(Uuid::fromString($dirigeantUuid));
 
                 if ($dirigeant !== null) {
-                    $this->dirigeantReglementDriveSync->sync($dirigeant);
+                    $this->dirigeantAttestationDriveSync->sync($dirigeant);
                 }
             } catch (\Throwable $e) {
-                $this->logger->error('Échec sync du règlement dirigeants de {uuid} : {message}', [
+                $this->logger->error('Échec sync attestation transport du dirigeant {uuid} : {message}', [
                     'uuid'    => $dirigeantUuid,
                     'message' => $e->getMessage(),
                 ]);

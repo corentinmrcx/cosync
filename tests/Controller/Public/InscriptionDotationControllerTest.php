@@ -45,6 +45,55 @@ final class InscriptionDotationControllerTest extends WebTestCase
         self::assertStringContainsString('flocage_confirme', $html);
     }
 
+    /**
+     * Le champ de flocage d'une option de choix est porté par la question, conditionné à la
+     * sélection. Il était rendu une seconde fois, inconditionnel, par la liste des textes dus
+     * « sans question » — deux champs de même name, dont le second rendait le flocage
+     * obligatoire même en choisissant la veste.
+     */
+    public function testLeChampDeFlocageNEstRenduQuUneSeuleFois(): void
+    {
+        $client = static::createClient();
+        ['uuid' => $uuid] = $this->seed(NatureLicence::RENOUVELLEMENT);
+
+        $crawler = $client->request('GET', '/inscription/' . $uuid);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(
+            1,
+            $crawler->filter('input[name="dotation_personnalisation[Dotation]"]'),
+            'Un seul champ de saisie du texte à floquer.',
+        );
+    }
+
+    /**
+     * Le bootstrap Alpine doit dire QUELLE option réclame un texte. Une table indexée par id
+     * d'article ne survit pas au `merge` de Twig, qui renumérote les clés entières : l'id est
+     * alors perdu, aucun flocage n'est reconnu, et ni le récapitulatif d'orthographe ni le
+     * blocage du bouton « Suivant » ne se déclenchent.
+     */
+    public function testLeBootstrapAlpinePorteLIdDeLOptionFloquee(): void
+    {
+        $client = static::createClient();
+        ['uuid' => $uuid, 'tshirt' => $tshirtId] = $this->seed(NatureLicence::RENOUVELLEMENT);
+
+        $crawler = $client->request('GET', '/inscription/' . $uuid);
+        $xData   = $crawler->filter('.inscription-page')->attr('x-data');
+
+        preg_match('/dotationFlocages: (\{.*?\}\]\})/', $xData, $m);
+        self::assertNotEmpty($m, 'dotationFlocages doit être présent dans le x-data.');
+
+        $flocages = json_decode(html_entity_decode($m[1]), true, flags: JSON_THROW_ON_ERROR);
+
+        self::assertSame(
+            [$tshirtId],
+            array_column($flocages['Dotation'], 'id'),
+            'Seul le t-shirt réclame un texte, et son id doit être exploitable côté client.',
+        );
+        self::assertSame(self::MAX_FLOCAGE, $flocages['Dotation'][0]['max']);
+        self::assertSame('T-shirt', $flocages['Dotation'][0]['article']);
+    }
+
     public function testNouveauLicencieNeVoitAucuneQuestionDeDotation(): void
     {
         $client = static::createClient();
@@ -165,7 +214,6 @@ final class InscriptionDotationControllerTest extends WebTestCase
             'taille_bas'         => 'M',
             'pointure'           => '42',
             'autorisation_photo' => '1',
-            'signature_data'     => 'data:image/png;base64,iVBORw0KGgo=',
             'payment_intention'  => 'especes',
             'dotation_choix'     => ['Dotation' => (string) $choixId],
         ], $extra);

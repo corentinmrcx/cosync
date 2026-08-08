@@ -3,8 +3,11 @@
 namespace App\Tests\Command;
 
 use App\Entity\Dirigeant;
+use App\Entity\DocumentSignable;
+use App\Entity\DocumentSignature;
 use App\Entity\Season;
-use App\Repository\DirigeantRepository;
+use App\Repository\DocumentSignatureRepository;
+use App\Tests\Support\DocumentFixtures;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -13,36 +16,38 @@ use Symfony\Component\Console\Tester\CommandTester;
 /**
  * Rattrapage des uploads Drive. Un document reste « en attente » tant que sa
  * colonne porte un chemin local absolu ; une fois sur Drive elle porte un ID.
- * Le règlement des dirigeants n'était pas couvert : son PDF pouvait rester
- * indéfiniment sur le disque sans reprise possible.
+ * Tous les documents signés — règlements comme chartes, licenciés comme
+ * dirigeants — partagent désormais la même section de rattrapage.
  */
 final class DriveRetryUploadCommandTest extends KernelTestCase
 {
     private ?Season $season = null;
+    private ?DocumentSignable $document = null;
 
-    public function testLeReglementDirigeantEnLocalEstDetecte(): void
+    public function testUnDocumentEnLocalEstDetecte(): void
     {
         self::bootKernel();
-        $enAttente = $this->makeDirigeant('MARTIN', '/var/www/html/var/pdfs/abc_reglement_dirigeant.pdf');
-        $dejaSurDrive = $this->makeDirigeant('DUPONT', 'drive-file-id');
+        $enAttente    = $this->makeSignature('MARTIN', '/var/www/html/var/pdfs/abc_reglement_dirigeant.pdf');
+        $dejaSurDrive = $this->makeSignature('DUPONT', 'drive-file-id');
 
-        $trouves = self::getContainer()->get(DirigeantRepository::class)->findWithLocalReglement();
-        $uuids   = array_map(static fn (Dirigeant $d): string => (string) $d->getUuid(), $trouves);
+        $trouves = self::getContainer()->get(DocumentSignatureRepository::class)->findWithLocalPath();
+        $ids     = array_map(static fn (DocumentSignature $s): int => $s->getId(), $trouves);
 
-        self::assertContains((string) $enAttente->getUuid(), $uuids);
-        self::assertNotContains((string) $dejaSurDrive->getUuid(), $uuids, 'Un règlement déjà archivé n\'est pas à rattraper.');
+        self::assertContains($enAttente->getId(), $ids);
+        self::assertNotContains($dejaSurDrive->getId(), $ids, 'Un document déjà archivé n\'est pas à rattraper.');
     }
 
-    public function testLaCommandeRapporteLaSectionReglementsDirigeants(): void
+    public function testLaCommandeRapporteLaSectionDocumentsSignes(): void
     {
         self::bootKernel();
-        $this->makeDirigeant('LAGRANGE', '/var/www/html/var/pdfs/def_reglement_dirigeant.pdf');
+        $this->makeSignature('LAGRANGE', '/var/www/html/var/pdfs/def_reglement_dirigeant.pdf');
 
         $tester = $this->runCommand();
         $output = $tester->getDisplay();
 
-        self::assertStringContainsString('règlement(s) dirigeant(s) en attente', $output);
+        self::assertStringContainsString('document(s) signé(s) en attente', $output);
         self::assertStringContainsString('LAGRANGE', $output);
+        self::assertStringContainsString('Règlement intérieur des dirigeants', $output);
     }
 
     public function testUneFileVideNEmpechePasLesAutresSections(): void
@@ -52,9 +57,8 @@ final class DriveRetryUploadCommandTest extends KernelTestCase
         $tester = $this->runCommand();
         $output = $tester->getDisplay();
 
-        // Les trois familles sont annoncées même quand la première n'a rien à faire.
-        self::assertStringContainsString('règlement(s) licencié(s)', $output);
-        self::assertStringContainsString('règlement(s) dirigeant(s)', $output);
+        // Les deux familles restantes sont annoncées même quand la première n'a rien à faire.
+        self::assertStringContainsString('document(s) signé(s)', $output);
         self::assertStringContainsString('attestation(s) de remise de clés', $output);
         self::assertSame(0, $tester->getStatusCode(), 'Rien à rattraper → succès.');
     }
@@ -68,21 +72,34 @@ final class DriveRetryUploadCommandTest extends KernelTestCase
         return $tester;
     }
 
-    private function makeDirigeant(string $nom, string $reglementPath): Dirigeant
+    private function makeSignature(string $nom, string $drivePath): DocumentSignature
     {
-        $em = self::getContainer()->get(EntityManagerInterface::class);
+        $em       = self::getContainer()->get(EntityManagerInterface::class);
+        $fixtures = new DocumentFixtures($em);
 
         $dirigeant = (new Dirigeant())
             ->setNom($nom)
             ->setPrenom('Kevin')
-            ->setSeason($this->season())
-            ->setReglementSignePath($reglementPath)
-            ->setReglementSignedAt(new \DateTimeImmutable());
+            ->setSeason($this->season());
 
         $em->persist($dirigeant);
         $em->flush();
 
-        return $dirigeant;
+        $signature = $fixtures->signerParDirigeant($this->document($fixtures), $dirigeant, $drivePath);
+        $em->flush();
+
+        return $signature;
+    }
+
+    /** Un seul document pour la saison : son code est unique par saison. */
+    private function document(DocumentFixtures $fixtures): DocumentSignable
+    {
+        if ($this->document === null) {
+            $this->document = $fixtures->documentDirigeant($this->season());
+            self::getContainer()->get(EntityManagerInterface::class)->flush();
+        }
+
+        return $this->document;
     }
 
     /** Le label de saison est unique en base : une seule saison par test. */

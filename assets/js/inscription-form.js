@@ -1,8 +1,9 @@
-import { reglementSignature } from './reglement-signature.js';
+import { documentSignatures } from './document-signatures.js';
 
 export function inscriptionForm({
     isJeune,
     montant,
+    documents = [],
     demo = false,
     demoUrl = '',
     dotationGroupes = [],
@@ -10,9 +11,16 @@ export function inscriptionForm({
     dotationAutoFlocages = [],
 }) {
     return {
-        ...reglementSignature(),
+        ...documentSignatures(documents),
 
         step: 1,
+
+        /**
+         * Le paiement reste la dernière étape, mais le nombre de documents à signer
+         * avant lui dépend de la saison. Un numéro haut le met hors de portée du bloc
+         * documents, qui occupe 5, 6, 7… selon les cas.
+         */
+        paymentStep: 100,
         isJeune,
         montant,
 
@@ -53,20 +61,32 @@ export function inscriptionForm({
         signatureDataAttestation: '',
         signaturePadAttestation: null,
 
-        // Étape 5 — règlement + signature : état fourni par le mixin reglementSignature()
+        // Étapes 5+ — documents à lire et signer : état fourni par documentSignatures()
 
-        // Étape 6 — paiement
+        // Dernière étape — paiement
         paymentMode: '',
         multiPayment: false,
         paymentModes: [],
 
         submitting: false,
 
-        // Séquence des étapes réellement accessibles (5 ou 6 selon volontaireTransport)
+        /** Numéro d'étape du document de rang `index`. */
+        documentStep(index) {
+            return 5 + index;
+        },
+
+        /** Rang du document affiché à l'étape courante, ou -1 hors des étapes documents. */
+        get currentDocumentIndex() {
+            return this.step >= 5 && this.step !== this.paymentStep ? this.step - 5 : -1;
+        },
+
+        // Séquence des étapes réellement accessibles : socle, attestation éventuelle,
+        // un document par étape, puis le paiement.
         get steps() {
             const s = [1, 2, 3];
             if (this.isJeune && this.volontaireTransport === '1') s.push(4);
-            s.push(5, 6);
+            this.docs.forEach((_, i) => s.push(this.documentStep(i)));
+            s.push(this.paymentStep);
             return s;
         },
 
@@ -88,12 +108,14 @@ export function inscriptionForm({
             const out = [];
             for (const [groupe, options] of Object.entries(this.dotationFlocages)) {
                 const choisi = this.dotationChoix[groupe];
-                if (choisi !== undefined && options[choisi] !== undefined) {
-                    out.push({ cle: groupe, max: options[choisi], texte: (this.dotationPersonnalisation[groupe] || '').trim() });
+                // Le `value` d'un radio est toujours une chaîne, l'id vient de PHP en nombre.
+                const opt = options.find(o => String(o.id) === String(choisi));
+                if (opt !== undefined) {
+                    out.push({ cle: groupe, max: opt.max, article: opt.article, texte: (this.dotationPersonnalisation[groupe] || '').trim() });
                 }
             }
             for (const auto of this.dotationAutoFlocages) {
-                out.push({ cle: auto.cle, max: auto.max, texte: (this.dotationPersonnalisation[auto.cle] || '').trim() });
+                out.push({ cle: auto.cle, max: auto.max, article: auto.article, texte: (this.dotationPersonnalisation[auto.cle] || '').trim() });
             }
             return out;
         },
@@ -123,18 +145,21 @@ export function inscriptionForm({
                 }
             });
 
-            this.$watch('hasRead', (value) => {
-                if (value === true && this.step === 5) {
-                    window.requestAnimationFrame(() => this.initSignaturePad());
-                }
+            // Le pad n'existe dans le DOM qu'une fois la case « J'ai lu » cochée.
+            this.docs.forEach((_, i) => {
+                this.$watch(`docs[${i}].hasRead`, (value) => {
+                    if (value === true && this.step === this.documentStep(i)) {
+                        window.requestAnimationFrame(() => this.initDocPad(i));
+                    }
+                });
             });
 
             this.$watch('step', (value) => {
                 if (value === 4) {
                     this.$nextTick(() => this.initAttestationSignaturePad());
                 }
-                if (value === 5) {
-                    this.$nextTick(() => this.markReglementScrolledIfShort());
+                if (value >= 5 && value !== this.paymentStep) {
+                    this.$nextTick(() => this.markDocScrolledIfShort(value - 5));
                 }
             });
         },
@@ -165,12 +190,10 @@ export function inscriptionForm({
                         && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
                         && this.engagementAttestation
                         && this.signatureDataAttestation !== '';
-                case 5: // règlement
-                    return this.hasRead && this.signatureData !== '';
-                case 6: // paiement
+                case this.paymentStep:
                     return this.multiPayment ? this.paymentModes.length > 0 : this.paymentMode !== '';
-                default:
-                    return false;
+                default: // étapes documents
+                    return this.docReady(this.currentDocumentIndex);
             }
         },
 

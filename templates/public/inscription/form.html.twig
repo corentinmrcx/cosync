@@ -8,19 +8,28 @@
 
 {% block body %}
 <div class="inscription-page"
-     {# dotationFlocages : { groupe: { stockItemId: max } } — quelles options réclament un texte.
-        dotationAutoFlocages : [{ cle, max }] — textes dus sans question de choix. #}
+     {# dotationFlocages : { groupe: [{ id, max, article }] } — quelles options réclament un texte.
+        dotationAutoFlocages : [{ cle, max, article }] — textes dus sans question de choix.
+        `article` sert au récapitulatif : avec deux flocages, deux mots en capitales ne se
+        distinguent pas l'un de l'autre.
+
+        Liste et non table indexée par id : `merge` renumérote les clés entières, l'identifiant
+        de l'article serait perdu et aucun flocage ne serait jamais détecté côté Alpine. #}
      {% set flocagesParGroupe = {} %}
      {% for grp in dotationGroupes|default([]) %}
-         {% set options = {} %}
+         {% set options = [] %}
          {% for opt in grp.options|filter(o => o.personnalisationRequise) %}
-             {% set options = options|merge({ (opt.stockItem.id): opt.personnalisationMaxLength ?? personnalisationMaxDefaut }) %}
+             {% set options = options|merge([{
+                 id: opt.stockItem.id,
+                 max: opt.personnalisationMaxLength ?? personnalisationMaxDefaut,
+                 article: opt.stockItem.nom,
+             }]) %}
          {% endfor %}
          {% if options is not empty %}
              {% set flocagesParGroupe = flocagesParGroupe|merge({ (grp.groupe): options }) %}
          {% endif %}
      {% endfor %}
-     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}, dotationGroupes: {{ (dotationGroupes|default([]))|map(g => g.groupe)|json_encode }}, dotationFlocages: {{ flocagesParGroupe|json_encode }}, dotationAutoFlocages: {{ (dotationAutos|default([]))|map(a => { cle: a.cle, max: a.ligne.personnalisationMaxLength ?? personnalisationMaxDefaut })|json_encode }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })">
+     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}, documents: {{ documents|map(d => {id: d.id})|json_encode }}, dotationGroupes: {{ (dotationGroupes|default([]))|map(g => g.groupe)|json_encode }}, dotationFlocages: {{ flocagesParGroupe|json_encode }}, dotationAutoFlocages: {{ (dotationAutos|default([]))|map(a => { cle: a.cle, max: a.ligne.personnalisationMaxLength ?? personnalisationMaxDefaut, article: a.ligne.stockItem.nom })|json_encode }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })">
 
     {% if demo|default(false) %}
         <div class="inscription-demo-banner">
@@ -53,7 +62,6 @@
             <form method="post"
                   {% if demo|default(false) %}@submit.prevent="demoSubmit()"{% else %}action="{{ path('public_inscription_submit', {uuid: licencie.uuid}) }}" @submit="submitting = true"{% endif %}>
                 <input type="hidden" name="_token" value="{{ csrf_token('inscription_submit') }}">
-                <input type="hidden" name="signature_data" :value="signatureData">
                 <input type="hidden" name="attestation_signature_data" :value="signatureDataAttestation">
 
                 {# ── Étape 1 : Bienvenue ── #}
@@ -171,8 +179,13 @@
                             </div>
                         </div>
 
-                        {% for grp in dotationGroupes|default([]) %}
+                        {% if dotationGroupes|default([]) is not empty or dotationAutos|default([]) is not empty %}
                             <hr class="inscription-question-divider">
+                            <p class="inscription-section-title">Votre dotation</p>
+                            <p class="inscription-section-hint">Les équipements que le club vous remet cette saison.</p>
+                        {% endif %}
+
+                        {% for grp in dotationGroupes|default([]) %}
                             <div class="inscription-question-block">
                                 <span class="inscription-question-label">{{ grp.groupe }} *</span>
                                 <span class="inscription-question-hint">Choisissez l'article souhaité pour votre dotation.</span>
@@ -205,7 +218,6 @@
                         {# Personnalisations dues sans question de choix : groupe à option unique
                            (nouveau licencié) ou article fixe personnalisé. #}
                         {% for auto in dotationAutos|default([]) %}
-                            <hr class="inscription-question-divider">
                             <div class="inscription-question-block">
                                 {% include 'public/inscription/_flocage_input.html.twig' with {
                                     cle: auto.cle,
@@ -221,7 +233,10 @@
                         <div class="inscription-flocage-recap" x-show="flocagesActifs.length > 0" x-cloak>
                             <p class="inscription-flocage-recap-title">Vérifiez l'orthographe avant de continuer</p>
                             <template x-for="f in flocagesActifs" :key="f.cle">
-                                <div class="inscription-flocage-preview" x-text="f.texte || '…'"></div>
+                                <div class="inscription-flocage-item">
+                                    <span class="inscription-flocage-article" x-text="f.article"></span>
+                                    <div class="inscription-flocage-preview" x-text="f.texte || '…'"></div>
+                                </div>
                             </template>
                             <label class="inscription-flocage-check">
                                 <input type="checkbox" name="flocage_confirme" value="1" x-model="flocageConfirme">
@@ -393,16 +408,17 @@
                     </div>
                 </div>
 
-                {# ── Étape 5 : Règlement + Signature ── #}
-                {% include 'public/_reglement_signature_step.html.twig' with {
-                    documentTitle: 'Règlement intérieur',
-                    reglementHtml: licencie.season.reglementText,
-                    checkboxLabel: "J'ai lu et j'accepte le règlement intérieur du Foyer de Soudron.",
-                    stepShow: 'step === 5'
-                } only %}
+                {# ── Étapes 5+ : un document à lire et signer par étape ── #}
+                {% for doc in documents %}
+                    {% include 'public/_document_signature_step.html.twig' with {
+                        doc: doc,
+                        index: loop.index0,
+                        stepShow: 'step === ' ~ (5 + loop.index0)
+                    } only %}
+                {% endfor %}
 
-                {# ── Étape 6 : Paiement ── #}
-                <div x-show="step === 6" class="inscription-card">
+                {# ── Dernière étape : Paiement ── #}
+                <div x-show="step === paymentStep" class="inscription-card">
                     <h2 class="inscription-step-title">Mode de paiement</h2>
 
                     <p class="inscription-montant">Cotisation : <strong x-text="montant + ' €'"></strong></p>

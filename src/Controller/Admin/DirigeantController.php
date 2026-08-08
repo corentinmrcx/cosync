@@ -12,7 +12,9 @@ use App\Repository\LicencieRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Service\ClubHouse\CleRegistreService;
+use App\Service\DirigeantDossierCompletion;
 use App\Service\DirigeantService;
+use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Mail\DirigeantLinkService;
 use App\Service\SeasonContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,6 +26,11 @@ use Symfony\Component\Uid\Uuid;
 #[Route('/admin/dirigeants', name: 'admin_dirigeants_')]
 class DirigeantController extends AbstractController
 {
+    public function __construct(
+        private readonly DocumentRequirementResolver $documentResolver,
+        private readonly DirigeantDossierCompletion $dossierCompletion,
+    ) {}
+
     #[Route('', name: 'list')]
     public function list(
         Request $request,
@@ -166,13 +173,28 @@ class DirigeantController extends AbstractController
             ];
         }
 
+        $signatures = $this->documentResolver->signaturesParDocumentPourDirigeant($dirigeant);
+
+        foreach ($signatures as $signature) {
+            $history[] = [
+                'date'  => $signature->getSignedAt(),
+                'label' => $signature->getDocument()->getTitre() . ' signé',
+                'who'   => $dirigeant->getNomPrenom(),
+            ];
+        }
+
         usort($history, fn(array $a, array $b) => $a['date'] <=> $b['date']);
 
         return $this->render('admin/dirigeants/show.html.twig', [
-            'dirigeant' => $dirigeant,
-            'dotations' => $stockMovementRepo->findDotationsByDirigeant($dirigeant),
-            'history'   => $history,
-            'nbCles'    => $registre->getSolde($dirigeant),
+            'dirigeant'  => $dirigeant,
+            'dotations'  => $stockMovementRepo->findDotationsByDirigeant($dirigeant),
+            'history'    => $history,
+            'nbCles'     => $registre->getSolde($dirigeant),
+            // Documents attendus et leur signature éventuelle : la checklist n'est plus
+            // une liste figée, elle suit ce que la saison demande à ce dirigeant.
+            'documents'  => $this->documentResolver->attendusPourDirigeant($dirigeant),
+            'signatures' => $signatures,
+            'dossierComplet' => $this->dossierCompletion->isComplete($dirigeant),
         ]);
     }
 

@@ -10,6 +10,9 @@ use PHPUnit\Framework\TestCase;
  * L'attestation de remise de clés ne concerne qu'un sous-ensemble de dirigeants
  * (les détenteurs de clés). Elle ne doit donc jamais entrer dans la complétude
  * du dossier dirigeant, ni partager son token.
+ *
+ * On teste ici la moitié que l'entité juge seule ; les documents à signer, qui
+ * dépendent d'une requête, sont couverts par DirigeantDossierCompletionTest.
  */
 final class DirigeantAttestationCleTest extends TestCase
 {
@@ -22,8 +25,8 @@ final class DirigeantAttestationCleTest extends TestCase
              ->setAttestationCleSignedAt(new \DateTimeImmutable())
              ->setAttestationCleTokenExpiresAt(new \DateTimeImmutable('+30 days'));
 
-        self::assertTrue($sans->isPublicFormComplete());
-        self::assertSame($sans->isPublicFormComplete(), $avec->isPublicFormComplete());
+        self::assertTrue($sans->isBaseFormComplete());
+        self::assertSame($sans->isBaseFormComplete(), $avec->isBaseFormComplete());
     }
 
     public function testUnDossierIncompletLeResteMalgreUneAttestationSignee(): void
@@ -31,7 +34,7 @@ final class DirigeantAttestationCleTest extends TestCase
         $dirigeant = (new Dirigeant())->setNom('DUPONT')->setPrenom('Thomas')->setSeason(new Season());
         $dirigeant->setAttestationCleSignePath('drive-id-123');
 
-        self::assertFalse($dirigeant->isPublicFormComplete());
+        self::assertFalse($dirigeant->isBaseFormComplete());
     }
 
     public function testHasSignedAttestationCleSuitLePath(): void
@@ -70,7 +73,6 @@ final class DirigeantAttestationCleTest extends TestCase
             ->setTailleBas('M')
             ->setPointure('42')
             ->setAutorisationPhoto(true)
-            ->setVolontaireTransport(false)
-            ->setReglementSignePath('drive-id-reglement');
+            ->setVolontaireTransport(false);
     }
 }

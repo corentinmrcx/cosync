@@ -13,6 +13,7 @@ use App\Enum\StockMovementType;
 use App\Repository\DirigeantRepository;
 use App\Repository\DotationBesoinRepository;
 use App\Repository\LicencieRepository;
+use App\Service\DirigeantDossierCompletion;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -28,6 +29,7 @@ final class DotationBesoinService
         private readonly StockService $stockService,
         private readonly LicencieRepository $licencieRepository,
         private readonly DirigeantRepository $dirigeantRepository,
+        private readonly DirigeantDossierCompletion $dossierCompletion,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -55,7 +57,7 @@ final class DotationBesoinService
         }
 
         foreach ($this->dirigeantRepository->findBySeason($season) as $dirigeant) {
-            if ($dirigeant->isPublicFormComplete() && $this->recomputeForDirigeant($dirigeant)) {
+            if ($this->dossierCompletion->isComplete($dirigeant) && $this->recomputeForDirigeant($dirigeant)) {
                 $count++;
             }
         }

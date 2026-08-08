@@ -2,10 +2,7 @@
 
 namespace App\Service\Pdf;
 
-use App\Entity\Dirigeant;
-use App\Entity\Licencie;
-use App\Entity\Season;
-use App\Enum\ReglementAudience;
+use App\Entity\DocumentSignable;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -19,86 +16,59 @@ final class PdfGeneratorService
     ) {}
 
     /**
-     * Génère le PDF règlement signé d'un licencié et le sauvegarde dans var/pdfs/.
+     * Génère le PDF d'un document signé et le sauvegarde dans var/pdfs/.
      * Retourne le chemin absolu du fichier généré.
+     *
+     * Le nom de fichier combine l'identifiant du signataire et le code du document :
+     * une personne qui signe plusieurs documents (le règlement dirigeants et une charte,
+     * par exemple) ne peut pas en écraser un avec l'autre.
      */
-    public function generateReglementSigne(Licencie $licencie, string $signatureDataUrl): string
-    {
-        return $this->renderReglementToFile(
-            $licencie->getPrenom(),
-            $licencie->getNom(),
-            $licencie->getSeason(),
-            $signatureDataUrl,
-            (string) $licencie->getUuid(),
-            ReglementAudience::LICENCIE,
-        );
-    }
-
-    /**
-     * Génère le PDF du règlement dirigeants signé et le sauvegarde dans var/pdfs/.
-     * Retourne le chemin absolu du fichier généré.
-     */
-    public function generateReglementSigneDirigeant(Dirigeant $dirigeant, string $signatureDataUrl): string
-    {
-        return $this->renderReglementToFile(
-            $dirigeant->getPrenom(),
-            $dirigeant->getNom(),
-            $dirigeant->getSeason(),
-            $signatureDataUrl,
-            (string) $dirigeant->getUuid(),
-            ReglementAudience::DIRIGEANT,
-        );
-    }
-
-    public function generatePreview(Season $season, ReglementAudience $audience): string
-    {
-        return $this->renderPdf($this->renderReglementHtml(
-            'Prénom',
-            'NOM',
-            $season,
-            '',
-            $audience,
-            previewMode: true,
-        ));
-    }
-
-    /** Rend le règlement signé en PDF et l'écrit dans var/pdfs/. Retourne le chemin absolu. */
-    private function renderReglementToFile(
+    public function generateSignedDocument(
+        DocumentSignable $document,
         string $prenom,
         string $nom,
-        Season $season,
-        string $signatureDataUrl,
         string $fileKey,
-        ReglementAudience $audience,
+        string $signatureDataUrl,
     ): string {
-        $html = $this->renderReglementHtml($prenom, $nom, $season, $signatureDataUrl, $audience);
+        $html = $this->renderDocumentHtml($document, $prenom, $nom, $signatureDataUrl);
 
         $dir = $this->projectDir . '/var/pdfs';
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
-        $path = $dir . '/' . $fileKey . $audience->fileSuffix() . '.pdf';
+        $path = $dir . '/' . $fileKey . '_' . $document->getCode() . '.pdf';
         file_put_contents($path, $this->renderPdf($html));
 
         return $path;
     }
 
-    private function renderReglementHtml(
+    /** Rendu d'aperçu pour l'administration : contenu binaire, jamais écrit sur disque. */
+    public function generatePreview(DocumentSignable $document): string
+    {
+        return $this->renderPdf($this->renderDocumentHtml(
+            $document,
+            'Prénom',
+            'NOM',
+            '',
+            previewMode: true,
+        ));
+    }
+
+    private function renderDocumentHtml(
+        DocumentSignable $document,
         string $prenom,
         string $nom,
-        Season $season,
         string $signatureDataUrl,
-        ReglementAudience $audience,
         bool $previewMode = false,
     ): string {
-        return $this->twig->render('pdf/reglement_signe.html.twig', [
+        return $this->twig->render('pdf/document_signe.html.twig', [
             'prenom'           => $prenom,
             'nom'              => $nom,
-            'season'           => $season,
-            'documentTitle'    => $audience->documentTitle(),
-            'documentLabel'    => $audience->documentLabel(),
-            'reglementHtml'    => $audience->textOf($season),
+            'season'           => $document->getSeason(),
+            'documentTitle'    => $document->getTitre(),
+            'documentLabel'    => $document->getLibelle(),
+            'reglementHtml'    => $document->getContenuHtml(),
             'signatureDataUrl' => $signatureDataUrl,
             'signedAt'         => new \DateTimeImmutable(),
             'logoDataUrl'      => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),

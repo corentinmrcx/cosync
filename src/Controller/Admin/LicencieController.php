@@ -13,6 +13,7 @@ use App\Form\LicencieIdentityType;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
+use App\Service\Document\DocumentRequirementResolver;
 use App\Service\LicencieService;
 use App\Service\Mail\InscriptionLinkService;
 use App\Service\SeasonContext;
@@ -25,6 +26,10 @@ use Symfony\Component\Uid\Uuid;
 #[Route('/admin/licencies', name: 'admin_licencies_')]
 class LicencieController extends AbstractController
 {
+    public function __construct(
+        private readonly DocumentRequirementResolver $documentResolver,
+    ) {}
+
     #[Route('', name: 'list')]
     public function list(
         Request $request,
@@ -260,6 +265,10 @@ class LicencieController extends AbstractController
             'dotationStatut'  => $dotationBesoinService->statutFicheLicencie($licencie),
             'history'         => $history,
             'autorisationsManquantes' => $completionService->hasMissing($licencie),
+            // Documents attendus et leur signature éventuelle : la checklist n'est plus
+            // une liste figée, elle suit ce que la saison demande.
+            'documents'       => $this->documentResolver->attendusPourLicencie($licencie),
+            'signatures'      => $this->documentResolver->signaturesParDocumentPourLicencie($licencie),
         ]);
     }
 

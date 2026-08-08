@@ -7,7 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Synchronise l'attestation transport PDF d'un dossier vers Drive (pattern
- * identique à DossierDriveSync pour le règlement signé).
+ * identique à DocumentSignatureDriveSync pour les documents signés).
  */
 final class AttestationDriveSync
 {

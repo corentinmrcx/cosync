@@ -157,7 +157,7 @@
 
 {# ── Contenu du règlement ── #}
 <div class="content">
-    {{ reglementHtml ? reglementHtml|raw : '<p>Aucun règlement défini pour cette saison.</p>' }}
+    {{ reglementHtml ? reglementHtml|raw : '<p>Ce document n\'a pas encore été rédigé pour cette saison.</p>' }}
 </div>
 
 {# ── Footer ── #}
@@ -167,7 +167,8 @@
     </p>
     <p class="footer-date">Soudron, le {{ signedAt|date('d/m/Y') }}</p>
     <p class="footer-statement">
-        Je soussigné·e <span class="highlight">{{ prenom }} {{ nom }}</span>, reconnais avoir lu et accepté le {{ documentLabel }} pour la saison <span class="highlight">{{ season.label }}</span>.
+        {# L'article fait partie du libellé du document : « le règlement… », « la charte… ». #}
+        Je soussigné·e <span class="highlight">{{ prenom }} {{ nom }}</span>, reconnais avoir lu et accepté {{ documentLabel }} pour la saison <span class="highlight">{{ season.label }}</span>.
     </p>
     <div class="sign-label">Signature :</div>
     {% if previewMode is defined and previewMode %}

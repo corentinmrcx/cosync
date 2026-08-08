@@ -5,22 +5,30 @@ namespace App\Controller\Public;
 use App\DTO\DirigeantPublicFormData;
 use App\Entity\Dirigeant;
 use App\Repository\DirigeantRepository;
+use App\Service\DirigeantDossierCompletion;
 use App\Service\DirigeantFormService;
+use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Form\AttestationTransportRequestFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Uid\Uuid;
 
 #[Route('/dirigeant', name: 'public_dirigeant_')]
 class DirigeantController extends AbstractController
 {
+    /** Une signature manuscrite dépasse rarement 300 Ko ; au-delà, c'est une soumission suspecte. */
+    private const SIGNATURE_MAX_LENGTH = 2_800_000;
+
     public function __construct(
         private readonly AttestationTransportRequestFactory $attestationFactory,
+        private readonly DocumentRequirementResolver $documentResolver,
+        private readonly DirigeantDossierCompletion $dossierCompletion,
     ) {}
 
-    #[Route('/{uuid}', name: 'show', methods: ['GET'])]
+    #[Route('/{uuid}', name: 'show', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
     public function show(string $uuid, DirigeantRepository $dirigeantRepo): Response
     {
         $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
@@ -29,7 +37,7 @@ class DirigeantController extends AbstractController
             return $this->render('public/dirigeant/expired.html.twig');
         }
 
-        if ($dirigeant->isPublicFormComplete()) {
+        if ($this->dossierCompletion->isComplete($dirigeant)) {
             return $this->redirectToRoute('public_dirigeant_confirmation', ['uuid' => $uuid]);
         }
 
@@ -42,11 +50,11 @@ class DirigeantController extends AbstractController
             'needTaille'    => $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null,
             'needPhoto'     => $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null,
             'needTransport' => $dirigeant->getVolontaireTransport() === null,
-            'needReglement' => $dirigeant->needsReglementSignature(),
+            'documents'     => $this->documentResolver->manquantsPourDirigeant($dirigeant),
         ]);
     }
 
-    #[Route('/{uuid}', name: 'submit', methods: ['POST'])]
+    #[Route('/{uuid}', name: 'submit', methods: ['POST'], requirements: ['uuid' => Requirement::UUID])]
     public function submit(
         string $uuid,
         Request $request,
@@ -76,7 +84,7 @@ class DirigeantController extends AbstractController
         return $this->redirectToRoute('public_dirigeant_confirmation', ['uuid' => $uuid]);
     }
 
-    #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'])]
+    #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
     public function confirmation(string $uuid, DirigeantRepository $dirigeantRepo): Response
     {
         $dirigeant = $dirigeantRepo->findByUuid(Uuid::fromString($uuid));
@@ -96,7 +104,6 @@ class DirigeantController extends AbstractController
         $needTaille    = $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null;
         $needPhoto     = $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null;
         $needTransport = $dirigeant->getVolontaireTransport() === null;
-        $needReglement = $dirigeant->needsReglementSignature();
 
         $tailleHaut = null;
         $tailleBas  = null;
@@ -124,7 +131,7 @@ class DirigeantController extends AbstractController
 
         // Transport : collecté uniquement s'il n'est pas déjà renseigné.
         // Sinon on conserve la valeur existante (cas d'une simple complétion,
-        // ex. l'ajout du règlement intérieur sur un dossier déjà rempli).
+        // ex. l'ajout d'une charte sur un dossier déjà rempli).
         $volontaireTransport = $dirigeant->getVolontaireTransport() ?? false;
         $attestationData     = null;
 
@@ -143,30 +150,56 @@ class DirigeantController extends AbstractController
             }
         }
 
-        // Signature du règlement intérieur : requise sauf si déjà signé
-        $reglementSignature = null;
+        $documentSignatures = $this->collectDocumentSignatures($request, $dirigeant);
 
-        if ($needReglement) {
-            $signatureData = $request->request->get('signature_data', '');
-
-            if ($signatureData === ''
-                || !str_starts_with($signatureData, 'data:image/')
-                || strlen($signatureData) > 2_800_000) {
-                return null;
-            }
-
-            $reglementSignature = $signatureData;
+        if ($documentSignatures === null) {
+            return null;
         }
 
         return new DirigeantPublicFormData(
-            tailleHaut:             $tailleHaut,
-            tailleBas:              $tailleBas,
-            pointure:               $pointure,
-            autorisationPhoto:      $autorisationPhoto,
-            volontaireTransport:    $volontaireTransport,
-            attestationTransport:   $attestationData,
-            reglementSignatureData: $reglementSignature,
+            tailleHaut:          $tailleHaut,
+            tailleBas:           $tailleBas,
+            pointure:            $pointure,
+            autorisationPhoto:   $autorisationPhoto,
+            volontaireTransport: $volontaireTransport,
+            attestationTransport: $attestationData,
+            documentSignatures:  $documentSignatures,
         );
     }
 
+    /**
+     * Une signature par document réellement attendu. La liste des documents est
+     * recalculée côté serveur : un id envoyé par le client mais non attendu est
+     * ignoré, et il manque une signature attendue, la soumission est rejetée.
+     *
+     * @return array<int, string>|null null si une signature attendue manque ou est invalide
+     */
+    private function collectDocumentSignatures(Request $request, Dirigeant $dirigeant): ?array
+    {
+        // Lecture défensive : une valeur scalaire doit être rejetée comme signature
+        // manquante, pas provoquer une réponse 400 incompréhensible pour le signataire.
+        $brut     = $request->request->all()['signature_data'] ?? null;
+        $soumises = is_array($brut) ? $brut : [];
+        $retenues = [];
+
+        foreach ($this->documentResolver->manquantsPourDirigeant($dirigeant) as $document) {
+            $signature = $soumises[$document->getId()] ?? null;
+
+            if (!$this->isSignatureValide($signature)) {
+                return null;
+            }
+
+            $retenues[$document->getId()] = $signature;
+        }
+
+        return $retenues;
+    }
+
+    private function isSignatureValide(mixed $signature): bool
+    {
+        return is_string($signature)
+            && $signature !== ''
+            && str_starts_with($signature, 'data:image/')
+            && strlen($signature) <= self::SIGNATURE_MAX_LENGTH;
+    }
 }

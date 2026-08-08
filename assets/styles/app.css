@@ -17,7 +17,8 @@
 @import './pages/seasons.css';
 @import './pages/users.css';
 @import './pages/inscription.css';
-@import './pages/reglement-edit.css';
+@import './pages/document-edit.css';
+@import './pages/documents.css';
 @import './pages/stock-home.css';
 @import './pages/stock-dotations.css';
 @import './pages/stock-commandes.css';

@@ -53,22 +53,6 @@ class DirigeantRepository extends ServiceEntityRepository
     }
 
     /**
-     * Règlements dirigeants signés dont le PDF n'a pas encore été uploadé sur Drive
-     * (le champ porte encore un chemin local absolu). Pour le rattrapage.
-     *
-     * @return Dirigeant[]
-     */
-    public function findWithLocalReglement(): array
-    {
-        return $this->createQueryBuilder('d')
-            ->where('d.reglementSignePath LIKE :local')
-            ->setParameter('local', '/%')
-            ->orderBy('d.nom', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
      * Attestations de remise signées dont le PDF n'a pas encore été uploadé sur Drive
      * (le champ porte encore un chemin local absolu). Pour le rattrapage.
      *

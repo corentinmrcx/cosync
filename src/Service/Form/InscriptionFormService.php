@@ -5,9 +5,10 @@ namespace App\Service\Form;
 use App\DTO\InscriptionFormData;
 use App\Entity\Licencie;
 use App\Enum\LicenceStatus;
+use App\Repository\DocumentSignableRepository;
+use App\Service\Document\DocumentSignatureService;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationTransportPdfService;
-use App\Service\Pdf\PdfGeneratorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -15,7 +16,8 @@ final class InscriptionFormService
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
-        private readonly PdfGeneratorService $pdfGenerator,
+        private readonly DocumentSignableRepository $documentRepo,
+        private readonly DocumentSignatureService $signatureService,
         private readonly AttestationTransportPdfService $attestationPdfService,
         private readonly PendingUploadQueue $uploadQueue,
         #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
@@ -40,13 +42,8 @@ final class InscriptionFormService
         $dossier->setPaymentIntentions($data->paymentIntentions);
         $dossier->setDotationChoix($data->dotationChoix);
         $dossier->setDotationPersonnalisation($data->dotationPersonnalisation);
-        $dossier->setIsSigned(true);
-        $dossier->setSignatureDate(new \DateTimeImmutable());
         $dossier->setFormCompletedAt(new \DateTimeImmutable());
         $dossier->setStatus(LicenceStatus::FORM_COMPLETED);
-
-        $pdfPath = $this->pdfGenerator->generateReglementSigne($licencie, $data->signatureData);
-        $dossier->setSignaturePath($pdfPath);
 
         // Si le licencié est volontaire pour transporter des enfants → générer l'attestation
         if ($data->attestationTransport !== null) {
@@ -65,8 +62,16 @@ final class InscriptionFormService
 
         $this->em->flush();
 
-        // Uploads Drive différés (kernel.terminate)
-        $this->uploadQueue->enqueue($dossier->getId());
+        // Documents signés : le contrôleur n'a retenu que des ids réellement attendus.
+        foreach ($data->documentSignatures as $documentId => $signatureDataUrl) {
+            $document = $this->documentRepo->find($documentId);
+
+            if ($document !== null) {
+                $this->signatureService->signerParLicencie($document, $licencie, $signatureDataUrl);
+            }
+        }
+
+        // Upload Drive différé (kernel.terminate)
         if ($data->attestationTransport !== null) {
             $this->uploadQueue->enqueueAttestation($dossier->getId());
         }

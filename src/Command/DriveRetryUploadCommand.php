@@ -3,12 +3,11 @@
 namespace App\Command;
 
 use App\Entity\Dirigeant;
-use App\Entity\DossierClub;
+use App\Entity\DocumentSignature;
 use App\Repository\DirigeantRepository;
-use App\Repository\DossierClubRepository;
+use App\Repository\DocumentSignatureRepository;
 use App\Service\Drive\DirigeantAttestationCleDriveSync;
-use App\Service\Drive\DirigeantReglementDriveSync;
-use App\Service\Drive\DossierDriveSync;
+use App\Service\Drive\DocumentSignatureDriveSync;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,10 +21,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class DriveRetryUploadCommand extends Command
 {
     public function __construct(
-        private readonly DossierClubRepository $dossierRepository,
-        private readonly DossierDriveSync $driveSync,
+        private readonly DocumentSignatureRepository $signatureRepository,
+        private readonly DocumentSignatureDriveSync $documentDriveSync,
         private readonly DirigeantRepository $dirigeantRepository,
-        private readonly DirigeantReglementDriveSync $reglementDriveSync,
         private readonly DirigeantAttestationCleDriveSync $attestationCleDriveSync,
     ) {
         parent::__construct();
@@ -40,22 +38,20 @@ final class DriveRetryUploadCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
+        // Licenciés et dirigeants, règlements et chartes : une seule section, les
+        // signatures de documents partageant désormais le même circuit d'archivage.
         $failures = $this->retrySection(
             $io,
-            'règlement(s) licencié(s)',
-            $this->dossierRepository->findWithLocalPdf(),
-            static fn (DossierClub $d): string => $d->getLicencie()->getNom() . ' ' . $d->getLicencie()->getPrenom(),
-            static fn (DossierClub $d): ?string => $d->getSignaturePath(),
-            fn (DossierClub $d): bool => $this->driveSync->sync($d),
-        );
-
-        $failures += $this->retrySection(
-            $io,
-            'règlement(s) dirigeant(s)',
-            $this->dirigeantRepository->findWithLocalReglement(),
-            static fn (Dirigeant $d): string => $d->getNomPrenom(),
-            static fn (Dirigeant $d): ?string => $d->getReglementSignePath(),
-            fn (Dirigeant $d): bool => $this->reglementDriveSync->sync($d),
+            'document(s) signé(s)',
+            $this->signatureRepository->findWithLocalPath(),
+            static fn (DocumentSignature $s): string => sprintf(
+                '%s %s — %s',
+                $s->getNom(),
+                $s->getPrenom(),
+                $s->getDocument()->getTitre(),
+            ),
+            static fn (DocumentSignature $s): ?string => $s->getDrivePath(),
+            fn (DocumentSignature $s): bool => $this->documentDriveSync->sync($s),
         );
 
         $failures += $this->retrySection(

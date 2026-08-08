@@ -1,0 +1,196 @@
+{# ──────────────────────────────────────────────────────────────────────────
+   Création / édition d'un document signable — généralise l'ancien écran
+   d'édition des règlements : mêmes éditeur Quill et aperçu live, plus
+   l'identité du document et son ciblage.
+   Paramètres : document (null en création), season, formAction, csrfId,
+                apercuUrl (null en création), roles, dirigeants
+─────────────────────────────────────────────────────────────────────────── #}
+{% extends 'admin/layout.html.twig' %}
+
+{% set titrePage = document ? document.titre : 'Nouveau document' %}
+{% set cibleActuelle = document ? document.cible.value : 'dirigeant' %}
+{% set rolesActuels = document ? document.roles|map(r => r.value) : [] %}
+{% set dirigeantsActuels = document ? document.dirigeants|map(d => d.uuid ~ '') : [] %}
+
+{% block title %}CoSync — {{ titrePage }}{% endblock %}
+
+{% block head %}
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Configuration', route: 'admin_config_index' },
+    { label: 'Documents à signer', route: 'admin_documents_list' },
+    { label: titrePage }
+] } %}
+
+<div class="document-edit-page" x-data="{ cible: '{{ cibleActuelle }}' }">
+    <div class="document-edit-layout">
+
+        <form method="post" action="{{ formAction }}" class="document-edit-card" id="document-form">
+
+            <input type="hidden" name="_token" value="{{ csrf_token(csrfId) }}">
+            <input type="hidden" name="contenu_html" id="contenu_html_input">
+
+            <div class="document-edit-header">
+                <h1 class="document-edit-title">{{ titrePage }}</h1>
+                <p class="document-edit-hint">
+                    Ce texte sera affiché lors de l'étape de signature du formulaire public, puis intégré
+                    au PDF archivé sur Drive. Saison {{ season.label }}.
+                </p>
+            </div>
+
+            <hr class="document-edit-divider">
+
+            <div class="document-edit-field">
+                <label class="document-edit-label" for="titre">Titre du document</label>
+                <input type="text" id="titre" name="titre" required maxlength="150"
+                       class="document-edit-input"
+                       placeholder="Ex : Charte d'engagement — Communication / Réseaux sociaux"
+                       value="{{ document ? document.titre : '' }}">
+                <p class="document-edit-field-hint">Affiché en tête de l'étape de signature et du PDF.</p>
+            </div>
+
+            <div class="document-edit-field">
+                <label class="document-edit-label" for="libelle">Désignation dans la phrase d'acceptation</label>
+                <input type="text" id="libelle" name="libelle" required maxlength="255"
+                       class="document-edit-input"
+                       placeholder="Ex : la charte d'engagement communication du Foyer de Soudron"
+                       value="{{ document ? document.libelle : '' }}">
+                <p class="document-edit-field-hint">
+                    Complète « J'ai lu et j'accepte … » dans le formulaire et « …reconnais avoir lu et accepté … » dans le PDF.
+                    Commencez par l'article (le, la, l').
+                </p>
+            </div>
+
+            <div class="document-edit-field">
+                <span class="document-edit-label">Qui doit le signer ?</span>
+                <div class="document-edit-radio-row">
+                    <label class="document-edit-radio">
+                        <input type="radio" name="cible" value="dirigeant" x-model="cible"
+                               {{ cibleActuelle == 'dirigeant' ? 'checked' : '' }}>
+                        Les dirigeants
+                    </label>
+                    <label class="document-edit-radio">
+                        <input type="radio" name="cible" value="licencie" x-model="cible"
+                               {{ cibleActuelle == 'licencie' ? 'checked' : '' }}>
+                        Les licenciés
+                    </label>
+                </div>
+                <p class="document-edit-field-hint" x-show="cible === 'licencie'" x-cloak>
+                    Un document destiné aux licenciés s'adresse à toute la saison : aucun ciblage plus fin.
+                </p>
+            </div>
+
+            <div x-show="cible === 'dirigeant'" x-cloak class="document-edit-field">
+                <span class="document-edit-label">Rôles concernés</span>
+                <p class="document-edit-field-hint">
+                    Ne rien cocher ici ni ci-dessous = le document est demandé à tous les dirigeants.
+                </p>
+                <div class="document-edit-checklist">
+                    {% for role in roles %}
+                        <label class="document-edit-check">
+                            <input type="checkbox" name="roles[]" value="{{ role.value }}"
+                                   {{ role.value in rolesActuels ? 'checked' : '' }}>
+                            <span>
+                                {{ role.label() }}
+                                <span class="document-edit-check-desc">{{ role.description() }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div x-show="cible === 'dirigeant'" x-cloak class="document-edit-field">
+                <span class="document-edit-label">Ou des personnes précises</span>
+                <p class="document-edit-field-hint">
+                    Pour un document qui ne correspond à aucun rôle — la charte communication, par exemple.
+                    S'ajoute aux rôles cochés ci-dessus.
+                </p>
+                {% if dirigeants is empty %}
+                    <p class="document-edit-empty">Aucun dirigeant enregistré pour cette saison.</p>
+                {% else %}
+                    <div class="document-edit-checklist">
+                        {% for d in dirigeants %}
+                            <label class="document-edit-check">
+                                <input type="checkbox" name="dirigeants[]" value="{{ d.uuid }}"
+                                       {{ (d.uuid ~ '') in dirigeantsActuels ? 'checked' : '' }}>
+                                <span>
+                                    {{ d.nomPrenom }}
+                                    <span class="document-edit-check-desc">{{ d.role.label() }}</span>
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="document-edit-field">
+                <label class="document-edit-check" style="padding:0">
+                    <input type="checkbox" name="actif" value="1" {{ document is null or document.actif ? 'checked' : '' }}>
+                    <span>
+                        Document actif
+                        <span class="document-edit-check-desc">Décoché, il n'est plus demandé, mais les signatures déjà recueillies sont conservées.</span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="document-edit-field">
+                <label class="document-edit-label">Texte du document</label>
+                <div class="document-edit-editor-wrapper">
+                    <div id="quill-editor" class="document-edit-editor">{{ document ? document.contenuHtml|raw : '' }}</div>
+                </div>
+            </div>
+
+            <div class="document-edit-actions">
+                <a href="{{ path('admin_documents_list') }}" class="document-edit-cancel">Annuler</a>
+                <button type="submit" class="document-edit-submit">Enregistrer</button>
+            </div>
+
+        </form>
+
+        <aside class="document-preview-panel">
+            <div class="document-preview-header">
+                <span class="document-preview-title">Aperçu</span>
+                <span class="document-preview-hint">Mis à jour en direct</span>
+            </div>
+            <div class="document-preview-content" id="document-preview">
+                {{ document ? document.contenuHtml|raw : '' }}
+            </div>
+            {% if apercuUrl %}
+                <div class="document-preview-footer">
+                    <a href="{{ apercuUrl }}" target="_blank" class="document-edit-apercu-btn">Aperçu PDF</a>
+                    <span class="document-edit-apercu-hint">L'aperçu PDF est basé sur le texte enregistré.</span>
+                </div>
+            {% endif %}
+        </aside>
+
+    </div>
+</div>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+    const quill = new Quill('#quill-editor', {
+        theme: 'snow',
+        placeholder: 'Saisissez ici le texte du document…',
+        modules: {
+            toolbar: [
+                [{ header: [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['clean']
+            ]
+        }
+    });
+
+    document.getElementById('document-form').addEventListener('submit', function () {
+        document.getElementById('contenu_html_input').value = quill.root.innerHTML;
+    });
+
+    const preview = document.getElementById('document-preview');
+    preview.innerHTML = quill.root.innerHTML;
+    quill.on('text-change', () => { preview.innerHTML = quill.root.innerHTML; });
+</script>
+{% endblock %}

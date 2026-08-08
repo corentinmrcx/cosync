@@ -12,7 +12,9 @@
          needTaille: {{ needTaille ? 'true' : 'false' }},
          needPhoto: {{ needPhoto ? 'true' : 'false' }},
          needTransport: {{ needTransport ? 'true' : 'false' }},
-         needReglement: {{ needReglement ? 'true' : 'false' }}
+         {# Pas de |raw : les guillemets du JSON doivent être échappés, sinon ils
+            referment l'attribut x-data et tout le composant Alpine casse. #}
+         documents: {{ documents|map(d => {id: d.id})|json_encode }}
      })">
 
     {# — Header — #}
@@ -41,7 +43,6 @@
                   @submit="submitting = true">
                 <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_submit') }}">
                 <input type="hidden" name="attestation_signature_data" :value="signatureDataAttestation">
-                <input type="hidden" name="signature_data" :value="signatureData">
 
                 {# ── Étape 1 : Bienvenue ── #}
                 <div x-show="step === 1" class="inscription-card">
@@ -275,15 +276,14 @@
                 </div>
                 {% endif %}
 
-                {% if needReglement %}
-                {# ── Étape 5 : Règlement + Signature ── #}
-                {% include 'public/_reglement_signature_step.html.twig' with {
-                    documentTitle: 'Règlement intérieur des dirigeants',
-                    reglementHtml: dirigeant.season.reglementDirigeantText,
-                    checkboxLabel: "J'ai lu et j'accepte le règlement intérieur des dirigeants du Foyer de Soudron.",
-                    stepShow: 'step === 5'
-                } only %}
-                {% endif %}
+                {# ── Étapes 5+ : un document à lire et signer par étape ── #}
+                {% for doc in documents %}
+                    {% include 'public/_document_signature_step.html.twig' with {
+                        doc: doc,
+                        index: loop.index0,
+                        stepShow: 'step === ' ~ (5 + loop.index0)
+                    } only %}
+                {% endfor %}
 
                 {# ── Navigation ── #}
                 <div class="inscription-nav">

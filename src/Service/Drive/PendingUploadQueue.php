@@ -9,8 +9,12 @@ namespace App\Service\Drive;
  */
 final class PendingUploadQueue
 {
-    /** @var int[] */
-    private array $dossierIds = [];
+    /**
+     * @var int[] ids des signatures de documents dont le PDF doit être uploadé.
+     * Une seule file pour tous les documents signables : leur nombre n'étant plus
+     * borné par le code, en ajouter un ne doit pas ajouter de file.
+     */
+    private array $documentSignatureIds = [];
 
     /** @var int[] dossiers dont l'attestation transport doit être uploadée */
     private array $attestationDossierIds = [];
@@ -18,18 +22,15 @@ final class PendingUploadQueue
     /** @var string[] uuids des dirigeants dont l'attestation transport doit être uploadée */
     private array $dirigeantAttestationUuids = [];
 
-    /** @var string[] uuids des dirigeants dont le règlement signé doit être uploadé */
-    private array $dirigeantReglementUuids = [];
-
     /** @var string[] uuids des dirigeants dont l'attestation de remise de clés doit être uploadée */
     private array $dirigeantAttestationCleUuids = [];
 
     /** @var int[] ids des saisons dont le récapitulatif des détenteurs doit être régénéré */
     private array $attestationCleRecapSeasonIds = [];
 
-    public function enqueue(int $dossierId): void
+    public function enqueueDocumentSignature(int $signatureId): void
     {
-        $this->dossierIds[] = $dossierId;
+        $this->documentSignatureIds[] = $signatureId;
     }
 
     public function enqueueAttestation(int $dossierId): void
@@ -40,11 +41,6 @@ final class PendingUploadQueue
     public function enqueueDirigeantAttestation(string $dirigeantUuid): void
     {
         $this->dirigeantAttestationUuids[] = $dirigeantUuid;
-    }
-
-    public function enqueueDirigeantReglement(string $dirigeantUuid): void
-    {
-        $this->dirigeantReglementUuids[] = $dirigeantUuid;
     }
 
     public function enqueueDirigeantAttestationCle(string $dirigeantUuid): void
@@ -61,14 +57,14 @@ final class PendingUploadQueue
     }
 
     /**
-     * Retourne les dossiers en attente et vide la file.
+     * Retourne les signatures en attente et vide la file.
      *
      * @return int[]
      */
-    public function flush(): array
+    public function flushDocumentSignatures(): array
     {
-        $ids = $this->dossierIds;
-        $this->dossierIds = [];
+        $ids = $this->documentSignatureIds;
+        $this->documentSignatureIds = [];
 
         return $ids;
     }
@@ -91,17 +87,6 @@ final class PendingUploadQueue
     {
         $uuids = $this->dirigeantAttestationUuids;
         $this->dirigeantAttestationUuids = [];
-
-        return $uuids;
-    }
-
-    /**
-     * @return string[]
-     */
-    public function flushDirigeantReglements(): array
-    {
-        $uuids = $this->dirigeantReglementUuids;
-        $this->dirigeantReglementUuids = [];
 
         return $uuids;
     }

@@ -4,9 +4,10 @@ namespace App\Service;
 
 use App\DTO\DirigeantPublicFormData;
 use App\Entity\Dirigeant;
+use App\Repository\DocumentSignableRepository;
+use App\Service\Document\DocumentSignatureService;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationTransportPdfService;
-use App\Service\Pdf\PdfGeneratorService;
 use App\Service\Stock\DotationBesoinService;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -15,9 +16,11 @@ final class DirigeantFormService
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly AttestationTransportPdfService $attestationPdfService,
-        private readonly PdfGeneratorService $pdfGenerator,
+        private readonly DocumentSignableRepository $documentRepo,
+        private readonly DocumentSignatureService $signatureService,
         private readonly PendingUploadQueue $uploadQueue,
         private readonly DotationBesoinService $dotationBesoinService,
+        private readonly DirigeantDossierCompletion $dossierCompletion,
     ) {}
 
     public function submit(Dirigeant $dirigeant, DirigeantPublicFormData $data): void
@@ -35,16 +38,6 @@ final class DirigeantFormService
 
         $dirigeant->setVolontaireTransport($data->volontaireTransport);
 
-        // Signature du règlement intérieur (absente si déjà signé via le dossier licencié)
-        if ($data->reglementSignatureData !== null) {
-            $reglementPath = $this->pdfGenerator->generateReglementSigneDirigeant(
-                $dirigeant,
-                $data->reglementSignatureData,
-            );
-            $dirigeant->setReglementSignePath($reglementPath);
-            $dirigeant->setReglementSignedAt(new \DateTimeImmutable());
-        }
-
         // Si le dirigeant accepte de transporter des licenciés → générer l'attestation
         if ($data->attestationTransport !== null) {
             $attestationPath = $this->attestationPdfService->generate(
@@ -58,23 +51,27 @@ final class DirigeantFormService
         }
 
         $dirigeant->setFormCompletedAt(new \DateTimeImmutable());
-
-        // Le lien n'est plus utilisable une fois le dossier complet
-        if ($dirigeant->isPublicFormComplete()) {
-            $dirigeant->setFormTokenExpiresAt(null);
-        }
-
         $this->em->flush();
 
-        if ($dirigeant->isPublicFormComplete()) {
+        // Documents signés : le contrôleur n'a retenu que des ids réellement attendus.
+        foreach ($data->documentSignatures as $documentId => $signatureDataUrl) {
+            $document = $this->documentRepo->find($documentId);
+
+            if ($document !== null) {
+                $this->signatureService->signerParDirigeant($document, $dirigeant, $signatureDataUrl);
+            }
+        }
+
+        // Le lien n'est plus utilisable une fois le dossier complet
+        if ($this->dossierCompletion->isComplete($dirigeant)) {
+            $dirigeant->setFormTokenExpiresAt(null);
+            $this->em->flush();
+
             $this->dotationBesoinService->recomputeForDirigeant($dirigeant);
         }
 
         if ($data->attestationTransport !== null) {
             $this->uploadQueue->enqueueDirigeantAttestation($dirigeant->getUuid()->toRfc4122());
-        }
-        if ($data->reglementSignatureData !== null) {
-            $this->uploadQueue->enqueueDirigeantReglement($dirigeant->getUuid()->toRfc4122());
         }
     }
 }

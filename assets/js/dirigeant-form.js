@@ -1,13 +1,19 @@
-import { reglementSignature } from './reglement-signature.js';
+import { documentSignatures } from './document-signatures.js';
 
-export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglement }) {
+/**
+ * Formulaire public du dossier dirigeant.
+ *
+ * Les étapes 1 à 4 sont fixes ; les documents à signer occupent ensuite une étape
+ * chacun, à partir de 5. Leur nombre dépend de la saison et du ciblage du dirigeant,
+ * il n'est donc pas connu du code : `documents` est fourni par le serveur.
+ */
+export function dirigeantForm({ needTaille, needPhoto, needTransport, documents }) {
     return {
-        ...reglementSignature(),
+        ...documentSignatures(documents),
 
         needTaille,
         needPhoto,
         needTransport,
-        needReglement,
 
         step: 1,
 
@@ -33,13 +39,23 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglem
 
         submitting: false,
 
+        /** Numéro d'étape du document de rang `index`. */
+        documentStep(index) {
+            return 5 + index;
+        },
+
+        /** Rang du document affiché à l'étape courante, ou -1 hors des étapes documents. */
+        get currentDocumentIndex() {
+            return this.step >= 5 ? this.step - 5 : -1;
+        },
+
         // Étapes réellement accessibles, calculées selon les champs à collecter
         get steps() {
             const s = [1];
             if (this.needTaille) s.push(2);
             if (this.needPhoto || this.needTransport) s.push(3);
             if (this.needTransport && this.volontaireTransport === '1') s.push(4);
-            if (this.needReglement) s.push(5);
+            this.docs.forEach((_, i) => s.push(this.documentStep(i)));
             return s;
         },
 
@@ -78,15 +94,18 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglem
                 if (value === 4) {
                     this.$nextTick(() => this.initAttestationSignaturePad());
                 }
-                if (value === 5) {
-                    this.$nextTick(() => this.markReglementScrolledIfShort());
+                if (value >= 5) {
+                    this.$nextTick(() => this.markDocScrolledIfShort(value - 5));
                 }
             });
 
-            this.$watch('hasRead', (value) => {
-                if (value === true && this.step === 5) {
-                    window.requestAnimationFrame(() => this.initSignaturePad());
-                }
+            // Le pad n'existe dans le DOM qu'une fois la case « J'ai lu » cochée.
+            this.docs.forEach((_, i) => {
+                this.$watch(`docs[${i}].hasRead`, (value) => {
+                    if (value === true && this.step === this.documentStep(i)) {
+                        window.requestAnimationFrame(() => this.initDocPad(i));
+                    }
+                });
             });
         },
 
@@ -108,10 +127,8 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglem
                         && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
                         && this.engagementAttestation
                         && this.signatureDataAttestation !== '';
-                case 5: // règlement intérieur
-                    return this.hasRead && this.signatureData !== '';
-                default:
-                    return false;
+                default: // étapes documents
+                    return this.docReady(this.currentDocumentIndex);
             }
         },
 

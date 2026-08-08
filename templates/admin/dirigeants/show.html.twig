@@ -26,7 +26,7 @@
                 Modifier
             </a>
 
-            {% if not dirigeant.isPublicFormComplete %}
+            {% if not dossierComplet %}
                 {% if dirigeant.email %}
                     <form method="post" action="{{ path('admin_dirigeants_send_link', {uuid: dirigeant.uuid}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_send_link_' ~ dirigeant.uuid) }}">
@@ -132,7 +132,7 @@
             <ul class="licencie-show-checklist">
                 {# Formulaire dirigeant #}
                 <li class="licencie-show-check-item">
-                    {% if dirigeant.isPublicFormComplete %}
+                    {% if dossierComplet %}
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         <span class="licencie-show-check-label">Formulaire dirigeant</span>
                         {% if dirigeant.formCompletedAt %}<span class="licencie-show-check-date">le {{ dirigeant.formCompletedAt|date('d/m/Y') }}</span>{% endif %}
@@ -196,22 +196,25 @@
                 </li>
                 {% endif %}
 
-                {# Règlement intérieur des dirigeants signé #}
-                <li class="licencie-show-check-item">
-                    {% if dirigeant.hasSignedReglement %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span class="licencie-show-check-label">Règlement dirigeants</span>
-                        {% if dirigeant.reglementSignePath starts with '/' %}
-                            <span class="licencie-show-check-badge-pending">Upload en attente</span>
+                {# Documents à signer — la liste suit ce que la saison demande à ce dirigeant #}
+                {% for doc in documents %}
+                    {% set signature = signatures[doc.id] ?? null %}
+                    <li class="licencie-show-check-item">
+                        {% if signature %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span class="licencie-show-check-label">{{ doc.titre }}</span>
+                            {% if signature.uploadPending %}
+                                <span class="licencie-show-check-badge-pending">Upload en attente</span>
+                            {% else %}
+                                <span class="licencie-show-check-badge-yes">Archivé sur Drive</span>
+                            {% endif %}
                         {% else %}
-                            <span class="licencie-show-check-badge-yes">Archivé sur Drive</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span class="licencie-show-check-label licencie-show-check-label-pending">{{ doc.titre }}</span>
+                            <span class="licencie-show-check-badge-pending">En attente</span>
                         {% endif %}
-                    {% else %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span class="licencie-show-check-label licencie-show-check-label-pending">Règlement dirigeants</span>
-                        <span class="licencie-show-check-badge-pending">En attente</span>
-                    {% endif %}
-                </li>
+                    </li>
+                {% endfor %}
 
                 {# Attestation de remise de clés — affichée seulement pour les détenteurs de clés #}
                 {% if nbCles > 0 or dirigeant.hasSignedAttestationCle %}
