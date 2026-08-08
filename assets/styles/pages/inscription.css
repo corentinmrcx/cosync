@@ -243,16 +243,33 @@
     margin: 0.25rem 0;
 }
 
+/* — Titre de section à l'intérieur d'une étape (tailles ↔ dotation) — */
+.inscription-section-title {
+    margin: 0;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.inscription-section-hint {
+    margin: -0.35rem 0 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
 /* — Personnalisation (flocage) — */
 
+/* Le champ découle de l'option cochée juste au-dessus : le liseré rouge fait le lien,
+   là où un pavé gris flottant donnait l'impression d'une question de plus. */
 .inscription-flocage-field {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
     margin-top: 0.75rem;
     padding: 0.75rem;
-    border-radius: var(--radius-md);
-    background: var(--color-bg-subtle);
+    border-left: 3px solid var(--color-primary);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    background: var(--color-primary-light);
 }
 
 .inscription-flocage-count {
@@ -277,6 +294,19 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--color-text-base);
+}
+
+.inscription-flocage-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Deux mots en capitales ne se distinguent pas : chaque aperçu dit sur quoi il sera imprimé. */
+.inscription-flocage-article {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
 }
 
 /* Le texte tel qu'il sera imprimé : c'est ce que le licencié doit relire, pas un champ de plus. */

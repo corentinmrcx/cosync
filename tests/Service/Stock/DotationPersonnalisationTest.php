@@ -161,6 +161,71 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         $this->besoinService()->updatePersonnalisation($besoin, 'Trop tard');
     }
 
+    /**
+     * Le champ de flocage d'une option de choix est porté par la question elle-même, conditionné
+     * à la sélection. Il ne doit jamais ressortir en plus comme personnalisation « automatique »,
+     * sinon le formulaire public affiche deux fois le même champ sous la même clé — et le second,
+     * inconditionnel, rend le flocage obligatoire même quand l'option choisie n'en demande aucun.
+     */
+    public function testUneOptionDeChoixNeRessortPasEnPersonnalisationAutomatique(): void
+    {
+        $season = $this->makeSeason();
+        $cat    = $this->makeCategory('SENIOR');
+        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $tshirt = $this->makeItem('T-shirt', StockItemVetementType::HAUT);
+        $sac    = $this->makeItem('Sac à dos', null);
+
+        $modele = $this->makeModele($season, 'Dotation 2026');
+        // Première option du groupe, floquée : c'est elle que le repli de retainedLines() faisait
+        // remonter à tort quand aucun choix n'était encore fait.
+        $this->addLigne($modele, $tshirt, 1, 'Votre dotation', DotationEligibilite::TOUS, true);
+        $this->addLigne($modele, $veste, 1, 'Votre dotation');
+        $ligneSac = $this->addLigne($modele, $sac, 1, null, DotationEligibilite::TOUS, true); // article fixe floqué
+        $this->affecterCategorie($season, $modele, $cat);
+
+        $licencie = $this->makeLicencie($season, $cat, null, 'L', nature: NatureLicence::RENOUVELLEMENT);
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+
+        $resolver = $this->service(\App\Service\Stock\DotationResolver::class);
+
+        self::assertCount(1, $resolver->getChoiceGroups($licencie), 'Le groupe est bien posé en question.');
+
+        $autos = $resolver->getAutoPersonnalisationRequests($licencie);
+        self::assertSame(
+            ['ligne:' . $ligneSac->getId()],
+            array_column($autos, 'cle'),
+            'Seul l\'article fixe floqué est demandé à part ; le t-shirt passe par sa question.',
+        );
+    }
+
+    /** Un groupe réduit à une seule option éligible n'est plus une question : son texte est dû à part. */
+    public function testUnGroupeAutoResoluRessortEnPersonnalisationAutomatique(): void
+    {
+        $season = $this->makeSeason();
+        $cat    = $this->makeCategory('SENIOR');
+        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $tshirt = $this->makeItem('T-shirt', StockItemVetementType::HAUT);
+
+        $modele = $this->makeModele($season, 'Dotation 2026');
+        $this->addLigne($modele, $veste, 1, 'Votre dotation', DotationEligibilite::NOUVEAUX, true);
+        $this->addLigne($modele, $tshirt, 1, 'Votre dotation', DotationEligibilite::RENOUVELLEMENTS);
+        $this->affecterCategorie($season, $modele, $cat);
+
+        $licencie = $this->makeLicencie($season, $cat, null, 'L', nature: NatureLicence::NOUVELLE_DEMANDE);
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+
+        $resolver = $this->service(\App\Service\Stock\DotationResolver::class);
+
+        self::assertSame([], $resolver->getChoiceGroups($licencie), 'Un nouveau licencié n\'a pas le choix.');
+        self::assertSame(
+            ['Votre dotation'],
+            array_column($resolver->getAutoPersonnalisationRequests($licencie), 'cle'),
+            'La veste imposée réclame quand même son texte.',
+        );
+    }
+
     public function testGetFlocagesListeUniquementLesArticlesFloquesADonner(): void
     {
         [$licencie] = $this->licencieAvecTshirtFloque('Coco');

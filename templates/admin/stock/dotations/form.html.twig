@@ -2,7 +2,31 @@
 
 {% block title %}CoSync — {{ modele.nom }}{% endblock %}
 
+{# Le sélecteur d'article, identique partout où l'on désigne un article du stock :
+   vêtements d'abord (taille déduite automatiquement), puis le reste. #}
+{% macro articleSelect(vetements, autres, name, placeholder, model = null) %}
+    <select name="{{ name }}" class="dot-select" required
+            {% if model %}x-model="{{ model }}"{% endif %}>
+        <option value="">{{ placeholder }}</option>
+        {% if vetements is not empty %}
+            <optgroup label="Vêtements (taille automatique)">
+                {% for item in vetements %}
+                    <option value="{{ item.id }}">{{ item.nom }} — {{ item.typeVetement.label }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
+                {% endfor %}
+            </optgroup>
+        {% endif %}
+        {% if autres is not empty %}
+            <optgroup label="Autres articles">
+                {% for item in autres %}
+                    <option value="{{ item.id }}">{{ item.nom }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
+                {% endfor %}
+            </optgroup>
+        {% endif %}
+    </select>
+{% endmacro %}
+
 {% block content %}
+{% import _self as ui %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
     { label: 'Stock', route: 'admin_stock_dashboard' },
@@ -10,15 +34,29 @@
     { label: modele.nom }
 ] } %}
 
+{% set vetements = articles|filter(a => a.typeVetement) %}
+{% set autres = articles|filter(a => not a.typeVetement) %}
+{% set fixes = modele.lignes|filter(l => l.groupeChoix is null) %}
+{% set choixGroupes = {} %}
+{% for l in modele.lignes|filter(l => l.groupeChoix is not null) %}
+    {% set choixGroupes = choixGroupes|merge({ (l.groupeChoix): (choixGroupes[l.groupeChoix]|default([]))|merge([l]) }) %}
+{% endfor %}
+
 <div class="dot-page">
 
     <div class="dot-header">
-        <h1 class="dot-title">{{ modele.nom }}</h1>
+        <div>
+            <h1 class="dot-title">{{ modele.nom }}</h1>
+            <p class="dot-subtitle">
+                Un kit se compose d'articles reçus par tout le monde, et de choix laissés au licencié.
+                L'aperçu en bas de page montre ce que chaque profil recevra vraiment.
+            </p>
+        </div>
     </div>
 
-    {# — Réglages du modèle — #}
+    {# — Réglages du kit — #}
     <div class="dot-card">
-        <h2 class="dot-card-title">Réglages</h2>
+        <h2 class="dot-card-title">Le kit</h2>
         <form method="post" action="{{ path('admin_stock_dotations_edit', {id: modele.id}) }}" class="dot-inline-form">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_edit_' ~ modele.id) }}">
             <input type="text" name="nom" class="dot-input" value="{{ modele.nom }}" required>
@@ -27,139 +65,286 @@
             </label>
             <button type="submit" class="dot-btn-primary">Enregistrer</button>
         </form>
+
     </div>
 
-    {# — Articles du modèle — #}
-    {% set vetements = articles|filter(a => a.typeVetement) %}
-    {% set autres = articles|filter(a => not a.typeVetement) %}
-    {% set fixes = modele.lignes|filter(l => l.groupeChoix is null) %}
-    {% set choixGroupes = {} %}
-    {% for l in modele.lignes|filter(l => l.groupeChoix is not null) %}
-        {% set choixGroupes = choixGroupes|merge({ (l.groupeChoix): (choixGroupes[l.groupeChoix]|default([]))|merge([l]) }) %}
-    {% endfor %}
-
+    {# — Qui reçoit ce kit — #}
     <div class="dot-card">
         <div class="dot-card-header">
-            <h2 class="dot-card-title">Articles à recevoir</h2>
-            <span class="dot-card-count">{{ modele.lignes|length }}</span>
+            <h2 class="dot-card-title">Qui reçoit ce kit</h2>
+            <span class="dot-card-count">{{ affectations|length }}</span>
         </div>
+        <p class="dot-hint">
+            En cas de chevauchement avec un autre kit, le plus précis l'emporte :
+            personne &gt; équipe &gt; catégorie ou rôle &gt; défaut.
+        </p>
 
-        {% if modele.lignes is empty %}
-            <p class="dot-empty">Aucun article. Ajoutez ce que cette dotation doit contenir.</p>
+        {% if affectations is empty %}
+            <p class="dot-warning">Ce kit n'est attribué à personne : personne ne le recevra tant qu'il n'a pas de cible.</p>
         {% else %}
             <ul class="dot-list">
-                {% for ligne in fixes %}
+                {% for a in affectations %}
                     <li class="dot-list-item">
                         <div class="dot-list-main">
-                            <span class="dot-list-name">{{ ligne.stockItem.nom }}</span>
-                            <span class="dot-list-meta">
-                                ×{{ ligne.quantite }}
-                                {% if ligne.stockItem.typeVetement %} · {{ ligne.stockItem.typeVetement.label }}{% endif %}
-                            </span>
+                            <span class="dot-list-name">{{ a.cibleLabel }}</span>
                         </div>
-                        <form method="post" action="{{ path('admin_stock_dotations_ligne_delete', {id: ligne.id}) }}" style="display:inline">
-                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_delete_' ~ ligne.id) }}">
+                        <form method="post" action="{{ path('admin_stock_dotations_affectation_delete', {id: a.id}) }}" style="display:inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_delete_' ~ a.id) }}">
                             <button type="submit" class="dot-action-delete">Retirer</button>
                         </form>
-                    </li>
-                {% endfor %}
-
-                {% for nom, lignes in choixGroupes %}
-                    <li class="dot-list-item dot-list-item-choix">
-                        <div class="dot-choix-head">
-                            <div class="dot-list-main">
-                                <span class="dot-list-name">
-                                    <span class="dot-choix-tag">Choix</span> {{ nom }}
-                                </span>
-                                <span class="dot-list-meta">
-                                    {{ lignes|length }} option(s){% if lignes[0].quantite > 1 %} · ×{{ lignes[0].quantite }}{% endif %}
-                                </span>
-                            </div>
-                            <form method="post" action="{{ path('admin_stock_dotations_choix_delete', {id: modele.id}) }}" style="display:inline"
-                                  onsubmit="return confirm('Retirer ce choix et ses {{ lignes|length }} options ?')">
-                                <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_delete_' ~ modele.id) }}">
-                                <input type="hidden" name="nom" value="{{ nom }}">
-                                <button type="submit" class="dot-action-delete">Retirer</button>
-                            </form>
-                        </div>
-
-                        <ul class="dot-option-list">
-                            {% for ligne in lignes %}
-                                {% include 'admin/stock/dotations/_option_reglages.html.twig' with {
-                                    ligne: ligne,
-                                    eligibilites: eligibilites,
-                                    personnalisationMaxDefaut: personnalisationMaxDefaut,
-                                } only %}
-                            {% endfor %}
-                        </ul>
                     </li>
                 {% endfor %}
             </ul>
         {% endif %}
 
-        {# — Ajout : article fixe OU choix — #}
-        <div class="dot-add" x-data="{ mode: 'fixe' }">
-            <div class="dot-add-tabs">
-                <button type="button" class="dot-add-tab" :class="{ 'is-active': mode === 'fixe' }" @click="mode = 'fixe'">Article fixe</button>
-                <button type="button" class="dot-add-tab" :class="{ 'is-active': mode === 'choix' }" @click="mode = 'choix'">Choix (le licencié choisit)</button>
+        <form method="post" action="{{ path('admin_stock_dotations_affectation_new') }}" class="dot-add-row"
+              x-data="{ cible: 'team' }">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_new') }}">
+            <input type="hidden" name="modele_id" value="{{ modele.id }}">
+
+            <select name="cible_type" class="dot-select" x-model="cible" aria-label="Type de cible">
+                <option value="team">Équipe</option>
+                <option value="category">Catégorie FFF</option>
+                <option value="role">Rôle dirigeant</option>
+                <option value="licencie">Un licencié</option>
+                <option value="dirigeant">Un dirigeant</option>
+                <option value="default">Par défaut (toute la saison)</option>
+            </select>
+
+            <select name="cible_id" class="dot-select" x-show="cible === 'team'" x-cloak :disabled="cible !== 'team'" aria-label="Équipe">
+                {% for t in teams %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+            </select>
+            <select name="cible_id" class="dot-select" x-show="cible === 'category'" x-cloak :disabled="cible !== 'category'" aria-label="Catégorie">
+                {% for c in categories %}<option value="{{ c.id }}">{{ c.label }}</option>{% endfor %}
+            </select>
+            <select name="cible_id" class="dot-select" x-show="cible === 'role'" x-cloak :disabled="cible !== 'role'" aria-label="Rôle dirigeant">
+                {% for r in roles %}<option value="{{ r.value }}">{{ r.label() }}</option>{% endfor %}
+            </select>
+            <select name="cible_id" class="dot-select" x-show="cible === 'licencie'" x-cloak :disabled="cible !== 'licencie'" aria-label="Licencié">
+                {% for l in licencies %}<option value="{{ l.uuid }}">{{ l.nom }} {{ l.prenom }}</option>{% endfor %}
+            </select>
+            <select name="cible_id" class="dot-select" x-show="cible === 'dirigeant'" x-cloak :disabled="cible !== 'dirigeant'" aria-label="Dirigeant">
+                {% for d in dirigeants %}<option value="{{ d.uuid }}">{{ d.nomPrenom }}</option>{% endfor %}
+            </select>
+
+            <button type="submit" class="dot-btn-ghost">+ Attribuer</button>
+        </form>
+    </div>
+
+    {# — Articles reçus par tout le monde — #}
+    <div class="dot-card">
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">Reçu par tout le monde</h2>
+            <span class="dot-card-count">{{ fixes|length }}</span>
+        </div>
+        <p class="dot-hint">Ces articles sont attribués sans question. Le licencié ne les voit pas dans son formulaire, sauf si l'un d'eux réclame un texte à personnaliser.</p>
+
+        {% if fixes is empty %}
+            <p class="dot-empty">Aucun article commun.</p>
+        {% else %}
+            <ul class="dot-list">
+                {% for ligne in fixes %}
+                    <li class="dot-list-item dot-list-item-stack" x-data="{ ouvert: false }">
+                        <div class="dot-list-row">
+                            <div class="dot-list-main">
+                                <span class="dot-list-name">{{ ligne.stockItem.nom }}</span>
+                                <span class="dot-list-meta">
+                                    ×{{ ligne.quantite }}
+                                    {%- if ligne.stockItem.typeVetement %} · {{ ligne.stockItem.typeVetement.label }}{% endif -%}
+                                    {%- if ligne.eligibilite != eligibilites[0] %} · {{ ligne.eligibilite.label }}{% endif -%}
+                                    {%- if ligne.personnalisationRequise %} · texte à personnaliser{% endif -%}
+                                </span>
+                            </div>
+                            <div class="dot-list-actions">
+                                <button type="button" class="dot-action-edit" @click="ouvert = !ouvert"
+                                        x-text="ouvert ? 'Fermer' : 'Régler'"></button>
+                                <button type="submit" form="fixe-del-{{ ligne.id }}" class="dot-action-delete">Retirer</button>
+                            </div>
+                        </div>
+
+                        <form method="post" action="{{ path('admin_stock_dotations_ligne_reglages', {id: ligne.id}) }}"
+                              class="dot-reglages" x-show="ouvert" x-cloak
+                              x-data="{ perso: {{ ligne.personnalisationRequise ? 'true' : 'false' }} }">
+                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_reglages_' ~ ligne.id) }}">
+
+                            <div class="dot-field">
+                                <label class="dot-field-label" for="fx-elig-{{ ligne.id }}">Qui y a droit</label>
+                                <select id="fx-elig-{{ ligne.id }}" name="eligibilite" class="dot-select">
+                                    {% for cas in eligibilites %}
+                                        <option value="{{ cas.value }}" {{ ligne.eligibilite == cas ? 'selected' : '' }}>{{ cas.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <label class="dot-toggle">
+                                <input type="checkbox" name="personnalisation_requise" value="1" x-model="perso">
+                                <span>Demander un texte à personnaliser</span>
+                            </label>
+
+                            <div class="dot-perso" x-show="perso" x-cloak>
+                                <div class="dot-row">
+                                    <div class="dot-field">
+                                        <label class="dot-field-label" for="fx-lab-{{ ligne.id }}">Question posée au licencié</label>
+                                        <input id="fx-lab-{{ ligne.id }}" type="text" name="personnalisation_label" class="dot-text"
+                                               value="{{ ligne.personnalisationLabel }}" placeholder="Ex : Nom à floquer au dos">
+                                    </div>
+                                    <div class="dot-field dot-field-narrow">
+                                        <label class="dot-field-label" for="fx-max-{{ ligne.id }}">Caractères max.</label>
+                                        <input id="fx-max-{{ ligne.id }}" type="number" name="personnalisation_max" class="dot-text"
+                                               min="1" max="60" value="{{ ligne.personnalisationMaxLength }}"
+                                               placeholder="{{ personnalisationMaxDefaut }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dot-choix-actions">
+                                <button type="submit" class="dot-btn-primary">Enregistrer cet article</button>
+                            </div>
+                        </form>
+
+                        {# Hors du formulaire ci-dessus : HTML interdit les formulaires imbriqués. #}
+                        <form id="fixe-del-{{ ligne.id }}" method="post" action="{{ path('admin_stock_dotations_ligne_delete', {id: ligne.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_delete_' ~ ligne.id) }}">
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form method="post" action="{{ path('admin_stock_dotations_ligne_add', {id: modele.id}) }}" class="dot-add-row">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_add_' ~ modele.id) }}">
+            {{ ui.articleSelect(vetements, autres, 'stock_item_id', '— Ajouter un article —') }}
+            <input type="number" name="quantite" class="dot-text dot-text-qty" min="1" value="1" title="Quantité" aria-label="Quantité">
+            <button type="submit" class="dot-btn-ghost">+ Ajouter</button>
+        </form>
+
+        <p class="dot-hint">La taille n'est pas à choisir ici : pour un vêtement, elle est déterminée automatiquement d'après la fiche d'inscription de chaque personne.</p>
+    </div>
+
+    {# — Choix laissés au licencié — #}
+    <div class="dot-card">
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">Choix laissés au licencié</h2>
+            <span class="dot-card-count">{{ choixGroupes|length }}</span>
+        </div>
+        <p class="dot-hint">
+            Un choix propose plusieurs articles dont le licencié en retient un.
+            Réserver une option à une population <strong>supprime la question</strong> pour les autres :
+            s'il ne reste qu'une option éligible, l'article est imposé sans rien demander.
+        </p>
+
+        {% if choixGroupes is empty %}
+            <p class="dot-empty">Aucun choix. Tout le monde reçoit exactement le même kit.</p>
+        {% endif %}
+
+        {% for nom, lignes in choixGroupes %}
+            <div class="dot-choix" id="choix-{{ nom }}">
+
+                <div class="dot-choix-bar">
+                    <span class="dot-choix-tag">Choix</span>
+                    <span class="dot-choix-count">{{ lignes|length }} option{{ lignes|length > 1 ? 's' : '' }}{% if lignes[0].quantite > 1 %} · ×{{ lignes[0].quantite }}{% endif %}</span>
+                    <button type="submit" form="choix-del-{{ loop.index }}" class="dot-choix-delete">Retirer ce choix</button>
+                </div>
+
+                {# Le nom du groupe est l'intitulé que lit le licencié : le dire, et permettre de le corriger. #}
+                <form method="post" action="{{ path('admin_stock_dotations_choix_rename', {id: modele.id}) }}" class="dot-choix-title">
+                    <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_rename_' ~ modele.id) }}">
+                    <input type="hidden" name="ancien" value="{{ nom }}">
+                    <div class="dot-field">
+                        <label class="dot-field-label" for="nom-{{ loop.index }}">Question affichée au licencié</label>
+                        <div class="dot-inline">
+                            <input id="nom-{{ loop.index }}" type="text" name="nouveau" class="dot-text" value="{{ nom }}" required>
+                            <button type="submit" class="dot-btn-ghost">Renommer</button>
+                        </div>
+                        <p class="dot-help">Ce texte s'affiche tel quel dans le formulaire public. Les réponses déjà saisies suivent le renommage.</p>
+                    </div>
+                </form>
+
+                <form method="post" action="{{ path('admin_stock_dotations_choix_reglages', {id: modele.id}) }}" class="dot-choix-body">
+                    <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_reglages_' ~ modele.id) }}">
+                    <input type="hidden" name="nom" value="{{ nom }}">
+                    <p class="dot-section-title">Options proposées</p>
+                    <ul class="dot-opt-list">
+                        {% for ligne in lignes %}
+                            {% include 'admin/stock/dotations/_option_reglages.html.twig' with {
+                                ligne: ligne,
+                                eligibilites: eligibilites,
+                                personnalisationMaxDefaut: personnalisationMaxDefaut,
+                                supprimable: lignes|length > 2,
+                            } only %}
+                        {% endfor %}
+                    </ul>
+                    <div class="dot-choix-actions">
+                        <button type="submit" class="dot-btn-primary">Enregistrer ce choix</button>
+                    </div>
+                </form>
+
+                {# Ajouter une 3e option sans détruire les réglages ni les réponses des 2 premières. #}
+                <form method="post" action="{{ path('admin_stock_dotations_choix_option_add', {id: modele.id}) }}" class="dot-choix-add">
+                    <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_option_add_' ~ modele.id) }}">
+                    <input type="hidden" name="nom" value="{{ nom }}">
+                    <div class="dot-inline">
+                        {{ ui.articleSelect(vetements, autres, 'stock_item_id', '— Ajouter une option —') }}
+                        <button type="submit" class="dot-btn-ghost">+ Ajouter</button>
+                    </div>
+                </form>
+
+                {# Hors du formulaire de réglages : HTML interdit les formulaires imbriqués.
+                   Les boutons plus haut s'y rattachent par leur attribut `form`. #}
+                <form id="choix-del-{{ loop.index }}" method="post" action="{{ path('admin_stock_dotations_choix_delete', {id: modele.id}) }}"
+                      onsubmit="return confirm('Retirer le choix « {{ nom }} » et ses {{ lignes|length }} options ?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_delete_' ~ modele.id) }}">
+                    <input type="hidden" name="nom" value="{{ nom }}">
+                </form>
+                {% for ligne in lignes %}
+                    <form id="opt-del-{{ ligne.id }}" method="post" action="{{ path('admin_stock_dotations_ligne_delete', {id: ligne.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_delete_' ~ ligne.id) }}">
+                    </form>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        {# — Créer un choix : deux selects minimum, comme partout ailleurs dans l'admin — #}
+        <form method="post" action="{{ path('admin_stock_dotations_ligne_choix_add', {id: modele.id}) }}"
+              class="dot-choix-new" x-data="{ options: ['', ''] }">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_add_' ~ modele.id) }}">
+            <p class="dot-section-title">Nouveau choix</p>
+
+            <div class="dot-row">
+                <div class="dot-field">
+                    <label class="dot-field-label" for="new-choix-nom">Question affichée au licencié</label>
+                    <input id="new-choix-nom" type="text" name="nom" class="dot-text" placeholder="Ex : Votre dotation au choix" required>
+                </div>
+                <div class="dot-field dot-field-narrow">
+                    <label class="dot-field-label" for="new-choix-qte">Quantité</label>
+                    <input id="new-choix-qte" type="number" name="quantite" class="dot-text" min="1" value="1">
+                </div>
             </div>
 
-            {# Mode 1 : un article que tout le monde reçoit #}
-            <form x-show="mode === 'fixe'" method="post" action="{{ path('admin_stock_dotations_ligne_add', {id: modele.id}) }}" class="dot-affect-form">
-                <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_add_' ~ modele.id) }}">
-                <select name="stock_item_id" class="dot-input" required>
-                    <option value="">— Article —</option>
-                    {% if vetements is not empty %}
-                        <optgroup label="Vêtements (taille automatique)">
-                            {% for item in vetements %}
-                                <option value="{{ item.id }}">{{ item.nom }} — {{ item.typeVetement.label }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
-                            {% endfor %}
-                        </optgroup>
-                    {% endif %}
-                    {% if autres is not empty %}
-                        <optgroup label="Autres articles">
-                            {% for item in autres %}
-                                <option value="{{ item.id }}">{{ item.nom }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
-                            {% endfor %}
-                        </optgroup>
-                    {% endif %}
-                </select>
-                <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" value="1" title="Quantité">
-                <button type="submit" class="dot-btn-primary">+ Ajouter</button>
-            </form>
+            <div class="dot-field">
+                <span class="dot-field-label">Articles proposés</span>
+                <template x-for="(option, i) in options" :key="i">
+                    <div class="dot-inline dot-inline-stack">
+                        {{ ui.articleSelect(vetements, autres, 'stock_item_ids[]', '— Choisir un article —', 'options[i]') }}
+                        <button type="button" class="dot-btn-ghost" x-show="options.length > 2"
+                                @click="options.splice(i, 1)">Retirer</button>
+                    </div>
+                </template>
+                <button type="button" class="dot-btn-ghost dot-btn-ghost-start" @click="options.push('')">+ Une option de plus</button>
+                <p class="dot-help">Le licencié en retiendra une seule. Vous réglerez ensuite qui a droit à quoi.</p>
+            </div>
 
-            {# Mode 2 : plusieurs articles, le licencié en choisit un dans son formulaire #}
-            <form x-show="mode === 'choix'" x-cloak method="post" action="{{ path('admin_stock_dotations_ligne_choix_add', {id: modele.id}) }}" class="dot-choix-form">
-                <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_add_' ~ modele.id) }}">
-                <div class="dot-choix-row">
-                    <input type="text" name="nom" class="dot-input" placeholder="Nom du choix (ex : Veste)" required>
-                    <input type="number" name="quantite" class="dot-input dot-input-qty" min="1" value="1" title="Quantité">
-                </div>
-                <p class="dot-hint">
-                    Cochez les articles proposés (au moins 2). Le licencié en choisira un seul lors de son inscription.
-                    Par défaut tout le monde voit l'option ; restreignez-la si elle est réservée aux nouveaux licenciés
-                    ou aux renouvellements. Le texte à personnaliser se règle ensuite, option par option.
-                </p>
-                <div class="dot-choix-options">
-                    {% for item in vetements|merge(autres) %}
-                        <div class="dot-choix-option-row">
-                            <label class="dot-choix-option">
-                                <input type="checkbox" name="stock_item_ids[]" value="{{ item.id }}">
-                                <span>{{ item.nom }}{% if item.typeVetement %} — {{ item.typeVetement.label }}{% endif %}{% if item.couleur %} · {{ item.couleur }}{% endif %}</span>
-                            </label>
-                            <select name="eligibilite[{{ item.id }}]" class="dot-input dot-option-eligibilite">
-                                {% for cas in eligibilites %}
-                                    <option value="{{ cas.value }}">{{ cas.label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    {% endfor %}
-                </div>
-                <button type="submit" class="dot-btn-primary">+ Ajouter le choix</button>
-            </form>
-        </div>
+            <div class="dot-choix-actions">
+                <button type="submit" class="dot-btn-primary">Créer le choix</button>
+            </div>
+        </form>
+    </div>
 
-        <p class="dot-hint">La taille n'est pas à choisir ici : pour un vêtement, elle est déterminée automatiquement pour chaque joueur d'après sa fiche d'inscription.</p>
+    {# — Aperçu — #}
+    <div class="dot-card">
+        <h2 class="dot-card-title">Ce que recevra chaque profil</h2>
+        <p class="dot-hint">Calculé à partir des réglages ci-dessus. C'est exactement ce que verra la personne concernée.</p>
+        {% include 'admin/stock/dotations/_apercu.html.twig' with { apercu: apercu } only %}
     </div>
 
 </div>

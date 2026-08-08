@@ -1,36 +1,49 @@
-{# Réglages d'une option de choix : qui y a droit, et faut-il demander un texte au licencié.
+{# Une option d'un choix, à l'intérieur du formulaire unique du groupe.
    `ligne` = App\Entity\DotationModeleLigne #}
-<li class="dot-option" x-data="{ perso: {{ ligne.personnalisationRequise ? 'true' : 'false' }} }">
-    <form method="post" action="{{ path('admin_stock_dotations_ligne_reglages', {id: ligne.id}) }}" class="dot-option-form">
-        <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_reglages_' ~ ligne.id) }}">
+<li class="dot-opt" x-data="{ perso: {{ ligne.personnalisationRequise ? 'true' : 'false' }} }">
+    {# Une case décochée n'est pas postée : ce marqueur dit au serveur que l'option était bien
+       dans le formulaire, et qu'un « texte à personnaliser » absent veut dire « décoché ». #}
+    <input type="hidden" name="reglages[{{ ligne.id }}][_present]" value="1">
 
-        <div class="dot-option-row">
-            <span class="dot-option-name">
-                {{ ligne.stockItem.nom }}
-                {%- if ligne.stockItem.typeVetement %} <span class="dot-option-meta">— {{ ligne.stockItem.typeVetement.label }}</span>{% endif -%}
-            </span>
+    <div class="dot-opt-head">
+        <span class="dot-opt-name">{{ ligne.stockItem.nom }}</span>
+        {% if ligne.stockItem.typeVetement %}
+            <span class="dot-opt-meta">{{ ligne.stockItem.typeVetement.label }}</span>
+        {% endif %}
+        {% if supprimable %}
+            <button type="submit" form="opt-del-{{ ligne.id }}" class="dot-opt-remove">Retirer</button>
+        {% endif %}
+    </div>
 
-            <select name="eligibilite" class="dot-input dot-option-eligibilite">
-                {% for cas in eligibilites %}
-                    <option value="{{ cas.value }}" {{ ligne.eligibilite == cas ? 'selected' : '' }}>{{ cas.label }}</option>
-                {% endfor %}
-            </select>
+    <div class="dot-field">
+        <label class="dot-field-label" for="elig-{{ ligne.id }}">Qui y a droit</label>
+        <select id="elig-{{ ligne.id }}" name="reglages[{{ ligne.id }}][eligibilite]" class="dot-select">
+            {% for cas in eligibilites %}
+                <option value="{{ cas.value }}" {{ ligne.eligibilite == cas ? 'selected' : '' }}>{{ cas.label }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-            <label class="dot-check">
-                <input type="checkbox" name="personnalisation_requise" value="1" x-model="perso"> Texte à personnaliser
-            </label>
+    <label class="dot-toggle">
+        <input type="checkbox" name="reglages[{{ ligne.id }}][personnalisation_requise]" value="1" x-model="perso">
+        <span>Demander un texte à personnaliser</span>
+    </label>
 
-            <button type="submit" class="dot-btn-secondary">Enregistrer</button>
+    <div class="dot-perso" x-show="perso" x-cloak>
+        <div class="dot-row">
+            <div class="dot-field">
+                <label class="dot-field-label" for="lab-{{ ligne.id }}">Question posée au licencié</label>
+                <input id="lab-{{ ligne.id }}" type="text" name="reglages[{{ ligne.id }}][personnalisation_label]"
+                       class="dot-text" value="{{ ligne.personnalisationLabel }}"
+                       placeholder="Ex : Nom à floquer au dos">
+            </div>
+            <div class="dot-field dot-field-narrow">
+                <label class="dot-field-label" for="max-{{ ligne.id }}">Caractères max.</label>
+                <input id="max-{{ ligne.id }}" type="number" name="reglages[{{ ligne.id }}][personnalisation_max]"
+                       class="dot-text" min="1" max="60" value="{{ ligne.personnalisationMaxLength }}"
+                       placeholder="{{ personnalisationMaxDefaut }}">
+            </div>
         </div>
-
-        <div class="dot-option-perso" x-show="perso" x-cloak>
-            <input type="text" name="personnalisation_label" class="dot-input"
-                   value="{{ ligne.personnalisationLabel }}"
-                   placeholder="Question posée (ex : Nom à floquer au dos)">
-            <input type="number" name="personnalisation_max" class="dot-input dot-input-qty"
-                   min="1" max="60" value="{{ ligne.personnalisationMaxLength }}"
-                   placeholder="{{ personnalisationMaxDefaut }}" title="Nombre de caractères maximum">
-            <span class="dot-hint">Le licencié devra saisir ce texte et en confirmer l'orthographe avant l'envoi.</span>
-        </div>
-    </form>
+        <p class="dot-help">Le licencié saisira ce texte et devra en confirmer l'orthographe avant l'envoi.</p>
+    </div>
 </li>

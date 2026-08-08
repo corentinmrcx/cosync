@@ -1,0 +1,49 @@
+{# Ce que chaque profil recevra réellement, une fois l'éligibilité appliquée.
+   `apercu` = App\DTO\DotationApercuProfil[] — tout est calculé par DotationModelePreview. #}
+<div class="dot-apercu">
+    {% for profil in apercu %}
+        <div class="dot-apercu-profil">
+            <h3 class="dot-apercu-nom">{{ profil.nom }}</h3>
+            <p class="dot-apercu-desc">{{ profil.description }}</p>
+
+            {% if profil.neRecoitRien %}
+                <p class="dot-apercu-vide">Ne reçoit rien de ce kit.</p>
+            {% endif %}
+
+            {% if profil.fixes is not empty or profil.imposes is not empty %}
+                <p class="dot-apercu-titre">Reçoit d'office</p>
+                <ul class="dot-apercu-liste">
+                    {% for ligne in profil.fixes %}
+                        <li>
+                            {{ ligne.stockItem.nom }}{% if ligne.quantite > 1 %} ×{{ ligne.quantite }}{% endif %}
+                            {%- if ligne.personnalisationRequise %} <span class="dot-apercu-floc">texte demandé</span>{% endif %}
+                        </li>
+                    {% endfor %}
+                    {% for impose in profil.imposes %}
+                        <li>
+                            {{ impose.ligne.stockItem.nom }}{% if impose.ligne.quantite > 1 %} ×{{ impose.ligne.quantite }}{% endif %}
+                            <span class="dot-apercu-source">au titre de « {{ impose.groupe }} »</span>
+                            {%- if impose.ligne.personnalisationRequise %} <span class="dot-apercu-floc">texte demandé</span>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% for question in profil.questions %}
+                <p class="dot-apercu-titre">On lui demande : « {{ question.groupe }} »</p>
+                <ul class="dot-apercu-liste">
+                    {% for option in question.options %}
+                        <li>
+                            {{ option.stockItem.nom }}
+                            {%- if option.personnalisationRequise %} <span class="dot-apercu-floc">texte demandé</span>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+
+            {% for alerte in profil.alertes %}
+                <p class="dot-apercu-alerte">{{ alerte }}</p>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>

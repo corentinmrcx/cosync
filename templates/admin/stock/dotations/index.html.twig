@@ -14,7 +14,7 @@
     <div class="dot-header">
         <div>
             <h1 class="dot-title">Dotations</h1>
-            <p class="dot-subtitle">1. Composez un kit. 2. Dites quelle équipe le reçoit. Le suivi se remplit tout seul.</p>
+            <p class="dot-subtitle">Créez un kit, puis ouvrez-le : son contenu et ses destinataires se règlent au même endroit. Le suivi se remplit tout seul.</p>
         </div>
         <a href="{{ path('admin_stock_dotations_suivi') }}" class="dot-btn-primary">Suivi des dotations →</a>
     </div>
@@ -36,7 +36,15 @@
                         <div class="dot-list-main">
                             <span class="dot-list-name">{{ modele.nom }}</span>
                             {% if not modele.actif %}<span class="dot-badge dot-badge-off">Inactif</span>{% endif %}
-                            <span class="dot-list-meta">{{ modele.lignes|length }} article{{ modele.lignes|length > 1 ? 's' : '' }}</span>
+                            <span class="dot-list-meta">
+                                {{ modele.lignes|length }} article{{ modele.lignes|length > 1 ? 's' : '' }}
+                                {%- set cibles = affectations|filter(a => a.modele.id == modele.id) -%}
+                                {% if cibles is empty %}
+                                    · <span class="dot-list-alert">attribué à personne</span>
+                                {% else %}
+                                    · {% for a in cibles %}{{ a.cibleLabel }}{{ not loop.last ? ', ' }}{% endfor %}
+                                {% endif %}
+                            </span>
                         </div>
                         <div class="dot-list-actions">
                             <a href="{{ path('admin_stock_dotations_edit', {id: modele.id}) }}" class="dot-action-edit">Modifier</a>
@@ -55,71 +63,6 @@
             <input type="text" name="nom" class="dot-input" placeholder="Nom du kit (ex : Kit sénior)" required>
             <button type="submit" class="dot-btn-primary">+ Nouveau kit</button>
         </form>
-    </div>
-
-    {# — Affectations — #}
-    <div class="dot-card">
-        <div class="dot-card-header">
-            <h2 class="dot-card-title">Qui reçoit quel kit</h2>
-            <span class="dot-card-count">{{ affectations|length }}</span>
-        </div>
-        <p class="dot-hint">Attribuez un kit à une équipe, une catégorie, une personne, ou par défaut. En cas de chevauchement, le plus précis l'emporte : personne &gt; équipe &gt; catégorie &gt; défaut.</p>
-
-        {% if affectations is empty %}
-            <p class="dot-empty">Aucune attribution. Tant qu'un kit n'est attribué à personne, le suivi reste vide.</p>
-        {% else %}
-            <ul class="dot-list">
-                {% for affectation in affectations %}
-                    <li class="dot-list-item">
-                        <div class="dot-list-main">
-                            <span class="dot-list-name">{{ affectation.cibleLabel }}</span>
-                            <span class="dot-list-meta">→ {{ affectation.modele.nom }}</span>
-                        </div>
-                        <form method="post" action="{{ path('admin_stock_dotations_affectation_delete', {id: affectation.id}) }}" style="display:inline">
-                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_delete_' ~ affectation.id) }}">
-                            <button type="submit" class="dot-action-delete">Retirer</button>
-                        </form>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-
-        {% if modeles is not empty %}
-        <form method="post" action="{{ path('admin_stock_dotations_affectation_new') }}" class="dot-affect-form"
-              x-data="{ cible: 'default' }">
-            <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_new') }}">
-
-            <select name="modele_id" class="dot-input" required>
-                <option value="">— Kit —</option>
-                {% for modele in modeles %}
-                    <option value="{{ modele.id }}">{{ modele.nom }}</option>
-                {% endfor %}
-            </select>
-
-            <select name="cible_type" class="dot-input" x-model="cible">
-                <option value="default">Par défaut (saison)</option>
-                <option value="category">Catégorie FFF</option>
-                <option value="team">Équipe</option>
-                <option value="licencie">Licencié</option>
-                <option value="dirigeant">Dirigeant</option>
-            </select>
-
-            <select name="cible_id" class="dot-input" x-show="cible === 'category'" x-cloak :disabled="cible !== 'category'">
-                {% for c in categories %}<option value="{{ c.id }}">{{ c.label }}</option>{% endfor %}
-            </select>
-            <select name="cible_id" class="dot-input" x-show="cible === 'team'" x-cloak :disabled="cible !== 'team'">
-                {% for t in teams %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
-            </select>
-            <select name="cible_id" class="dot-input" x-show="cible === 'licencie'" x-cloak :disabled="cible !== 'licencie'">
-                {% for l in licencies %}<option value="{{ l.uuid }}">{{ l.nom }} {{ l.prenom }}</option>{% endfor %}
-            </select>
-            <select name="cible_id" class="dot-input" x-show="cible === 'dirigeant'" x-cloak :disabled="cible !== 'dirigeant'">
-                {% for d in dirigeants %}<option value="{{ d.uuid }}">{{ d.nomPrenom }}</option>{% endfor %}
-            </select>
-
-            <button type="submit" class="dot-btn-primary">Affecter</button>
-        </form>
-        {% endif %}
     </div>
 
 </div>

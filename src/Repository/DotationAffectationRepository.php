@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\DotationAffectation;
+use App\Entity\DotationModele;
 use App\Entity\Season;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -30,6 +31,21 @@ class DotationAffectationRepository extends ServiceEntityRepository
             ->setParameter('season', $season)
             // Ordre stable : à priorité égale, DotationResolver retient la dernière affectation
             // créée. Sans ce tri, le gagnant dépendrait du plan d'exécution SQL.
+            ->orderBy('a.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return DotationAffectation[] Qui reçoit ce kit — affiché en tête de son écran d'édition. */
+    public function findByModele(DotationModele $modele): array
+    {
+        return $this->createQueryBuilder('a')
+            ->leftJoin('a.category', 'c')->addSelect('c')
+            ->leftJoin('a.team', 't')->addSelect('t')
+            ->leftJoin('a.licencie', 'l')->addSelect('l')
+            ->leftJoin('a.dirigeant', 'd')->addSelect('d')
+            ->where('a.modele = :modele')
+            ->setParameter('modele', $modele)
             ->orderBy('a.id', 'ASC')
             ->getQuery()
             ->getResult();

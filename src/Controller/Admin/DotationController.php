@@ -7,6 +7,7 @@ use App\Entity\DotationAffectation;
 use App\Entity\DotationBesoin;
 use App\Entity\DotationModele;
 use App\Entity\DotationModeleLigne;
+use App\Enum\DirigeantRole;
 use App\Enum\DotationEligibilite;
 use App\Repository\CategoryRepository;
 use App\Repository\DirigeantRepository;
@@ -16,8 +17,10 @@ use App\Repository\DotationModeleRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockItemRepository;
 use App\Repository\TeamRepository;
+use App\Service\Form\DotationGroupeReglagesFactory;
 use App\Service\SeasonContext;
 use App\Service\Stock\DotationBesoinService;
+use App\Service\Stock\DotationModelePreview;
 use App\Service\Stock\DotationModeleService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -41,6 +44,8 @@ class DotationController extends AbstractController
         private readonly DirigeantRepository $dirigeantRepository,
         private readonly DotationBesoinService $besoinService,
         private readonly DotationModeleService $modeleService,
+        private readonly DotationModelePreview $preview,
+        private readonly DotationGroupeReglagesFactory $reglagesFactory,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -53,14 +58,11 @@ class DotationController extends AbstractController
             return $this->redirectToRoute('admin_seasons_new');
         }
 
+        // L'index ne fait que lister : contenu et destinataires d'un kit se règlent sur sa page.
         return $this->render('admin/stock/dotations/index.html.twig', [
             'season'       => $season,
             'modeles'      => $this->modeleRepository->findBySeason($season),
             'affectations' => $this->affectationRepository->findBySeason($season),
-            'categories'   => $this->categoryRepository->findBy([], ['minYear' => 'ASC']),
-            'teams'        => $this->teamRepository->findBySeason($season),
-            'licencies'    => $this->licencieRepository->findValidatedBySeason($season),
-            'dirigeants'   => $this->dirigeantRepository->findBySeason($season),
         ]);
     }
 
@@ -108,12 +110,97 @@ class DotationController extends AbstractController
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
+        $season = $modele->getSeason();
+        // Composer un kit et dire qui le reçoit sont la même décision : les deux se font ici.
+        $affectations = $this->affectationRepository->findByModele($modele);
+
         return $this->render('admin/stock/dotations/form.html.twig', [
             'modele'                    => $modele,
             'articles'                  => $this->itemRepository->findAllOrdered(),
             'eligibilites'              => DotationEligibilite::cases(),
             'personnalisationMaxDefaut' => DotationModeleService::PERSONNALISATION_MAX_DEFAUT,
+            'affectations'              => $affectations,
+            'apercu'                    => $this->preview->build($modele, $affectations),
+            'categories'                => $this->categoryRepository->findBy([], ['minYear' => 'ASC']),
+            'teams'                     => $this->teamRepository->findBySeason($season),
+            'licencies'                 => $this->licencieRepository->findValidatedBySeason($season),
+            'dirigeants'                => $this->dirigeantRepository->findBySeason($season),
+            'roles'                     => DirigeantRole::cases(),
         ]);
+    }
+
+    #[Route('/{id}/choix/reglages', name: 'choix_reglages', methods: ['POST'])]
+    public function choixReglages(DotationModele $modele, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('dotation_choix_reglages_' . $modele->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        $groupe = trim((string) $request->request->get('nom', ''));
+
+        $modifiees = $this->modeleService->updateReglagesGroupe(
+            $modele,
+            $groupe,
+            $this->reglagesFactory->fromRequest($request),
+        );
+
+        $this->addFlash('success', sprintf('Choix « %s » enregistré (%d option%s).', $groupe, $modifiees, $modifiees > 1 ? 's' : ''));
+
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $groupe]);
+    }
+
+    #[Route('/{id}/choix/options', name: 'choix_option_add', methods: ['POST'])]
+    public function choixOptionAdd(DotationModele $modele, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('dotation_choix_option_add_' . $modele->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        $groupe = trim((string) $request->request->get('nom', ''));
+        $item   = $this->itemRepository->find((int) $request->request->get('stock_item_id'));
+
+        if ($item === null) {
+            $this->addFlash('error', 'Article introuvable.');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        try {
+            $this->modeleService->addOptionToGroupe($modele, $groupe, $item);
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        $this->addFlash('success', sprintf('« %s » ajouté au choix « %s ».', $item->getNom(), $groupe));
+
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $groupe]);
+    }
+
+    #[Route('/{id}/choix/renommer', name: 'choix_rename', methods: ['POST'])]
+    public function choixRename(DotationModele $modele, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('dotation_choix_rename_' . $modele->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        $ancien  = trim((string) $request->request->get('ancien', ''));
+        $nouveau = trim((string) $request->request->get('nouveau', ''));
+
+        try {
+            $migres = $this->modeleService->renameGroupe($modele, $ancien, $nouveau);
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        }
+
+        $this->addFlash('success', $migres > 0
+            ? sprintf('Choix renommé en « %s ». %d réponse%s déjà saisie%s ont suivi.', $nouveau, $migres, $migres > 1 ? 's' : '', $migres > 1 ? 's' : '')
+            : sprintf('Choix renommé en « %s ».', $nouveau));
+
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $nouveau]);
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
@@ -176,21 +263,21 @@ class DotationController extends AbstractController
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
-        $quantite      = max(1, (int) $request->request->get('quantite', 1));
-        $eligibilites  = (array) $request->request->all('eligibilite');
-        $ajoutes = 0;
+        $quantite = max(1, (int) $request->request->get('quantite', 1));
+        $ajoutes  = 0;
         foreach ($itemIds as $itemId) {
             $item = $this->itemRepository->find($itemId);
             if ($item === null) {
                 continue;
             }
+            // Toutes les options naissent ouvertes à tout le monde : l'éligibilité et le texte à
+            // personnaliser se règlent ensuite dans le panneau du choix, où l'aperçu montre
+            // immédiatement la conséquence.
             $ligne = (new DotationModeleLigne())
                 ->setStockItem($item)
                 ->setQuantite($quantite)
                 ->setGroupeChoix($nom)
-                ->setEligibilite(
-                    DotationEligibilite::tryFrom((string) ($eligibilites[$itemId] ?? '')) ?? DotationEligibilite::TOUS,
-                );
+                ->setEligibilite(DotationEligibilite::TOUS);
             $modele->addLigne($ligne);
             $this->em->persist($ligne);
             ++$ajoutes;
@@ -202,9 +289,13 @@ class DotationController extends AbstractController
         }
 
         $this->em->flush();
-        $this->addFlash('success', sprintf('Choix « %s » ajouté (%d options).', $nom, $ajoutes));
+        $this->addFlash('success', sprintf(
+            'Choix « %s » ajouté (%d options). Réglez maintenant qui a droit à quoi, et le texte à personnaliser.',
+            $nom,
+            $ajoutes,
+        ));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $nom]);
     }
 
     #[Route('/{id}/choix/supprimer', name: 'choix_delete', methods: ['POST'])]
@@ -258,9 +349,14 @@ class DotationController extends AbstractController
             $this->addFlash('error', 'Token CSRF invalide.');
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
         }
-        $this->em->remove($ligne);
-        $this->em->flush();
-        $this->addFlash('success', 'Ligne retirée.');
+        try {
+            $this->modeleService->removeLigne($ligne);
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
+        }
+
+        $this->addFlash('success', 'Article retiré.');
 
         return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
     }
@@ -300,6 +396,9 @@ class DotationController extends AbstractController
             case 'dirigeant':
                 $affectation->setDirigeant($cibleId ? $this->dirigeantRepository->findByUuid(Uuid::fromString($cibleId)) : null);
                 break;
+            case 'role':
+                $affectation->setRole(DirigeantRole::tryFrom((string) $cibleId));
+                break;
             case 'default':
             default:
                 // aucune cible → affectation par défaut
@@ -313,23 +412,26 @@ class DotationController extends AbstractController
 
         $this->em->persist($affectation);
         $this->em->flush();
-        $this->addFlash('success', sprintf('Modèle « %s » affecté à : %s.', $modele->getNom(), $affectation->cibleLabel()));
+        $this->addFlash('success', sprintf('Ce kit est maintenant attribué à : %s.', $affectation->cibleLabel()));
 
-        return $this->redirectToRoute('admin_stock_dotations_index');
+        // Une affectation appartient toujours à un kit : on revient sur sa page, là où l'aperçu
+        // se met à jour en conséquence.
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
     }
 
     #[Route('/affectations/{id}/supprimer', name: 'affectation_delete', methods: ['POST'])]
     public function affectationDelete(DotationAffectation $affectation, Request $request): Response
     {
+        $modeleId = $affectation->getModele()->getId();
         if (!$this->isCsrfTokenValid('dotation_affectation_delete_' . $affectation->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_dotations_index');
+            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
         }
         $this->em->remove($affectation);
         $this->em->flush();
-        $this->addFlash('success', 'Affectation supprimée.');
+        $this->addFlash('success', 'Attribution retirée.');
 
-        return $this->redirectToRoute('admin_stock_dotations_index');
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
     }
 
     #[Route('/suivi', name: 'suivi', methods: ['GET'])]

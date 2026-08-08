@@ -175,6 +175,28 @@ final class DotationResolver
     }
 
     /**
+     * Textes dus alors qu'aucune question de choix n'est posée : groupe auto-résolu (une seule
+     * option éligible) ou article fixe personnalisé. C'est ce que le formulaire public doit
+     * demander « à part ».
+     *
+     * Impossible de réutiliser `getPersonnalisationRequests($person, [])` tel quel : sans choix,
+     * `retainedLines()` retient par repli la première option de CHAQUE groupe, y compris ceux
+     * qui sont déjà posés en question — le formulaire affichait alors deux fois le même champ,
+     * sous la même clé.
+     *
+     * @return array<int, array{cle: string, ligne: DotationModeleLigne}>
+     */
+    public function getAutoPersonnalisationRequests(Licencie|Dirigeant $person): array
+    {
+        $questions = array_column($this->getChoiceGroups($person), 'groupe');
+
+        return array_values(array_filter(
+            $this->getPersonnalisationRequests($person, []),
+            static fn (array $demande): bool => !in_array($demande['cle'], $questions, true),
+        ));
+    }
+
+    /**
      * Lignes du kit effectivement dues à cette personne : articles fixes + une option par
      * groupe de choix. L'éligibilité s'applique aux deux — une ligne fixe peut être réservée
      * aux nouveaux licenciés. Un groupe sans aucune option éligible n'est pas dû du tout.
@@ -250,6 +272,12 @@ final class DotationResolver
         if ($affectation->getCategory() !== null) {
             return $person instanceof Licencie
                 && $affectation->getCategory()->getId() === $person->getCategory()->getId();
+        }
+
+        // Cible rôle dirigeant : le pendant de la catégorie côté encadrement — un responsable,
+        // un coach et un dirigeant standard n'ont pas la même dotation.
+        if ($affectation->getRole() !== null) {
+            return $person instanceof Dirigeant && $affectation->getRole() === $person->getRole();
         }
 
         // Affectation par défaut (sans cible)
