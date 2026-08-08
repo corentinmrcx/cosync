@@ -5,6 +5,7 @@ namespace App\Tests\Service\Stock;
 use App\Entity\CleMouvement;
 use App\Entity\Dirigeant;
 use App\Entity\StockCategory;
+use App\Tests\Support\DocumentFixtures;
 use App\Enum\CleMouvementType;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementType;
@@ -45,6 +46,14 @@ final class PurgeServiceTest extends StockIntegrationTestCase
         $dirigeant = (new Dirigeant())->setNom('DUPONT')->setPrenom('Thomas')->setSeason($season);
         $this->em->persist($dirigeant);
 
+        // Documents signables et signatures : ajoutés après l'écriture initiale de la purge,
+        // ils référencent season, licencie et dirigeant — donc bloquent la purge s'ils sont oubliés.
+        $documents = new DocumentFixtures($this->em);
+        $docLicencie  = $documents->documentLicencie($season);
+        $docDirigeant = $documents->documentDirigeant($season, dirigeants: [$dirigeant]);
+        $documents->signerParLicencie($docLicencie, $licencie);
+        $documents->signerParDirigeant($docDirigeant, $dirigeant);
+
         $this->em->persist(
             (new CleMouvement())
                 ->setDirigeant($dirigeant)
@@ -64,13 +73,16 @@ final class PurgeServiceTest extends StockIntegrationTestCase
         self::assertGreaterThan(0, $this->rowCount('dotation_besoin'), 'Le besoin doit exister avant purge.');
         self::assertGreaterThan(0, $this->rowCount('commande_ligne'), 'La ligne de commande doit exister avant purge.');
         self::assertGreaterThan(0, $this->rowCount('cle_mouvement'), 'Le mouvement de clé doit exister avant purge.');
+        self::assertGreaterThan(0, $this->rowCount('document_signature'), 'Les signatures doivent exister avant purge.');
+        self::assertGreaterThan(0, $this->rowCount('document_signable_dirigeant'), 'La désignation nominative doit exister avant purge.');
 
         // — Purge —
         $this->service(PurgeService::class)->purgeAll();
 
         // Toutes les tables de données sont vides.
         $videes = [
-            'transaction', 'cle_mouvement', 'commande_ligne', 'dotation_modele_ligne', 'dotation_affectation',
+            'transaction', 'document_signature', 'document_signable_dirigeant', 'document_signable',
+            'cle_mouvement', 'commande_ligne', 'dotation_modele_ligne', 'dotation_affectation',
             'dotation_besoin', 'stock_movement', 'commande', 'dotation_modele', 'dossier_club',
             'licencie', 'dirigeant', 'stock_item', 'fournisseur', 'stock_category', 'team', 'season',
         ];

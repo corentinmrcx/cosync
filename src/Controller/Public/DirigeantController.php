@@ -19,7 +19,7 @@ use Symfony\Component\Uid\Uuid;
 #[Route('/dirigeant', name: 'public_dirigeant_')]
 class DirigeantController extends AbstractController
 {
-    /** Une signature manuscrite dépasse rarement 300 Ko ; au-delà, c'est une soumission suspecte. */
+    /** Un PNG de signature dépasse rarement 2 Mo une fois encodé en base64 ; au-delà, soumission suspecte. */
     private const SIGNATURE_MAX_LENGTH = 2_800_000;
 
     public function __construct(

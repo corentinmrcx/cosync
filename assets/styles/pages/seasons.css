@@ -48,6 +48,20 @@
     margin: 0;
 }
 
+.season-form-subheader {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text-base);
+    margin: 0;
+}
+
+.season-form-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: -0.75rem 0 0;
+    line-height: 1.5;
+}
+
 .season-form-years {
     display: flex;
     align-items: flex-end;

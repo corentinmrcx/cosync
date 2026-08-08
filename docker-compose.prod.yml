@@ -1,3 +1,10 @@
+# Logs Docker bornés : sans ça, les fichiers JSON grossissent sans limite sur le VPS.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   php:
     build:
@@ -7,26 +14,35 @@ services:
     container_name: cosync_php
     restart: unless-stopped
     env_file: .env.prod
+    logging: *default-logging
     volumes:
       - public_assets:/var/www/html/public
       - cosync_var_locks:/var/www/html/var/locks
       - cosync_pdfs:/var/www/html/var/pdfs
+      - cosync_backups:/var/www/html/var/backups
+      - cosync_logs:/var/www/html/var/log
     depends_on:
       database:
         condition: service_healthy
     networks:
       - cosync-internal
 
-  # Reprise des uploads Drive en attente (PDF signés restés en local suite à une
-  # panne de l'API Google). Partage le volume cosync_pdfs avec le conteneur php.
+  # Tâches planifiées : reprise des uploads Drive en attente, réconciliation des
+  # paiements HelloAsso, sauvegarde nightly. Partage les volumes du conteneur php
+  # (var/pdfs pour les PDF en attente, var/locks pour le mode beta, var/backups
+  # pour que make prod-backup-list voie les dumps).
   cron:
     image: cosync-php:prod
     container_name: cosync_cron
     restart: unless-stopped
     env_file: .env.prod
     entrypoint: ["/bin/sh", "/var/www/html/docker/php/cron-entrypoint.sh"]
+    logging: *default-logging
     volumes:
       - cosync_pdfs:/var/www/html/var/pdfs
+      - cosync_var_locks:/var/www/html/var/locks
+      - cosync_backups:/var/www/html/var/backups
+      - cosync_logs:/var/www/html/var/log
     depends_on:
       php:
         condition: service_started
@@ -39,10 +55,19 @@ services:
     image: nginx:1.25-alpine
     container_name: cosync_nginx
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ./docker/nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
       - ./docker/nginx/maintenance.html:/usr/share/nginx/html/__maintenance.html:ro
       - public_assets:/var/www/html/public:ro
+    # Traverse nginx → php-fpm → Symfony : un 200 sur /login prouve que toute la
+    # chaîne applicative répond, pas seulement que le process nginx est vivant.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/login || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     depends_on:
       - php
     networks:
@@ -54,10 +79,15 @@ services:
     container_name: cosync_db
     restart: unless-stopped
     env_file: .env.prod
+    logging: *default-logging
     volumes:
       - db_data:/var/lib/postgresql/data
+    # CMD-SHELL : les variables sont résolues DANS le conteneur, depuis .env.prod.
+    # Avec ${POSTGRES_DB}, Compose les aurait interpolées depuis le .env committé —
+    # un utilisateur différent en prod faisait échouer le healthcheck en boucle,
+    # et php (qui attend service_healthy) ne démarrait jamais.
     healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -70,6 +100,8 @@ volumes:
   public_assets:
   cosync_var_locks:
   cosync_pdfs:
+  cosync_backups:
+  cosync_logs:
 
 networks:
   cosync-internal:

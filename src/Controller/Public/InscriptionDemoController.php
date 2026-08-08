@@ -8,6 +8,7 @@ use App\Entity\Season;
 use App\Enum\DocumentCible;
 use App\Repository\DocumentSignableRepository;
 use App\Repository\SeasonRepository;
+use App\Service\CotisationResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -21,7 +22,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class InscriptionDemoController extends AbstractController
 {
     #[Route('/inscription-demo', name: 'public_inscription_demo_show', methods: ['GET'])]
-    public function show(SeasonRepository $seasonRepo, DocumentSignableRepository $documentRepo): Response
+    public function show(SeasonRepository $seasonRepo, DocumentSignableRepository $documentRepo, CotisationResolver $cotisationResolver): Response
     {
         // Saison réelle (lecture seule) pour afficher les vrais documents et le bon tarif
         $season = $seasonRepo->findMostRecent();
@@ -53,10 +54,11 @@ class InscriptionDemoController extends AbstractController
         $montant = $season->getCotisationDefaut();
 
         return $this->render('public/inscription/form.html.twig', [
-            'licencie'  => $licencie,
-            'montant'   => $montant,
-            'documents' => $documents,
-            'demo'      => true,
+            'licencie'        => $licencie,
+            'montant'         => $montant,
+            'libelleVirement' => $cotisationResolver->libelleVirement($licencie),
+            'documents'       => $documents,
+            'demo'            => true,
         ]);
     }
 

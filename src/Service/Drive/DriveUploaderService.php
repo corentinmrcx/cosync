@@ -2,7 +2,6 @@
 
 namespace App\Service\Drive;
 
-use App\Entity\Licencie;
 use Google\Client;
 use Google\Service\Drive;
 use Google\Service\Drive\DriveFile;
@@ -16,21 +15,6 @@ final class DriveUploaderService
         #[Autowire('%env(GOOGLE_DRIVE_FOLDER_ID)%')] private readonly string $rootFolderId,
         private readonly LoggerInterface $logger,
     ) {}
-
-    /**
-     * Upload le PDF signé sur Drive dans Saison/{label}/Règlements intérieurs signés/.
-     * Retourne l'ID Drive du fichier créé, ou null en cas d'échec.
-     */
-    public function upload(string $localPdfPath, Licencie $licencie): ?string
-    {
-        return $this->uploadToSubFolder(
-            $localPdfPath,
-            $licencie->getSeason()->getLabel(),
-            'Règlements intérieurs signés',
-            $this->buildFilename($licencie),
-            (string) $licencie->getUuid(),
-        );
-    }
 
     /**
      * Upload générique vers n'importe quel sous-dossier de la saison.
@@ -117,6 +101,37 @@ final class DriveUploaderService
         }
     }
 
+    /**
+     * Upload vers un chemin imbriqué directement sous le dossier racine, hors arborescence
+     * de saison. Utilisé pour les sauvegardes de base (Sauvegardes/{YYYY-MM}/).
+     *
+     * @param string[] $segments
+     */
+    public function uploadToRoot(string $localPath, array $segments, string $filename, string $mimeType = 'application/pdf', string $logRef = ''): ?string
+    {
+        if ($this->credentialsPath === '' || $this->rootFolderId === '') {
+            $this->logger->warning('Google Drive non configuré (variables d\'env manquantes). Fichier conservé en local.');
+            return null;
+        }
+
+        try {
+            $service  = $this->buildDriveService();
+            $parentId = $this->rootFolderId;
+
+            foreach ($segments as $segment) {
+                $parentId = $this->findOrCreateFolder($service, $segment, $parentId);
+            }
+
+            return $this->uploadFile($service, $localPath, $parentId, $filename, $mimeType);
+        } catch (\Throwable $e) {
+            $this->logger->error('Échec upload Drive ({ref}) : {message}', [
+                'ref'     => $logRef ?: $filename,
+                'message' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
     private function buildDriveService(): Drive
     {
         if (!file_exists($this->credentialsPath)) {
@@ -181,7 +196,7 @@ final class DriveUploaderService
         return $created->getId();
     }
 
-    private function uploadFile(Drive $service, string $localPath, string $folderId, string $filename): string
+    private function uploadFile(Drive $service, string $localPath, string $folderId, string $filename, string $mimeType = 'application/pdf'): string
     {
         $content = file_get_contents($localPath);
         if ($content === false) {
@@ -191,7 +206,7 @@ final class DriveUploaderService
         $meta    = new DriveFile(['name' => $filename, 'parents' => [$folderId]]);
         $created = $service->files->create($meta, [
             'data'              => $content,
-            'mimeType'          => 'application/pdf',
+            'mimeType'          => $mimeType,
             'uploadType'        => 'multipart',
             'fields'            => 'id',
             'supportsAllDrives' => true,
@@ -200,20 +215,4 @@ final class DriveUploaderService
         return $created->getId();
     }
 
-    private function buildFilename(Licencie $licencie): string
-    {
-        $nom      = $this->sanitize($licencie->getNom());
-        $prenom   = $this->sanitize($licencie->getPrenom());
-        $categorie = $this->sanitize($licencie->getCategory()->getCode());
-
-        return sprintf('RI_%s_%s_%s.pdf', $nom, $prenom, $categorie);
-    }
-
-    private function sanitize(string $value): string
-    {
-        $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) ?: $value;
-        $value = (string) preg_replace('/[^A-Za-z0-9]+/', '_', $value);
-
-        return trim($value, '_');
-    }
 }

@@ -20,4 +20,19 @@ final class CotisationResolver
 
         return $licencie->getSeason()->getCotisationDefaut();
     }
+
+    /**
+     * Libellé à porter sur le virement. Centralisé ici parce qu'il est affiché à trois
+     * endroits (formulaire, confirmation, mail) : une divergence rendrait les virements
+     * impossibles à rapprocher des licenciés.
+     */
+    public function libelleVirement(Licencie $licencie): string
+    {
+        return sprintf(
+            'COTISATION %s %s %s',
+            $licencie->getNom(),
+            $licencie->getPrenom(),
+            $licencie->getSeason()->getLabel(),
+        );
+    }
 }

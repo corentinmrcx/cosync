@@ -1,0 +1,25 @@
+{#
+    Coordonnées bancaires du club, pour un règlement par virement.
+
+    Paramètres :
+      season  (Season) — porte iban / bic / titulaireCompte
+      libelle (string) — libellé exact à porter sur le virement (CotisationResolver::libelleVirement)
+
+    Ne rend rien si la saison n'a pas d'IBAN : le bloc appelant doit de toute façon
+    masquer l'option « virement » dans ce cas.
+
+    La version mail vit dans templates/email/inscription_confirmation.html.twig : les clients
+    mail exigent des styles inline, donc la présentation y est dupliquée — mais jamais les
+    valeurs, qui viennent toutes de la saison.
+#}
+{% if season.accepteVirement %}
+    <p><strong>Coordonnées bancaires du club</strong></p>
+    <p>IBAN : <strong>{{ season.iban }}</strong></p>
+    {% if season.bic %}
+        <p>BIC : <strong>{{ season.bic }}</strong></p>
+    {% endif %}
+    {% if season.titulaireCompte %}
+        <p>Titulaire : <strong>{{ season.titulaireCompte }}</strong></p>
+    {% endif %}
+    <p>Libellé : <strong>{{ libelle }}</strong></p>
+{% endif %}

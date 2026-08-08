@@ -32,6 +32,22 @@ class Season
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $attestationCleText = null;
 
+    /*
+     * Coordonnées bancaires du club, affichées au licencié qui règle par virement
+     * (formulaire, page de confirmation, mail de confirmation). Portées par la saison
+     * plutôt que codées en dur : le bureau change de banque sans redéploiement, et il
+     * n'existe qu'une seule source. Nullables — une saison sans IBAN masque simplement
+     * l'option « virement ».
+     */
+    #[ORM\Column(length: 34, nullable: true)]
+    private ?string $iban = null;
+
+    #[ORM\Column(length: 11, nullable: true)]
+    private ?string $bic = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $titulaireCompte = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -78,8 +94,58 @@ class Season
         return $this;
     }
 
+    public function getIban(): ?string
+    {
+        return $this->iban;
+    }
+
+    public function setIban(?string $iban): static
+    {
+        $this->iban = $this->normaliser($iban);
+        return $this;
+    }
+
+    public function getBic(): ?string
+    {
+        return $this->bic;
+    }
+
+    public function setBic(?string $bic): static
+    {
+        $this->bic = $this->normaliser($bic);
+        return $this;
+    }
+
+    public function getTitulaireCompte(): ?string
+    {
+        return $this->titulaireCompte;
+    }
+
+    public function setTitulaireCompte(?string $titulaireCompte): static
+    {
+        $this->titulaireCompte = $this->normaliser($titulaireCompte);
+        return $this;
+    }
+
+    /**
+     * Le virement n'est proposé que si le club a de quoi le recevoir : afficher l'option
+     * sans donner d'IBAN enverrait le licencié dans le mur.
+     */
+    public function accepteVirement(): bool
+    {
+        return $this->iban !== null;
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    /** Un champ vidé dans le formulaire arrive en chaîne vide : le stocker fausserait accepteVirement(). */
+    private function normaliser(?string $valeur): ?string
+    {
+        $valeur = trim((string) $valeur);
+
+        return $valeur === '' ? null : $valeur;
     }
 }

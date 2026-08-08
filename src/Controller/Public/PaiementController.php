@@ -151,7 +151,9 @@ class PaiementController extends AbstractController
             return $this->redirectToRoute('public_inscription_confirmation', ['uuid' => $uuid]);
         }
 
-        $licencie->getDossierClub()?->setHelloassoCheckoutIntentId($intent->id);
+        $licencie->getDossierClub()
+            ?->setHelloassoCheckoutIntentId($intent->id)
+            ->setHelloassoCheckoutStartedAt(new \DateTimeImmutable());
         $em->flush();
 
         return $this->redirect($intent->redirectUrl);

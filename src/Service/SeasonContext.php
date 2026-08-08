@@ -27,12 +27,20 @@ class SeasonContext
             return $user->getSelectedSeason();
         }
 
-        $session  = $this->requestStack->getSession();
-        $seasonId = $session->get(self::SESSION_KEY);
-        if ($seasonId) {
-            $season = $this->seasonRepository->find($seasonId);
-            if ($season) {
-                return $season;
+        // Hors requête HTTP (commandes cron, tests), il n'existe aucune session :
+        // getSession() lèverait une SessionNotFoundException. Comme AppExtension expose
+        // la saison courante en variable globale Twig, cela ferait échouer le rendu de
+        // n'importe quel template — donc l'envoi du mail de validation déclenché par
+        // app:helloasso:sync-paiements. On retombe sur la saison la plus récente.
+        $request = $this->requestStack->getCurrentRequest();
+
+        if ($request !== null && $request->hasSession()) {
+            $seasonId = $request->getSession()->get(self::SESSION_KEY);
+            if ($seasonId) {
+                $season = $this->seasonRepository->find($seasonId);
+                if ($season) {
+                    return $season;
+                }
             }
         }
 

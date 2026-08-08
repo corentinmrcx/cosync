@@ -85,6 +85,14 @@ class DossierClub
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $helloassoCheckoutIntentId = null;
 
+    /**
+     * Date de création de cette intention. Sert à borner la réconciliation
+     * (app:helloasso:sync-paiements) : une intention abandonnée depuis longtemps
+     * n'est plus interrogée indéfiniment auprès de l'API HelloAsso.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $helloassoCheckoutStartedAt = null;
+
     public function getId(): int
     {
         return $this->id;
@@ -261,6 +269,17 @@ class DossierClub
     public function setHelloassoCheckoutIntentId(?string $helloassoCheckoutIntentId): static
     {
         $this->helloassoCheckoutIntentId = $helloassoCheckoutIntentId;
+        return $this;
+    }
+
+    public function getHelloassoCheckoutStartedAt(): ?\DateTimeImmutable
+    {
+        return $this->helloassoCheckoutStartedAt;
+    }
+
+    public function setHelloassoCheckoutStartedAt(?\DateTimeImmutable $helloassoCheckoutStartedAt): static
+    {
+        $this->helloassoCheckoutStartedAt = $helloassoCheckoutStartedAt;
         return $this;
     }
 

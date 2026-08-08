@@ -47,6 +47,22 @@
                 {{ form_errors(form.cotisationDefaut) }}
             </div>
 
+            <hr class="season-form-divider">
+            <h2 class="season-form-subheader">Coordonnées bancaires</h2>
+            <p class="season-form-hint">
+                Affichées au licencié qui règle par virement, dans le formulaire, sur la page
+                de confirmation et dans le mail de confirmation.
+            </p>
+
+            {% for champ in [form.iban, form.bic, form.titulaireCompte] %}
+                <div class="season-form-field">
+                    {{ form_label(champ) }}
+                    {{ form_widget(champ) }}
+                    {{ form_help(champ) }}
+                    {{ form_errors(champ) }}
+                </div>
+            {% endfor %}
+
             <button type="submit" class="season-form-submit">Enregistrer</button>
             <hr class="season-form-divider">
             <a href="{{ path('admin_documents_list') }}" class="season-form-reglement-btn">

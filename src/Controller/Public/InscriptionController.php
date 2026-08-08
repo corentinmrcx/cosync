@@ -21,12 +21,13 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Uid\Uuid;
 
 #[Route('/inscription', name: 'public_inscription_')]
 class InscriptionController extends AbstractController
 {
-    /** Une signature manuscrite dépasse rarement 300 Ko ; au-delà, c'est une soumission suspecte. */
+    /** Un PNG de signature dépasse rarement 2 Mo une fois encodé en base64 ; au-delà, soumission suspecte. */
     private const SIGNATURE_MAX_LENGTH = 2_800_000;
 
     public function __construct(
@@ -34,7 +35,7 @@ class InscriptionController extends AbstractController
         private readonly DocumentRequirementResolver $documentResolver,
     ) {}
 
-    #[Route('/{uuid}', name: 'show', methods: ['GET'])]
+    #[Route('/{uuid}', name: 'show', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
     public function show(string $uuid, LicencieRepository $licencieRepo, DotationResolver $resolver, CotisationResolver $cotisationResolver): Response
     {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
@@ -57,6 +58,7 @@ class InscriptionController extends AbstractController
         return $this->render('public/inscription/form.html.twig', [
             'licencie'        => $licencie,
             'montant'         => $cotisationResolver->resolve($licencie),
+            'libelleVirement' => $cotisationResolver->libelleVirement($licencie),
             'dotationGroupes' => $resolver->getChoiceGroups($licencie),
             // Personnalisations dues sans qu'aucune question de choix ne soit posée :
             // groupe à option unique (nouveau licencié) ou article fixe personnalisé.
@@ -66,7 +68,7 @@ class InscriptionController extends AbstractController
         ]);
     }
 
-    #[Route('/{uuid}', name: 'submit', methods: ['POST'])]
+    #[Route('/{uuid}', name: 'submit', methods: ['POST'], requirements: ['uuid' => Requirement::UUID])]
     public function submit(string $uuid, Request $request, LicencieRepository $licencieRepo, InscriptionFormService $formService, DotationChoixRequestFactory $dotationFactory): Response
     {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
@@ -104,7 +106,7 @@ class InscriptionController extends AbstractController
         return $this->redirectToRoute('public_inscription_confirmation', ['uuid' => $uuid]);
     }
 
-    #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'])]
+    #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
     public function confirmation(
         string $uuid,
         LicencieRepository $licencieRepo,
@@ -120,9 +122,10 @@ class InscriptionController extends AbstractController
         $montant = $cotisationResolver->resolve($licencie);
 
         return $this->render('public/inscription/confirmation.html.twig', [
-            'licencie' => $licencie,
-            'dossier'  => $licencie->getDossierClub(),
-            'montant'  => $montant,
+            'licencie'        => $licencie,
+            'dossier'         => $licencie->getDossierClub(),
+            'montant'         => $montant,
+            'libelleVirement' => $cotisationResolver->libelleVirement($licencie),
             // Seule une transaction réellement enregistrée autorise à annoncer un paiement reçu.
             'paiementRecu' => $transactionRepo->sumByLicencieAndSeason($licencie, $licencie->getSeason()) >= (float) $montant,
         ]);
@@ -249,7 +252,7 @@ class InscriptionController extends AbstractController
         return $retenues;
     }
 
-    #[Route('/{uuid}/completer', name: 'completer', methods: ['GET'])]
+    #[Route('/{uuid}/completer', name: 'completer', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
     public function completer(string $uuid, LicencieRepository $licencieRepo, AutorisationCompletionService $completionService): Response
     {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
@@ -270,7 +273,7 @@ class InscriptionController extends AbstractController
         ]);
     }
 
-    #[Route('/{uuid}/completer', name: 'completer_submit', methods: ['POST'])]
+    #[Route('/{uuid}/completer', name: 'completer_submit', methods: ['POST'], requirements: ['uuid' => Requirement::UUID])]
     public function completerSubmit(string $uuid, Request $request, LicencieRepository $licencieRepo, AutorisationCompletionService $completionService): Response
     {
         $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));

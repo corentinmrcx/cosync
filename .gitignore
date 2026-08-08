@@ -3,6 +3,8 @@
 /.env.local
 /.env.local.php
 /.env.*.local
+# Secrets de production — ne doivent jamais être versionnés
+/.env.prod
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/

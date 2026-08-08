@@ -456,14 +456,17 @@
                         <span class="inscription-multi-toggle-text">Je souhaite régler avec plusieurs moyens de paiement</span>
                     </label>
 
-                    {% set modes = [
-                        { value: 'virement',   label: 'Virement bancaire' },
+                    {# Le virement n'est proposé que si le club a renseigné un IBAN :
+                       l'annoncer sans pouvoir donner les coordonnées enverrait le licencié dans le mur. #}
+                    {% set modes = (licencie.season.accepteVirement
+                        ? [{ value: 'virement', label: 'Virement bancaire' }]
+                        : []) | merge([
                         { value: 'cheque',     label: 'Chèque' },
                         { value: 'especes',    label: 'Espèces' },
                         { value: 'pass_sport', label: "Pass'Sport" },
                         { value: 'caf',        label: 'Chèque CAF' },
                         { value: 'ancv',       label: 'ANCV / Chèques Vacances' },
-                    ] %}
+                    ]) %}
 
                     {# Paiement unique → radios #}
                     <div x-show="!multiPayment" class="inscription-payment-options">
@@ -489,14 +492,16 @@
 
                     {# Blocs info — s'affichent selon le mode sélectionné (unique ou multiple) #}
                     <div class="inscription-payment-infos">
-                        <div x-show="isPaymentModeActive('virement')" class="inscription-payment-info">
-                            <p><strong>Coordonnées bancaires du club</strong></p>
-                            <p>IBAN : <strong>FR76 1020 6000 2020 1001 5900 056</strong></p>
-                            <p>BIC : <strong>AGRIFRPP802</strong></p>
-                            <p>Libellé : <strong>COTISATION {{ licencie.nom }} {{ licencie.prenom }} {{ licencie.season.label }}</strong></p>
-                        </div>
+                        {% if licencie.season.accepteVirement %}
+                            <div x-show="isPaymentModeActive('virement')" class="inscription-payment-info">
+                                {% include 'components/_coordonnees_bancaires.html.twig' with {
+                                    season:  licencie.season,
+                                    libelle: libelleVirement,
+                                } only %}
+                            </div>
+                        {% endif %}
                         <div x-show="isPaymentModeActive('cheque')" class="inscription-payment-info">
-                            Chèque à l'ordre de <strong>Foyer de Soudron</strong>, à remettre à un dirigeant.
+                            Chèque à l'ordre de <strong>{{ licencie.season.titulaireCompte|default('Foyer de Soudron') }}</strong>, à remettre à un dirigeant.
                         </div>
                         <div x-show="isPaymentModeActive('especes')" class="inscription-payment-info">
                             Espèces à remettre à un dirigeant.
