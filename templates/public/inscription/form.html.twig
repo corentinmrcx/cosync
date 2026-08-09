@@ -74,7 +74,7 @@
                 Ce formulaire vous prendra moins de <strong>5 minutes</strong>. Vous renseignerez vos tailles d'équipement, vos autorisations et signerez le règlement intérieur.
             </p>
             {% include 'public/_rgpd_note.html.twig' %}
-            <button type="button" @click="next" class="inscription-btn-start">
+            <button type="button" @click="next" class="btn btn-primary btn-block">
                 Commencer →
             </button>
         </div>
@@ -426,7 +426,7 @@
             <input type="hidden" name="pay_online" value="0" x-ref="payOnlineFlag">
 
             <div class="inscription-cb-block" x-show="!multiPayment">
-                <button type="button" class="inscription-btn-cb" :disabled="submitting" @click="payByCard($el)">
+                <button type="button" class="btn btn-primary btn-block" :disabled="submitting" @click="payByCard($el)">
                     Payer — <span x-text="montant + ' €'"></span>
                 </button>
                 <p class="inscription-cb-note">
@@ -508,19 +508,19 @@
         {# ── Navigation ── #}
         <div class="inscription-nav">
             <template x-if="step > 1">
-                <button type="button" @click="prev" class="inscription-btn-prev">
+                <button type="button" @click="prev" class="btn btn-ghost">
                     ← Précédent
                 </button>
             </template>
 
             <template x-if="step > 1 && displayStep < totalSteps">
-                <button type="button" @click="next" :disabled="!canGoNext" class="inscription-btn-next">
+                <button type="button" @click="next" :disabled="!canGoNext" class="btn btn-primary btn-block">
                     Suivant →
                 </button>
             </template>
 
             <template x-if="displayStep === totalSteps">
-                <button type="submit" :disabled="!canGoNext || submitting" class="inscription-btn-submit">
+                <button type="submit" :disabled="!canGoNext || submitting" class="btn btn-primary btn-block">
                     Valider mon inscription ✓
                 </button>
             </template>

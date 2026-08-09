@@ -26,25 +26,6 @@
     margin: 0;
 }
 
-.users-new-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    text-decoration: none;
-    border-radius: var(--radius-md);
-    transition: background 0.15s;
-    white-space: nowrap;
-}
-
-.users-new-btn:hover {
-    background: var(--color-primary-dark);
-}
-
 .users-table-wrap {
     background: var(--color-bg-page);
     border: 1px solid var(--color-border);
@@ -96,40 +77,11 @@
     color: var(--color-text-base);
 }
 
-
 .users-actions-cell {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 1rem;
-}
-
-.users-action-edit {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    text-decoration: none;
-    color: var(--color-info);
-    transition: opacity 0.15s;
-}
-
-.users-action-edit:hover {
-    opacity: 0.75;
-}
-
-.users-action-delete {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    font-family: var(--font-sans);
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-danger);
-    padding: 0;
-    transition: opacity 0.15s;
-}
-
-.users-action-delete:hover {
-    opacity: 0.75;
 }
 
 /* — Formulaire utilisateur — */
@@ -209,27 +161,6 @@
     margin: 0;
     font-size: var(--font-size-xs);
     color: var(--color-danger);
-}
-
-
-.users-form-submit {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.625rem 1.25rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-    align-self: flex-start;
-}
-
-.users-form-submit:hover {
-    background: var(--color-primary-dark);
 }
 
 .users-badge-diag {

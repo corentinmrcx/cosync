@@ -14,11 +14,11 @@
     <div class="stock-dashboard-header">
         <h1 class="stock-dashboard-title">Gestion du stock</h1>
         <div class="stock-dashboard-actions">
-            <a href="{{ showArchived ? path('admin_stock_gestion') : path('admin_stock_gestion', {archivés: 1}) }}" class="stock-dashboard-btn-secondary{% if showArchived %} stock-btn-archived-active{% endif %}">
+            <a href="{{ showArchived ? path('admin_stock_gestion') : path('admin_stock_gestion', {archivés: 1}) }}" class="btn btn-secondary{% if showArchived %} stock-btn-archived-active{% endif %}">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
                 {{ showArchived ? 'Masquer les archivés' : 'Voir les archivés' }}
             </a>
-            <a href="{{ path('admin_stock_items_new') }}" class="stock-dashboard-btn-primary">
+            <a href="{{ path('admin_stock_items_new') }}" class="btn btn-primary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nouvel article
             </a>
@@ -28,7 +28,7 @@
     {% if summary is empty %}
         <div class="stock-dashboard-empty">
             <p>Aucun article de stock pour cette saison.</p>
-            <a href="{{ path('admin_stock_items_new') }}" class="stock-dashboard-btn-primary">Créer un article</a>
+            <a href="{{ path('admin_stock_items_new') }}" class="btn btn-primary">Créer un article</a>
         </div>
     {% endif %}
 
@@ -89,20 +89,20 @@
                                     {% if row.item.actif %}
                                         <button
                                             type="button"
-                                            class="stock-action-mouvement"
+                                            class="btn btn-primary btn-sm"
                                             @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
                                         >
                                             + / − Mouvement
                                         </button>
-                                        <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="stock-action-edit">Modifier</a>
+                                        <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
                                         <form method="post" action="{{ path('admin_stock_items_delete', {id: row.item.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cet article ?')">
                                             <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_item_' ~ row.item.id) }}">
-                                            <button type="submit" class="stock-action-delete">Supprimer</button>
+                                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                                         </form>
                                     {% else %}
                                         <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">
-                                            <button type="submit" class="stock-action-restore">Désarchiver</button>
+                                            <button type="submit" class="btn btn-secondary btn-sm">Désarchiver</button>
                                         </form>
                                     {% endif %}
                                 </td>
@@ -214,8 +214,8 @@
                 </div>
 
                 <div class="stock-modal-footer">
-                    <button type="button" class="stock-modal-cancel" @click="closeModal()">Annuler</button>
-                    <button type="submit" class="stock-modal-submit" :disabled="!action || quantite < 1">Enregistrer</button>
+                    <button type="button" class="btn btn-ghost" @click="closeModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary" :disabled="!action || quantite < 1">Enregistrer</button>
                 </div>
             </form>
         </div>

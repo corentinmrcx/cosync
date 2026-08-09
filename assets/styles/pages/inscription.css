@@ -197,7 +197,6 @@
     border-color: var(--color-primary);
 }
 
-
 /* — Questions Oui/Non — */
 .inscription-question-block {
     display: flex;
@@ -578,32 +577,6 @@
     margin-bottom: 1.25rem;
 }
 
-.inscription-btn-cb {
-    width: 100%;
-    padding: 1rem;
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--color-success);
-    font-family: var(--font-sans);
-    font-size: var(--font-size-base);
-    font-weight: 700;
-    color: var(--color-text-inverse);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.inscription-btn-cb:hover {
-    background: var(--color-status-validated);
-    filter: brightness(0.92);
-}
-
-.inscription-btn-cb:disabled {
-    background: var(--color-border);
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
-    filter: none;
-}
-
 .inscription-cb-note {
     display: flex;
     align-items: center;
@@ -723,57 +696,6 @@
     display: flex;
     gap: 0.75rem;
     margin-top: 1rem;
-}
-
-.inscription-btn-start,
-.inscription-btn-next,
-.inscription-btn-submit {
-    flex: 1;
-    padding: 0.875rem;
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    color: var(--color-text-inverse);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.inscription-btn-start {
-    width: 100%;
-}
-
-.inscription-btn-start:hover,
-.inscription-btn-next:hover:not(:disabled),
-.inscription-btn-submit:hover:not(:disabled) {
-    background: var(--color-primary-dark);
-}
-
-.inscription-btn-next:disabled,
-.inscription-btn-submit:disabled {
-    background: var(--color-border);
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
-}
-
-.inscription-btn-prev {
-    flex: 1;
-    padding: 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-page);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 600;
-    color: var(--color-text-body);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.inscription-btn-prev:hover {
-    background: var(--color-bg-subtle);
 }
 
 /* — Page de confirmation — */

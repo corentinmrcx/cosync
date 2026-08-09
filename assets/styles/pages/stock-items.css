@@ -96,30 +96,6 @@
     border-top: 1px solid var(--color-border);
 }
 
-.stock-items-cancel {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-decoration: none;
-}
-
-.stock-items-cancel:hover { color: var(--color-text-body); }
-
-.stock-items-submit {
-    padding: 0.625rem 1.25rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-family: var(--font-sans);
-    transition: background 0.15s;
-}
-
-.stock-items-submit:hover { background: var(--color-primary-dark); }
-
 .stock-items-label-row {
     display: flex;
     align-items: center;
@@ -232,26 +208,6 @@
     color: var(--color-text-muted);
     flex: 1;
 }
-
-.dotations-btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    text-decoration: none;
-    font-family: var(--font-sans);
-    transition: background 0.15s;
-}
-
-.dotations-btn-primary:hover:not(:disabled) { background: var(--color-primary-dark); }
-.dotations-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .dotations-btn-lg { padding: 0.625rem 1.5rem; font-size: var(--font-size-base); }
 
@@ -718,22 +674,6 @@
 .stock-categories-input-icon     { max-width: 70px; text-align: center; font-size: var(--font-size-xl); }
 .stock-categories-input-position { max-width: 80px; }
 
-.stock-categories-submit {
-    align-self: flex-start;
-    padding: 0.5rem 1.25rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    cursor: pointer;
-    font-family: var(--font-sans);
-    transition: background 0.15s;
-}
-
-.stock-categories-submit:hover { background: var(--color-primary-dark); }
-
 .stock-categories-empty {
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
@@ -770,26 +710,6 @@
 
 .stock-categories-item-actions { display: flex; gap: 0.5rem; }
 
-.stock-categories-edit-btn {
-    padding: 0.3rem 0.625rem;
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    color: var(--color-info);
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.stock-categories-delete-btn {
-    padding: 0.3rem 0.625rem;
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    color: var(--color-danger);
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
 .stock-categories-edit-form {
     display: flex;
     align-items: center;
@@ -799,25 +719,3 @@
     flex-wrap: wrap;
 }
 
-.stock-categories-submit-sm {
-    padding: 0.35rem 0.875rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    cursor: pointer;
-    font-family: var(--font-sans);
-}
-
-.stock-categories-cancel-sm {
-    padding: 0.35rem 0.625rem;
-    background: none;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
-    cursor: pointer;
-    font-family: var(--font-sans);
-}

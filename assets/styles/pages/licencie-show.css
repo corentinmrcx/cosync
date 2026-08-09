@@ -53,26 +53,6 @@
     color: var(--color-text-disabled);
 }
 
-.licencie-show-send-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.licencie-show-send-btn:hover {
-    background: var(--color-primary-dark);
-}
-
 /* — Grille de cartes — */
 .licencie-show-grid {
     display: grid;
@@ -190,11 +170,7 @@
         display: flex;
     }
 
-    .licencie-show-edit-btn,
-    .licencie-show-send-btn {
-        flex: 1 1 auto;
-        justify-content: center;
-    }
+    
 
     /* Historique : date en pleine largeur, label + auteur en dessous */
     .licencie-show-history-item {
@@ -503,36 +479,6 @@
     padding-top: 0.5rem;
 }
 
-.licencie-modal-cancel {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-text-muted);
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.licencie-modal-cancel:hover {
-    color: var(--color-text-body);
-}
-
-.licencie-modal-submit {
-    padding: 0.625rem 1.25rem;
-    background: var(--color-success);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.licencie-modal-submit:hover {
-    background: var(--color-success-dark);
-}
-
 .licencie-show-dotations-table {
     width: 100%;
     border-collapse: collapse;
@@ -647,10 +593,7 @@
         text-align: center;
     }
 
-    .licencie-modal-submit {
-        width: 100%;
-        text-align: center;
-    }
+    
 }
 
 .licencie-modal-row {

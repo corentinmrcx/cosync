@@ -169,38 +169,6 @@
     gap: 0.75rem;
 }
 
-.season-form-cancel {
-    padding: 0.625rem 1rem;
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-text-body);
-    text-decoration: none;
-    border-radius: var(--radius-md);
-    background: var(--color-bg-muted);
-    transition: background 0.15s;
-}
-
-.season-form-cancel:hover { background: var(--color-border); }
-
-.season-form-submit {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.625rem 1.25rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-    align-self: flex-start;
-    text-decoration: none;
-}
-
-.season-form-submit:hover { background: var(--color-primary-dark); }
-
 .season-form-empty {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
@@ -316,7 +284,6 @@
     white-space: nowrap;
 }
 
-
 .config-teams-btns {
     display: flex;
     gap: 0.125rem;
@@ -334,17 +301,6 @@
     font-family: var(--font-sans);
 }
 
-.config-teams-btn-delete {
-    padding: 0.2rem 0.5rem;
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    color: var(--color-danger);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font-sans);
-}
-
 .config-teams-edit-form {
     display: flex;
     flex-direction: column;
@@ -353,22 +309,10 @@
     background: var(--color-bg-page);
 }
 
-
 .config-teams-edit-actions {
     display: flex;
     gap: 0.375rem;
     align-items: center;
-}
-
-.config-teams-btn-cancel {
-    background: none;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 0.4rem 0.625rem;
-    font-size: var(--font-size-xs);
-    cursor: pointer;
-    font-family: var(--font-sans);
-    color: var(--color-text-muted);
 }
 
 .config-teams-add-toggle {
@@ -432,23 +376,6 @@
     color: var(--color-text-base);
     margin: 0;
 }
-
-.season-list-new-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    text-decoration: none;
-    border-radius: var(--radius-md);
-    flex-shrink: 0;
-    transition: background 0.15s;
-}
-
-.season-list-new-btn:hover { background: var(--color-primary-dark); }
 
 .season-list {
     list-style: none;
@@ -527,21 +454,6 @@
     background: var(--color-bg-muted);
     border-color: var(--color-border-strong);
 }
-
-.season-list-btn-delete {
-    padding: 0.375rem 0.75rem;
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    font-family: var(--font-sans);
-    color: var(--color-danger);
-    background: var(--color-danger-bg);
-    border: 1.5px solid var(--color-danger);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.season-list-btn-delete:hover { background: var(--color-danger-hover); }
 
 .season-list-empty {
     padding: 2rem 1.5rem;

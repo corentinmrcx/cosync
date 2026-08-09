@@ -48,7 +48,7 @@
                 Il vous prendra moins de deux minutes.
             </p>
             {% include 'public/_rgpd_note.html.twig' %}
-            <button type="button" @click="next" class="inscription-btn-start">
+            <button type="button" @click="next" class="btn btn-primary btn-block">
                 Commencer →
             </button>
         </div>
@@ -281,19 +281,19 @@
         {# ── Navigation ── #}
         <div class="inscription-nav">
             <template x-if="step > 1">
-                <button type="button" @click="prev" class="inscription-btn-prev">
+                <button type="button" @click="prev" class="btn btn-ghost">
                     ← Précédent
                 </button>
             </template>
 
             <template x-if="step > 1 && displayStep < totalSteps">
-                <button type="button" @click="next" :disabled="!canGoNext" class="inscription-btn-next">
+                <button type="button" @click="next" :disabled="!canGoNext" class="btn btn-primary btn-block">
                     Suivant →
                 </button>
             </template>
 
             <template x-if="displayStep === totalSteps">
-                <button type="submit" :disabled="!canGoNext || submitting" class="inscription-btn-submit">
+                <button type="submit" :disabled="!canGoNext || submitting" class="btn btn-primary btn-block">
                     Valider ✓
                 </button>
             </template>

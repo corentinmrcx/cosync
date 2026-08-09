@@ -23,7 +23,7 @@
                        value="{{ besoin.personnalisation }}" placeholder="Texte à floquer"
                        x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
                 <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
-                <button type="button" class="dot-taille-cancel" @click="editing = false" title="Annuler">✕</button>
+                <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
             </form>
         {% endif %}
     </div>

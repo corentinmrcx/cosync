@@ -18,7 +18,7 @@
         <div class="inscription-cb-block" style="margin-top: 1.25rem;">
             <form method="post" action="{{ path('public_helloasso_checkout', { uuid: licencie.uuid }) }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('paiement_helloasso') }}">
-                <button type="submit" class="inscription-btn-cb">
+                <button type="submit" class="btn btn-primary btn-block">
                     Réessayer le paiement par carte — {{ montant }} €
                 </button>
             </form>

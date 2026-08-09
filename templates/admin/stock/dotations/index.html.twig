@@ -16,7 +16,7 @@
             <h1 class="dot-title">Dotations</h1>
             <p class="dot-subtitle">Créez un kit, puis ouvrez-le : son contenu et ses destinataires se règlent au même endroit. Le suivi se remplit tout seul.</p>
         </div>
-        <a href="{{ path('admin_stock_dotations_suivi') }}" class="dot-btn-primary">Suivi des dotations →</a>
+        <a href="{{ path('admin_stock_dotations_suivi') }}" class="btn btn-primary">Suivi des dotations →</a>
     </div>
 
     {# — Modèles — #}
@@ -47,10 +47,10 @@
                             </span>
                         </div>
                         <div class="dot-list-actions">
-                            <a href="{{ path('admin_stock_dotations_edit', {id: modele.id}) }}" class="dot-action-edit">Modifier</a>
+                            <a href="{{ path('admin_stock_dotations_edit', {id: modele.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
                             <form method="post" action="{{ path('admin_stock_dotations_delete', {id: modele.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce kit et ses attributions ?')">
                                 <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_delete_' ~ modele.id) }}">
-                                <button type="submit" class="dot-action-delete">Supprimer</button>
+                                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                             </form>
                         </div>
                     </li>
@@ -61,7 +61,7 @@
         <form method="post" action="{{ path('admin_stock_dotations_new') }}" class="dot-inline-form">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_new') }}">
             <input type="text" name="nom" class="dot-input" placeholder="Nom du kit (ex : Kit sénior)" required>
-            <button type="submit" class="dot-btn-primary">+ Nouveau kit</button>
+            <button type="submit" class="btn btn-primary">+ Nouveau kit</button>
         </form>
     </div>
 

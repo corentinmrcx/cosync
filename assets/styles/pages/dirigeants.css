@@ -22,8 +22,6 @@
     transition: background 0.15s;
 }
 
-.dirigeants-add-btn:hover { background: var(--color-primary-dark); }
-
 /* — Vide — */
 .dirigeants-empty {
     text-align: center;
@@ -180,23 +178,6 @@
     background: var(--color-bg-muted);
     color: var(--color-text-muted);
 }
-
-.dirigeant-show-send-link-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.dirigeant-show-send-link-btn:hover { background: var(--color-primary-dark); }
 
 .dirigeant-show-link-no-email {
     margin-top: 0.75rem;

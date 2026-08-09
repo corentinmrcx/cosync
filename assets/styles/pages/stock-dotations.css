@@ -30,59 +30,12 @@
     color: var(--color-text-muted);
 }
 
-.dot-btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-}
-
-.dot-btn-primary:hover { background: var(--color-primary-dark); }
-
 .dot-header-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
 }
-
-.dot-btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-md);
-    background: var(--color-bg-page);
-    color: var(--color-text-body);
-    border: 1px solid var(--color-border-strong);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.dot-btn-secondary:hover { background: var(--color-bg-muted); }
-
-.dot-btn-sm {
-    padding: 0.3rem 0.7rem;
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    border: none;
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.dot-btn-sm:hover { background: var(--color-primary-dark); }
 
 .dot-badge-todo {
     background: var(--color-status-completed-bg);
@@ -238,31 +191,6 @@
     background: var(--color-bg-muted);
     color: var(--color-text-muted);
 }
-
-.dot-action-edit {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: var(--color-primary);
-    text-decoration: none;
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-}
-
-.dot-action-edit:hover { text-decoration: underline; }
-
-.dot-action-delete {
-    background: none;
-    border: none;
-    color: var(--color-danger);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    cursor: pointer;
-    padding: 0;
-}
-
-.dot-action-delete:hover { text-decoration: underline; }
 
 /* — Formulaires inline — */
 .dot-inline-form,
@@ -572,21 +500,6 @@
 .dot-add-row > .dot-select { flex: 1 1 auto; }
 .dot-text-qty { flex: 0 0 5rem; }
 
-.dot-btn-ghost {
-    flex-shrink: 0;
-    padding: 0 0.875rem;
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-page);
-    color: var(--color-text-body);
-    font-family: var(--font-sans);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.dot-btn-ghost:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .dot-btn-ghost-start { align-self: flex-start; }
 
 /* — Aperçu : ce que recevra chaque profil — */
@@ -889,8 +802,6 @@
 
 .dot-taille-ok { color: var(--color-success); }
 .dot-taille-ok:hover { background: var(--color-success-bg); border-color: var(--color-success); }
-.dot-taille-cancel { color: var(--color-text-muted); }
-.dot-taille-cancel:hover { background: var(--color-bg-muted); }
 
 @media (max-width: 640px) {
     .dot-page { padding: 1rem; }
@@ -921,7 +832,7 @@
     .dot-inline,
     .dot-add-row { flex-direction: column; align-items: stretch; }
     .dot-text-qty { flex-basis: auto; }
-    .dot-btn-ghost { width: 100%; justify-content: center; }
+    
     .dot-btn-ghost-start { align-self: stretch; }
 
     /* Aperçu : une colonne par profil, empilées */

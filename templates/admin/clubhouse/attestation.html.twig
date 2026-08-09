@@ -41,8 +41,8 @@
             </div>
 
             <div class="clubhouse-editor-actions">
-                <a href="{{ path('admin_clubhouse_index') }}" class="clubhouse-btn-cancel">Annuler</a>
-                <button type="submit" class="clubhouse-btn-primary">Enregistrer</button>
+                <a href="{{ path('admin_clubhouse_index') }}" class="btn btn-ghost">Annuler</a>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
             </div>
 
         </form>
@@ -56,8 +56,8 @@
                 {{ season.attestationCleText|raw }}
             </div>
             <div class="clubhouse-preview-footer">
-                <a href="{{ path('admin_clubhouse_attestation_apercu') }}" target="_blank" class="clubhouse-btn-secondary">Aperçu PDF</a>
-                <a href="{{ path('admin_clubhouse_attestation_recap') }}" class="clubhouse-btn-secondary">Récapitulatif mairie</a>
+                <a href="{{ path('admin_clubhouse_attestation_apercu') }}" target="_blank" class="btn btn-secondary">Aperçu PDF</a>
+                <a href="{{ path('admin_clubhouse_attestation_recap') }}" class="btn btn-secondary">Récapitulatif mairie</a>
 
                 <form method="post" action="{{ path('admin_clubhouse_attestation_recap_sync') }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('attestation_cle_recap_sync') }}">

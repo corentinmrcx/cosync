@@ -25,7 +25,7 @@
             {% if aCommander is not empty %}
                 <form method="post" action="{{ path('admin_stock_commandes_generer') }}" style="margin-left:auto">
                     <input type="hidden" name="_token" value="{{ csrf_token('commande_generer') }}">
-                    <button type="submit" class="dot-btn-primary">Générer les bons de commande</button>
+                    <button type="submit" class="btn btn-primary">Générer les bons de commande</button>
                 </form>
             {% endif %}
         </div>
@@ -97,7 +97,7 @@
                                 <td>{{ commande.quantiteTotale }}</td>
                                 <td><span class="cmd-badge cmd-badge-{{ commande.statut.value }}">{{ commande.statut.label }}</span></td>
                                 <td>{{ commande.dateCommande ? commande.dateCommande|date('d/m/Y') : '—' }}</td>
-                                <td class="dot-table-action"><a href="{{ path('admin_stock_commandes_show', {id: commande.id}) }}" class="dot-action-edit">Ouvrir</a></td>
+                                <td class="dot-table-action"><a href="{{ path('admin_stock_commandes_show', {id: commande.id}) }}" class="btn btn-secondary btn-sm">Ouvrir</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>

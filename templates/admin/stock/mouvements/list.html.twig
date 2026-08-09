@@ -47,7 +47,7 @@
         <input type="date" name="date_from" class="stock-mouvements-filter-input" value="{{ filters.date_from ?? '' }}" title="Du">
         <input type="date" name="date_to" class="stock-mouvements-filter-input" value="{{ filters.date_to ?? '' }}" title="Au">
 
-        <button type="submit" class="stock-mouvements-filter-btn">Filtrer</button>
+        <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
         {% if filters is not empty %}
             <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-mouvements-filter-reset">Réinitialiser</a>
         {% endif %}

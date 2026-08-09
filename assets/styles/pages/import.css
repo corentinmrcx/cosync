@@ -92,10 +92,6 @@
     transition: background 0.15s;
 }
 
-.import-submit:hover {
-    background: var(--color-primary-dark);
-}
-
 /* — Guide collapsible — */
 .import-guide {
     margin-top: 1.5rem;
@@ -320,15 +316,6 @@
     font-weight: 700;
     text-decoration: none;
     transition: background 0.15s;
-}
-
-.import-btn-primary {
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-}
-
-.import-btn-primary:hover {
-    background: var(--color-primary-dark);
 }
 
 .import-btn-secondary {

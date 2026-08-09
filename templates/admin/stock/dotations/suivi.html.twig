@@ -18,10 +18,10 @@
             <p class="dot-subtitle">Ce que chaque personne doit recevoir et ce qui a déjà été remis.</p>
         </div>
         <div class="dot-header-actions">
-            <a href="{{ path('admin_stock_dotations_flocage') }}" class="dot-btn-secondary">Liste de flocage</a>
+            <a href="{{ path('admin_stock_dotations_flocage') }}" class="btn btn-secondary">Liste de flocage</a>
             <form method="post" action="{{ path('admin_stock_dotations_recalculer') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('dotation_recalculer') }}">
-                <button type="submit" class="dot-btn-secondary">↻ Recalculer les besoins</button>
+                <button type="submit" class="btn btn-secondary">↻ Recalculer les besoins</button>
             </form>
         </div>
     </div>
@@ -115,7 +115,7 @@
                                                 {% endfor %}
                                             </select>
                                             <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
-                                            <button type="button" class="dot-taille-cancel" @click="editing = false" title="Annuler">✕</button>
+                                            <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
                                         </form>
                                     </div>
                                 </td>
@@ -131,12 +131,12 @@
                                     {% if besoin.statut.value == 'donne' %}
                                         <form method="post" action="{{ path('admin_stock_dotations_besoin_annuler', {id: besoin.id}) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_annuler_' ~ besoin.id) }}">
-                                            <button type="submit" class="dot-action-delete">Annuler</button>
+                                            <button type="submit" class="btn btn-danger btn-sm">Annuler</button>
                                         </form>
                                     {% else %}
                                         <form method="post" action="{{ path('admin_stock_dotations_besoin_remise', {id: besoin.id}) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_remise_' ~ besoin.id) }}">
-                                            <button type="submit" class="dot-btn-sm">Marquer remis</button>
+                                            <button type="submit" class="btn btn-primary btn-sm">Marquer remis</button>
                                         </form>
                                     {% endif %}
                                 </td>

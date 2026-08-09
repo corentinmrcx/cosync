@@ -97,36 +97,6 @@
     gap: 0.75rem;
 }
 
-.document-edit-cancel {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-decoration: none;
-}
-
-.document-edit-cancel:hover {
-    color: var(--color-text-body);
-}
-
-.document-edit-submit {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.625rem 1.25rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.document-edit-submit:hover {
-    background: var(--color-primary-dark);
-}
-
 .document-edit-apercu-btn {
     display: inline-flex;
     align-items: center;

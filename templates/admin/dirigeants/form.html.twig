@@ -143,8 +143,8 @@
 
         <div class="season-form-actions">
             <a href="{{ dirigeant ? path('admin_dirigeants_show', {uuid: dirigeant.uuid}) : path('admin_dirigeants_list') }}"
-               class="season-form-cancel">Annuler</a>
-            <button type="submit" class="season-form-submit">
+               class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg">
                 {{ dirigeant ? 'Enregistrer' : 'Ajouter le dirigeant' }}
             </button>
         </div>

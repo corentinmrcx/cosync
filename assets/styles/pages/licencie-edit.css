@@ -18,7 +18,6 @@
     margin: 0;
 }
 
-
 /* — Création manuelle — */
 .licencie-new-card {
     max-width: 680px;
@@ -74,6 +73,3 @@
     transition: background 0.15s;
 }
 
-.licencie-show-edit-btn:hover {
-    background: var(--color-border);
-}

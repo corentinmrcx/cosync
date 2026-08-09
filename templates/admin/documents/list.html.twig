@@ -21,7 +21,7 @@
                     exigible : les dossiers concernés redeviennent incomplets.
                 </p>
             </div>
-            <a href="{{ path('admin_documents_new') }}" class="documents-add-btn">
+            <a href="{{ path('admin_documents_new') }}" class="btn btn-primary">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nouveau document
             </a>
@@ -82,23 +82,23 @@
                         </div>
 
                         <div class="documents-item-actions">
-                            <a href="{{ path('admin_documents_edit', {id: doc.id}) }}" class="documents-btn">Modifier</a>
-                            <a href="{{ path('admin_documents_apercu', {id: doc.id}) }}" target="_blank" class="documents-btn">Aperçu PDF</a>
+                            <a href="{{ path('admin_documents_edit', {id: doc.id}) }}" class="btn btn-secondary">Modifier</a>
+                            <a href="{{ path('admin_documents_apercu', {id: doc.id}) }}" target="_blank" class="btn btn-secondary">Aperçu PDF</a>
 
                             {% if doc.cible.value == 'dirigeant' and doc.actif and stats[doc.id].enAttente > 0 %}
-                                <a href="{{ path('admin_documents_relancer', {id: doc.id}) }}" class="documents-btn">Relancer</a>
+                                <a href="{{ path('admin_documents_relancer', {id: doc.id}) }}" class="btn btn-secondary">Relancer</a>
                             {% endif %}
 
                             <form method="post" action="{{ path('admin_documents_toggle', {id: doc.id}) }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('document_toggle_' ~ doc.id) }}">
-                                <button type="submit" class="documents-btn">{{ doc.actif ? 'Désactiver' : 'Réactiver' }}</button>
+                                <button type="submit" class="btn btn-secondary">{{ doc.actif ? 'Désactiver' : 'Réactiver' }}</button>
                             </form>
 
                             {% if stats[doc.id].signes == 0 %}
                                 <form method="post" action="{{ path('admin_documents_delete', {id: doc.id}) }}"
                                       onsubmit="return confirm('Supprimer définitivement ce document ?')">
                                     <input type="hidden" name="_token" value="{{ csrf_token('document_delete_' ~ doc.id) }}">
-                                    <button type="submit" class="documents-btn documents-btn-danger">Supprimer</button>
+                                    <button type="submit" class="btn btn-secondary documents-btn-danger">Supprimer</button>
                                 </form>
                             {% endif %}
                         </div>

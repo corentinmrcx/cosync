@@ -74,17 +74,6 @@
     color: var(--color-text-disabled);
 }
 
-.cat-btn-delete {
-    padding: 0.2rem 0.5rem;
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    color: var(--color-danger);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font-sans);
-}
-
 .cat-btn-delete-disabled {
     color: var(--color-text-disabled);
     cursor: not-allowed;

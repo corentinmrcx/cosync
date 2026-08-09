@@ -39,10 +39,10 @@
                             </span>
                         </div>
                         <div x-show="editingId !== {{ f.id }}" class="dot-list-actions">
-                            <button type="button" class="dot-action-edit" @click="editingId = {{ f.id }}">Modifier</button>
+                            <button type="button" class="btn btn-secondary btn-sm" @click="editingId = {{ f.id }}">Modifier</button>
                             <form method="post" action="{{ path('admin_stock_fournisseurs_delete', {id: f.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce fournisseur ?')">
                                 <input type="hidden" name="_token" value="{{ csrf_token('fournisseur_delete_' ~ f.id) }}">
-                                <button type="submit" class="dot-action-delete">Supprimer</button>
+                                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                             </form>
                         </div>
 
@@ -52,8 +52,8 @@
                             <input type="text" name="contact" class="dot-input" value="{{ f.contact }}" placeholder="Contact">
                             <input type="email" name="email" class="dot-input" value="{{ f.email }}" placeholder="Email">
                             <label class="dot-check"><input type="checkbox" name="actif" value="1" {{ f.actif ? 'checked' : '' }}> Actif</label>
-                            <button type="submit" class="dot-btn-primary">Enregistrer</button>
-                            <button type="button" class="dot-action-delete" @click="editingId = null">Annuler</button>
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                            <button type="button" class="btn btn-danger btn-sm" @click="editingId = null">Annuler</button>
                         </form>
                     </li>
                 {% endfor %}
@@ -65,7 +65,7 @@
             <input type="text" name="nom" class="dot-input" placeholder="Nom du fournisseur" required>
             <input type="text" name="contact" class="dot-input" placeholder="Contact (option.)">
             <input type="email" name="email" class="dot-input" placeholder="Email (option.)">
-            <button type="submit" class="dot-btn-primary">+ Ajouter</button>
+            <button type="submit" class="btn btn-primary">+ Ajouter</button>
         </form>
     </div>
 

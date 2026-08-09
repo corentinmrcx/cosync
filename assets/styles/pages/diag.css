@@ -75,24 +75,6 @@
 
 .diag-input:focus { border-color: var(--color-primary); }
 
-.diag-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.625rem 1.25rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-    white-space: nowrap;
-}
-
-.diag-btn:hover { background: var(--color-primary-dark); }
-
 .diag-btn-success {
     background: var(--color-success);
 }

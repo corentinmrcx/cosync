@@ -41,12 +41,12 @@
             {% if not betaActive %}
             <form method="post" action="{{ path('admin_diag_beta_enable') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('beta_enable') }}">
-                <button type="submit" class="diag-btn diag-btn-success">Activer le mode beta</button>
+                <button type="submit" class="btn btn-primary btn-lg diag-btn-success">Activer le mode beta</button>
             </form>
             {% else %}
             <form method="post" action="{{ path('admin_diag_beta_disable') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('beta_disable') }}">
-                <button type="submit" class="diag-btn diag-btn-outline">Désactiver le mode beta</button>
+                <button type="submit" class="btn btn-primary btn-lg diag-btn-outline">Désactiver le mode beta</button>
             </form>
             {% endif %}
         </div>
@@ -101,7 +101,7 @@
             <div class="diag-purge-footer">
                 <button
                     type="submit"
-                    class="diag-btn diag-btn-danger"
+                    class="btn btn-primary btn-lg diag-btn-danger"
                     :disabled="!ready"
                     x-bind:class="ready ? '' : 'diag-btn-disabled'"
                 >
@@ -123,7 +123,7 @@
         <form method="post" action="{{ path('admin_diag_test_mail') }}" class="diag-form">
             <input type="hidden" name="_token" value="{{ csrf_token('test_mail') }}">
             <input type="email" name="test_email" placeholder="votre@email.fr" required class="diag-input">
-            <button type="submit" class="diag-btn">Envoyer</button>
+            <button type="submit" class="btn btn-primary btn-lg">Envoyer</button>
         </form>
     </div>
 
@@ -143,7 +143,7 @@
                     <input type="radio" name="profil" value="senior"> Senior
                 </label>
             </div>
-            <button type="submit" class="diag-btn">Envoyer</button>
+            <button type="submit" class="btn btn-primary btn-lg">Envoyer</button>
         </form>
     </div>
 

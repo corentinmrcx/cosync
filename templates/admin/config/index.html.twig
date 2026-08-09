@@ -16,7 +16,7 @@
             <h1 class="season-form-header">Configuration</h1>
             <hr class="season-form-divider">
             <p class="season-form-empty">Aucune saison sélectionnée. Commencez par créer une saison.</p>
-            <a href="{{ path('admin_seasons_new') }}" class="season-form-submit" style="text-decoration:none; align-self:flex-start;">
+            <a href="{{ path('admin_seasons_new') }}" class="btn btn-primary btn-lg" style="text-decoration:none; align-self:flex-start;">
                 Créer une saison →
             </a>
         </div>
@@ -63,7 +63,7 @@
                 </div>
             {% endfor %}
 
-            <button type="submit" class="season-form-submit">Enregistrer</button>
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
             <hr class="season-form-divider">
             <a href="{{ path('admin_documents_list') }}" class="season-form-reglement-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -98,7 +98,7 @@
                                     <button type="button" class="config-teams-btn-edit" @click="editingTeam = {{ team.id }}">Modifier</button>
                                     <form method="post" action="{{ path('admin_config_teams_delete', {id: team.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cette équipe ?')">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete_team_' ~ team.id) }}">
-                                        <button type="submit" class="config-teams-btn-delete">Supprimer</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                                     </form>
                                 </div>
                             </div>
@@ -127,8 +127,8 @@
                                     } %}
                                 </div>
                                 <div class="config-teams-edit-actions">
-                                    <button type="submit" class="season-form-submit" style="padding:0.4rem 0.875rem;font-size:var(--font-size-xs)">Enregistrer</button>
-                                    <button type="button" class="config-teams-btn-cancel" @click="editingTeam = null">Annuler</button>
+                                    <button type="submit" class="btn btn-primary btn-lg" style="padding:0.4rem 0.875rem;font-size:var(--font-size-xs)">Enregistrer</button>
+                                    <button type="button" class="btn btn-ghost" @click="editingTeam = null">Annuler</button>
                                 </div>
                             </form>
 
@@ -173,8 +173,8 @@
                         {{ form_errors(newTeamForm.categories) }}
                     </div>
                     <div class="config-teams-edit-actions">
-                        <button type="submit" class="season-form-submit">Ajouter l'équipe</button>
-                        <button type="button" class="config-teams-btn-cancel" @click="addingTeam = false">Annuler</button>
+                        <button type="submit" class="btn btn-primary btn-lg">Ajouter l'équipe</button>
+                        <button type="button" class="btn btn-ghost" @click="addingTeam = false">Annuler</button>
                     </div>
                 {{ form_end(newTeamForm) }}
             </div>

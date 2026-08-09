@@ -39,12 +39,12 @@
                             <td class="cat-cell-center {{ nb > 0 ? 'cat-count-active' : 'cat-count-zero' }}">{{ nb }}</td>
                             <td class="cat-cell-action">
                                 {% if nb > 0 %}
-                                    <span class="cat-btn-delete cat-btn-delete-disabled" title="{{ nb }} licencié(s) — suppression impossible">Supprimer</span>
+                                    <span class="btn btn-danger btn-sm cat-btn-delete-disabled" title="{{ nb }} licencié(s) — suppression impossible">Supprimer</span>
                                 {% else %}
                                     <form method="post" action="{{ path('admin_categories_delete', {id: category.id}) }}"
                                           onsubmit="return confirm('Supprimer la catégorie {{ category.code }} ?')">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete_category_' ~ category.id) }}">
-                                        <button type="submit" class="cat-btn-delete">Supprimer</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                                     </form>
                                 {% endif %}
                             </td>
@@ -76,7 +76,7 @@
                 {{ form_widget(form.isEcoleFoot) }}
                 {{ form_label(form.isEcoleFoot) }}
             </div>
-            <button type="submit" class="season-form-submit">Ajouter</button>
+            <button type="submit" class="btn btn-primary btn-lg">Ajouter</button>
         {{ form_end(form) }}
 
     </div>
