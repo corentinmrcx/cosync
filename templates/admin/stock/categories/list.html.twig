@@ -52,10 +52,11 @@
                                 <span class="stock-categories-item-position">#{{ category.position }}</span>
                                 <div class="stock-categories-item-actions">
                                     <button type="button" class="btn btn-secondary btn-sm" @click="editingId = {{ category.id }}">Modifier</button>
-                                    <form method="post" action="{{ path('admin_stock_categories_delete', {id: category.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cette catégorie ?')">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_category_' ~ category.id) }}">
-                                        <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                                    </form>
+                                    {% include 'components/_form_suppression.html.twig' with {
+                                        action: path('admin_stock_categories_delete', {id: category.id}),
+                                        jeton: 'delete_category_' ~ category.id,
+                                        message: 'Supprimer cette catégorie ?',
+                                    } only %}
                                 </div>
                             </div>
 

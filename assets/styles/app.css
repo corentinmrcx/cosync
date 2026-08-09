@@ -1,5 +1,6 @@
 
 @import './components/button.css';
+@import './components/empty-state.css';
 @import './components/navbar.css';
 @import './components/footer.css';
 @import './components/hub-card.css';

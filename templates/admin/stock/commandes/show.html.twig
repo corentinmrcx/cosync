@@ -33,10 +33,12 @@
                     <input type="date" name="date_commande" class="dot-input" value="{{ 'now'|date('Y-m-d') }}" max="{{ 'now'|date('Y-m-d') }}">
                     <button type="submit" class="btn btn-primary">Marquer commandée</button>
                 </form>
-                <form method="post" action="{{ path('admin_stock_commandes_delete', {id: commande.id}) }}" onsubmit="return confirm('Supprimer ce brouillon ?')">
-                    <input type="hidden" name="_token" value="{{ csrf_token('commande_delete_' ~ commande.id) }}">
-                    <button type="submit" class="btn btn-danger btn-sm">Supprimer le brouillon</button>
-                </form>
+                {% include 'components/_form_suppression.html.twig' with {
+                    action: path('admin_stock_commandes_delete', {id: commande.id}),
+                    jeton: 'commande_delete_' ~ commande.id,
+                    message: 'Supprimer ce brouillon ?',
+                    libelle: 'Supprimer le brouillon',
+                } only %}
             {% endif %}
         </div>
     </div>

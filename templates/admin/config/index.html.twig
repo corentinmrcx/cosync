@@ -96,10 +96,11 @@
                                 </div>
                                 <div class="config-teams-btns">
                                     <button type="button" class="config-teams-btn-edit" @click="editingTeam = {{ team.id }}">Modifier</button>
-                                    <form method="post" action="{{ path('admin_config_teams_delete', {id: team.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cette équipe ?')">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_team_' ~ team.id) }}">
-                                        <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                                    </form>
+                                    {% include 'components/_form_suppression.html.twig' with {
+                                        action: path('admin_config_teams_delete', {id: team.id}),
+                                        jeton: 'delete_team_' ~ team.id,
+                                        message: 'Supprimer cette équipe ?',
+                                    } only %}
                                 </div>
                             </div>
 

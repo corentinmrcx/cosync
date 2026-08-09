@@ -48,10 +48,11 @@
                         </div>
                         <div class="dot-list-actions">
                             <a href="{{ path('admin_stock_dotations_edit', {id: modele.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
-                            <form method="post" action="{{ path('admin_stock_dotations_delete', {id: modele.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce kit et ses attributions ?')">
-                                <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_delete_' ~ modele.id) }}">
-                                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                            </form>
+                            {% include 'components/_form_suppression.html.twig' with {
+                                action: path('admin_stock_dotations_delete', {id: modele.id}),
+                                jeton: 'dotation_modele_delete_' ~ modele.id,
+                                message: 'Supprimer ce kit et ses attributions ?',
+                            } only %}
                         </div>
                     </li>
                 {% endfor %}

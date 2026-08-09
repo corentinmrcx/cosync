@@ -1,0 +1,6 @@
+{# Message affiché quand une liste ne contient rien. `texte` requis, `action` facultative
+   (markup déjà rendu d'un bouton d'ajout). #}
+<div class="empty-state">
+    <p class="empty-state-texte">{{ texte }}</p>
+    {% if action is defined %}{{ action|raw }}{% endif %}
+</div>

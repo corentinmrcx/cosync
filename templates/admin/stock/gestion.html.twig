@@ -95,10 +95,11 @@
                                             + / − Mouvement
                                         </button>
                                         <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
-                                        <form method="post" action="{{ path('admin_stock_items_delete', {id: row.item.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cet article ?')">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_item_' ~ row.item.id) }}">
-                                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                                        </form>
+                                        {% include 'components/_form_suppression.html.twig' with {
+                                            action: path('admin_stock_items_delete', {id: row.item.id}),
+                                            jeton: 'delete_stock_item_' ~ row.item.id,
+                                            message: 'Supprimer cet article ?',
+                                        } only %}
                                     {% else %}
                                         <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">

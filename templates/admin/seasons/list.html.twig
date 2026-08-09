@@ -52,11 +52,11 @@
                             {% endif %}
 
                             {% if canDelete %}
-                                <form method="post" action="{{ path('admin_seasons_delete', {id: season.id}) }}"
-                                      onsubmit="return confirm('Supprimer la saison {{ season.label }} ? Cette action est irréversible.')">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('season_delete_' ~ season.id) }}">
-                                    <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                                </form>
+                                {% include 'components/_form_suppression.html.twig' with {
+                                    action: path('admin_seasons_delete', {id: season.id}),
+                                    jeton: 'season_delete_' ~ season.id,
+                                    message: 'Supprimer la saison {{ season.label }} ? Cette action est irréversible.',
+                                } only %}
                             {% endif %}
                         </div>
                     </li>

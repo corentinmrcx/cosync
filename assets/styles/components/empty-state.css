@@ -1,0 +1,23 @@
+/* ── État vide ────────────────────────────────────────────────────────────────
+   Le message d'une liste sans résultat. Une page ne redéfinit pas ce style.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 3rem 1.5rem;
+    text-align: center;
+}
+
+.empty-state-texte {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* Formulaire réduit à son bouton, aligné dans une barre d'actions. */
+.form-inline {
+    display: inline;
+}

@@ -40,10 +40,11 @@
                         </div>
                         <div x-show="editingId !== {{ f.id }}" class="dot-list-actions">
                             <button type="button" class="btn btn-secondary btn-sm" @click="editingId = {{ f.id }}">Modifier</button>
-                            <form method="post" action="{{ path('admin_stock_fournisseurs_delete', {id: f.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce fournisseur ?')">
-                                <input type="hidden" name="_token" value="{{ csrf_token('fournisseur_delete_' ~ f.id) }}">
-                                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                            </form>
+                            {% include 'components/_form_suppression.html.twig' with {
+                                action: path('admin_stock_fournisseurs_delete', {id: f.id}),
+                                jeton: 'fournisseur_delete_' ~ f.id,
+                                message: 'Supprimer ce fournisseur ?',
+                            } only %}
                         </div>
 
                         <form x-show="editingId === {{ f.id }}" x-cloak method="post" action="{{ path('admin_stock_fournisseurs_edit', {id: f.id}) }}" class="dot-affect-form">
