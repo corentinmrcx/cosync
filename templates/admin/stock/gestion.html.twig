@@ -1,4 +1,5 @@
 {% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
 
 {% block title %}CoSync — Gestion du stock{% endblock %}
 
@@ -63,7 +64,7 @@
                                     <div class="stock-nom-wrap{% if row.hasTailles %} stock-nom-clickable{% endif %}"{% if row.hasTailles %} @click="open = !open" title="Voir le détail par taille"{% endif %}>
                                         {% if row.hasTailles %}
                                             <span class="stock-row-toggle" :class="{ 'is-open': open }">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                                                {{ ui.icon('chevron-right', 14) }}
                                             </span>
                                         {% endif %}
                                         <div class="stock-nom-texts">

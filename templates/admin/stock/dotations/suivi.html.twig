@@ -1,4 +1,5 @@
 {% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
 
 {% block title %}CoSync — Suivi des dotations{% endblock %}
 
@@ -97,7 +98,7 @@
                                             {% endif %}
                                             <button type="button" class="dot-taille-pen" @click="editing = true"
                                                     title="{{ estDonne ? 'Corriger la taille remise (ajuste le stock)' : 'Modifier la taille' }}" aria-label="Modifier la taille">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                                {{ ui.icon('edit', 14) }}
                                             </button>
                                         </div>
                                         <form x-show="editing" x-cloak method="post"
