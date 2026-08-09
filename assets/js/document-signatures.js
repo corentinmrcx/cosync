@@ -1,3 +1,5 @@
+import { creerPad } from './signature-pad.js';
+
 /**
  * État et comportements de la (des) étape(s) « Lecture + signature d'un document ».
  * Utilisé par le formulaire licencié comme par le formulaire dirigeant.
@@ -47,18 +49,8 @@ export function documentSignatures(documents) {
             const canvas = this.$refs['signatureCanvas' + index];
             if (!doc || !canvas || doc.pad) return;
 
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width  = canvas.offsetWidth  * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext('2d').scale(ratio, ratio);
-
-            doc.pad = new SignaturePad(canvas, {
-                backgroundColor: 'rgb(255, 255, 255)',
-                penColor: 'rgb(0, 0, 0)',
-            });
-
-            doc.pad.addEventListener('endStroke', () => {
-                doc.signatureData = doc.pad.toDataURL('image/png');
+            doc.pad = creerPad(canvas, (data) => {
+                doc.signatureData = data;
             });
         },
 

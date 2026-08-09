@@ -1,4 +1,5 @@
 import { documentSignatures } from './document-signatures.js';
+import { attestationTransport } from './attestation-transport.js';
 
 export function inscriptionForm({
     isJeune,
@@ -11,6 +12,8 @@ export function inscriptionForm({
     dotationAutoFlocages = [],
 }) {
     return {
+        ...attestationTransport(),
+
         ...documentSignatures(documents),
 
         step: 1,
@@ -51,15 +54,6 @@ export function inscriptionForm({
         volontaireTransport: null,
 
         // Étape 4 — attestation transport (uniquement si volontaireTransport === '1')
-        nomConducteur: '',
-        prenomConducteur: '',
-        numPermis: '',
-        assuranceNomAdresse: '',
-        dateCT: '',
-        vehiculeNeuf: false,
-        engagementAttestation: false,
-        signatureDataAttestation: '',
-        signaturePadAttestation: null,
 
         // Étapes 5+ — documents à lire et signer : état fourni par documentSignatures()
 
@@ -127,16 +121,6 @@ export function inscriptionForm({
             return this.flocagesActifs.every(f => f.texte !== '' && f.texte.length <= f.max && autorise.test(f.texte));
         },
 
-        // Vrai si l'utilisateur a saisi une date de CT strictement dans le futur (aujourd'hui autorisé)
-        get dateCTFuture() {
-            if (this.dateCT === '') return false;
-            const d = new Date();
-            const todayStr = d.getFullYear() + '-'
-                + String(d.getMonth() + 1).padStart(2, '0') + '-'
-                + String(d.getDate()).padStart(2, '0');
-            return this.dateCT > todayStr;
-        },
-
         init() {
             // Si volontaireTransport passe à non et qu'on est sur l'étape attestation → reculer
             this.$watch('volontaireTransport', (val) => {
@@ -183,13 +167,7 @@ export function inscriptionForm({
                     }
                     return true;
                 case 4: // attestation transport
-                    return this.nomConducteur !== ''
-                        && this.prenomConducteur !== ''
-                        && this.numPermis !== ''
-                        && this.assuranceNomAdresse !== ''
-                        && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
-                        && this.engagementAttestation
-                        && this.signatureDataAttestation !== '';
+                    return this.attestationValide;
                 case this.paymentStep:
                     return this.multiPayment ? this.paymentModes.length > 0 : this.paymentMode !== '';
                 default: // étapes documents
@@ -211,32 +189,6 @@ export function inscriptionForm({
             if (idx > 0) {
                 this.step = this.steps[idx - 1];
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        },
-
-        initAttestationSignaturePad() {
-            const canvas = this.$refs.signatureCanvasAttestation;
-            if (!canvas || this.signaturePadAttestation) return;
-
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width  = canvas.offsetWidth  * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext('2d').scale(ratio, ratio);
-
-            this.signaturePadAttestation = new SignaturePad(canvas, {
-                backgroundColor: 'rgb(255, 255, 255)',
-                penColor: 'rgb(0, 0, 0)',
-            });
-
-            this.signaturePadAttestation.addEventListener('endStroke', () => {
-                this.signatureDataAttestation = this.signaturePadAttestation.toDataURL('image/png');
-            });
-        },
-
-        clearAttestationSignature() {
-            if (this.signaturePadAttestation) {
-                this.signaturePadAttestation.clear();
-                this.signatureDataAttestation = '';
             }
         },
 

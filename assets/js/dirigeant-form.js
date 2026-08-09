@@ -1,4 +1,5 @@
 import { documentSignatures } from './document-signatures.js';
+import { attestationTransport } from './attestation-transport.js';
 
 /**
  * Formulaire public du dossier dirigeant.
@@ -9,6 +10,8 @@ import { documentSignatures } from './document-signatures.js';
  */
 export function dirigeantForm({ needTaille, needPhoto, needTransport, documents }) {
     return {
+        ...attestationTransport(),
+
         ...documentSignatures(documents),
 
         needTaille,
@@ -27,15 +30,6 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, documents 
         volontaireTransport: null,
 
         // Étape 4 — attestation transport (uniquement si volontaireTransport === '1')
-        nomConducteur: '',
-        prenomConducteur: '',
-        numPermis: '',
-        assuranceNomAdresse: '',
-        dateCT: '',
-        vehiculeNeuf: false,
-        engagementAttestation: false,
-        signatureDataAttestation: '',
-        signaturePadAttestation: null,
 
         submitting: false,
 
@@ -70,16 +64,6 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, documents 
 
         get isLastStep() {
             return this.step === this.steps[this.steps.length - 1];
-        },
-
-        // Vrai si l'utilisateur a saisi une date de CT strictement dans le futur (aujourd'hui autorisé)
-        get dateCTFuture() {
-            if (this.dateCT === '') return false;
-            const d = new Date();
-            const todayStr = d.getFullYear() + '-'
-                + String(d.getMonth() + 1).padStart(2, '0') + '-'
-                + String(d.getDate()).padStart(2, '0');
-            return this.dateCT > todayStr;
         },
 
         init() {
@@ -120,13 +104,7 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, documents 
                     if (this.needTransport && this.volontaireTransport === null) return false;
                     return true;
                 case 4: // attestation transport
-                    return this.nomConducteur !== ''
-                        && this.prenomConducteur !== ''
-                        && this.numPermis !== ''
-                        && this.assuranceNomAdresse !== ''
-                        && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
-                        && this.engagementAttestation
-                        && this.signatureDataAttestation !== '';
+                    return this.attestationValide;
                 default: // étapes documents
                     return this.docReady(this.currentDocumentIndex);
             }
@@ -149,30 +127,5 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, documents 
             }
         },
 
-        initAttestationSignaturePad() {
-            const canvas = this.$refs.signatureCanvasAttestation;
-            if (!canvas || this.signaturePadAttestation) return;
-
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width  = canvas.offsetWidth  * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext('2d').scale(ratio, ratio);
-
-            this.signaturePadAttestation = new SignaturePad(canvas, {
-                backgroundColor: 'rgb(255, 255, 255)',
-                penColor: 'rgb(0, 0, 0)',
-            });
-
-            this.signaturePadAttestation.addEventListener('endStroke', () => {
-                this.signatureDataAttestation = this.signaturePadAttestation.toDataURL('image/png');
-            });
-        },
-
-        clearAttestationSignature() {
-            if (this.signaturePadAttestation) {
-                this.signaturePadAttestation.clear();
-                this.signatureDataAttestation = '';
-            }
-        },
     };
 }
