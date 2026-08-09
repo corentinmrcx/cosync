@@ -3,7 +3,6 @@
 {% block title %}CoSync — Attestation de remise{% endblock %}
 
 {% block head %}
-    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -70,28 +69,16 @@
 
     </div>
 </div>
+{% endblock %}
 
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-<script>
-    const quill = new Quill('#quill-editor', {
-        theme: 'snow',
-        placeholder: 'Ex. : je m'''engage à ne pas prêter cette clé et à la restituer sur demande…',
-        modules: {
-            toolbar: [
-                [{ header: [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline'],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['clean']
-            ]
-        }
-    });
-
-    document.getElementById('attestation-form').addEventListener('submit', function () {
-        document.getElementById('attestation_cle_text_input').value = quill.root.innerHTML;
-    });
-
-    const preview = document.getElementById('attestation-preview');
-    preview.innerHTML = quill.root.innerHTML;
-    quill.on('text-change', () => { preview.innerHTML = quill.root.innerHTML; });
-</script>
+{% block scripts %}
+    <script>
+        initEditeurRiche({
+            editeur: '#quill-editor',
+            formulaire: 'attestation-form',
+            champCache: 'attestation_cle_text_input',
+            apercu: 'attestation-preview',
+            placeholder: {{ "Ex. : je m'engage à ne pas prêter cette clé et à la restituer sur demande…"|e('js') }},
+        });
+    </script>
 {% endblock %}

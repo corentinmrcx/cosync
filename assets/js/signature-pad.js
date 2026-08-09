@@ -1,3 +1,5 @@
+import SignaturePad from 'signature_pad';
+
 /**
  * Création d'un pad de signature sur un canvas.
  *

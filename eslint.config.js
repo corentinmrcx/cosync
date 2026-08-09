@@ -9,8 +9,7 @@ module.exports = [
             globals: {
                 ...globals.browser,
                 Alpine: 'readonly',
-                Quill: 'readonly',
-                SignaturePad: 'readonly',
+                initEditeurRiche: 'readonly',
             },
         },
         rules: {

@@ -15,7 +15,6 @@
 {% block title %}CoSync — {{ titrePage }}{% endblock %}
 
 {% block head %}
-    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -169,28 +168,16 @@
 
     </div>
 </div>
+{% endblock %}
 
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-<script>
-    const quill = new Quill('#quill-editor', {
-        theme: 'snow',
-        placeholder: 'Saisissez ici le texte du document…',
-        modules: {
-            toolbar: [
-                [{ header: [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline'],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['clean']
-            ]
-        }
-    });
-
-    document.getElementById('document-form').addEventListener('submit', function () {
-        document.getElementById('contenu_html_input').value = quill.root.innerHTML;
-    });
-
-    const preview = document.getElementById('document-preview');
-    preview.innerHTML = quill.root.innerHTML;
-    quill.on('text-change', () => { preview.innerHTML = quill.root.innerHTML; });
-</script>
+{% block scripts %}
+    <script>
+        initEditeurRiche({
+            editeur: '#quill-editor',
+            formulaire: 'document-form',
+            champCache: 'contenu_html_input',
+            apercu: 'document-preview',
+            placeholder: {{ "Saisissez ici le texte du document…"|e('js') }},
+        });
+    </script>
 {% endblock %}
