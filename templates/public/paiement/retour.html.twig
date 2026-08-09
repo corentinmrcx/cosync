@@ -2,44 +2,25 @@
 
 {% block title %}Paiement en cours de validation – Foyer de Soudron{% endblock %}
 
-{% block body %}
-<div class="inscription-page">
+{% block entete_extra %}
+    {% include 'components/_progression.html.twig' with { total: 5 } only %}
+{% endblock %}
 
-    <header class="inscription-header">
-        <div class="inscription-header-top">
-            <span class="inscription-header-club">Foyer de Soudron</span>
-        </div>
-        <div class="inscription-progress">
-            {% for i in 1..5 %}
-                <div class="inscription-progress-segment inscription-progress-segment-done"></div>
-            {% endfor %}
-        </div>
-    </header>
+{% block contenu %}
+    <div class="inscription-card">
+        <div class="inscription-confirm-icon">⏳</div>
+        <h1 class="inscription-confirm-title">Merci !</h1>
+        <p class="inscription-confirm-text">
+            Votre paiement est en cours de validation. HelloAsso vous envoie un reçu par email.
+        </p>
 
-    <main class="inscription-main">
-        <div class="inscription-container">
+        <p class="inscription-confirm-note">
+            Votre inscription sera définitivement validée dès confirmation du paiement.<br>
+            Vous n'avez rien d'autre à faire. Pour toute question, contactez le club directement.
+        </p>
 
-            <div class="inscription-card">
-                <div class="inscription-confirm-icon">⏳</div>
-                <h1 class="inscription-confirm-title">Merci !</h1>
-                <p class="inscription-confirm-text">
-                    Votre paiement est en cours de validation. HelloAsso vous envoie un reçu par email.
-                </p>
-
-                <p class="inscription-confirm-note">
-                    Votre inscription sera définitivement validée dès confirmation du paiement.<br>
-                    Vous n'avez rien d'autre à faire. Pour toute question, contactez le club directement.
-                </p>
-
-                <p class="inscription-cb-hint" style="margin-top: 1rem;">
-                    <a href="{{ path('public_inscription_confirmation', { uuid: licencie.uuid }) }}">Revoir le récapitulatif de mon inscription</a>
-                </p>
-            </div>
-
-        </div>
-    </main>
-
-    {% include 'components/footer.html.twig' %}
-
-</div>
+        <p class="inscription-cb-hint" style="margin-top: 1rem;">
+            <a href="{{ path('public_inscription_confirmation', { uuid: licencie.uuid }) }}">Revoir le récapitulatif de mon inscription</a>
+        </p>
+    </div>
 {% endblock %}

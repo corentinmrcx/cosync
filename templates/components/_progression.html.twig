@@ -1,0 +1,8 @@
+{# Barre d'étapes du parcours public.
+   `total` = nombre d'étapes, `faites` = étapes franchies (toutes par défaut). #}
+{% set faites = faites|default(total) %}
+<div class="inscription-progress">
+    {% for i in 1..total %}
+        <div class="inscription-progress-segment{{ i <= faites ? ' inscription-progress-segment-done' : '' }}"></div>
+    {% endfor %}
+</div>

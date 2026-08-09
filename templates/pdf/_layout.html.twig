@@ -1,0 +1,83 @@
+{# Coquille commune aux PDF : page A4, en-tête à logos, styles de contenu et de signature.
+   DomPDF n'applique pas les variables CSS : les couleurs sont écrites en dur ici, une fois. #}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: A4; margin: 20mm 25mm; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: #111;
+            line-height: 1.5;
+            padding: 12mm 10mm;
+        }
+
+        /* ── En-tête ── */
+        .header {
+            width: 100%;
+            border-collapse: collapse;
+            border-bottom: 2px solid #ff0033;
+            margin-bottom: 6mm;
+        }
+
+        .header td { vertical-align: middle; padding: 0 0 6mm; }
+        .header-logo { width: 20mm; height: 20mm; object-fit: contain; }
+        .header-title { text-align: center; padding: 0 8px; }
+        .header-title h1 { font-size: 20px; font-weight: 700; color: #111; margin-bottom: 3px; }
+        .header-title p { font-size: 13px; font-weight: 700; color: #ff0033; }
+
+        /* ── Contenu ── */
+        .content { font-size: 12px; line-height: 1.6; color: #111; margin-bottom: 12mm; }
+        .content h2 { font-size: 15px; margin: 20px 0 10px; page-break-after: avoid; }
+        .content h3 { font-size: 13px; margin: 16px 0 7px; page-break-after: avoid; }
+        .content p { margin: 0 0 12px; page-break-inside: avoid; }
+        .content ul, .content ol { margin: 8px 0 14px 20px; }
+        .content li { margin-bottom: 6px; page-break-inside: avoid; }
+
+        /* ── Pied de page et signature ── */
+        .footer { border-top: 1px solid #ccc; padding-top: 6mm; font-size: 10px; page-break-inside: avoid; }
+        .footer-approval { color: #555; margin-bottom: 8px; }
+        .footer-date { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+        .footer-statement { font-size: 13px; font-weight: 700; margin-bottom: 12px; line-height: 1.6; }
+        .footer-statement .highlight { color: #ff0033; }
+        .sign-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #555;
+            margin-bottom: 6px;
+        }
+        .sign-img { max-height: 80px; max-width: 220px; display: block; }
+
+        {% block styles %}{% endblock %}
+    </style>
+</head>
+<body>
+
+{% block entete %}
+    <table class="header">
+        <tr>
+            <td style="width: 20mm;">
+                {% if logoDataUrl %}<img src="{{ logoDataUrl }}" class="header-logo" alt="">{% endif %}
+            </td>
+            <td class="header-title">
+                <h1>{% block titre %}{% endblock %}</h1>
+                <p>{% block sous_titre %}{% endblock %}</p>
+            </td>
+            <td style="width: 20mm; text-align: right;">
+                {% if foyerLogoDataUrl|default(null) %}<img src="{{ foyerLogoDataUrl }}" class="header-logo" alt="">{% endif %}
+            </td>
+        </tr>
+    </table>
+{% endblock %}
+
+{% block corps %}{% endblock %}
+
+</body>
+</html>

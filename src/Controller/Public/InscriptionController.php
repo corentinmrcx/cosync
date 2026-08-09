@@ -46,7 +46,7 @@ class InscriptionController extends AbstractController
         $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         $dossier = $licencie->getDossierClub();
@@ -57,7 +57,7 @@ class InscriptionController extends AbstractController
         }
 
         if (!$licencie->isFormTokenValid()) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         return $this->render('public/inscription/form.html.twig', [
@@ -79,7 +79,7 @@ class InscriptionController extends AbstractController
         $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || !$licencie->isFormTokenValid()) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         $this->csrf->valider('inscription_submit', $request);
@@ -117,7 +117,7 @@ class InscriptionController extends AbstractController
         $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || $licencie->getDossierClub() === null) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         $montant = $this->cotisationResolver->resolve($licencie);
@@ -138,7 +138,7 @@ class InscriptionController extends AbstractController
         $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || !$licencie->isFormTokenValid()) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         $manquants = $this->completionService->manquantes($licencie);
@@ -159,7 +159,7 @@ class InscriptionController extends AbstractController
         $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || !$licencie->isFormTokenValid()) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         $this->csrf->valider('inscription_completer', $request);

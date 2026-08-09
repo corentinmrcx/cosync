@@ -2,94 +2,70 @@
 
 {% block title %}Inscription confirmée – Foyer de Soudron{% endblock %}
 
-{% block body %}
-<div class="inscription-page">
+{% block entete_extra %}
+    {% include 'components/_progression.html.twig' with { total: 5 } only %}
+{% endblock %}
 
-    <header class="inscription-header">
-        <div class="inscription-header-top">
-            <span class="inscription-header-club">Foyer de Soudron</span>
-        </div>
-        <div class="inscription-progress">
-            {% for i in 1..5 %}
-                <div class="inscription-progress-segment inscription-progress-segment-done"></div>
-            {% endfor %}
-        </div>
-    </header>
+{% block contenu %}
+    <div class="inscription-card">
+        <div class="inscription-confirm-icon">✅</div>
+        {% if licencie.category.isJeune %}
+            <h1 class="inscription-confirm-title">Merci !</h1>
+            <p class="inscription-confirm-text">Le formulaire d'inscription de <strong>{{ licencie.prenom }}</strong> a bien été enregistré.</p>
+        {% else %}
+            <h1 class="inscription-confirm-title">Merci {{ licencie.prenom }} !</h1>
+            <p class="inscription-confirm-text">Votre formulaire d'inscription a bien été enregistré.</p>
+        {% endif %}
 
-    {# — Flash — #}
-    {% for message in app.flashes('error') %}
-        <div class="inscription-flash-error">{{ message }}</div>
-    {% endfor %}
-
-    <main class="inscription-main">
-        <div class="inscription-container">
-
-            <div class="inscription-card">
-                <div class="inscription-confirm-icon">✅</div>
-                {% if licencie.category.isJeune %}
-                    <h1 class="inscription-confirm-title">Merci !</h1>
-                    <p class="inscription-confirm-text">Le formulaire d'inscription de <strong>{{ licencie.prenom }}</strong> a bien été enregistré.</p>
-                {% else %}
-                    <h1 class="inscription-confirm-title">Merci {{ licencie.prenom }} !</h1>
-                    <p class="inscription-confirm-text">Votre formulaire d'inscription a bien été enregistré.</p>
-                {% endif %}
-
-                {% set intentions = dossier.paymentIntentions %}
-                {% if intentions is not empty %}
-                    <p class="inscription-recap-title">Récapitulatif du paiement</p>
-                    <div>
-                        <div class="inscription-recap-row">
-                            <span class="inscription-recap-key">Montant</span>
-                            <span class="inscription-recap-val">{{ montant }} €</span>
-                        </div>
-                        <div class="inscription-recap-row">
-                            <span class="inscription-recap-key">Mode{{ intentions|length > 1 ? 's choisis' : ' choisi' }}</span>
-                            <span class="inscription-recap-val">{{ intentions|map(m => m.label())|join(', ') }}</span>
-                        </div>
-                    </div>
-
-                    {% set intentionValues = intentions|map(m => m.value) %}
-                    {% if 'virement' in intentionValues and licencie.season.accepteVirement %}
-                        <div class="inscription-payment-info" style="margin-top: 1rem;">
-                            {% include 'components/_coordonnees_bancaires.html.twig' with {
-                                season:  licencie.season,
-                                libelle: libelleVirement,
-                            } only %}
-                        </div>
-                    {% endif %}
-                    {% if intentionValues|filter(v => v in ['cheque', 'especes', 'pass_sport', 'caf', 'ancv']) is not empty %}
-                        <div class="inscription-payment-info" style="margin-top: 1rem;">
-                            À remettre à un dirigeant du club ou lors d'une permanence.
-                        </div>
-                    {% endif %}
-                {% endif %}
-
-                {% if paiementRecu %}
-                    <p class="inscription-cb-note" style="margin-top: 1rem;">Paiement reçu ✓</p>
-                {% else %}
-                    <div class="inscription-cb-block" style="margin-top: 1.25rem;">
-                        <form method="post" action="{{ path('public_helloasso_checkout', { uuid: licencie.uuid }) }}">
-                            <input type="hidden" name="_token" value="{{ csrf_token('paiement_helloasso') }}">
-                            <button type="submit" class="inscription-btn-cb">
-                                Payer — {{ montant }} €
-                            </button>
-                        </form>
-                        <p class="inscription-cb-note">
-                            Paiement 100 % sécurisé via HelloAsso
-                        </p>
-                    </div>
-                {% endif %}
-
-                <p class="inscription-confirm-note">
-                    Votre inscription sera définitivement validée dès réception du paiement.<br>
-                    Pour toute question, contactez le club directement.
-                </p>
+        {% set intentions = dossier.paymentIntentions %}
+        {% if intentions is not empty %}
+            <p class="inscription-recap-title">Récapitulatif du paiement</p>
+            <div>
+                <div class="inscription-recap-row">
+                    <span class="inscription-recap-key">Montant</span>
+                    <span class="inscription-recap-val">{{ montant }} €</span>
+                </div>
+                <div class="inscription-recap-row">
+                    <span class="inscription-recap-key">Mode{{ intentions|length > 1 ? 's choisis' : ' choisi' }}</span>
+                    <span class="inscription-recap-val">{{ intentions|map(m => m.label())|join(', ') }}</span>
+                </div>
             </div>
 
-        </div>
-    </main>
+            {% set intentionValues = intentions|map(m => m.value) %}
+            {% if 'virement' in intentionValues and licencie.season.accepteVirement %}
+                <div class="inscription-payment-info" style="margin-top: 1rem;">
+                    {% include 'components/_coordonnees_bancaires.html.twig' with {
+                        season:  licencie.season,
+                        libelle: libelleVirement,
+                    } only %}
+                </div>
+            {% endif %}
+            {% if intentionValues|filter(v => v in ['cheque', 'especes', 'pass_sport', 'caf', 'ancv']) is not empty %}
+                <div class="inscription-payment-info" style="margin-top: 1rem;">
+                    À remettre à un dirigeant du club ou lors d'une permanence.
+                </div>
+            {% endif %}
+        {% endif %}
 
-    {% include 'components/footer.html.twig' %}
+        {% if paiementRecu %}
+            <p class="inscription-cb-note" style="margin-top: 1rem;">Paiement reçu ✓</p>
+        {% else %}
+            <div class="inscription-cb-block" style="margin-top: 1.25rem;">
+                <form method="post" action="{{ path('public_helloasso_checkout', { uuid: licencie.uuid }) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('paiement_helloasso') }}">
+                    <button type="submit" class="inscription-btn-cb">
+                        Payer — {{ montant }} €
+                    </button>
+                </form>
+                <p class="inscription-cb-note">
+                    Paiement 100 % sécurisé via HelloAsso
+                </p>
+            </div>
+        {% endif %}
 
-</div>
+        <p class="inscription-confirm-note">
+            Votre inscription sera définitivement validée dès réception du paiement.<br>
+            Pour toute question, contactez le club directement.
+        </p>
+    </div>
 {% endblock %}

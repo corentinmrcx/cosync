@@ -15,11 +15,13 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
     public function __construct(
         private readonly SeasonContext $seasonContext,
         private readonly SeasonRepository $seasonRepository,
+        private readonly string $nomClub,
     ) {}
 
     public function getGlobals(): array
     {
         return [
+            'club_nom' => $this->nomClub,
             'navbar_current_season' => $this->seasonContext->getCurrentSeason(),
             'navbar_seasons' => $this->seasonRepository->findBy([], ['createdAt' => 'DESC']),
         ];

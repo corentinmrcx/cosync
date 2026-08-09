@@ -64,14 +64,32 @@
 }
 
 /* — Flash — */
-.inscription-flash-error {
+.inscription-flash {
     margin: 1rem 1rem 0;
     padding: 0.75rem 1rem;
-    background: var(--color-danger-bg);
-    color: var(--color-danger);
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
     font-weight: 500;
+}
+
+.inscription-flash-error {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.inscription-flash-success {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.inscription-flash-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.inscription-flash-info {
+    background: var(--color-info-bg);
+    color: var(--color-info);
 }
 
 /* — Contenu principal — */

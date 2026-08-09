@@ -1,139 +1,60 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Licence validée — Foyer de Soudron</title>
-    <style>
-        body { margin: 0; padding: 0; background: #ebedf0; -webkit-font-smoothing: antialiased; }
-        a { text-decoration: none; }
-        @media (max-width: 620px) {
-            .container { width: 100% !important; }
-            .px { padding-left: 28px !important; padding-right: 28px !important; }
-            .h1 { font-size: 25px !important; }
-        }
-    </style>
-</head>
-<body>
+{% extends 'email/_layout.html.twig' %}
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #ebedf0; font-family: Arial, sans-serif;">
-    <tr>
-        <td align="center" style="padding: 40px 16px;">
+{% block sujet %}{% if licencie.category.isJeune %}Licence de {{ licencie.prenom }} validée{% else %}Votre licence est validée{% endif %} — {{ club_nom }}{% endblock %}
 
-            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0"
-                   style="width: 600px; max-width: 600px; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.08);">
+{% block corps %}
+    {# — Hero — #}
+        <tr>
+            <td style="padding: 44px 40px 8px;" class="px">
+                <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: {{ c.primaire }};">
+                    Validation · Saison {{ licencie.season.label }}
+                </p>
+                {% if licencie.category.isJeune %}
+                <h1 class="h1" style="margin: 0 0 6px; font-size: 30px; line-height: 1.2; font-weight: 800; color: {{ c.texteFort }};">
+                    Bonjour,
+                </h1>
+                <p style="margin: 0 0 18px; font-size: 18px; font-weight: 700; color: {{ c.texteCourant }};">
+                    Licence de {{ licencie.prenom }} validée !
+                </p>
+                <p style="margin: 0; font-size: 16px; line-height: 1.65; color: {{ c.texteCourant }};">
+                    Nous avons bien reçu le paiement de la cotisation de <strong style="color: {{ c.texteFort }};">{{ licencie.prenom }} {{ licencie.nom }}</strong>.
+                    L'inscription au {{ club_nom }} pour la saison <strong style="color: {{ c.texteFort }};">{{ licencie.season.label }}</strong> est désormais <strong style="color: #22c55e;">complète et validée</strong>.
+                </p>
+                {% else %}
+                <h1 class="h1" style="margin: 0 0 18px; font-size: 30px; line-height: 1.2; font-weight: 800; color: {{ c.texteFort }};">
+                    Bonjour {{ licencie.prenom }},<br>votre licence est validée !
+                </h1>
+                <p style="margin: 0; font-size: 16px; line-height: 1.65; color: {{ c.texteCourant }};">
+                    Nous avons bien reçu votre paiement. Votre inscription au {{ club_nom }} pour la saison <strong style="color: {{ c.texteFort }};">{{ licencie.season.label }}</strong> est désormais <strong style="color: #22c55e;">complète et validée</strong>.
+                </p>
+                {% endif %}
+            </td>
+        </tr>
 
-                {# — Bandeau rouge — #}
-                <tr>
-                    <td style="background: #ff3131; padding: 30px 40px;" class="px">
-                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td style="vertical-align: middle;">
-                                    <span style="color: #ffffff; font-size: 22px; font-weight: 900; letter-spacing: 2px;">CoSync</span>
-                                </td>
-                                <td align="right" style="vertical-align: middle;">
-                                    <img src="{{ absolute_url(asset('images/logo/logo.png')) }}"
-                                         alt="Foyer de Soudron"
-                                         width="48" height="48"
-                                         style="display: block; width: 48px; height: 48px; object-fit: contain;">
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
+        {# — Bloc confirmation visuelle — #}
+        <tr>
+            <td style="padding: 32px 40px 8px;" class="px">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                       style="background: {{ c.succesBg }}; border-radius: 10px; border: 1px solid #bbf7d0;">
+                    <tr>
+                        <td style="padding: 20px 24px;">
+                            <p style="margin: 0; font-size: 15px; font-weight: 700; color: #15803d;">✓ Dossier complet</p>
+                            <p style="margin: 6px 0 0; font-size: 14px; color: #166534; line-height: 1.5;">
+                                Formulaire rempli · Règlement signé · Paiement confirmé
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
 
-                {# — Hero — #}
-                <tr>
-                    <td style="padding: 44px 40px 8px;" class="px">
-                        <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #ff3131;">
-                            Validation · Saison {{ licencie.season.label }}
-                        </p>
-                        {% if licencie.category.isJeune %}
-                        <h1 class="h1" style="margin: 0 0 6px; font-size: 30px; line-height: 1.2; font-weight: 800; color: #1f1f1f;">
-                            Bonjour,
-                        </h1>
-                        <p style="margin: 0 0 18px; font-size: 18px; font-weight: 700; color: #374151;">
-                            Licence de {{ licencie.prenom }} validée !
-                        </p>
-                        <p style="margin: 0; font-size: 16px; line-height: 1.65; color: #374151;">
-                            Nous avons bien reçu le paiement de la cotisation de <strong style="color: #1f1f1f;">{{ licencie.prenom }} {{ licencie.nom }}</strong>.
-                            L'inscription au Foyer de Soudron pour la saison <strong style="color: #1f1f1f;">{{ licencie.season.label }}</strong> est désormais <strong style="color: #22c55e;">complète et validée</strong>.
-                        </p>
-                        {% else %}
-                        <h1 class="h1" style="margin: 0 0 18px; font-size: 30px; line-height: 1.2; font-weight: 800; color: #1f1f1f;">
-                            Bonjour {{ licencie.prenom }},<br>votre licence est validée !
-                        </h1>
-                        <p style="margin: 0; font-size: 16px; line-height: 1.65; color: #374151;">
-                            Nous avons bien reçu votre paiement. Votre inscription au Foyer de Soudron pour la saison <strong style="color: #1f1f1f;">{{ licencie.season.label }}</strong> est désormais <strong style="color: #22c55e;">complète et validée</strong>.
-                        </p>
-                        {% endif %}
-                    </td>
-                </tr>
-
-                {# — Bloc confirmation visuelle — #}
-                <tr>
-                    <td style="padding: 32px 40px 8px;" class="px">
-                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                               style="background: #f0fdf4; border-radius: 10px; border: 1px solid #bbf7d0;">
-                            <tr>
-                                <td style="padding: 20px 24px;">
-                                    <p style="margin: 0; font-size: 15px; font-weight: 700; color: #15803d;">✓ Dossier complet</p>
-                                    <p style="margin: 6px 0 0; font-size: 14px; color: #166534; line-height: 1.5;">
-                                        Formulaire rempli · Règlement signé · Paiement confirmé
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-
-                {# — Message final — #}
-                <tr>
-                    <td style="padding: 24px 40px 36px;" class="px">
-                        <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #374151;">
-                            À très bientôt sur les terrains !<br>
-                            <strong style="color: #1f1f1f;">L'équipe du Foyer de Soudron</strong>
-                        </p>
-                    </td>
-                </tr>
-
-                {# — Pied de page sombre — #}
-                <tr>
-                    <td style="background: #1f1f1f; padding: 28px 40px;" class="px">
-                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td>
-                                    <p style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: #ffffff;">Foyer de Soudron</p>
-                                    <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #9aa1aa;">
-                                        Stade municipal · 51320 Soudron
-                                    </p>
-                                </td>
-                                <td align="right" style="vertical-align: bottom;">
-                                    <p style="margin: 0; font-size: 11px; color: #5b6068;">Propulsé par <a href="https://codepp.fr/" style="color: #ff3131; font-weight: 700; text-decoration: none;">Codepp</a></p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-
-            </table>
-
-            {# — Sous-pied de page — #}
-            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="width: 600px; max-width: 600px;">
-                <tr>
-                    <td align="center" style="padding: 20px 40px;">
-                        <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #9aa1aa;">
-                            Vous recevez cet email car vous êtes licencié(e) au Foyer de Soudron.<br>
-                            Pour toute question, contactez le club directement.
-                        </p>
-                    </td>
-                </tr>
-            </table>
-
-        </td>
-    </tr>
-</table>
-
-</body>
-</html>
+        {# — Message final — #}
+        <tr>
+            <td style="padding: 24px 40px 36px;" class="px">
+                <p style="margin: 0; font-size: 15px; line-height: 1.7; color: {{ c.texteCourant }};">
+                    À très bientôt sur les terrains !<br>
+                    <strong style="color: {{ c.texteFort }};">L'équipe du {{ club_nom }}</strong>
+                </p>
+            </td>
+        </tr>
+{% endblock %}

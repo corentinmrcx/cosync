@@ -46,7 +46,7 @@ class PaiementController extends AbstractController
         $licencie = $this->findSubmittedLicencie($uuid);
 
         if ($licencie === null) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         $this->csrf->valider('paiement_helloasso', $request);
@@ -66,7 +66,7 @@ class PaiementController extends AbstractController
         $licencie = $this->findSubmittedLicencie($uuid);
 
         if ($licencie === null) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         return $this->startCheckout($licencie);
@@ -85,7 +85,7 @@ class PaiementController extends AbstractController
         $licencie = $this->findSubmittedLicencie($uuid);
 
         if ($licencie === null) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         $intentId = $licencie->getDossierClub()?->getHelloassoCheckoutIntentId();
@@ -112,7 +112,7 @@ class PaiementController extends AbstractController
         $licencie = $this->findSubmittedLicencie($uuid);
 
         if ($licencie === null) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         return $this->render('public/paiement/erreur.html.twig', [

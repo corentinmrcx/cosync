@@ -152,9 +152,9 @@
     {{ form_end(form) }}
 
 </div>
+{% endblock %}
 
-{% block javascripts %}
-{{ parent() }}
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const data = {{ licenciesSizes|json_encode|raw }};
@@ -209,5 +209,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 </script>
-{% endblock %}
 {% endblock %}

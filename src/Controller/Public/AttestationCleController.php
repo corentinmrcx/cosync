@@ -34,7 +34,7 @@ class AttestationCleController extends AbstractController
         $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null) {
-            return $this->render('public/attestation_cle/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
         }
 
         $detention = $this->registre->getDetentionDe($dirigeant);
@@ -45,7 +45,7 @@ class AttestationCleController extends AbstractController
         }
 
         if (!$dirigeant->isAttestationCleTokenValid()) {
-            return $this->render('public/attestation_cle/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
         }
 
         return $this->render('public/attestation_cle/form.html.twig', [
@@ -63,7 +63,7 @@ class AttestationCleController extends AbstractController
         $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null || !$dirigeant->isAttestationCleTokenValid()) {
-            return $this->render('public/attestation_cle/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
         }
 
         $this->csrf->valider('attestation_cle_submit', $request);
@@ -87,7 +87,7 @@ class AttestationCleController extends AbstractController
         $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null || $dirigeant->getAttestationCleSignedAt() === null) {
-            return $this->render('public/attestation_cle/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
         }
 
         return $this->render('public/attestation_cle/confirmation.html.twig', [

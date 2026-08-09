@@ -1,23 +1,40 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Foyer de Soudron{% endblock %}</title>
-    <link rel="icon" type="image/svg+xml" href="/images/favicon/favicon.svg">
-    <link rel="icon" type="image/png" sizes="96x96" href="/images/favicon/favicon-96x96.png">
-    <link rel="shortcut icon" href="/images/favicon/favicon.ico">
-    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png">
-    <link rel="manifest" href="/images/favicon/site.webmanifest">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    {{ encore_entry_link_tags('app') }}
-    {% block head %}{% endblock %}
-</head>
-<body>
-    {% block body %}{% endblock %}
-    {{ encore_entry_script_tags('app') }}
-    {% block scripts %}{% endblock %}
-</body>
-</html>
+{% extends 'base.html.twig' %}
+
+{# Coquille commune aux pages publiques : en-tête club, messages, carte centrale, pied de page.
+   Une page publique ne remplit que `contenu`. #}
+
+{% block title %}{{ club_nom }}{% endblock %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block corps %}
+    <div class="inscription-page"{% block page_attributs %}{% endblock %}>
+
+        <header class="inscription-header">
+            <div class="inscription-header-top">
+                <span class="inscription-header-club">{{ club_nom }}</span>
+                {% block entete_droite %}{% endblock %}
+            </div>
+            {% block entete_extra %}{% endblock %}
+        </header>
+
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="inscription-flash inscription-flash-{{ type }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        <main class="inscription-main">
+            <div class="inscription-container">
+                {% block contenu %}{% endblock %}
+            </div>
+        </main>
+
+        {% include 'components/footer.html.twig' %}
+
+        {# Hors du flux : overlays et modales plein écran. #}
+        {% block hors_flux %}{% endblock %}
+
+    </div>
+{% endblock %}

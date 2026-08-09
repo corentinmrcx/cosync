@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{% block title %}CoSync — Foyer de Soudron{% endblock %}</title>
+        <title>{% block title %}CoSync — {{ club_nom }}{% endblock %}</title>
         <link rel="icon" type="image/svg+xml" href="/images/favicon/favicon.svg">
         <link rel="icon" type="image/png" sizes="96x96" href="/images/favicon/favicon-96x96.png">
         <link rel="shortcut icon" href="/images/favicon/favicon.ico">
@@ -19,13 +19,18 @@
     </head>
     <body>
         <div id="loader-bar" class="loader-bar"></div>
-        {% include 'components/navbar.html.twig' %}
 
-        <main class="main-content">
-            {% block body %}{% endblock %}
-        </main>
+        {# Les pages publiques vident ces trois blocs : elles n'ont ni navbar admin,
+           ni la même coquille de contenu. #}
+        {% block navbar %}{% include 'components/navbar.html.twig' %}{% endblock %}
 
-        {% include 'components/footer.html.twig' %}
+        {% block corps %}
+            <main class="main-content">
+                {% block body %}{% endblock %}
+            </main>
+        {% endblock %}
+
+        {% block footer %}{% include 'components/footer.html.twig' %}{% endblock %}
 
         {% block javascripts %}
             {{ encore_entry_script_tags('app') }}

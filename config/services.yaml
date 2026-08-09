@@ -25,6 +25,10 @@ services:
     App\:
         resource: '../src/'
 
+    App\Twig\AppExtension:
+        arguments:
+            $nomClub: '%club.nom_expediteur%'
+
     App\Service\Mail\ClubMailer:
         arguments:
             $emailExpediteur: '%club.email_expediteur%'

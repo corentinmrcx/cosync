@@ -38,7 +38,7 @@ class DirigeantController extends AbstractController
         $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null) {
-            return $this->render('public/dirigeant/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de formulaire n\'est plus valide.']);
         }
 
         if ($this->dossierCompletion->isComplete($dirigeant)) {
@@ -46,7 +46,7 @@ class DirigeantController extends AbstractController
         }
 
         if (!$dirigeant->isFormTokenValid()) {
-            return $this->render('public/dirigeant/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de formulaire n\'est plus valide.']);
         }
 
         return $this->render('public/dirigeant/form.html.twig', [
@@ -66,7 +66,7 @@ class DirigeantController extends AbstractController
         $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null || !$dirigeant->isFormTokenValid()) {
-            return $this->render('public/dirigeant/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de formulaire n\'est plus valide.']);
         }
 
         $this->csrf->valider('dirigeant_submit', $request);
@@ -90,7 +90,7 @@ class DirigeantController extends AbstractController
         $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($dirigeant === null || $dirigeant->getFormCompletedAt() === null) {
-            return $this->render('public/dirigeant/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de formulaire n\'est plus valide.']);
         }
 
         return $this->render('public/dirigeant/confirmation.html.twig', [
