@@ -3,6 +3,8 @@
 namespace App\Service\Stock;
 
 use App\Entity\StockItem;
+use App\Enum\StockItemKind;
+use App\Enum\StockItemVetementType;
 use App\Repository\StockMovementRepository;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -53,6 +55,33 @@ final class StockItemService
         }
 
         return false;
+    }
+
+    /**
+     * Applique les champs conditionnels au type d'article (équipement vs épicerie) sur un StockItem.
+     * Centralise la règle : un vêtement n'a pas de taille figée (déclinaisons de stock), l'épicerie
+     * porte sa contenance dans « taille ».
+     */
+    public function applyEditableFields(
+        StockItem $item,
+        ?StockItemKind $kind,
+        ?string $marque,
+        ?string $couleur,
+        ?string $taille,
+        ?StockItemVetementType $typeVetement,
+    ): void {
+        $item->setKind($kind);
+        $item->setMarque($marque ?: null);
+
+        if ($kind === StockItemKind::EQUIPEMENT) {
+            $item->setTaille(null);
+            $item->setCouleur($couleur ?: null);
+            $item->setTypeVetement($typeVetement);
+        } else {
+            $item->setTaille($taille ?: null);
+            $item->setCouleur(null);
+            $item->setTypeVetement(null);
+        }
     }
 
     public function restaurer(StockItem $item): void

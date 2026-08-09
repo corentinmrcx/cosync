@@ -4,7 +4,7 @@ namespace App\DTO;
 
 /**
  * Données d'un mouvement de stock saisi à la main depuis la modale de gestion.
- * Transformé depuis la Request par le contrôleur, consommé par StockService::recordManualMovement().
+ * Transformé depuis la Request par le contrôleur, consommé par StockMovementService::recordManualMovement().
  */
 final class ManualMovementData
 {

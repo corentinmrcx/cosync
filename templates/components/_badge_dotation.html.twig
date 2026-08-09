@@ -1,20 +1,8 @@
 {# Badge synthétique de l'état de la dotation d'un licencié.
-   `dotation` = { statut, donnes, total } (cf. DotationBesoinService::statutFicheLicencie) ou null. #}
+   `dotation` = App\DTO\DotationAvancement ou null. #}
 {% if dotation is not null %}
-    {% set classes = {
-        'remise':     'badge-status badge-status-validated',
-        'partielle':  'badge-status badge-status-completed',
-        'attente':    'badge-status badge-status-completed',
-        'a_preparer': 'badge-status badge-status-sent',
-    } %}
-    {% set labels = {
-        'remise':     'Dotation remise',
-        'partielle':  'Dotation ' ~ dotation.donnes ~ '/' ~ dotation.total,
-        'attente':    'Dotation à remettre',
-        'a_preparer': 'Dotation prévue',
-    } %}
-    <span class="{{ classes[dotation.statut] ?? 'badge-status' }}">
+    <span class="badge-status badge-status-{{ dotation.statut.badgeVariant }}">
         <span class="badge-status-dot"></span>
-        {{ labels[dotation.statut] ?? 'Dotation' }}
+        {{ dotation.label }}
     </span>
 {% endif %}

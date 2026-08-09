@@ -5,7 +5,7 @@ namespace App\Controller\Admin;
 use App\Security\CsrfGuard;
 use App\Security\Voter\SuperAdminVoter;
 use App\Service\BetaModeService;
-use App\Service\Mail\MailerService;
+use App\Service\Mail\DiagMailerService;
 use App\Service\PurgeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,7 +18,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class DiagController extends AbstractController
 {
     public function __construct(
-        private readonly MailerService $mailerService,
+        private readonly DiagMailerService $diagMailer,
         private readonly CsrfGuard $csrf,
         private readonly BetaModeService $betaModeService,
         private readonly PurgeService $purgeService,
@@ -47,7 +47,7 @@ class DiagController extends AbstractController
         }
 
         try {
-            $this->mailerService->sendTestEmail($to);
+            $this->diagMailer->envoyerMailDeTest($to);
             $this->addFlash('success', sprintf('Mail de test envoyé à %s.', $to));
         } catch (\Throwable $e) {
             $this->addFlash('error', 'Échec d\'envoi : ' . $e->getMessage());
@@ -72,7 +72,7 @@ class DiagController extends AbstractController
         $isJeune = $request->request->get('profil') === 'jeune';
 
         try {
-            $this->mailerService->sendValidationTest($to, $isJeune);
+            $this->diagMailer->envoyerApercuValidation($to, $isJeune);
             $profil = $isJeune ? 'jeune (Thomas DUPONT)' : 'senior (Kévin MARTIN)';
             $this->addFlash('success', sprintf('Mail de validation envoyé à %s (profil %s).', $to, $profil));
         } catch (\Throwable $e) {

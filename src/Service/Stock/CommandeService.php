@@ -16,7 +16,7 @@ final class CommandeService
 {
     public function __construct(
         private readonly AchatService $achatService,
-        private readonly StockService $stockService,
+        private readonly StockMovementService $stockService,
         private readonly CommandeRepository $commandeRepository,
         private readonly EntityManagerInterface $em,
     ) {}

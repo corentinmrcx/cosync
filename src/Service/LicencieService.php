@@ -7,30 +7,22 @@ use App\DTO\LicencieIdentityData;
 use App\Entity\DossierClub;
 use App\Entity\Licencie;
 use App\Entity\Season;
-use App\Entity\Transaction;
-use App\Entity\User;
 use App\Enum\LicenceStatus;
 use App\Enum\NatureLicence;
-use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
-use App\Repository\TransactionRepository;
 use App\Service\Import\DataSanitizer;
-use App\Service\Mail\MailerService;
-use App\Service\Stock\DotationBesoinService;
+use App\Service\Stock\DotationBesoinSynchronizer;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class LicencieService
 {
     public function __construct(
+        private readonly DotationBesoinSynchronizer $dotationSynchronizer,
         private readonly EntityManagerInterface $em,
-        private readonly TransactionRepository $transactionRepo,
         private readonly LicencieRepository $licencieRepo,
         private readonly TeamRepository $teamRepo,
         private readonly DataSanitizer $sanitizer,
-        private readonly MailerService $mailerService,
-        private readonly DotationBesoinService $dotationBesoinService,
-        private readonly CotisationResolver $cotisationResolver,
     ) {}
 
     /**
@@ -155,72 +147,7 @@ final class LicencieService
 
         // La nature pilote les options de dotation : la corriger change ce qui est dû.
         if ($natureChangee) {
-            $this->dotationBesoinService->recomputeForLicencie($licencie);
-        }
-    }
-
-    /**
-     * @param ?User   $confirmedBy       null pour un encaissement automatique en ligne (aucun dirigeant ne le saisit)
-     * @param ?string $externalPaymentId identifiant du paiement chez le prestataire — unique en base, garantit
-     *                                   qu'un encaissement notifié plusieurs fois n'est enregistré qu'une fois
-     */
-    public function addPayment(
-        Licencie $licencie,
-        PaymentMode $mode,
-        float $montant,
-        ?string $reference,
-        ?string $note,
-        \DateTimeImmutable $datePaiement,
-        ?User $confirmedBy,
-        Season $season,
-        ?string $externalPaymentId = null,
-    ): void {
-        $transaction = new Transaction();
-        $transaction->setLicencie($licencie);
-        $transaction->setSeason($season);
-        $transaction->setMode($mode);
-        $transaction->setMontant(number_format($montant, 2, '.', ''));
-        $transaction->setReference($reference);
-        $transaction->setNote($note);
-        $transaction->setDatePaiement($datePaiement);
-        $transaction->setConfirmedBy($confirmedBy);
-        $transaction->setExternalPaymentId($externalPaymentId);
-        $this->em->persist($transaction);
-        $this->em->flush();
-
-        $expected = (float) $this->cotisationResolver->resolve($licencie);
-        $totalPaid = $this->transactionRepo->sumByLicencieAndSeason($licencie, $season);
-
-        if ($totalPaid >= $expected) {
-            $this->setValidated($licencie);
-        }
-    }
-
-    /**
-     * Supprime un paiement saisi par erreur. Le total payé est recalculé à l'affichage ;
-     * le statut de la licence n'est pas modifié (une licence validée le reste).
-     */
-    public function deletePayment(Transaction $transaction): void
-    {
-        $this->em->remove($transaction);
-        $this->em->flush();
-    }
-
-    public function validateManually(Licencie $licencie): void
-    {
-        $this->setValidated($licencie);
-    }
-
-    private function setValidated(Licencie $licencie): void
-    {
-        $dossier = $licencie->getDossierClub();
-        if ($dossier !== null && $dossier->getStatus() !== LicenceStatus::VALIDATED) {
-            $dossier->setStatus(LicenceStatus::VALIDATED);
-            $this->em->flush();
-            $this->dotationBesoinService->recomputeForLicencie($licencie);
-            if ($licencie->getEmail() !== null) {
-                $this->mailerService->sendValidation($licencie);
-            }
+            $this->dotationSynchronizer->recomputeForLicencie($licencie);
         }
     }
 }

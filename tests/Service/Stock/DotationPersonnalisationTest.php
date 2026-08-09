@@ -9,7 +9,9 @@ use App\Enum\DotationEligibilite;
 use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Repository\DotationBesoinRepository;
-use App\Service\Stock\DotationBesoinService;
+use App\Service\Stock\DotationBesoinSynchronizer;
+use App\Service\Stock\DotationRemiseService;
+use App\Service\Stock\DotationSuiviPresenter;
 
 /**
  * Propagation du texte de flocage, du dossier du licencié jusqu'au besoin matérialisé.
@@ -20,9 +22,19 @@ use App\Service\Stock\DotationBesoinService;
  */
 final class DotationPersonnalisationTest extends StockIntegrationTestCase
 {
-    private function besoinService(): DotationBesoinService
+    private function synchronizer(): DotationBesoinSynchronizer
     {
-        return $this->service(DotationBesoinService::class);
+        return $this->service(DotationBesoinSynchronizer::class);
+    }
+
+    private function suivi(): DotationSuiviPresenter
+    {
+        return $this->service(DotationSuiviPresenter::class);
+    }
+
+    private function remise(): DotationRemiseService
+    {
+        return $this->service(DotationRemiseService::class);
     }
 
     /** @return DotationBesoin[] */
@@ -65,7 +77,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     {
         [$licencie] = $this->licencieAvecTshirtFloque('Coco');
 
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoins = $this->besoinsDe($licencie);
         self::assertCount(1, $besoins);
@@ -76,7 +88,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     {
         [$licencie] = $this->licencieAvecTshirtFloque('Cco');
 
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
         $idAvant = $this->besoinsDe($licencie)[0]->getId();
 
         // Le licencié (ou l'admin) corrige la faute de frappe dans le dossier.
@@ -85,7 +97,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         $dossier->setDotationPersonnalisation([$cles[0] => 'Coco']);
         $this->em->flush();
 
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoins = $this->besoinsDe($licencie);
         self::assertCount(1, $besoins, 'Aucun doublon : le besoin est mis à jour en place.');
@@ -97,7 +109,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     {
         [$licencie] = $this->licencieAvecTshirtFloque('Coco');
 
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
         $besoin = $this->besoinsDe($licencie)[0];
         $besoin->setStatut(DotationBesoinStatut::DONNE);
         $this->em->flush();
@@ -108,7 +120,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         $dossier->setDotationPersonnalisation([$cles[0] => 'Autre chose']);
         $this->em->flush();
 
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoins = $this->besoinsDe($licencie);
         self::assertCount(1, $besoins);
@@ -134,7 +146,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
 
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoins = $this->besoinsDe($licencie);
         self::assertSame('Veste', $besoins[0]->getStockItem()->getNom());
@@ -144,10 +156,10 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     public function testUpdatePersonnalisationCorrigeLeTexte(): void
     {
         [$licencie] = $this->licencieAvecTshirtFloque('Cco');
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoin = $this->besoinsDe($licencie)[0];
-        $this->besoinService()->updatePersonnalisation($besoin, '  Coco   Bel ');
+        $this->remise()->changerPersonnalisation($besoin, '  Coco   Bel ');
 
         self::assertSame('Coco Bel', $besoin->getPersonnalisation(), 'Trim + espaces compactés.');
     }
@@ -155,14 +167,14 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     public function testUpdatePersonnalisationRefuseeApresRemise(): void
     {
         [$licencie] = $this->licencieAvecTshirtFloque('Coco');
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoin = $this->besoinsDe($licencie)[0];
         $besoin->setStatut(DotationBesoinStatut::DONNE);
         $this->em->flush();
 
         $this->expectException(\DomainException::class);
-        $this->besoinService()->updatePersonnalisation($besoin, 'Trop tard');
+        $this->remise()->changerPersonnalisation($besoin, 'Trop tard');
     }
 
     /**
@@ -233,10 +245,10 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     public function testGetFlocagesListeUniquementLesArticlesFloquesADonner(): void
     {
         [$licencie] = $this->licencieAvecTshirtFloque('Coco');
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $season = $licencie->getSeason();
-        $flocages = $this->besoinService()->getFlocages($season);
+        $flocages = $this->suivi()->flocages($season);
 
         self::assertCount(1, $flocages);
         self::assertSame('Coco', $flocages[0]->getPersonnalisation());
@@ -245,6 +257,6 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         $flocages[0]->setStatut(DotationBesoinStatut::DONNE);
         $this->em->flush();
 
-        self::assertSame([], $this->besoinService()->getFlocages($season));
+        self::assertSame([], $this->suivi()->flocages($season));
     }
 }

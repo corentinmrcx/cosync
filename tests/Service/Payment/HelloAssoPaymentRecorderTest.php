@@ -11,7 +11,7 @@ use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TransactionRepository;
 use App\Service\CotisationResolver;
-use App\Service\LicencieService;
+use App\Service\PaiementService;
 use App\Service\Payment\HelloAssoClient;
 use App\Service\Payment\HelloAssoPaymentRecorder;
 use Doctrine\ORM\EntityManagerInterface;
@@ -93,7 +93,7 @@ final class HelloAssoPaymentRecorderTest extends KernelTestCase
             $client,
             self::getContainer()->get(LicencieRepository::class),
             self::getContainer()->get(TransactionRepository::class),
-            self::getContainer()->get(LicencieService::class),
+            self::getContainer()->get(PaiementService::class),
             self::getContainer()->get(CotisationResolver::class),
             new NullLogger(),
         );

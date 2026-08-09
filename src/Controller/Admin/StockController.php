@@ -23,7 +23,8 @@ use App\Service\Stock\AchatService;
 use App\Service\Stock\CommandeService;
 use App\Service\Stock\StockItemFormContext;
 use App\Service\Stock\StockItemService;
-use App\Service\Stock\StockService;
+use App\Service\Stock\StockMovementService;
+use App\Service\Stock\StockReportService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -37,7 +38,8 @@ class StockController extends AbstractController
 
     public function __construct(
         private readonly CsrfGuard $csrf,
-        private readonly StockService $stockService,
+        private readonly StockMovementService $mouvements,
+        private readonly StockReportService $rapports,
         private readonly StockItemService $itemService,
         private readonly StockItemFormContext $itemFormContext,
         private readonly InventairePdfService $pdfService,
@@ -52,7 +54,7 @@ class StockController extends AbstractController
     public function dashboard(#[CurrentSeason] Season $season): Response
     {
         return $this->render('admin/stock/dashboard.html.twig', [
-            'data' => $this->stockService->getDashboardData(),
+            'data' => $this->rapports->getDashboardData(),
             'season' => $season,
             'aCommanderCount' => $this->achatService->compterACommander($season),
             'commandesEnAttente' => $this->commandeService->compterEnAttente($season),
@@ -65,7 +67,7 @@ class StockController extends AbstractController
         $showArchived = $request->query->getBoolean('archivés', false);
 
         return $this->render('admin/stock/gestion.html.twig', [
-            'summary' => $this->stockService->getStockSummary($showArchived),
+            'summary' => $this->rapports->getStockSummary($showArchived),
             'showArchived' => $showArchived,
             'season' => $season,
             'licenciesValides' => $this->licencieRepository->findValidatedBySeason($season),
@@ -78,7 +80,7 @@ class StockController extends AbstractController
     #[Route('/inventaire.pdf', name: 'inventaire_pdf', methods: ['GET'])]
     public function inventairePdf(#[CurrentSeason] Season $season): Response
     {
-        $pdf = $this->pdfService->generate($this->stockService->getInventaireData(), $season->getLabel());
+        $pdf = $this->pdfService->generate($this->rapports->getInventaireData(), $season->getLabel());
 
         return new Response($pdf, Response::HTTP_OK, [
             'Content-Type' => 'application/pdf',
@@ -124,7 +126,7 @@ class StockController extends AbstractController
     /** Lit les champs conditionnels du formulaire article et délègue l'application au service. */
     private function applyEditableFields(StockItem $item, Request $request): void
     {
-        $this->stockService->applyEditableFields(
+        $this->itemService->applyEditableFields(
             $item,
             StockItemKind::tryFrom((string) $request->request->get('kind', '')),
             trim((string) $request->request->get('marque', '')) ?: null,
@@ -148,7 +150,7 @@ class StockController extends AbstractController
         );
 
         try {
-            $movement = $this->stockService->recordManualMovement($item, $data, $user);
+            $movement = $this->mouvements->recordManualMovement($item, $data, $user);
             $this->addFlash('success', sprintf(
                 '%s de %d "%s" enregistrée%s.',
                 $movement->getType()->label(),
@@ -169,7 +171,7 @@ class StockController extends AbstractController
         $this->csrf->valider('delete_stock_movement_' . $movement->getId(), $request);
 
         try {
-            $this->stockService->deleteManualMovement($movement);
+            $this->mouvements->deleteManualMovement($movement);
             $this->addFlash('success', 'Mouvement supprimé, stock recalculé.');
         } catch (\InvalidArgumentException $e) {
             $this->addFlash('error', $e->getMessage());

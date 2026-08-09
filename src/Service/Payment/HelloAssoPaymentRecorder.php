@@ -7,7 +7,7 @@ use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TransactionRepository;
 use App\Service\CotisationResolver;
-use App\Service\LicencieService;
+use App\Service\PaiementService;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Uid\Uuid;
@@ -34,7 +34,7 @@ final class HelloAssoPaymentRecorder
         private readonly HelloAssoClient $client,
         private readonly LicencieRepository $licencieRepo,
         private readonly TransactionRepository $transactionRepo,
-        private readonly LicencieService $licencieService,
+        private readonly PaiementService $paiementService,
         private readonly CotisationResolver $cotisationResolver,
         private readonly LoggerInterface $logger,
     ) {}
@@ -74,7 +74,7 @@ final class HelloAssoPaymentRecorder
         $montant = $this->montantRevenantAuClub($payment, $licencie, $checkoutIntentId);
 
         try {
-            $this->licencieService->addPayment(
+            $this->paiementService->enregistrer(
                 licencie: $licencie,
                 mode: PaymentMode::CB_ONLINE,
                 montant: $montant,

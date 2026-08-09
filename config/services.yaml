@@ -7,6 +7,12 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    # Identité de l'expéditeur des mails du club. Le nom apparaît dans la boîte de réception
+    # des licenciés : le changer ici le change partout.
+    club.email_expediteur: '%env(default:club_email_expediteur_defaut:CLUB_EMAIL_EXPEDITEUR)%'
+    club.nom_expediteur: '%env(default:club_nom_expediteur_defaut:CLUB_NOM_EXPEDITEUR)%'
+    club_email_expediteur_defaut: 'soudron.fr@marne.lgef.fr'
+    club_nom_expediteur_defaut: 'Foyer de Soudron'
 
 services:
     # default configuration for services in *this* file
@@ -18,6 +24,16 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+
+    App\Service\Mail\ClubMailer:
+        arguments:
+            $emailExpediteur: '%club.email_expediteur%'
+            $nomExpediteur: '%club.nom_expediteur%'
+
+    App\Service\Mail\DiagMailerService:
+        arguments:
+            $emailExpediteur: '%club.email_expediteur%'
+            $nomExpediteur: '%club.nom_expediteur%'
 
     # Tag tous les layouts d'import pour l'injection en iterator dans le resolver
     _instanceof:

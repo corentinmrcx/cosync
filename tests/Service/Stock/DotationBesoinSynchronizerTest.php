@@ -3,19 +3,32 @@
 namespace App\Tests\Service\Stock;
 
 use App\Entity\Licencie;
+use App\Enum\DotationAvancementStatut;
 use App\Enum\DotationBesoinStatut;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Repository\DotationBesoinRepository;
 use App\Repository\StockMovementRepository;
-use App\Service\Stock\DotationBesoinService;
+use App\Service\Stock\DotationBesoinSynchronizer;
+use App\Service\Stock\DotationRemiseService;
+use App\Service\Stock\DotationSuiviPresenter;
 
-final class DotationBesoinServiceTest extends StockIntegrationTestCase
+final class DotationBesoinSynchronizerTest extends StockIntegrationTestCase
 {
-    private function besoinService(): DotationBesoinService
+    private function synchronizer(): DotationBesoinSynchronizer
     {
-        return $this->service(DotationBesoinService::class);
+        return $this->service(DotationBesoinSynchronizer::class);
+    }
+
+    private function suivi(): DotationSuiviPresenter
+    {
+        return $this->service(DotationSuiviPresenter::class);
+    }
+
+    private function remise(): DotationRemiseService
+    {
+        return $this->service(DotationRemiseService::class);
     }
 
     private function besoinRepo(): DotationBesoinRepository
@@ -35,7 +48,7 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
 
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoins = $this->besoinRepo()->findForLicencie($licencie);
         self::assertCount(1, $besoins);
@@ -56,9 +69,9 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
 
-        $this->besoinService()->recomputeForLicencie($licencie);
-        $this->besoinService()->recomputeForLicencie($licencie);
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         self::assertCount(1, $this->besoinRepo()->findForLicencie($licencie), 'Pas de doublon après recalculs répétés.');
     }
@@ -75,13 +88,13 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
 
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoin = $this->besoinRepo()->findForLicencie($licencie)[0];
-        $this->besoinService()->markGiven($besoin, null);
+        $this->remise()->marquerRemis($besoin, null);
 
         // Un nouveau recalcul ne doit ni dupliquer ni réinitialiser le besoin donné
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoins = $this->besoinRepo()->findForLicencie($licencie);
         self::assertCount(1, $besoins);
@@ -100,22 +113,22 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
 
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoin = $this->besoinRepo()->findForLicencie($licencie)[0];
         self::assertSame('L', $besoin->getTaille());
 
         // L'admin force XXL à la main, puis on recalcule.
-        $this->besoinService()->updateTaille($besoin, 'XXL');
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->remise()->changerTaille($besoin, 'XXL');
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoin = $this->besoinRepo()->findForLicencie($licencie)[0];
         self::assertSame('XXL', $besoin->getTaille(), 'La taille manuelle survit au recalcul.');
         self::assertTrue($besoin->isTailleManuelle());
 
         // Vider la taille repasse en automatique → le dossier (L) reprend la main.
-        $this->besoinService()->updateTaille($besoin, '');
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->remise()->changerTaille($besoin, '');
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoin = $this->besoinRepo()->findForLicencie($licencie)[0];
         self::assertSame('L', $besoin->getTaille(), 'Taille vidée → retour à la déduction automatique.');
@@ -136,16 +149,16 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
 
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoins = $this->besoinRepo()->findForLicencie($licencie);
         self::assertCount(1, $besoins, 'Groupe de choix → 1 besoin (option par défaut).');
 
         // L'option par défaut est remise, puis le choix change vers l'autre option.
-        $this->besoinService()->markGiven($besoins[0], null);
+        $this->remise()->marquerRemis($besoins[0], null);
         $licencie->getDossierClub()->setDotationChoix(['haut' => $itemB->getId()]);
         $this->em->flush();
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         self::assertCount(
             1,
@@ -162,7 +175,7 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         $besoin = $this->makeBesoin($season, $item, 'L', 1);
         $this->em->flush();
 
-        $this->besoinService()->markGiven($besoin, null);
+        $this->remise()->marquerRemis($besoin, null);
 
         $movRepo = $this->service(StockMovementRepository::class);
         self::assertSame(1, $movRepo->getCurrentStockByTaille($item, 'L'), 'Stock L = 2 − 1.');
@@ -215,14 +228,14 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         $this->makeBesoin($season, $item, 'XL', 1)->setLicencie($zulu);
         $this->em->flush();
 
-        $groupes = $this->besoinService()->getSuiviGroupes($season);
+        $groupes = $this->suivi()->groupesDeSuivi($season);
 
         self::assertCount(1, $groupes);
-        self::assertSame('Séniors 1', $groupes[0]['nom']);
-        self::assertSame(3, $groupes[0]['total']);
-        self::assertSame(2, $groupes[0]['restants']);
+        self::assertSame('Séniors 1', $groupes[0]->nom);
+        self::assertSame(3, $groupes[0]->total);
+        self::assertSame(2, $groupes[0]->restants);
 
-        $noms = array_map(static fn ($b) => $b->getLicencie()->getNom(), $groupes[0]['besoins']);
+        $noms = array_map(static fn ($b) => $b->getLicencie()->getNom(), $groupes[0]->besoins);
         self::assertSame(['ALPHA', 'ZULU', 'MIKE'], $noms, 'À servir (alphabétique) puis servis en fin.');
     }
 
@@ -244,9 +257,9 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         $this->makeBesoin($season, $item, 'M', 1, DotationBesoinStatut::DONNE)->setLicencie($whiskey);
         $this->em->flush();
 
-        $groupes = $this->besoinService()->getSuiviGroupes($season);
+        $groupes = $this->suivi()->groupesDeSuivi($season);
 
-        $noms = array_map(static fn ($b) => $b->getLicencie()->getNom(), $groupes[0]['besoins']);
+        $noms = array_map(static fn ($b) => $b->getLicencie()->getNom(), $groupes[0]->besoins);
         self::assertSame(['BRAVO', 'BRAVO', 'WHISKEY'], $noms, 'Une dotation partielle reste devant les personnes entièrement servies.');
     }
 
@@ -261,7 +274,7 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
 
         $licencie = $this->makeLicencie($season, $cat, null, 'L');
         $this->em->flush();
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         // Un besoin d'une autre saison rattaché à la même personne ne doit jamais entrer
         // dans le périmètre du recalcul — sinon il serait supprimé comme caduc.
@@ -275,7 +288,7 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         $this->em->flush();
         $idEtranger = $etranger->getId();
 
-        $this->besoinService()->recomputeForLicencie($licencie);
+        $this->synchronizer()->recomputeForLicencie($licencie);
 
         self::assertNotNull(
             $this->em->find(\App\Entity\DotationBesoin::class, $idEtranger),
@@ -300,28 +313,28 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         $this->em->flush();
 
         // Sans kit applicable → null
-        self::assertNull($this->besoinService()->statutFicheLicencie($sansKit));
+        self::assertNull($this->suivi()->avancementDe($sansKit));
 
         // Kit applicable mais pas encore matérialisé → a_preparer
-        self::assertSame('a_preparer', $this->besoinService()->statutFicheLicencie($prevu)['statut']);
+        self::assertSame(DotationAvancementStatut::A_PREPARER, $this->suivi()->avancementDe($prevu)?->statut);
 
         // Besoins matérialisés, rien donné → attente
-        $this->besoinService()->recomputeForLicencie($prevu);
-        $statut = $this->besoinService()->statutFicheLicencie($prevu);
-        self::assertSame('attente', $statut['statut']);
-        self::assertSame(0, $statut['donnes']);
-        self::assertSame(2, $statut['total']);
+        $this->synchronizer()->recomputeForLicencie($prevu);
+        $statut = $this->suivi()->avancementDe($prevu);
+        self::assertSame(DotationAvancementStatut::ATTENTE, $statut->statut);
+        self::assertSame(0, $statut->donnes);
+        self::assertSame(2, $statut->total);
 
         // Une partie donnée → partielle
         $besoins = $this->besoinRepo()->findForLicencie($prevu);
-        $this->besoinService()->markGiven($besoins[0], null);
-        $statut = $this->besoinService()->statutFicheLicencie($prevu);
-        self::assertSame('partielle', $statut['statut']);
-        self::assertSame(1, $statut['donnes']);
+        $this->remise()->marquerRemis($besoins[0], null);
+        $statut = $this->suivi()->avancementDe($prevu);
+        self::assertSame(DotationAvancementStatut::PARTIELLE, $statut->statut);
+        self::assertSame(1, $statut->donnes);
 
         // Tout donné → remise
-        $this->besoinService()->markGiven($besoins[1], null);
-        self::assertSame('remise', $this->besoinService()->statutFicheLicencie($prevu)['statut']);
+        $this->remise()->marquerRemis($besoins[1], null);
+        self::assertSame(DotationAvancementStatut::REMISE, $this->suivi()->avancementDe($prevu)?->statut);
     }
 
     public function testChangerTailleApresRemiseAjusteLeStock(): void
@@ -333,14 +346,14 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         $besoin = $this->makeBesoin($season, $item, 'L', 1);
         $this->em->flush();
 
-        $this->besoinService()->markGiven($besoin, null);
+        $this->remise()->marquerRemis($besoin, null);
 
         $movRepo = $this->service(StockMovementRepository::class);
         self::assertSame(1, $movRepo->getCurrentStockByTaille($item, 'L'), 'L = 2 − 1 après remise.');
         self::assertSame(2, $movRepo->getCurrentStockByTaille($item, 'M'));
 
         // Le licencié avait pris du L mais il lui faut finalement du M.
-        $this->besoinService()->updateTaille($besoin, 'M', null);
+        $this->remise()->changerTaille($besoin, 'M', null);
 
         self::assertSame(DotationBesoinStatut::DONNE, $besoin->getStatut(), 'Reste « donné ».');
         self::assertSame('M', $besoin->getTaille());
@@ -358,8 +371,8 @@ final class DotationBesoinServiceTest extends StockIntegrationTestCase
         $besoin = $this->makeBesoin($season, $item, 'L', 1);
         $this->em->flush();
 
-        $this->besoinService()->markGiven($besoin, null);
-        $this->besoinService()->cancelGiven($besoin);
+        $this->remise()->marquerRemis($besoin, null);
+        $this->remise()->annulerRemise($besoin);
 
         $movRepo = $this->service(StockMovementRepository::class);
         self::assertSame(2, $movRepo->getCurrentStockByTaille($item, 'L'), 'Stock rétabli après annulation.');

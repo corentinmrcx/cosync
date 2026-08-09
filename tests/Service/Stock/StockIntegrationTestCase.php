@@ -24,7 +24,7 @@ use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
-use App\Service\Stock\StockService;
+use App\Service\Stock\StockMovementService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -206,7 +206,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
 
     protected function makeMovement(StockItem $item, int $qte, StockMovementType $type, ?string $taille): void
     {
-        self::getContainer()->get(StockService::class)->recordMovement(
+        self::getContainer()->get(StockMovementService::class)->recordMovement(
             $item, $qte, $type, StockMovementSource::MANUEL, null, $type === StockMovementType::REBUT ? 'test' : null, taille: $taille,
         );
     }

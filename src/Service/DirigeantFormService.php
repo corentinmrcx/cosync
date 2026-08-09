@@ -8,7 +8,7 @@ use App\Repository\DocumentSignableRepository;
 use App\Service\Document\DocumentSignatureService;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationTransportPdfService;
-use App\Service\Stock\DotationBesoinService;
+use App\Service\Stock\DotationBesoinSynchronizer;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class DirigeantFormService
@@ -19,7 +19,7 @@ final class DirigeantFormService
         private readonly DocumentSignableRepository $documentRepo,
         private readonly DocumentSignatureService $signatureService,
         private readonly PendingUploadQueue $uploadQueue,
-        private readonly DotationBesoinService $dotationBesoinService,
+        private readonly DotationBesoinSynchronizer $dotationSynchronizer,
         private readonly DirigeantDossierCompletion $dossierCompletion,
     ) {}
 
@@ -67,7 +67,7 @@ final class DirigeantFormService
             $dirigeant->setFormTokenExpiresAt(null);
             $this->em->flush();
 
-            $this->dotationBesoinService->recomputeForDirigeant($dirigeant);
+            $this->dotationSynchronizer->recomputeForDirigeant($dirigeant);
         }
 
         if ($data->attestationTransport !== null) {

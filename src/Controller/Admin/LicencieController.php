@@ -29,8 +29,9 @@ use App\Service\HistoriqueFicheService;
 use App\Service\LicencieService;
 use App\Service\ListFilterMemory;
 use App\Service\Mail\InscriptionLinkService;
+use App\Service\PaiementService;
 use App\Service\SeasonContext;
-use App\Service\Stock\DotationBesoinService;
+use App\Service\Stock\DotationSuiviPresenter;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,7 +46,7 @@ class LicencieController extends AbstractController
         private readonly ListFilterMemory $filterMemory,
         private readonly StockMovementRepository $stockMovementRepo,
         private readonly CotisationResolver $cotisationResolver,
-        private readonly DotationBesoinService $dotationBesoinService,
+        private readonly DotationSuiviPresenter $dotationSuivi,
         private readonly AutorisationCompletionService $completionService,
         private readonly LicencieRepository $licencieRepo,
         private readonly TeamRepository $teamRepo,
@@ -54,6 +55,7 @@ class LicencieController extends AbstractController
         private readonly TransactionRepository $transactionRepo,
         private readonly SeasonContext $seasonContext,
         private readonly CsrfGuard $csrf,
+        private readonly PaiementService $paiementService,
         private readonly HistoriqueFicheService $historiqueService,
         private readonly DocumentRequirementResolver $documentResolver,
     ) {}
@@ -212,7 +214,7 @@ class LicencieController extends AbstractController
             'montant' => $montant,
             'paymentModes' => PaymentMode::cases(),
             'dotations' => $this->stockMovementRepo->findDotationsByLicencie($licencie),
-            'dotationStatut' => $this->dotationBesoinService->statutFicheLicencie($licencie),
+            'dotationStatut' => $this->dotationSuivi->avancementDe($licencie),
             'history' => $this->historiqueService->pourLicencie($licencie, $transactions),
             'autorisationsManquantes' => $this->completionService->hasMissing($licencie),
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
@@ -282,7 +284,7 @@ class LicencieController extends AbstractController
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
-        $this->licencieService->addPayment(
+        $this->paiementService->enregistrer(
             $licencie,
             $paiement->mode,
             $paiement->montant,
@@ -317,7 +319,7 @@ class LicencieController extends AbstractController
             throw $this->createNotFoundException('Paiement introuvable.');
         }
 
-        $this->licencieService->deletePayment($transaction);
+        $this->paiementService->supprimer($transaction);
         $this->addFlash('success', 'Paiement supprimé.');
 
         return $this->redirectToRoute('admin_licencies_show', ['uuid' => $uuid, 'paymentsModal' => '1']);
@@ -330,7 +332,7 @@ class LicencieController extends AbstractController
     ): Response {
         $this->csrf->valider('validate_manually_' . $licencie->getUuid(), $request);
 
-        $this->licencieService->validateManually($licencie);
+        $this->paiementService->validerManuellement($licencie);
 
         $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' validée manuellement.');
 

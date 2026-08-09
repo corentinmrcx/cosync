@@ -20,9 +20,11 @@ use App\Security\CsrfGuard;
 use App\Service\Form\DotationGroupeReglagesFactory;
 use App\Service\Referentiel\Tailles;
 use App\Service\Stock\DotationAffectationService;
-use App\Service\Stock\DotationBesoinService;
+use App\Service\Stock\DotationBesoinSynchronizer;
 use App\Service\Stock\DotationModeleFormContext;
 use App\Service\Stock\DotationModeleService;
+use App\Service\Stock\DotationRemiseService;
+use App\Service\Stock\DotationSuiviPresenter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -37,7 +39,9 @@ class DotationController extends AbstractController
         private readonly DotationModeleRepository $modeleRepository,
         private readonly DotationAffectationRepository $affectationRepository,
         private readonly StockItemRepository $itemRepository,
-        private readonly DotationBesoinService $besoinService,
+        private readonly DotationBesoinSynchronizer $synchronizer,
+        private readonly DotationSuiviPresenter $suivi,
+        private readonly DotationRemiseService $remiseService,
         private readonly DotationModeleService $modeleService,
         private readonly DotationAffectationService $affectationService,
         private readonly DotationModeleFormContext $formContext,
@@ -313,11 +317,11 @@ class DotationController extends AbstractController
     #[Route('/suivi', name: 'suivi', methods: ['GET'])]
     public function suivi(#[CurrentSeason] Season $season): Response
     {
-        $this->besoinService->syncTaillesFromDossiers($season);
+        $this->synchronizer->syncTaillesFromDossiers($season);
 
         return $this->render('admin/stock/dotations/suivi.html.twig', [
             'season' => $season,
-            'groupes' => $this->besoinService->getSuiviGroupes($season),
+            'groupes' => $this->suivi->groupesDeSuivi($season),
             'taillesConnues' => Tailles::toutes(),
             'pointures' => Tailles::pointures(),
         ]);
@@ -328,7 +332,7 @@ class DotationController extends AbstractController
     {
         $this->csrf->valider('dotation_recalculer', $request);
 
-        $count = $this->besoinService->recomputeAll($season);
+        $count = $this->synchronizer->recomputeAll($season);
         $this->addFlash('success', sprintf('Besoins recalculés pour %d personne%s.', $count, $count > 1 ? 's' : ''));
 
         return $this->redirectToRoute('admin_stock_dotations_suivi');
@@ -339,7 +343,7 @@ class DotationController extends AbstractController
     {
         $this->csrf->valider('dotation_besoin_taille_' . $besoin->getId(), $request);
 
-        $this->besoinService->updateTaille($besoin, (string) $request->request->get('taille', ''), $user);
+        $this->remiseService->changerTaille($besoin, (string) $request->request->get('taille', ''), $user);
         $this->addFlash('success', sprintf('Taille mise à jour pour %s.', $besoin->getNomPrenom()));
 
         return $this->redirectToRoute('admin_stock_dotations_suivi');
@@ -351,7 +355,7 @@ class DotationController extends AbstractController
         $this->csrf->valider('dotation_besoin_personnalisation_' . $besoin->getId(), $request);
 
         try {
-            $this->besoinService->updatePersonnalisation($besoin, $request->request->get('personnalisation'));
+            $this->remiseService->changerPersonnalisation($besoin, $request->request->get('personnalisation'));
             $this->addFlash('success', sprintf('Texte de flocage mis à jour pour %s.', $besoin->getNomPrenom()));
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
@@ -365,7 +369,7 @@ class DotationController extends AbstractController
     {
         return $this->render('admin/stock/dotations/flocage.html.twig', [
             'season' => $season,
-            'besoins' => $this->besoinService->getFlocages($season),
+            'besoins' => $this->suivi->flocages($season),
         ]);
     }
 
@@ -374,7 +378,7 @@ class DotationController extends AbstractController
     {
         $this->csrf->valider('dotation_besoin_remise_' . $besoin->getId(), $request);
 
-        $this->besoinService->markGiven($besoin, $user);
+        $this->remiseService->marquerRemis($besoin, $user);
         $this->addFlash('success', sprintf('Dotation remise à %s.', $besoin->getNomPrenom()));
 
         return $this->redirectToRoute('admin_stock_dotations_suivi');
@@ -385,7 +389,7 @@ class DotationController extends AbstractController
     {
         $this->csrf->valider('dotation_besoin_annuler_' . $besoin->getId(), $request);
 
-        $this->besoinService->cancelGiven($besoin);
+        $this->remiseService->annulerRemise($besoin);
         $this->addFlash('success', 'Remise annulée.');
 
         return $this->redirectToRoute('admin_stock_dotations_suivi');
