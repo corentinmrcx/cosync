@@ -173,12 +173,12 @@
 
 {% block scripts %}
     <script>
-        initEditeurRiche({
+        document.addEventListener('DOMContentLoaded', () => initEditeurRiche({
             editeur: '#quill-editor',
             formulaire: 'document-form',
             champCache: 'contenu_html_input',
             apercu: 'document-preview',
-            placeholder: {{ "Saisissez ici le texte du document…"|e('js') }},
-        });
+            placeholder: {{ "Saisissez ici le texte du document…"|json_encode|raw }},
+        }));
     </script>
 {% endblock %}

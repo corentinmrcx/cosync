@@ -74,12 +74,12 @@
 
 {% block scripts %}
     <script>
-        initEditeurRiche({
+        document.addEventListener('DOMContentLoaded', () => initEditeurRiche({
             editeur: '#quill-editor',
             formulaire: 'attestation-form',
             champCache: 'attestation_cle_text_input',
             apercu: 'attestation-preview',
-            placeholder: {{ "Ex. : je m'engage à ne pas prêter cette clé et à la restituer sur demande…"|e('js') }},
-        });
+            placeholder: {{ "Ex. : je m'engage à ne pas prêter cette clé et à la restituer sur demande…"|json_encode|raw }},
+        }));
     </script>
 {% endblock %}

@@ -8,6 +8,7 @@ use App\Entity\Season;
 use App\Entity\User;
 use App\Repository\DocumentSignableRepository;
 use App\Tests\Support\DocumentFixtures;
+use App\Tests\Support\EditeurRicheAssertions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -21,6 +22,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 final class DocumentSignableCrudTest extends WebTestCase
 {
+    use EditeurRicheAssertions;
+
     private ?Season $season = null;
 
     public function testLaListeAfficheLesDocumentsDeLaSaison(): void
@@ -135,6 +138,18 @@ final class DocumentSignableCrudTest extends WebTestCase
         self::assertSame('<p>Je m engage.</p>', $document->getContenuHtml());
         self::assertTrue($document->isActif());
         self::assertTrue($document->viseTousLesDirigeants(), 'Sans rôle ni personne cochée, le document vise tout le monde.');
+    }
+
+    public function testLEcranDeCreationEmbarqueUnEditeurUtilisable(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $crawler = $client->request('GET', '/admin/effectif/documents/nouveau');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('#quill-editor'), 'Le conteneur de l\'éditeur doit être rendu.');
+        $this->assertEditeurRicheInitialisable($crawler, 'la création d\'un document');
     }
 
     public function testEnregistrerUnDocumentNEcrasePasLesAutres(): void

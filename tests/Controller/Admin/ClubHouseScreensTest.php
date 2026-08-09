@@ -7,6 +7,7 @@ use App\Entity\Dirigeant;
 use App\Entity\Season;
 use App\Entity\User;
 use App\Enum\CleMouvementType;
+use App\Tests\Support\EditeurRicheAssertions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -18,6 +19,8 @@ use Symfony\Component\Uid\Uuid;
  */
 final class ClubHouseScreensTest extends WebTestCase
 {
+    use EditeurRicheAssertions;
+
     private ?Season $season = null;
 
     public function testLesTroisEcransRepondent(): void
@@ -170,6 +173,18 @@ final class ClubHouseScreensTest extends WebTestCase
         $season = $em->find(Season::class, $this->season->getId());
 
         self::assertStringContainsString('met le local à disposition', (string) $season->getAttestationCleText());
+    }
+
+    public function testLEcranDAttestationEmbarqueUnEditeurUtilisable(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $crawler = $client->request('GET', '/admin/club-house/attestation');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('#quill-editor'), 'Le conteneur de l\'éditeur doit être rendu.');
+        $this->assertEditeurRicheInitialisable($crawler, 'le texte d\'attestation de clé');
     }
 
     public function testLesEcransSontInaccessiblesSansAuthentification(): void
