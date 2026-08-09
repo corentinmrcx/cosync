@@ -216,7 +216,7 @@ final class DocumentSignableCrudTest extends WebTestCase
 
         $fixtures = new DocumentFixtures($em);
         $document = $fixtures->documentDirigeant($this->season);
-        $dirigeant = (new \App\Entity\Dirigeant())
+        $dirigeant = (new Dirigeant())
             ->setNom('MARTIN')->setPrenom('Kevin')->setSeason($this->season);
 
         $em->persist($dirigeant);
@@ -286,11 +286,11 @@ final class DocumentSignableCrudTest extends WebTestCase
         $em->clear();
 
         self::assertNotNull(
-            $em->find(\App\Entity\Dirigeant::class, $uuidRelance)->getFormTokenExpiresAt(),
+            $em->find(Dirigeant::class, $uuidRelance)->getFormTokenExpiresAt(),
             'Le lien est régénéré pour 30 jours.',
         );
         self::assertNull(
-            $em->find(\App\Entity\Dirigeant::class, $uuidSansEmail)->getFormTokenExpiresAt(),
+            $em->find(Dirigeant::class, $uuidSansEmail)->getFormTokenExpiresAt(),
             'Sans email, aucun lien ne part.',
         );
     }
@@ -330,11 +330,11 @@ final class DocumentSignableCrudTest extends WebTestCase
         return $licencie;
     }
 
-    private function makeDirigeant(string $nom, ?string $email): \App\Entity\Dirigeant
+    private function makeDirigeant(string $nom, ?string $email): Dirigeant
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $dirigeant = (new \App\Entity\Dirigeant())
+        $dirigeant = (new Dirigeant())
             ->setNom($nom)
             ->setPrenom('Kevin')
             ->setSeason($this->season)

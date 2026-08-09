@@ -2,9 +2,9 @@
 
 namespace App\Tests\Controller\Admin;
 
-use App\Entity\DocumentSignable;
 use App\Entity\Category;
 use App\Entity\Dirigeant;
+use App\Entity\DocumentSignable;
 use App\Entity\DossierClub;
 use App\Entity\Licencie;
 use App\Entity\Season;
@@ -123,7 +123,7 @@ final class FicheDocumentsChecklistTest extends WebTestCase
         self::assertStringContainsString('En attente', $html);
 
         $fixtures->signerParLicencie(
-            $em->find(\App\Entity\DocumentSignable::class, $reglement->getId()),
+            $em->find(DocumentSignable::class, $reglement->getId()),
             $em->find(Licencie::class, $licencie->getUuid()),
         );
         $em->flush();

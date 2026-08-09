@@ -280,7 +280,7 @@ final class DotationBesoinSynchronizerTest extends StockIntegrationTestCase
         // Un besoin d'une autre saison rattaché à la même personne ne doit jamais entrer
         // dans le périmètre du recalcul — sinon il serait supprimé comme caduc.
         $autreSaison = $this->makeSeason('2024-2025');
-        $etranger = (new \App\Entity\DotationBesoin())
+        $etranger = (new DotationBesoin())
             ->setSeason($autreSaison)
             ->setStockItem($this->makeItem('Sweat', StockItemVetementType::HAUT))
             ->setLicencie($licencie)
@@ -292,7 +292,7 @@ final class DotationBesoinSynchronizerTest extends StockIntegrationTestCase
         $this->synchronizer()->recomputeForLicencie($licencie);
 
         self::assertNotNull(
-            $this->em->find(\App\Entity\DotationBesoin::class, $idEtranger),
+            $this->em->find(DotationBesoin::class, $idEtranger),
             'Le besoin de la saison précédente doit survivre au recalcul.',
         );
     }

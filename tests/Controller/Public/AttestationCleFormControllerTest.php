@@ -2,9 +2,9 @@
 
 namespace App\Tests\Controller\Public;
 
-use App\Entity\DocumentSignature;
 use App\Entity\CleMouvement;
 use App\Entity\Dirigeant;
+use App\Entity\DocumentSignature;
 use App\Entity\Season;
 use App\Enum\CleMouvementType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -251,7 +251,7 @@ final class AttestationCleFormControllerTest extends WebTestCase
         return (int) self::getContainer()->get(EntityManagerInterface::class)
             ->createQueryBuilder()
             ->select('COUNT(s.id)')
-            ->from(\App\Entity\DocumentSignature::class, 's')
+            ->from(DocumentSignature::class, 's')
             ->getQuery()
             ->getSingleScalarResult();
     }

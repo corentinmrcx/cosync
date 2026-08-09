@@ -74,25 +74,9 @@ final class LocalFileDriveSyncTest extends TestCase
         self::assertFalse($this->sync($this->uploaderQuiEchoueSiAppele())->sync($sujet));
     }
 
-    /** @return LocalFileDriveSync<SujetArchivable> */
-    private function sync(DriveUploader $uploader): LocalFileDriveSync
+    private function sync(DriveUploader $uploader): SyncDeTest
     {
-        return new class($uploader, $this->createStub(EntityManagerInterface::class)) extends LocalFileDriveSync {
-            protected function cheminActuel(object $sujet): ?string
-            {
-                return $sujet->chemin;
-            }
-
-            protected function enregistrerDriveId(object $sujet, string $driveId): void
-            {
-                $sujet->chemin = $driveId;
-            }
-
-            protected function destination(object $sujet): DriveDestination
-            {
-                return new DriveDestination('2025-2026', ['Documents signés'], 'document.pdf');
-            }
-        };
+        return new SyncDeTest($uploader, $this->createStub(EntityManagerInterface::class));
     }
 
     private function uploaderQuiRepond(?string $driveId): DriveUploader
@@ -115,6 +99,30 @@ final class LocalFileDriveSyncTest extends TestCase
                 TestCase::fail('Aucun upload ne devait être tenté.');
             }
         };
+    }
+}
+
+/**
+ * Implémentation minimale de l'archivage, pour éprouver l'ossature sans dépendre
+ * d'une entité Doctrine.
+ *
+ * @extends LocalFileDriveSync<SujetArchivable>
+ */
+final class SyncDeTest extends LocalFileDriveSync
+{
+    protected function cheminActuel(object $sujet): ?string
+    {
+        return $sujet->chemin;
+    }
+
+    protected function enregistrerDriveId(object $sujet, string $driveId): void
+    {
+        $sujet->chemin = $driveId;
+    }
+
+    protected function destination(object $sujet): DriveDestination
+    {
+        return new DriveDestination('2025-2026', ['Documents signés'], 'document.pdf');
     }
 }
 

@@ -2,12 +2,12 @@
 
 namespace App\Tests\Service\Form;
 
-use App\Service\Dotation\DotationResolver;
 use App\Entity\Licencie;
 use App\Enum\DotationEligibilite;
 use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Service\Dotation\DotationChoixRequestFactory;
+use App\Service\Dotation\DotationResolver;
 use App\Tests\Service\Stock\StockIntegrationTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -108,7 +108,7 @@ final class DotationChoixRequestFactoryTest extends StockIntegrationTestCase
         self::assertSame([], $data->personnalisation, 'Aucun flocage n\'est dû à ce licencié.');
 
         // Et la dotation réellement due reste la veste.
-        $lignes = $this->service(\App\Service\Dotation\DotationResolver::class)->resolveDotation($licencie);
+        $lignes = $this->service(DotationResolver::class)->resolveDotation($licencie);
         self::assertSame($veste->getId(), $lignes[0]['stockItem']->getId());
     }
 

@@ -2,7 +2,6 @@
 
 namespace App\Tests\Service\Stock;
 
-use App\Service\Dotation\DotationResolver;
 use App\Entity\DotationBesoin;
 use App\Entity\Licencie;
 use App\Enum\DotationBesoinStatut;
@@ -12,6 +11,7 @@ use App\Enum\StockItemVetementType;
 use App\Repository\DotationBesoinRepository;
 use App\Service\Dotation\DotationBesoinSynchronizer;
 use App\Service\Dotation\DotationRemiseService;
+use App\Service\Dotation\DotationResolver;
 use App\Service\Dotation\DotationSuiviPresenter;
 
 /**
@@ -204,7 +204,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
 
-        $resolver = $this->service(\App\Service\Dotation\DotationResolver::class);
+        $resolver = $this->service(DotationResolver::class);
 
         self::assertCount(1, $resolver->getChoiceGroups($licencie), 'Le groupe est bien posé en question.');
 
@@ -233,7 +233,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
 
-        $resolver = $this->service(\App\Service\Dotation\DotationResolver::class);
+        $resolver = $this->service(DotationResolver::class);
 
         self::assertSame([], $resolver->getChoiceGroups($licencie), 'Un nouveau licencié n\'a pas le choix.');
         self::assertSame(

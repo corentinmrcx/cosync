@@ -2,8 +2,8 @@
 
 namespace App\Tests\Controller\Public;
 
-use App\Entity\DocumentSignable;
 use App\Entity\Dirigeant;
+use App\Entity\DocumentSignable;
 use App\Entity\DocumentSignature;
 use App\Entity\Season;
 use App\Tests\Support\DocumentFixtures;
@@ -127,7 +127,7 @@ final class DirigeantFormControllerTest extends WebTestCase
 
         return (int) $em->createQueryBuilder()
             ->select('d.id')
-            ->from(\App\Entity\DocumentSignable::class, 'd')
+            ->from(DocumentSignable::class, 'd')
             ->getQuery()
             ->getSingleScalarResult();
     }

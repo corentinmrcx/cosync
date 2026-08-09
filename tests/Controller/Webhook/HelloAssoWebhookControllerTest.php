@@ -2,8 +2,8 @@
 
 namespace App\Tests\Controller\Webhook;
 
-use App\Service\Payment\HelloAssoWebhookVerifier;
 use App\Repository\TransactionRepository;
+use App\Service\Payment\HelloAssoWebhookVerifier;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -73,11 +73,11 @@ final class HelloAssoWebhookControllerTest extends WebTestCase
     {
         // Le secret n'est pas configuré en test : la vérification est alors volontairement passante,
         // la sécurité reposant sur la revérification auprès de l'API. On documente ce contrat ici.
-        $verifier = static::getContainer()->get(\App\Service\Payment\HelloAssoWebhookVerifier::class);
+        $verifier = static::getContainer()->get(HelloAssoWebhookVerifier::class);
 
         self::assertTrue($verifier->isTrusted('{}', null), 'Sans secret configuré, la notification passe.');
 
-        $avecSecret = new \App\Service\Payment\HelloAssoWebhookVerifier('un-secret');
+        $avecSecret = new HelloAssoWebhookVerifier('un-secret');
         self::assertFalse($avecSecret->isTrusted('{}', 'signature-bidon'));
         self::assertFalse($avecSecret->isTrusted('{}', null));
         self::assertTrue($avecSecret->isTrusted('{}', hash_hmac('sha256', '{}', 'un-secret')));
