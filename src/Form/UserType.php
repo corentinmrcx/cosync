@@ -28,7 +28,7 @@ class UserType extends AbstractType
                 'mapped' => false,
                 'required' => $options['is_new'],
                 'constraints' => $options['is_new']
-                    ? [new NotBlank(), new Length(['min' => 8, 'minMessage' => 'Le mot de passe doit faire au moins {{ limit }} caractères.'])]
+                    ? [new NotBlank(), new Length(min: 8, minMessage: 'Le mot de passe doit faire au moins {{ limit }} caractères.')]
                     : [],
                 'attr' => ['placeholder' => $options['is_new'] ? '' : 'Laisser vide pour ne pas changer'],
             ]);

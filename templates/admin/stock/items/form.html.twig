@@ -37,7 +37,7 @@
 
             <div class="field">
                 {{ form_label(form.nom) }}
-                {{ form_widget(form.nom, {attr: {class: 'field-input'}}) }}
+                {{ form_widget(form.nom) }}
                 {{ form_errors(form.nom) }}
             </div>
 
@@ -102,7 +102,7 @@
                     {{ form_label(form.category) }}
                     <a href="{{ path('admin_stock_categories_list') }}" class="stock-items-label-link" target="_blank">Gérer ↗</a>
                 </div>
-                {{ form_widget(form.category, {attr: {class: 'field-input'}}) }}
+                {{ form_widget(form.category) }}
             </div>
 
             <div class="field">
@@ -110,7 +110,7 @@
                     {{ form_label(form.fournisseur) }}
                     <a href="{{ path('admin_stock_fournisseurs_list') }}" class="stock-items-label-link" target="_blank">Gérer ↗</a>
                 </div>
-                {{ form_widget(form.fournisseur, {attr: {class: 'field-input'}}) }}
+                {{ form_widget(form.fournisseur) }}
                 {{ form_help(form.fournisseur) }}
             </div>
 
@@ -120,12 +120,12 @@
             <div class="stock-items-row">
                 <div class="field">
                     {{ form_label(form.alertSeuil) }}
-                    {{ form_widget(form.alertSeuil, {attr: {class: 'field-input'}}) }}
+                    {{ form_widget(form.alertSeuil) }}
                     {{ form_help(form.alertSeuil) }}
                 </div>
                 <div class="field">
                     {{ form_label(form.prixAchat) }}
-                    {{ form_widget(form.prixAchat, {attr: {class: 'field-input'}}) }}
+                    {{ form_widget(form.prixAchat) }}
                     {{ form_help(form.prixAchat) }}
                 </div>
             </div>
@@ -136,11 +136,11 @@
             <div class="stock-items-row">
                 <div class="field">
                     {{ form_label(form.refCatalogue) }}
-                    {{ form_widget(form.refCatalogue, {attr: {class: 'field-input'}}) }}
+                    {{ form_widget(form.refCatalogue) }}
                 </div>
                 <div class="field">
                     {{ form_label(form.lienAchat) }}
-                    {{ form_widget(form.lienAchat, {attr: {class: 'field-input'}}) }}
+                    {{ form_widget(form.lienAchat) }}
                 </div>
             </div>
 

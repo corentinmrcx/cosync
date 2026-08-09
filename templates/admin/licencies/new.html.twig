@@ -23,12 +23,12 @@
         <div class="season-form-row">
             <div class="field">
                 {{ form_label(form.nom) }}
-                {{ form_widget(form.nom, { attr: { class: 'field-input' } }) }}
+                {{ form_widget(form.nom) }}
                 {{ form_errors(form.nom) }}
             </div>
             <div class="field">
                 {{ form_label(form.prenom) }}
-                {{ form_widget(form.prenom, { attr: { class: 'field-input' } }) }}
+                {{ form_widget(form.prenom) }}
                 {{ form_errors(form.prenom) }}
             </div>
         </div>
@@ -36,12 +36,12 @@
         <div class="season-form-row">
             <div class="field">
                 {{ form_label(form.dateNaissance) }}
-                {{ form_widget(form.dateNaissance, { attr: { class: 'field-input' } }) }}
+                {{ form_widget(form.dateNaissance) }}
                 {{ form_errors(form.dateNaissance) }}
             </div>
             <div class="field">
                 {{ form_label(form.category) }}
-                {{ form_widget(form.category, { attr: { class: 'field-input' } }) }}
+                {{ form_widget(form.category) }}
                 {{ form_errors(form.category) }}
             </div>
         </div>
@@ -49,14 +49,14 @@
         <div class="season-form-row">
             <div class="field">
                 {{ form_label(form.team) }}
-                {{ form_widget(form.team, { attr: { class: 'field-input' } }) }}
+                {{ form_widget(form.team) }}
                 {{ form_errors(form.team) }}
             </div>
         </div>
 
         <div class="field">
             {{ form_label(form.numLicence) }}
-            {{ form_widget(form.numLicence, { attr: { class: 'field-input' } }) }}
+            {{ form_widget(form.numLicence) }}
             {{ form_errors(form.numLicence) }}
             <p class="licencie-new-hint">Facultatif si l'export FootClubs est indisponible. Sera mis à jour automatiquement lors du prochain import.</p>
         </div>
@@ -68,31 +68,31 @@
         <div class="season-form-row">
             <div class="field">
                 {{ form_label(form.email) }}
-                {{ form_widget(form.email, { attr: { class: 'field-input' } }) }}
+                {{ form_widget(form.email) }}
                 {{ form_errors(form.email) }}
             </div>
             <div class="field">
                 {{ form_label(form.telephone) }}
-                {{ form_widget(form.telephone, { attr: { class: 'field-input' } }) }}
+                {{ form_widget(form.telephone) }}
                 {{ form_errors(form.telephone) }}
             </div>
         </div>
 
         <div class="field">
             {{ form_label(form.voieRue) }}
-            {{ form_widget(form.voieRue, { attr: { class: 'field-input' } }) }}
+            {{ form_widget(form.voieRue) }}
             {{ form_errors(form.voieRue) }}
         </div>
 
         <div class="season-form-row">
             <div class="field">
                 {{ form_label(form.codePostal) }}
-                {{ form_widget(form.codePostal, { attr: { class: 'field-input' } }) }}
+                {{ form_widget(form.codePostal) }}
                 {{ form_errors(form.codePostal) }}
             </div>
             <div class="field">
                 {{ form_label(form.ville) }}
-                {{ form_widget(form.ville, { attr: { class: 'field-input' } }) }}
+                {{ form_widget(form.ville) }}
                 {{ form_errors(form.ville) }}
             </div>
         </div>

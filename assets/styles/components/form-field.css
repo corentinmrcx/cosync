@@ -53,8 +53,11 @@
     color: var(--color-text-muted);
 }
 
+/* Rendu tantôt en <p>, tantôt en <ul> par le thème de formulaire Symfony. */
 .field-erreur {
     margin: 0;
+    padding: 0;
+    list-style: none;
     font-size: var(--font-size-xs);
     color: var(--color-danger);
 }

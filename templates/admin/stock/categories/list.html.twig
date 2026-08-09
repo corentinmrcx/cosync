@@ -24,12 +24,12 @@
                 <div class="stock-categories-form-row">
                     <div class="field" style="flex:3">
                         {{ form_label(newCategoryForm.name) }}
-                        {{ form_widget(newCategoryForm.name, {attr: {class: 'field-input'}}) }}
+                        {{ form_widget(newCategoryForm.name) }}
                         {{ form_errors(newCategoryForm.name) }}
                     </div>
                     <div class="field">
                         {{ form_label(newCategoryForm.position) }}
-                        {{ form_widget(newCategoryForm.position, {attr: {class: 'field-input stock-categories-input-position'}}) }}
+                        {{ form_widget(newCategoryForm.position, {attr: {class: 'stock-categories-input-position'}}) }}
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Créer</button>
