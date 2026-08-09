@@ -21,6 +21,19 @@ final class AchatService
         private readonly CommandeLigneRepository $commandeLigneRepository,
     ) {}
 
+    /** Nombre total d'articles à commander, toutes lignes confondues. */
+    public function compterACommander(Season $season): int
+    {
+        $total = 0;
+        foreach ($this->computeACommander($season) as $groupe) {
+            foreach ($groupe['lignes'] as $ligne) {
+                $total += $ligne['aCommander'];
+            }
+        }
+
+        return $total;
+    }
+
     /**
      * @return array<int, array{
      *   fournisseur: ?Fournisseur,

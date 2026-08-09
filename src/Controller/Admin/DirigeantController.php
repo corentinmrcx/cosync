@@ -4,20 +4,22 @@ namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
 use App\DTO\DirigeantData;
+use App\DTO\FiltreListe;
 use App\Entity\Dirigeant;
 use App\Entity\Season;
 use App\Entity\Team;
 use App\Enum\DirigeantRole;
 use App\Form\DirigeantType;
 use App\Repository\DirigeantRepository;
-use App\Repository\LicencieRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
 use App\Service\ClubHouse\CleRegistreService;
 use App\Service\DirigeantDossierCompletion;
+use App\Service\DirigeantFormPrefill;
 use App\Service\DirigeantService;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\HistoriqueFicheService;
 use App\Service\ListFilterMemory;
 use App\Service\Mail\DirigeantLinkService;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -34,11 +36,12 @@ class DirigeantController extends AbstractController
         private readonly DirigeantRepository $dirigeantRepo,
         private readonly TeamRepository $teamRepo,
         private readonly DirigeantService $dirigeantService,
-        private readonly LicencieRepository $licencieRepo,
         private readonly StockMovementRepository $stockMovementRepo,
         private readonly CleRegistreService $registre,
         private readonly DirigeantLinkService $linkService,
         private readonly CsrfGuard $csrf,
+        private readonly DirigeantFormPrefill $formPrefill,
+        private readonly HistoriqueFicheService $historiqueService,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DirigeantDossierCompletion $dossierCompletion,
     ) {}
@@ -66,20 +69,16 @@ class DirigeantController extends AbstractController
         }
 
         $filterGroups = [
-            [
-                'name' => 'team',
-                'label' => 'Équipe',
-                'allLabel' => 'Toutes',
-                'options' => array_map(fn (Team $t) => ['value' => $t->getId(), 'label' => $t->getName()], $this->teamRepo->findBySeason($season)),
-                'current' => $currentTeam?->getId(),
-            ],
-            [
-                'name' => 'role',
-                'label' => 'Rôle',
-                'allLabel' => 'Tous',
-                'options' => DirigeantRole::options(),
-                'current' => $currentRole?->value,
-            ],
+            FiltreListe::depuisEntites(
+                'team',
+                'Équipe',
+                'Toutes',
+                $this->teamRepo->findBySeason($season),
+                static fn (Team $team): int => (int) $team->getId(),
+                static fn (Team $team): string => $team->getName(),
+                $currentTeam?->getId(),
+            ),
+            FiltreListe::depuisEnum('role', 'Rôle', 'Tous', DirigeantRole::cases(), $currentRole),
         ];
 
         return $this->render('admin/dirigeants/list.html.twig', [
@@ -92,7 +91,7 @@ class DirigeantController extends AbstractController
             'season' => $season,
             'search' => $search,
             'filterGroups' => $filterGroups,
-            'activeFilterCount' => ($currentTeam ? 1 : 0) + ($currentRole ? 1 : 0),
+            'activeFilterCount' => FiltreListe::compterActifs($filterGroups),
         ]);
     }
 
@@ -123,7 +122,7 @@ class DirigeantController extends AbstractController
             'form' => $form,
             'dirigeant' => null,
             'roleOptions' => DirigeantRole::options(),
-            'licenciesSizes' => $this->buildLicenciesSizes($this->licencieRepo, $season),
+            'licenciesSizes' => $this->formPrefill->parUuid($season),
         ]);
     }
 
@@ -131,54 +130,12 @@ class DirigeantController extends AbstractController
     public function show(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
     ): Response {
-        $history = [[
-            'date' => $dirigeant->getImportedAt(),
-            'label' => $dirigeant->isCreatedManually()
-                ? 'Dirigeant créé manuellement'
-                : 'Dirigeant importé depuis FootClubs',
-            'who' => 'Admin',
-        ]];
-
-        if ($dirigeant->getFormTokenExpiresAt() !== null) {
-            $history[] = [
-                'date' => $dirigeant->getFormTokenExpiresAt()->modify('-30 days'),
-                'label' => 'Lien de formulaire envoyé par email',
-                'who' => 'Système',
-            ];
-        }
-
-        if ($dirigeant->getFormCompletedAt() !== null) {
-            $history[] = [
-                'date' => $dirigeant->getFormCompletedAt(),
-                'label' => 'Formulaire équipement complété',
-                'who' => $dirigeant->getNomPrenom(),
-            ];
-        }
-
-        if ($dirigeant->getAttestationCleSignedAt() !== null) {
-            $history[] = [
-                'date' => $dirigeant->getAttestationCleSignedAt(),
-                'label' => 'Attestation de remise de clés signée',
-                'who' => $dirigeant->getNomPrenom(),
-            ];
-        }
-
         $signatures = $this->documentResolver->signaturesParDocumentPourDirigeant($dirigeant);
-
-        foreach ($signatures as $signature) {
-            $history[] = [
-                'date' => $signature->getSignedAt(),
-                'label' => $signature->getDocument()->getTitre() . ' signé',
-                'who' => $dirigeant->getNomPrenom(),
-            ];
-        }
-
-        usort($history, fn (array $a, array $b) => $a['date'] <=> $b['date']);
 
         return $this->render('admin/dirigeants/show.html.twig', [
             'dirigeant' => $dirigeant,
             'dotations' => $this->stockMovementRepo->findDotationsByDirigeant($dirigeant),
-            'history' => $history,
+            'history' => $this->historiqueService->pourDirigeant($dirigeant),
             'nbCles' => $this->registre->getSolde($dirigeant),
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande à ce dirigeant.
@@ -243,28 +200,7 @@ class DirigeantController extends AbstractController
             'form' => $form,
             'dirigeant' => $dirigeant,
             'roleOptions' => DirigeantRole::options(),
-            'licenciesSizes' => $this->buildLicenciesSizes($this->licencieRepo, $season),
+            'licenciesSizes' => $this->formPrefill->parUuid($season),
         ]);
-    }
-
-    private function buildLicenciesSizes(LicencieRepository $licencieRepo, Season $season): string
-    {
-        $map = [];
-        foreach ($licencieRepo->findBySeason($season) as $licencie) {
-            $dossier = $licencie->getDossierClub();
-            $map[(string) $licencie->getUuid()] = [
-                'nom' => $licencie->getNom(),
-                'prenom' => $licencie->getPrenom(),
-                'email' => $licencie->getEmail(),
-                'telephone' => $licencie->getTelephone(),
-                'dateNaissance' => $licencie->getDateNaissance()->format('Y-m-d'),
-                'numLicence' => $licencie->getNumLicence(),
-                'tailleHaut' => $dossier?->getTailleHaut(),
-                'tailleBas' => $dossier?->getTailleBas(),
-                'pointure' => $dossier?->getPointure(),
-            ];
-        }
-
-        return json_encode($map, JSON_THROW_ON_ERROR);
     }
 }

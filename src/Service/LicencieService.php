@@ -69,7 +69,7 @@ final class LicencieService
         $licencie->setCodePostal($data->codePostal !== null && trim($data->codePostal) !== '' ? trim($data->codePostal) : null);
         $licencie->setVille($data->ville !== null && trim($data->ville) !== '' ? trim($data->ville) : null);
         $licencie->setNumLicence($numLicence);
-        $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
+        $licencie->setFormTokenExpiresAt(LienPublic::expiration());
         $licencie->setCreatedManually(true);
         // Saisie explicite par l'admin : elle fait autorité sur un import ultérieur.
         $licencie->setNatureLicence($data->natureLicence);

@@ -6,21 +6,26 @@ use App\DTO\DotationGroupeReglagesData;
 use App\DTO\DotationLigneReglagesData;
 use App\Entity\DotationModele;
 use App\Entity\DotationModeleLigne;
+use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Enum\DotationEligibilite;
 use App\Repository\DotationBesoinRepository;
 use App\Repository\DotationModeleRepository;
 use App\Repository\LicencieRepository;
+use App\Repository\StockItemRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Gestion des réglages fins d'une ligne de modèle de dotation (éligibilité, personnalisation).
- * La composition d'un kit — ajouter/retirer des articles — reste dans DotationController.
+ * Composition d'un kit de dotation : le modèle lui-même, ses articles, ses groupes de choix
+ * et les réglages fins de chaque option (éligibilité, personnalisation).
  */
 final class DotationModeleService
 {
     /** Longueur retenue quand l'admin n'en fixe aucune : un flocage tient rarement plus long. */
     public const PERSONNALISATION_MAX_DEFAUT = 15;
+
+    /** Un choix est une question : en dessous de deux options, l'article est imposé, pas choisi. */
+    private const OPTIONS_MINIMUM_PAR_CHOIX = 2;
 
     /** Borne haute de sécurité — la colonne DotationBesoin::personnalisation fait 60. */
     private const PERSONNALISATION_MAX_ABSOLU = 60;
@@ -31,7 +36,122 @@ final class DotationModeleService
         private readonly LicencieRepository $licencieRepository,
         private readonly DotationBesoinRepository $besoinRepository,
         private readonly DotationModeleRepository $modeleRepository,
+        private readonly StockItemRepository $itemRepository,
     ) {}
+
+    /** @throws \DomainException si le nom est vide */
+    public function creer(Season $season, string $nom): DotationModele
+    {
+        $nom = trim($nom);
+        if ($nom === '') {
+            throw new \DomainException('Le nom du modèle est obligatoire.');
+        }
+
+        $modele = (new DotationModele())->setSeason($season)->setNom($nom);
+
+        $this->em->persist($modele);
+        $this->em->flush();
+
+        return $modele;
+    }
+
+    /** Un nom vide laisse l'ancien en place : l'admin peut ne vouloir basculer que l'activation. */
+    public function mettreAJour(DotationModele $modele, string $nom, bool $actif): void
+    {
+        $nom = trim($nom);
+        if ($nom !== '') {
+            $modele->setNom($nom);
+        }
+        $modele->setActif($actif);
+
+        $this->em->flush();
+    }
+
+    public function supprimer(DotationModele $modele): void
+    {
+        $this->em->remove($modele);
+        $this->em->flush();
+    }
+
+    /** @throws \DomainException si l'article n'existe pas */
+    public function ajouterArticle(DotationModele $modele, int $itemId, int $quantite): DotationModeleLigne
+    {
+        $item = $this->itemRepository->find($itemId);
+        if ($item === null) {
+            throw new \DomainException('Article introuvable.');
+        }
+
+        $ligne = (new DotationModeleLigne())
+            ->setStockItem($item)
+            ->setQuantite(max(1, $quantite));
+
+        $modele->addLigne($ligne);
+        $this->em->persist($ligne);
+        $this->em->flush();
+
+        return $ligne;
+    }
+
+    /**
+     * Crée un groupe « 1 parmi N ». Les options naissent ouvertes à tout le monde : l'éligibilité
+     * et le texte à personnaliser se règlent ensuite dans le panneau du choix, où l'aperçu montre
+     * immédiatement la conséquence.
+     *
+     * @param int[] $itemIds
+     *
+     * @throws \DomainException si le nom est vide ou si moins de deux articles sont retenus
+     */
+    public function creerChoix(DotationModele $modele, string $nom, array $itemIds, int $quantite): int
+    {
+        $nom = trim($nom);
+        if ($nom === '') {
+            throw new \DomainException('Donnez un nom au choix (ex : « Veste »).');
+        }
+
+        $itemIds = array_unique(array_filter($itemIds));
+        if (count($itemIds) < self::OPTIONS_MINIMUM_PAR_CHOIX) {
+            throw new \DomainException('Un choix doit proposer au moins 2 articles.');
+        }
+
+        $quantite = max(1, $quantite);
+        $ajoutes = 0;
+
+        foreach ($itemIds as $itemId) {
+            $item = $this->itemRepository->find($itemId);
+            if ($item === null) {
+                continue;
+            }
+
+            $modele->addLigne(
+                $ligne = (new DotationModeleLigne())
+                    ->setStockItem($item)
+                    ->setQuantite($quantite)
+                    ->setGroupeChoix($nom)
+                    ->setEligibilite(DotationEligibilite::TOUS),
+            );
+            $this->em->persist($ligne);
+            ++$ajoutes;
+        }
+
+        if ($ajoutes < self::OPTIONS_MINIMUM_PAR_CHOIX) {
+            throw new \DomainException('Articles introuvables : choix non créé.');
+        }
+
+        $this->em->flush();
+
+        return $ajoutes;
+    }
+
+    public function supprimerChoix(DotationModele $modele, string $groupe): void
+    {
+        foreach ($modele->getLignes() as $ligne) {
+            if ($ligne->getGroupeChoix() === $groupe) {
+                $this->em->remove($ligne);
+            }
+        }
+
+        $this->em->flush();
+    }
 
     public function updateReglages(DotationModeleLigne $ligne, DotationLigneReglagesData $data): void
     {
@@ -150,7 +270,7 @@ final class DotationModeleService
                     ++$restantes;
                 }
             }
-            if ($restantes < 2) {
+            if ($restantes < self::OPTIONS_MINIMUM_PAR_CHOIX) {
                 throw new \DomainException(sprintf('Un choix doit garder au moins 2 options. Retirez le choix « %s » en entier si vous n\'en voulez plus.', $groupe));
             }
         }

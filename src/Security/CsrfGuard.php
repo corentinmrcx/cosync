@@ -4,9 +4,9 @@ namespace App\Security;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\Security\Core\Exception\InvalidCsrfTokenException;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
-use Symfony\Component\Security\Core\Exception\InvalidCsrfTokenException;
 
 /**
  * Point unique de vérification des jetons CSRF des formulaires.

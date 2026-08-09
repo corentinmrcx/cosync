@@ -3,10 +3,11 @@
 namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
-use App\DTO\CleDetention;
 use App\DTO\CleMouvementData;
+use App\DTO\FiltreListe;
 use App\Entity\Season;
 use App\Entity\User;
+use App\Enum\CleDetentionStatut;
 use App\Enum\CleMouvementType;
 use App\Repository\DirigeantRepository;
 use App\Security\CsrfGuard;
@@ -42,28 +43,22 @@ class CleController extends AbstractController
         }
 
         $search = trim((string) $request->query->get('search', ''));
-        $statut = (string) $request->query->get('statut', '');
-
-        $detentions = $this->registre->getDetentions($season);
+        $statut = CleDetentionStatut::tryFrom((string) $request->query->get('statut', ''));
 
         return $this->render('admin/clubhouse/cles.html.twig', [
             'season' => $season,
             'stats' => $this->registre->getStats($season),
-            'detentions' => $this->filterDetentions($detentions, $search, $statut),
+            'detentions' => $this->registre->rechercherDetentions($season, $search, $statut),
             'candidats' => $this->dirigeantRepo->findBySeason($season),
             'search' => $search,
-            'filterGroups' => [[
-                'name' => 'statut',
-                'label' => 'Statut',
-                'allLabel' => 'Tous',
-                'options' => [
-                    ['value' => 'detenteur', 'label' => 'Détenteurs actuels'],
-                    ['value' => 'signature_manquante', 'label' => 'Attestation non signée'],
-                    ['value' => 'restitue', 'label' => 'Clés restituées'],
-                ],
-                'current' => $statut !== '' ? $statut : null,
-            ]],
-            'activeFilterCount' => ($search !== '' ? 1 : 0) + ($statut !== '' ? 1 : 0),
+            'filterGroups' => [FiltreListe::depuisEnum(
+                'statut',
+                'Statut',
+                'Tous',
+                CleDetentionStatut::cases(),
+                $statut,
+            )],
+            'activeFilterCount' => ($search !== '' ? 1 : 0) + ($statut !== null ? 1 : 0),
         ]);
     }
 
@@ -132,29 +127,5 @@ class CleController extends AbstractController
         }
 
         return $this->redirectToRoute('admin_clubhouse_cles_index');
-    }
-
-    /**
-     * @param CleDetention[] $detentions
-     *
-     * @return CleDetention[]
-     */
-    private function filterDetentions(array $detentions, string $search, string $statut): array
-    {
-        return array_values(array_filter($detentions, static function ($detention) use ($search, $statut): bool {
-            if ($search !== '') {
-                $haystack = mb_strtolower($detention->dirigeant->getNomPrenom());
-                if (!str_contains($haystack, mb_strtolower($search))) {
-                    return false;
-                }
-            }
-
-            return match ($statut) {
-                'detenteur' => $detention->estDetenteur(),
-                'signature_manquante' => $detention->estDetenteur() && !$detention->dirigeant->hasSignedAttestationCle(),
-                'restitue' => !$detention->estDetenteur(),
-                default => true,
-            };
-        }));
     }
 }

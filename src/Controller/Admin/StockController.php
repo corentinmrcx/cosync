@@ -2,9 +2,9 @@
 
 namespace App\Controller\Admin;
 
+use App\Attribute\CurrentSeason;
 use App\DTO\ManualMovementData;
-use App\Entity\Fournisseur;
-use App\Entity\StockCategory;
+use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
 use App\Entity\User;
@@ -12,21 +12,18 @@ use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
-use App\Form\StockCategoryType;
 use App\Form\StockItemType;
-use App\Repository\CommandeRepository;
-use App\Repository\FournisseurRepository;
 use App\Repository\LicencieRepository;
-use App\Repository\StockCategoryRepository;
 use App\Repository\StockItemRepository;
 use App\Repository\StockMovementRepository;
 use App\Security\CsrfGuard;
 use App\Service\Pdf\InventairePdfService;
-use App\Service\SeasonContext;
+use App\Service\Referentiel\Tailles;
 use App\Service\Stock\AchatService;
+use App\Service\Stock\CommandeService;
+use App\Service\Stock\StockItemFormContext;
+use App\Service\Stock\StockItemService;
 use App\Service\Stock\StockService;
-use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -38,74 +35,50 @@ class StockController extends AbstractController
 {
     private const PER_PAGE = 25;
 
-    private const TAILLES_EQUIPEMENT = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'];
-    private const CONTENANCES_EPICERIE = ['25cl', '33cl', '50cl', '75cl', '1L', '1,5L', '2L'];
-
     public function __construct(
-        private readonly InventairePdfService $pdfService,
         private readonly CsrfGuard $csrf,
         private readonly StockService $stockService,
+        private readonly StockItemService $itemService,
+        private readonly StockItemFormContext $itemFormContext,
+        private readonly InventairePdfService $pdfService,
         private readonly StockItemRepository $itemRepository,
         private readonly StockMovementRepository $movementRepository,
-        private readonly StockCategoryRepository $categoryRepository,
-        private readonly FournisseurRepository $fournisseurRepository,
         private readonly LicencieRepository $licencieRepository,
         private readonly AchatService $achatService,
-        private readonly CommandeRepository $commandeRepository,
-        private readonly SeasonContext $seasonContext,
-        private readonly EntityManagerInterface $em,
+        private readonly CommandeService $commandeService,
     ) {}
 
     #[Route('', name: 'dashboard', methods: ['GET'])]
-    public function dashboard(): Response
+    public function dashboard(#[CurrentSeason] Season $season): Response
     {
-        $season = $this->seasonContext->getCurrentSeason();
-        $aCommanderCount = 0;
-        $commandesEnAttente = 0;
-
-        if ($season !== null) {
-            foreach ($this->achatService->computeACommander($season) as $groupe) {
-                foreach ($groupe['lignes'] as $ligne) {
-                    $aCommanderCount += $ligne['aCommander'];
-                }
-            }
-            foreach ($this->commandeRepository->findBySeason($season) as $commande) {
-                if ($commande->getStatut()->isEnAttente()) {
-                    ++$commandesEnAttente;
-                }
-            }
-        }
-
         return $this->render('admin/stock/dashboard.html.twig', [
             'data' => $this->stockService->getDashboardData(),
             'season' => $season,
-            'aCommanderCount' => $aCommanderCount,
-            'commandesEnAttente' => $commandesEnAttente,
+            'aCommanderCount' => $this->achatService->compterACommander($season),
+            'commandesEnAttente' => $this->commandeService->compterEnAttente($season),
         ]);
     }
 
     #[Route('/gestion', name: 'gestion', methods: ['GET'])]
-    public function gestion(Request $request): Response
+    public function gestion(Request $request, #[CurrentSeason] Season $season): Response
     {
-        $season = $this->seasonContext->getCurrentSeason();
         $showArchived = $request->query->getBoolean('archivés', false);
 
         return $this->render('admin/stock/gestion.html.twig', [
             'summary' => $this->stockService->getStockSummary($showArchived),
             'showArchived' => $showArchived,
             'season' => $season,
-            'licenciesValides' => $season !== null ? $this->licencieRepository->findValidatedBySeason($season) : [],
-            'taillesConnues' => self::TAILLES_EQUIPEMENT,
+            'licenciesValides' => $this->licencieRepository->findValidatedBySeason($season),
+            'taillesConnues' => Tailles::toutes(),
             'types' => StockMovementType::cases(),
             'sources' => StockMovementSource::cases(),
         ]);
     }
 
     #[Route('/inventaire.pdf', name: 'inventaire_pdf', methods: ['GET'])]
-    public function inventairePdf(): Response
+    public function inventairePdf(#[CurrentSeason] Season $season): Response
     {
-        $season = $this->seasonContext->getCurrentSeason();
-        $pdf = $this->pdfService->generate($this->stockService->getInventaireData(), $season?->getLabel());
+        $pdf = $this->pdfService->generate($this->stockService->getInventaireData(), $season->getLabel());
 
         return new Response($pdf, Response::HTTP_OK, [
             'Content-Type' => 'application/pdf',
@@ -122,14 +95,13 @@ class StockController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $this->applyEditableFields($item, $request);
-            $this->em->persist($item);
-            $this->em->flush();
+            $this->itemService->creer($item);
             $this->addFlash('success', sprintf('Article "%s" créé.', $item->getNom()));
 
             return $this->redirectToRoute('admin_stock_gestion');
         }
 
-        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext(null));
+        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext->build(null));
     }
 
     #[Route('/items/{id}/modifier', name: 'items_edit', methods: ['GET', 'POST'])]
@@ -140,34 +112,13 @@ class StockController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $this->applyEditableFields($item, $request);
-            $this->em->flush();
+            $this->itemService->enregistrer($item);
             $this->addFlash('success', sprintf('Article "%s" mis à jour.', $item->getNom()));
 
             return $this->redirectToRoute('admin_stock_gestion');
         }
 
-        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext($item));
-    }
-
-    /** @return array<string, mixed> */
-    private function itemFormContext(?StockItem $item): array
-    {
-        return [
-            'item' => $item,
-            'title' => $item ? 'Modifier ' . $item->getNom() : 'Nouvel article',
-            'kinds' => StockItemKind::cases(),
-            'vetementTypes' => StockItemVetementType::cases(),
-            'marques' => $this->itemRepository->findDistinctMarques(),
-            'taillesEquip' => array_values(array_unique(array_merge(
-                $this->itemRepository->findDistinctTaillesByKind(StockItemKind::EQUIPEMENT),
-                self::TAILLES_EQUIPEMENT,
-            ))),
-            'contenances' => array_values(array_unique(array_merge(
-                $this->itemRepository->findDistinctTaillesByKind(StockItemKind::EPICERIE),
-                self::CONTENANCES_EPICERIE,
-            ))),
-            'couleurs' => $this->itemRepository->findDistinctCouleurs(),
-        ];
+        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext->build($item));
     }
 
     /** Lit les champs conditionnels du formulaire article et délègue l'application au service. */
@@ -234,27 +185,20 @@ class StockController extends AbstractController
 
         $nom = $item->getNom();
 
-        if ($this->movementRepository->count(['item' => $item]) > 0) {
-            $item->setActif(false);
-            $this->em->flush();
-            $this->addFlash('info', sprintf(
-                '"%s" archivé — il disparaît des listes, mais l\'historique des mouvements est conservé.',
-                $nom,
-            ));
+        try {
+            $archive = $this->itemService->supprimerOuArchiver($item);
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
 
             return $this->redirectToRoute('admin_stock_gestion');
         }
 
-        try {
-            $this->em->remove($item);
-            $this->em->flush();
-            $this->addFlash('success', sprintf('Article "%s" supprimé.', $nom));
-        } catch (ForeignKeyConstraintViolationException) {
-            $this->addFlash('error', sprintf(
-                'Impossible de supprimer "%s" : il est référencé par une dotation ou une commande.',
-                $nom,
-            ));
-        }
+        $this->addFlash(
+            $archive ? 'info' : 'success',
+            $archive
+                ? sprintf('"%s" archivé — il disparaît des listes, mais l\'historique des mouvements est conservé.', $nom)
+                : sprintf('Article "%s" supprimé.', $nom),
+        );
 
         return $this->redirectToRoute('admin_stock_gestion');
     }
@@ -264,15 +208,14 @@ class StockController extends AbstractController
     {
         $this->csrf->valider('restore_stock_item_' . $item->getId(), $request);
 
-        $item->setActif(true);
-        $this->em->flush();
+        $this->itemService->restaurer($item);
         $this->addFlash('success', sprintf('Article "%s" restauré dans le catalogue actif.', $item->getNom()));
 
         return $this->redirectToRoute('admin_stock_gestion', ['archivés' => '1']);
     }
 
     #[Route('/mouvements', name: 'mouvements_list', methods: ['GET'])]
-    public function mouvementsList(Request $request): Response
+    public function mouvementsList(Request $request, #[CurrentSeason] Season $season): Response
     {
         $page = max(1, (int) $request->query->get('page', 1));
         $filters = array_filter([
@@ -296,130 +239,7 @@ class StockController extends AbstractController
             'items' => $this->itemRepository->findAllOrdered(),
             'types' => StockMovementType::cases(),
             'sources' => StockMovementSource::cases(),
-            'season' => $this->seasonContext->getCurrentSeason(),
+            'season' => $season,
         ]);
-    }
-
-    #[Route('/categories', name: 'categories_list', methods: ['GET'])]
-    public function categoriesList(): Response
-    {
-        $newCategoryForm = $this->createForm(StockCategoryType::class, new StockCategory(), [
-            'action' => $this->generateUrl('admin_stock_categories_new'),
-        ]);
-
-        return $this->render('admin/stock/categories/list.html.twig', [
-            'categories' => $this->categoryRepository->findAllOrderedByPosition(),
-            'newCategoryForm' => $newCategoryForm,
-        ]);
-    }
-
-    #[Route('/categories/nouveau', name: 'categories_new', methods: ['POST'])]
-    public function categoryNew(Request $request): Response
-    {
-        $category = new StockCategory();
-        $form = $this->createForm(StockCategoryType::class, $category);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $this->em->persist($category);
-            $this->em->flush();
-            $this->addFlash('success', sprintf('Catégorie "%s" créée.', $category->getName()));
-        } else {
-            $this->addFlash('error', 'Données invalides.');
-        }
-
-        return $this->redirectToRoute('admin_stock_categories_list');
-    }
-
-    #[Route('/categories/{id}/modifier', name: 'categories_edit', methods: ['POST'])]
-    public function categoryEdit(StockCategory $category, Request $request): Response
-    {
-        $form = $this->createForm(StockCategoryType::class, $category);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $this->em->flush();
-            $this->addFlash('success', sprintf('Catégorie "%s" mise à jour.', $category->getName()));
-        } else {
-            $this->addFlash('error', 'Données invalides.');
-        }
-
-        return $this->redirectToRoute('admin_stock_categories_list');
-    }
-
-    #[Route('/categories/{id}/supprimer', name: 'categories_delete', methods: ['POST'])]
-    public function categoryDelete(StockCategory $category, Request $request): Response
-    {
-        $this->csrf->valider('delete_category_' . $category->getId(), $request);
-
-        $name = $category->getName();
-        $this->em->remove($category);
-        $this->em->flush();
-        $this->addFlash('success', sprintf('Catégorie "%s" supprimée.', $name));
-
-        return $this->redirectToRoute('admin_stock_categories_list');
-    }
-
-    #[Route('/fournisseurs', name: 'fournisseurs_list', methods: ['GET'])]
-    public function fournisseursList(): Response
-    {
-        return $this->render('admin/stock/fournisseurs/list.html.twig', [
-            'fournisseurs' => $this->fournisseurRepository->findAllOrdered(),
-        ]);
-    }
-
-    #[Route('/fournisseurs/nouveau', name: 'fournisseurs_new', methods: ['POST'])]
-    public function fournisseurNew(Request $request): Response
-    {
-        $this->csrf->valider('fournisseur_new', $request);
-
-        $nom = trim((string) $request->request->get('nom', ''));
-        if ($nom === '') {
-            $this->addFlash('error', 'Le nom du fournisseur est obligatoire.');
-
-            return $this->redirectToRoute('admin_stock_fournisseurs_list');
-        }
-
-        $fournisseur = (new Fournisseur())
-            ->setNom($nom)
-            ->setContact(trim((string) $request->request->get('contact', '')) ?: null)
-            ->setEmail(trim((string) $request->request->get('email', '')) ?: null);
-        $this->em->persist($fournisseur);
-        $this->em->flush();
-        $this->addFlash('success', sprintf('Fournisseur "%s" créé.', $nom));
-
-        return $this->redirectToRoute('admin_stock_fournisseurs_list');
-    }
-
-    #[Route('/fournisseurs/{id}/modifier', name: 'fournisseurs_edit', methods: ['POST'])]
-    public function fournisseurEdit(Fournisseur $fournisseur, Request $request): Response
-    {
-        $this->csrf->valider('fournisseur_edit_' . $fournisseur->getId(), $request);
-
-        $nom = trim((string) $request->request->get('nom', ''));
-        if ($nom !== '') {
-            $fournisseur->setNom($nom);
-        }
-        $fournisseur
-            ->setContact(trim((string) $request->request->get('contact', '')) ?: null)
-            ->setEmail(trim((string) $request->request->get('email', '')) ?: null)
-            ->setActif($request->request->get('actif') === '1');
-        $this->em->flush();
-        $this->addFlash('success', 'Fournisseur mis à jour.');
-
-        return $this->redirectToRoute('admin_stock_fournisseurs_list');
-    }
-
-    #[Route('/fournisseurs/{id}/supprimer', name: 'fournisseurs_delete', methods: ['POST'])]
-    public function fournisseurDelete(Fournisseur $fournisseur, Request $request): Response
-    {
-        $this->csrf->valider('fournisseur_delete_' . $fournisseur->getId(), $request);
-
-        $nom = $fournisseur->getNom();
-        $this->em->remove($fournisseur);
-        $this->em->flush();
-        $this->addFlash('success', sprintf('Fournisseur "%s" supprimé.', $nom));
-
-        return $this->redirectToRoute('admin_stock_fournisseurs_list');
     }
 }

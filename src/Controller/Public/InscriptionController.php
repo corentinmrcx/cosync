@@ -3,10 +3,6 @@
 namespace App\Controller\Public;
 
 use App\DTO\AutorisationCompletionData;
-use App\DTO\DotationChoixData;
-use App\DTO\InscriptionFormData;
-use App\Entity\Licencie;
-use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TransactionRepository;
 use App\Security\CsrfGuard;
@@ -15,6 +11,7 @@ use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Form\AttestationTransportRequestFactory;
 use App\Service\Form\AutorisationCompletionService;
 use App\Service\Form\DotationChoixRequestFactory;
+use App\Service\Form\InscriptionFormRequestFactory;
 use App\Service\Form\InscriptionFormService;
 use App\Service\Stock\DotationModeleService;
 use App\Service\Stock\DotationResolver;
@@ -29,8 +26,6 @@ use Symfony\Component\Uid\Uuid;
 class InscriptionController extends AbstractController
 {
     /** Un PNG de signature dépasse rarement 2 Mo une fois encodé en base64 ; au-delà, soumission suspecte. */
-    private const SIGNATURE_MAX_LENGTH = 2_800_000;
-
     public function __construct(
         private readonly LicencieRepository $licencieRepo,
         private readonly DotationResolver $resolver,
@@ -40,6 +35,7 @@ class InscriptionController extends AbstractController
         private readonly TransactionRepository $transactionRepo,
         private readonly AutorisationCompletionService $completionService,
         private readonly CsrfGuard $csrf,
+        private readonly InscriptionFormRequestFactory $formFactory,
         private readonly AttestationTransportRequestFactory $attestationFactory,
         private readonly DocumentRequirementResolver $documentResolver,
     ) {}
@@ -95,7 +91,7 @@ class InscriptionController extends AbstractController
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
-        $data = $this->buildFormData($request, $licencie, $licencie->getCategory()->isJeune(), $dotation);
+        $data = $this->formFactory->fromRequest($request, $licencie, $licencie->getCategory()->isJeune(), $dotation);
 
         if ($data === null) {
             $this->addFlash('error', 'Formulaire incomplet, veuillez remplir tous les champs.');
@@ -134,127 +130,6 @@ class InscriptionController extends AbstractController
             // Seule une transaction réellement enregistrée autorise à annoncer un paiement reçu.
             'paiementRecu' => $this->transactionRepo->sumByLicencieAndSeason($licencie, $licencie->getSeason()) >= (float) $montant,
         ]);
-    }
-
-    private function buildFormData(Request $request, Licencie $licencie, bool $isJeune, DotationChoixData $dotation): ?InscriptionFormData
-    {
-        $tailleHaut = $request->request->get('taille_haut', '');
-        $tailleBas = $request->request->get('taille_bas', '');
-        $pointure = $request->request->get('pointure', '');
-        $photoRaw = $request->request->get('autorisation_photo');
-
-        if ($tailleHaut === '' || $tailleBas === '' || $pointure === '' || $photoRaw === null) {
-            return null;
-        }
-
-        $documentSignatures = $this->collectDocumentSignatures($request, $licencie);
-
-        if ($documentSignatures === null) {
-            return null;
-        }
-
-        $multiPayment = $request->request->get('multi_payment') === '1';
-
-        if ($request->request->get('pay_online') === '1') {
-            // Le bouton « payer par carte » vaut choix du mode : aucun radio n'est coché.
-            $modes = [PaymentMode::CB_ONLINE];
-        } elseif ($multiPayment) {
-            $rawModes = (array) ($request->request->all()['payment_intentions'] ?? []);
-            $modes = [];
-            foreach ($rawModes as $raw) {
-                $m = PaymentMode::tryFrom((string) $raw);
-                if ($m === null) {
-                    return null;
-                }
-                $modes[] = $m;
-            }
-            if (count($modes) === 0) {
-                return null;
-            }
-        } else {
-            $rawMode = $request->request->get('payment_intention', '');
-            $single = PaymentMode::tryFrom($rawMode);
-            if ($single === null) {
-                return null;
-            }
-            $modes = [$single];
-        }
-
-        $transportDirig = null;
-        $transportParent = null;
-        $autorisationAccident = null;
-        $volontaireTransport = null;
-        $attestationData = null;
-
-        if ($isJeune) {
-            $dirigRaw = $request->request->get('autorisation_transport_dirigeants');
-            $parentRaw = $request->request->get('autorisation_transport_parents');
-            $accidentRaw = $request->request->get('autorisation_accident');
-            $volRaw = $request->request->get('volontaire_transport');
-
-            if ($dirigRaw === null || $parentRaw === null || $accidentRaw === null || $volRaw === null) {
-                return null;
-            }
-
-            $transportDirig = $dirigRaw === '1';
-            $transportParent = $parentRaw === '1';
-            $autorisationAccident = $accidentRaw === '1';
-            $volontaireTransport = $volRaw === '1';
-
-            if ($volontaireTransport) {
-                $attestationData = $this->attestationFactory->fromRequest($request);
-                if ($attestationData === null) {
-                    return null;
-                }
-            }
-        }
-
-        return new InscriptionFormData(
-            tailleHaut: $tailleHaut,
-            tailleBas: $tailleBas,
-            pointure: $pointure,
-            autorisationPhoto: $photoRaw === '1',
-            autorisationTransportDirigeants: $transportDirig,
-            autorisationTransportParents: $transportParent,
-            autorisationAccident: $autorisationAccident,
-            volontaireTransport: $volontaireTransport,
-            documentSignatures: $documentSignatures,
-            paymentIntentions: $modes,
-            attestationTransport: $attestationData,
-            dotationChoix: $dotation->choix,
-            dotationPersonnalisation: $dotation->personnalisation,
-        );
-    }
-
-    /**
-     * Une signature par document réellement attendu. La liste est recalculée côté
-     * serveur : un id envoyé par le client mais non attendu est ignoré, et s'il manque
-     * une signature attendue, la soumission est rejetée.
-     *
-     * @return array<int, string>|null null si une signature attendue manque ou est invalide
-     */
-    private function collectDocumentSignatures(Request $request, Licencie $licencie): ?array
-    {
-        // Lecture défensive : une valeur scalaire doit être rejetée comme signature
-        // manquante, pas provoquer une réponse 400 incompréhensible pour le licencié.
-        $brut = $request->request->all()['signature_data'] ?? null;
-        $soumises = is_array($brut) ? $brut : [];
-        $retenues = [];
-
-        foreach ($this->documentResolver->manquantsPourLicencie($licencie) as $document) {
-            $signature = $soumises[$document->getId()] ?? null;
-
-            if (!is_string($signature)
-                || $signature === ''
-                || !str_starts_with($signature, 'data:image/')
-                || strlen($signature) > self::SIGNATURE_MAX_LENGTH) {
-                return null;
-            }
-
-            $retenues[$document->getId()] = $signature;
-        }
-
-        return $retenues;
     }
 
     #[Route('/{uuid}/completer', name: 'completer', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]

@@ -28,6 +28,21 @@ final class SeasonService
         $this->em->flush();
     }
 
+    /**
+     * Le libellé d'une saison est toujours « année-année suivante » : l'admin ne saisit que
+     * l'année de début, le reste en découle.
+     */
+    public function anneeDeDebut(Season $season): int
+    {
+        return (int) explode('-', $season->getLabel())[0];
+    }
+
+    public function renommerParAnnee(Season $season, int $anneeDeDebut): void
+    {
+        $season->setLabel($anneeDeDebut . '-' . ($anneeDeDebut + 1));
+        $this->em->flush();
+    }
+
     public function updateAttestationCleText(Season $season, ?string $attestationCleText): void
     {
         $season->setAttestationCleText($attestationCleText);

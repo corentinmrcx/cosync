@@ -6,10 +6,9 @@ use App\Entity\Licencie;
 use App\Repository\LicencieRepository;
 use App\Security\CsrfGuard;
 use App\Service\CotisationResolver;
-use App\Service\Payment\HelloAssoClient;
+use App\Service\Payment\HelloAssoCheckoutService;
 use App\Service\Payment\HelloAssoException;
 use App\Service\Payment\HelloAssoPaymentRecorder;
-use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,9 +29,8 @@ use Symfony\Component\Uid\Uuid;
 class PaiementController extends AbstractController
 {
     public function __construct(
-        private readonly HelloAssoClient $client,
+        private readonly HelloAssoCheckoutService $checkoutService,
         private readonly CotisationResolver $cotisationResolver,
-        private readonly EntityManagerInterface $em,
         private readonly HelloAssoPaymentRecorder $recorder,
         private readonly CsrfGuard $csrf,
         private readonly LicencieRepository $licencieRepo,
@@ -53,7 +51,7 @@ class PaiementController extends AbstractController
 
         $this->csrf->valider('paiement_helloasso', $request);
 
-        return $this->startCheckout($licencie, $this->client, $this->cotisationResolver, $this->em);
+        return $this->startCheckout($licencie);
     }
 
     /**
@@ -71,7 +69,7 @@ class PaiementController extends AbstractController
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        return $this->startCheckout($licencie, $this->client, $this->cotisationResolver, $this->em);
+        return $this->startCheckout($licencie);
     }
 
     /**
@@ -123,18 +121,13 @@ class PaiementController extends AbstractController
         ]);
     }
 
-    private function startCheckout(
-        Licencie $licencie,
-        HelloAssoClient $client,
-        CotisationResolver $cotisationResolver,
-        EntityManagerInterface $em,
-    ): Response {
+    private function startCheckout(Licencie $licencie): Response
+    {
         $uuid = (string) $licencie->getUuid();
 
         try {
-            $intent = $client->createCheckoutIntent(
+            $intent = $this->checkoutService->demarrer(
                 $licencie,
-                $cotisationResolver->resolve($licencie),
                 $this->generateUrl('public_helloasso_return', ['uuid' => $uuid], UrlGeneratorInterface::ABSOLUTE_URL),
                 $this->generateUrl('public_helloasso_error', ['uuid' => $uuid], UrlGeneratorInterface::ABSOLUTE_URL),
             );
@@ -146,11 +139,6 @@ class PaiementController extends AbstractController
 
             return $this->redirectToRoute('public_inscription_confirmation', ['uuid' => $uuid]);
         }
-
-        $licencie->getDossierClub()
-            ?->setHelloassoCheckoutIntentId($intent->id)
-            ->setHelloassoCheckoutStartedAt(new \DateTimeImmutable());
-        $em->flush();
 
         return $this->redirect($intent->redirectUrl);
     }

@@ -3,11 +3,14 @@
 namespace App\Service\Document;
 
 use App\DTO\DocumentSignableData;
+use App\DTO\DocumentStatistiques;
 use App\Entity\DocumentSignable;
 use App\Entity\Season;
 use App\Enum\DocumentCible;
 use App\Repository\DirigeantRepository;
 use App\Repository\DocumentSignableRepository;
+use App\Repository\DocumentSignatureRepository;
+use App\Repository\LicencieRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -24,6 +27,9 @@ final class DocumentSignableService
         private readonly EntityManagerInterface $em,
         private readonly DocumentSignableRepository $documentRepo,
         private readonly DirigeantRepository $dirigeantRepo,
+        private readonly DocumentSignatureRepository $signatureRepository,
+        private readonly LicencieRepository $licencieRepository,
+        private readonly DocumentRequirementResolver $requirementResolver,
     ) {}
 
     public function creer(DocumentSignableData $data, Season $season): DocumentSignable
@@ -65,8 +71,48 @@ final class DocumentSignableService
         $this->em->flush();
     }
 
+    /**
+     * Avancement des signatures, document par document.
+     *
+     * Côté dirigeants, le ciblage impose de parcourir la population concernée ; côté
+     * licenciés, le document s'adresse à toute la saison et une soustraction suffit.
+     *
+     * @param DocumentSignable[] $documents
+     *
+     * @return array<int, DocumentStatistiques>
+     */
+    public function statistiques(array $documents, Season $season): array
+    {
+        $licenciesDeLaSaison = $this->licencieRepository->count(['season' => $season]);
+
+        $statistiques = [];
+        foreach ($documents as $document) {
+            $signes = $this->signatureRepository->countByDocument($document);
+            $pourDirigeants = $document->getCible() === DocumentCible::DIRIGEANT;
+
+            $statistiques[$document->getId()] = new DocumentStatistiques(
+                $signes,
+                $pourDirigeants ? null : $licenciesDeLaSaison,
+                $pourDirigeants
+                    ? count($this->requirementResolver->dirigeantsEnAttente($document))
+                    : max(0, $licenciesDeLaSaison - $signes),
+            );
+        }
+
+        return $statistiques;
+    }
+
+    /** @throws \DomainException si des signatures y sont rattachées */
     public function supprimer(DocumentSignable $document): void
     {
+        // Supprimer emporterait les signatures recueillies : on impose la désactivation,
+        // qui retire le document du parcours sans effacer ce qui a été signé.
+        $signatures = $this->signatureRepository->countByDocument($document);
+
+        if ($signatures > 0) {
+            throw new \DomainException(sprintf('Impossible de supprimer « %s » : %d signature(s) y sont rattachées. Désactivez-le plutôt.', $document->getTitre(), $signatures));
+        }
+
         $this->em->remove($document);
         $this->em->flush();
     }

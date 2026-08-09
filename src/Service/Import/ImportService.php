@@ -15,6 +15,7 @@ use App\Repository\DirigeantRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Service\Import\Layout\ImportLayoutResolver;
+use App\Service\LienPublic;
 use App\Service\Mail\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -241,7 +242,7 @@ final class ImportService
         $licencie->setCodePostal($codePostal);
         $licencie->setVille($ville);
         $licencie->setNatureLicence($nature);
-        $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
+        $licencie->setFormTokenExpiresAt(LienPublic::expiration());
 
         // Auto-assignation si une seule équipe couvre cette catégorie
         $defaultTeam = $this->teamRepository->findForCategory($category, $season);

@@ -157,7 +157,7 @@
 {{ parent() }}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const data = {{ licenciesSizes|raw }};
+    const data = {{ licenciesSizes|json_encode|raw }};
 
     const licencieSelect  = document.getElementById('{{ form.licencie.vars.id }}');
     const nomInput        = document.getElementById('{{ form.nom.vars.id }}');

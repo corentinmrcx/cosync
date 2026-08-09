@@ -10,8 +10,6 @@ use App\Enum\DirigeantRole;
 use App\Enum\DocumentCible;
 use App\Repository\DirigeantRepository;
 use App\Repository\DocumentSignableRepository;
-use App\Repository\DocumentSignatureRepository;
-use App\Repository\LicencieRepository;
 use App\Security\CsrfGuard;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Document\DocumentSignableService;
@@ -32,8 +30,6 @@ use Symfony\Component\Routing\Attribute\Route;
 class DocumentSignableController extends AbstractController
 {
     public function __construct(
-        private readonly DocumentSignatureRepository $signatureRepo,
-        private readonly LicencieRepository $licencieRepo,
         private readonly DirigeantRepository $dirigeantRepo,
         private readonly PdfGeneratorService $pdfGenerator,
         private readonly DirigeantLinkService $linkService,
@@ -48,30 +44,10 @@ class DocumentSignableController extends AbstractController
     {
         $documents = $this->documentRepo->findBySeason($season);
 
-        // Combien de personnes n'ont pas encore signé. Côté dirigeants, le ciblage
-        // restreint la population et impose de la parcourir ; côté licenciés, le
-        // document s'adresse à toute la saison, une soustraction suffit.
-        $licenciesDeLaSaison = $this->licencieRepo->count(['season' => $season]);
-
-        $stats = [];
-        foreach ($documents as $document) {
-            $signes = $this->signatureRepo->countByDocument($document);
-
-            $stats[$document->getId()] = [
-                'signes' => $signes,
-                'concernes' => $document->getCible() === DocumentCible::DIRIGEANT
-                    ? null
-                    : $licenciesDeLaSaison,
-                'enAttente' => $document->getCible() === DocumentCible::DIRIGEANT
-                    ? count($this->resolver->dirigeantsEnAttente($document))
-                    : max(0, $licenciesDeLaSaison - $signes),
-            ];
-        }
-
         return $this->render('admin/documents/list.html.twig', [
             'season' => $season,
             'documents' => $documents,
-            'stats' => $stats,
+            'stats' => $this->documentService->statistiques($documents, $season),
         ]);
     }
 
@@ -160,23 +136,14 @@ class DocumentSignableController extends AbstractController
     {
         $this->csrf->valider('document_delete_' . $document->getId(), $request);
 
-        // Supprimer emporterait les signatures recueillies : on impose la désactivation,
-        // qui retire le document du parcours sans effacer ce qui a été signé.
-        $signatures = $this->signatureRepo->countByDocument($document);
-
-        if ($signatures > 0) {
-            $this->addFlash('error', sprintf(
-                'Impossible de supprimer « %s » : %d signature(s) y sont rattachées. Désactivez-le plutôt.',
-                $document->getTitre(),
-                $signatures,
-            ));
-
-            return $this->redirectToRoute('admin_documents_list');
-        }
-
         $titre = $document->getTitre();
-        $this->documentService->supprimer($document);
-        $this->addFlash('success', sprintf('Document « %s » supprimé.', $titre));
+
+        try {
+            $this->documentService->supprimer($document);
+            $this->addFlash('success', sprintf('Document « %s » supprimé.', $titre));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
 
         return $this->redirectToRoute('admin_documents_list');
     }
@@ -200,23 +167,12 @@ class DocumentSignableController extends AbstractController
         if ($request->isMethod('POST')) {
             $this->csrf->valider('document_relancer_' . $document->getId(), $request);
 
-            $envoyes = 0;
-            $sansEmail = 0;
-
-            foreach ($enAttente as $dirigeant) {
-                if ($dirigeant->getEmail() === null) {
-                    ++$sansEmail;
-                    continue;
-                }
-
-                $this->linkService->send($dirigeant);
-                ++$envoyes;
-            }
+            $resultat = $this->linkService->relancerEnMasse($enAttente);
 
             $this->addFlash('success', sprintf(
                 '%d lien(s) envoyé(s)%s.',
-                $envoyes,
-                $sansEmail > 0 ? sprintf(', %d dirigeant(s) sans adresse email', $sansEmail) : '',
+                $resultat->envoyes,
+                $resultat->sansEmail > 0 ? sprintf(', %d dirigeant(s) sans adresse email', $resultat->sansEmail) : '',
             ));
 
             return $this->redirectToRoute('admin_documents_list');

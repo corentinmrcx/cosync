@@ -7,48 +7,42 @@ use App\Form\UserType;
 use App\Repository\UserRepository;
 use App\Security\CsrfGuard;
 use App\Service\BetaModeService;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/admin/config/utilisateurs', name: 'admin_users_')]
 class UserController extends AbstractController
 {
     public function __construct(
-        private readonly UserRepository $userRepo,
-        private readonly UserPasswordHasherInterface $hasher,
-        private readonly EntityManagerInterface $em,
         private readonly CsrfGuard $csrf,
+        private readonly UserService $userService,
+        private readonly UserRepository $userRepo,
         private readonly BetaModeService $betaModeService,
     ) {}
 
     #[Route('', name: 'list')]
-    public function list(): Response
+    public function list(#[CurrentUser] ?User $currentUser): Response
     {
         return $this->render('admin/config/utilisateurs/list.html.twig', [
             'users' => $this->userRepo->findBy([], ['email' => 'ASC']),
             'diagEmail' => $this->betaModeService->getRedirectEmail(),
-            'isDiag' => $this->isDiagUser(),
+            'isDiag' => $this->userService->estSuperAdmin($currentUser),
         ]);
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
-    public function new(
-        Request $request,
-    ): Response {
+    public function new(Request $request): Response
+    {
         $user = new User();
         $form = $this->createForm(UserType::class, $user, ['is_new' => true, 'can_change_password' => true]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $user->setPassword($this->hasher->hashPassword($user, $form->get('plainPassword')->getData()));
-
-            $this->em->persist($user);
-            $this->em->flush();
-
+            $this->userService->creer($user, (string) $form->get('plainPassword')->getData());
             $this->addFlash('success', sprintf('Utilisateur "%s" créé.', $user->getEmail()));
 
             return $this->redirectToRoute('admin_users_list');
@@ -62,11 +56,9 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'])]
-    public function edit(
-        User $user,
-        Request $request,
-    ): Response {
-        $canChangePassword = $this->canChangePasswordFor($user);
+    public function edit(User $user, Request $request, #[CurrentUser] ?User $currentUser): Response
+    {
+        $canChangePassword = $this->userService->peutChangerLeMotDePasseDe($user, $currentUser);
 
         $form = $this->createForm(UserType::class, $user, [
             'is_new' => false,
@@ -75,15 +67,10 @@ class UserController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if ($canChangePassword && $form->has('plainPassword')) {
-                $plain = $form->get('plainPassword')->getData();
-                if ($plain !== null && $plain !== '') {
-                    $user->setPassword($this->hasher->hashPassword($user, $plain));
-                }
-            }
-
-            $this->em->flush();
-
+            $this->userService->mettreAJour(
+                $user,
+                $canChangePassword && $form->has('plainPassword') ? $form->get('plainPassword')->getData() : null,
+            );
             $this->addFlash('success', sprintf('Utilisateur "%s" mis à jour.', $user->getEmail()));
 
             return $this->redirectToRoute('admin_users_list');
@@ -98,51 +85,19 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
-    public function delete(User $user, Request $request): Response
+    public function delete(User $user, Request $request, #[CurrentUser] User $currentUser): Response
     {
         $this->csrf->valider('delete_user_' . $user->getId(), $request);
 
-        /** @var User $currentUser */
-        $currentUser = $this->getUser();
-        if ($currentUser->getId() === $user->getId()) {
-            $this->addFlash('error', 'Vous ne pouvez pas supprimer votre propre compte.');
-
-            return $this->redirectToRoute('admin_users_list');
-        }
-
-        $diagEmail = $this->betaModeService->getRedirectEmail();
-        if ($diagEmail !== '' && $user->getEmail() === $diagEmail) {
-            $this->addFlash('error', 'Le compte super-admin ne peut pas être supprimé.');
-
-            return $this->redirectToRoute('admin_users_list');
-        }
-
         $email = $user->getEmail();
-        $this->em->remove($user);
-        $this->em->flush();
 
-        $this->addFlash('success', sprintf('Utilisateur "%s" supprimé.', $email));
+        try {
+            $this->userService->supprimer($user, $currentUser);
+            $this->addFlash('success', sprintf('Utilisateur "%s" supprimé.', $email));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
 
         return $this->redirectToRoute('admin_users_list');
-    }
-
-    private function isDiagUser(): bool
-    {
-        $diagEmail = $this->betaModeService->getRedirectEmail();
-        /** @var User $currentUser */
-        $currentUser = $this->getUser();
-
-        return $diagEmail !== '' && $currentUser->getEmail() === $diagEmail;
-    }
-
-    private function canChangePasswordFor(User $target): bool
-    {
-        if (!$this->isDiagUser()) {
-            return false;
-        }
-
-        $diagEmail = $this->betaModeService->getRedirectEmail();
-
-        return $target->getEmail() !== $diagEmail;
     }
 }

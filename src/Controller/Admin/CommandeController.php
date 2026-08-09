@@ -7,13 +7,11 @@ use App\Entity\Commande;
 use App\Entity\CommandeLigne;
 use App\Entity\Season;
 use App\Entity\User;
-use App\Enum\CommandeStatut;
 use App\Repository\CommandeRepository;
 use App\Security\CsrfGuard;
 use App\Service\Pdf\BonCommandePdfService;
 use App\Service\Stock\AchatService;
 use App\Service\Stock\CommandeService;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,7 +27,6 @@ class CommandeController extends AbstractController
         private readonly CommandeService $commandeService,
         private readonly CommandeRepository $commandeRepository,
         private readonly BonCommandePdfService $pdfService,
-        private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route('', name: 'index', methods: ['GET'])]
@@ -123,16 +120,12 @@ class CommandeController extends AbstractController
     {
         $this->csrf->valider('commande_delete_' . $commande->getId(), $request);
 
-        // On ne supprime qu'un brouillon (une commande passée a généré des mouvements)
-        if ($commande->getStatut() !== CommandeStatut::BROUILLON) {
-            $this->addFlash('error', 'Seul un brouillon peut être supprimé.');
-
-            return $this->redirectToRoute('admin_stock_commandes_index');
+        try {
+            $this->commandeService->supprimerBrouillon($commande);
+            $this->addFlash('success', 'Brouillon supprimé.');
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
         }
-
-        $this->em->remove($commande);
-        $this->em->flush();
-        $this->addFlash('success', 'Brouillon supprimé.');
 
         return $this->redirectToRoute('admin_stock_commandes_index');
     }

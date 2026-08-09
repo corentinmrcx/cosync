@@ -9,6 +9,7 @@ use App\Security\CsrfGuard;
 use App\Service\DirigeantDossierCompletion;
 use App\Service\DirigeantFormService;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Document\SignatureCollector;
 use App\Service\Form\AttestationTransportRequestFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,12 +22,11 @@ use Symfony\Component\Uid\Uuid;
 class DirigeantController extends AbstractController
 {
     /** Un PNG de signature dépasse rarement 2 Mo une fois encodé en base64 ; au-delà, soumission suspecte. */
-    private const SIGNATURE_MAX_LENGTH = 2_800_000;
-
     public function __construct(
         private readonly DirigeantRepository $dirigeantRepo,
         private readonly DirigeantFormService $formService,
         private readonly CsrfGuard $csrf,
+        private readonly SignatureCollector $signatureCollector,
         private readonly AttestationTransportRequestFactory $attestationFactory,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DirigeantDossierCompletion $dossierCompletion,
@@ -150,7 +150,7 @@ class DirigeantController extends AbstractController
             }
         }
 
-        $documentSignatures = $this->collectDocumentSignatures($request, $dirigeant);
+        $documentSignatures = $this->signatureCollector->pourDirigeant($request, $dirigeant);
 
         if ($documentSignatures === null) {
             return null;
@@ -167,39 +167,11 @@ class DirigeantController extends AbstractController
         );
     }
 
-    /**
+    /*
      * Une signature par document réellement attendu. La liste des documents est
      * recalculée côté serveur : un id envoyé par le client mais non attendu est
      * ignoré, et il manque une signature attendue, la soumission est rejetée.
      *
      * @return array<int, string>|null null si une signature attendue manque ou est invalide
      */
-    private function collectDocumentSignatures(Request $request, Dirigeant $dirigeant): ?array
-    {
-        // Lecture défensive : une valeur scalaire doit être rejetée comme signature
-        // manquante, pas provoquer une réponse 400 incompréhensible pour le signataire.
-        $brut = $request->request->all()['signature_data'] ?? null;
-        $soumises = is_array($brut) ? $brut : [];
-        $retenues = [];
-
-        foreach ($this->documentResolver->manquantsPourDirigeant($dirigeant) as $document) {
-            $signature = $soumises[$document->getId()] ?? null;
-
-            if (!$this->isSignatureValide($signature)) {
-                return null;
-            }
-
-            $retenues[$document->getId()] = $signature;
-        }
-
-        return $retenues;
-    }
-
-    private function isSignatureValide(mixed $signature): bool
-    {
-        return is_string($signature)
-            && $signature !== ''
-            && str_starts_with($signature, 'data:image/')
-            && strlen($signature) <= self::SIGNATURE_MAX_LENGTH;
-    }
 }

@@ -3,10 +3,13 @@
 namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
+use App\DTO\FiltreListe;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
+use App\DTO\PaiementManuelData;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Entity\Team;
 use App\Entity\User;
 use App\Enum\LicenceStatus;
 use App\Enum\NatureLicence;
@@ -22,6 +25,7 @@ use App\Security\CsrfGuard;
 use App\Service\CotisationResolver;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Form\AutorisationCompletionService;
+use App\Service\HistoriqueFicheService;
 use App\Service\LicencieService;
 use App\Service\ListFilterMemory;
 use App\Service\Mail\InscriptionLinkService;
@@ -50,6 +54,7 @@ class LicencieController extends AbstractController
         private readonly TransactionRepository $transactionRepo,
         private readonly SeasonContext $seasonContext,
         private readonly CsrfGuard $csrf,
+        private readonly HistoriqueFicheService $historiqueService,
         private readonly DocumentRequirementResolver $documentResolver,
     ) {}
 
@@ -85,30 +90,18 @@ class LicencieController extends AbstractController
         $total = $this->licencieRepo->countWithFilters($season, $currentTeam, null, $currentStatus, $search ?: null, $currentNature);
         $pages = (int) ceil($total / $perPage);
 
-        $teams = $this->teamRepo->findBySeason($season);
-
         $filterGroups = [
-            [
-                'name' => 'team',
-                'label' => 'Équipe',
-                'allLabel' => 'Toutes',
-                'options' => array_map(fn ($t) => ['value' => $t->getId(), 'label' => $t->getName()], $teams),
-                'current' => $currentTeam?->getId(),
-            ],
-            [
-                'name' => 'status',
-                'label' => 'Statut',
-                'allLabel' => 'Tous',
-                'options' => array_map(fn (LicenceStatus $s) => ['value' => $s->value, 'label' => $s->label()], LicenceStatus::cases()),
-                'current' => $currentStatus?->value,
-            ],
-            [
-                'name' => 'nature',
-                'label' => 'Nature',
-                'allLabel' => 'Toutes',
-                'options' => array_map(fn (NatureLicence $n) => ['value' => $n->value, 'label' => $n->label()], NatureLicence::cases()),
-                'current' => $currentNature?->value,
-            ],
+            FiltreListe::depuisEntites(
+                'team',
+                'Équipe',
+                'Toutes',
+                $this->teamRepo->findBySeason($season),
+                static fn (Team $team): int => (int) $team->getId(),
+                static fn (Team $team): string => $team->getName(),
+                $currentTeam?->getId(),
+            ),
+            FiltreListe::depuisEnum('status', 'Statut', 'Tous', LicenceStatus::cases(), $currentStatus),
+            FiltreListe::depuisEnum('nature', 'Nature', 'Toutes', NatureLicence::cases(), $currentNature),
         ];
 
         return $this->render('admin/licencies/list.html.twig', [
@@ -116,7 +109,7 @@ class LicencieController extends AbstractController
             'season' => $season,
             'search' => $search,
             'filterGroups' => $filterGroups,
-            'activeFilterCount' => ($currentTeam ? 1 : 0) + ($currentStatus ? 1 : 0) + ($currentNature ? 1 : 0),
+            'activeFilterCount' => FiltreListe::compterActifs($filterGroups),
             'total' => $total,
             'page' => $page,
             'pages' => $pages,
@@ -210,38 +203,6 @@ class LicencieController extends AbstractController
         $montant = $this->cotisationResolver->resolve($licencie);
         $remainingAmount = max(0, (float) $montant - $totalPaid);
 
-        $history = [
-            [
-                'date' => $licencie->getImportedAt(),
-                'format' => 'd/m/Y à H:i',
-                'label' => $licencie->isCreatedManually()
-                    ? 'Licencié créé manuellement'
-                    : 'Licencié importé depuis FootClubs',
-                'who' => 'Admin',
-            ],
-        ];
-
-        if ($licencie->getLinkSentAt() !== null) {
-            $history[] = ['date' => $licencie->getLinkSentAt(), 'format' => 'd/m/Y à H:i', 'label' => 'Lien d\'inscription envoyé par email', 'who' => 'Système'];
-        }
-
-        $dossier = $licencie->getDossierClub();
-        if ($dossier?->getFormCompletedAt() !== null) {
-            $history[] = ['date' => $dossier->getFormCompletedAt(), 'format' => 'd/m/Y à H:i', 'label' => 'Formulaire complété par le licencié', 'who' => 'Licencié'];
-        }
-
-        foreach ($transactions as $t) {
-            $history[] = [
-                'date' => $t->getDatePaiement(),
-                'format' => 'd/m/Y',
-                'label' => sprintf('Paiement enregistré — %s %s €', $t->getMode()->label(), $t->getMontant()),
-                // Pas de dirigeant sur un encaissement en ligne : c'est HelloAsso qui l'a confirmé.
-                'who' => $t->getConfirmedBy()?->getEmail() ?? ($t->getMode() === PaymentMode::CB_ONLINE ? 'HelloAsso' : 'Admin'),
-            ];
-        }
-
-        usort($history, static fn (array $a, array $b): int => $a['date'] <=> $b['date']);
-
         return $this->render('admin/licencies/show.html.twig', [
             'licencie' => $licencie,
             'transactions' => $transactions,
@@ -252,7 +213,7 @@ class LicencieController extends AbstractController
             'paymentModes' => PaymentMode::cases(),
             'dotations' => $this->stockMovementRepo->findDotationsByLicencie($licencie),
             'dotationStatut' => $this->dotationBesoinService->statutFicheLicencie($licencie),
-            'history' => $history,
+            'history' => $this->historiqueService->pourLicencie($licencie, $transactions),
             'autorisationsManquantes' => $this->completionService->hasMissing($licencie),
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande.
@@ -313,31 +274,21 @@ class LicencieController extends AbstractController
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
-        $mode = PaymentMode::tryFrom($request->request->get('mode', ''));
-        $montant = (float) str_replace(',', '.', $request->request->get('montant', '0'));
-        $dateRaw = $request->request->get('date_paiement', '');
-
-        if ($mode === null || $montant <= 0 || $dateRaw === '') {
-            $this->addFlash('error', 'Mode, montant ou date invalide.');
-
-            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
-        }
-
         try {
-            $date = new \DateTimeImmutable($dateRaw);
-        } catch (\Exception) {
-            $this->addFlash('error', 'Date invalide.');
+            $paiement = PaiementManuelData::fromRequest($request);
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
 
             return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
         }
 
         $this->licencieService->addPayment(
             $licencie,
-            $mode,
-            $montant,
-            $request->request->get('reference') ?: null,
-            $request->request->get('note') ?: null,
-            $date,
+            $paiement->mode,
+            $paiement->montant,
+            $paiement->reference,
+            $paiement->note,
+            $paiement->datePaiement,
             $user,
             $season,
         );

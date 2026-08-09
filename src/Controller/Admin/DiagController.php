@@ -2,8 +2,8 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\User;
 use App\Security\CsrfGuard;
+use App\Security\Voter\SuperAdminVoter;
 use App\Service\BetaModeService;
 use App\Service\Mail\MailerService;
 use App\Service\PurgeService;
@@ -11,8 +11,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/diagnostic', name: 'admin_diag_')]
+#[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
 class DiagController extends AbstractController
 {
     public function __construct(
@@ -25,10 +27,6 @@ class DiagController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): Response
     {
-        if ($redirect = $this->requireDiagAccess()) {
-            return $redirect;
-        }
-
         return $this->render('admin/diag/index.html.twig', [
             'betaActive' => $this->betaModeService->isActive(),
             'diagEmail' => $this->betaModeService->getRedirectEmail(),
@@ -38,10 +36,6 @@ class DiagController extends AbstractController
     #[Route('/test-mail', name: 'test_mail', methods: ['POST'])]
     public function testMail(Request $request): Response
     {
-        if ($redirect = $this->requireDiagAccess()) {
-            return $redirect;
-        }
-
         $this->csrf->valider('test_mail', $request);
 
         $to = filter_var(trim((string) $request->request->get('test_email', '')), FILTER_VALIDATE_EMAIL);
@@ -65,10 +59,6 @@ class DiagController extends AbstractController
     #[Route('/test-validation-mail', name: 'test_validation_mail', methods: ['POST'])]
     public function testValidationMail(Request $request): Response
     {
-        if ($redirect = $this->requireDiagAccess()) {
-            return $redirect;
-        }
-
         $this->csrf->valider('test_validation_mail', $request);
 
         $to = filter_var(trim((string) $request->request->get('test_email', '')), FILTER_VALIDATE_EMAIL);
@@ -95,10 +85,6 @@ class DiagController extends AbstractController
     #[Route('/beta/activer', name: 'beta_enable', methods: ['POST'])]
     public function enableBeta(Request $request): Response
     {
-        if ($redirect = $this->requireDiagAccess()) {
-            return $redirect;
-        }
-
         $this->csrf->valider('beta_enable', $request);
 
         $this->betaModeService->enable();
@@ -110,10 +96,6 @@ class DiagController extends AbstractController
     #[Route('/beta/desactiver', name: 'beta_disable', methods: ['POST'])]
     public function disableBeta(Request $request): Response
     {
-        if ($redirect = $this->requireDiagAccess()) {
-            return $redirect;
-        }
-
         $this->csrf->valider('beta_disable', $request);
 
         $this->betaModeService->disable();
@@ -125,10 +107,6 @@ class DiagController extends AbstractController
     #[Route('/purge', name: 'purge', methods: ['POST'])]
     public function purge(Request $request): Response
     {
-        if ($redirect = $this->requireDiagAccess()) {
-            return $redirect;
-        }
-
         if (!$this->betaModeService->isActive()) {
             $this->addFlash('error', 'La purge n\'est disponible qu\'en mode beta.');
 
@@ -152,18 +130,5 @@ class DiagController extends AbstractController
         }
 
         return $this->redirectToRoute('admin_diag_index');
-    }
-
-    private function requireDiagAccess(): ?Response
-    {
-        /** @var User $user */
-        $user = $this->getUser();
-        $diagEmail = $this->betaModeService->getRedirectEmail();
-
-        if ($diagEmail === '' || $user->getEmail() !== $diagEmail) {
-            return $this->redirectToRoute('admin_dashboard');
-        }
-
-        return null;
     }
 }

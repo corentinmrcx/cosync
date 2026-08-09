@@ -3,6 +3,7 @@
 namespace App\Service\Mail;
 
 use App\Entity\Dirigeant;
+use App\Service\LienPublic;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -22,7 +23,7 @@ final class AttestationCleLinkService
             throw new \LogicException('Impossible d\'envoyer le lien : aucune adresse email pour ce dirigeant.');
         }
 
-        $dirigeant->setAttestationCleTokenExpiresAt(new \DateTimeImmutable('+30 days'));
+        $dirigeant->setAttestationCleTokenExpiresAt(LienPublic::expiration());
         $this->em->flush();
 
         $this->mailerService->sendAttestationCleLink($dirigeant);

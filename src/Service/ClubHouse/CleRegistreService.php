@@ -9,6 +9,7 @@ use App\Entity\CleMouvement;
 use App\Entity\Dirigeant;
 use App\Entity\Season;
 use App\Entity\User;
+use App\Enum\CleDetentionStatut;
 use App\Enum\CleMouvementType;
 use App\Repository\CleMouvementRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -55,6 +56,40 @@ final class CleRegistreService
         $this->em->flush();
 
         return $mouvement;
+    }
+
+    /**
+     * Détentions de la saison, restreintes à ce que l'admin cherche.
+     *
+     * @return CleDetention[]
+     */
+    public function rechercherDetentions(Season $season, string $recherche = '', ?CleDetentionStatut $statut = null): array
+    {
+        $detentions = $this->getDetentions($season);
+
+        if ($recherche !== '') {
+            $recherche = mb_strtolower($recherche);
+            $detentions = array_filter(
+                $detentions,
+                static fn (CleDetention $detention): bool => str_contains(
+                    mb_strtolower($detention->dirigeant->getNomPrenom()),
+                    $recherche,
+                ),
+            );
+        }
+
+        if ($statut !== null) {
+            $detentions = array_filter(
+                $detentions,
+                static fn (CleDetention $detention): bool => match ($statut) {
+                    CleDetentionStatut::DETENTEUR => $detention->estDetenteur(),
+                    CleDetentionStatut::SIGNATURE_MANQUANTE => $detention->estDetenteur() && !$detention->dirigeant->hasSignedAttestationCle(),
+                    CleDetentionStatut::RESTITUE => !$detention->estDetenteur(),
+                },
+            );
+        }
+
+        return array_values($detentions);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
+use App\DTO\DotationAffectationData;
 use App\DTO\DotationLigneReglagesData;
 use App\Entity\DotationAffectation;
 use App\Entity\DotationBesoin;
@@ -10,27 +11,23 @@ use App\Entity\DotationModele;
 use App\Entity\DotationModeleLigne;
 use App\Entity\Season;
 use App\Entity\User;
-use App\Enum\DirigeantRole;
+use App\Enum\DotationCibleType;
 use App\Enum\DotationEligibilite;
-use App\Repository\CategoryRepository;
-use App\Repository\DirigeantRepository;
 use App\Repository\DotationAffectationRepository;
 use App\Repository\DotationModeleRepository;
-use App\Repository\LicencieRepository;
 use App\Repository\StockItemRepository;
-use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
 use App\Service\Form\DotationGroupeReglagesFactory;
+use App\Service\Referentiel\Tailles;
+use App\Service\Stock\DotationAffectationService;
 use App\Service\Stock\DotationBesoinService;
-use App\Service\Stock\DotationModelePreview;
+use App\Service\Stock\DotationModeleFormContext;
 use App\Service\Stock\DotationModeleService;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use Symfony\Component\Uid\Uuid;
 
 #[Route('/admin/stock/dotations', name: 'admin_stock_dotations_')]
 class DotationController extends AbstractController
@@ -40,15 +37,11 @@ class DotationController extends AbstractController
         private readonly DotationModeleRepository $modeleRepository,
         private readonly DotationAffectationRepository $affectationRepository,
         private readonly StockItemRepository $itemRepository,
-        private readonly TeamRepository $teamRepository,
-        private readonly CategoryRepository $categoryRepository,
-        private readonly LicencieRepository $licencieRepository,
-        private readonly DirigeantRepository $dirigeantRepository,
         private readonly DotationBesoinService $besoinService,
         private readonly DotationModeleService $modeleService,
-        private readonly DotationModelePreview $preview,
+        private readonly DotationAffectationService $affectationService,
+        private readonly DotationModeleFormContext $formContext,
         private readonly DotationGroupeReglagesFactory $reglagesFactory,
-        private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route('', name: 'index', methods: ['GET'])]
@@ -67,17 +60,15 @@ class DotationController extends AbstractController
     {
         $this->csrf->valider('dotation_modele_new', $request);
 
-        $nom = trim((string) $request->request->get('nom', ''));
-        if ($nom === '') {
-            $this->addFlash('error', 'Le nom du modèle est obligatoire.');
+        try {
+            $modele = $this->modeleService->creer($season, (string) $request->request->get('nom', ''));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
 
             return $this->redirectToRoute('admin_stock_dotations_index');
         }
 
-        $modele = (new DotationModele())->setSeason($season)->setNom($nom);
-        $this->em->persist($modele);
-        $this->em->flush();
-        $this->addFlash('success', sprintf('Modèle « %s » créé. Ajoutez ses articles.', $nom));
+        $this->addFlash('success', sprintf('Modèle « %s » créé. Ajoutez ses articles.', $modele->getNom()));
 
         return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
     }
@@ -87,34 +78,18 @@ class DotationController extends AbstractController
     {
         if ($request->isMethod('POST')) {
             $this->csrf->valider('dotation_modele_edit_' . $modele->getId(), $request);
-            $nom = trim((string) $request->request->get('nom', ''));
-            if ($nom !== '') {
-                $modele->setNom($nom);
-            }
-            $modele->setActif($request->request->get('actif') === '1');
-            $this->em->flush();
+
+            $this->modeleService->mettreAJour(
+                $modele,
+                (string) $request->request->get('nom', ''),
+                $request->request->get('actif') === '1',
+            );
             $this->addFlash('success', 'Modèle mis à jour.');
 
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
-        $season = $modele->getSeason();
-        // Composer un kit et dire qui le reçoit sont la même décision : les deux se font ici.
-        $affectations = $this->affectationRepository->findByModele($modele);
-
-        return $this->render('admin/stock/dotations/form.html.twig', [
-            'modele' => $modele,
-            'articles' => $this->itemRepository->findAllOrdered(),
-            'eligibilites' => DotationEligibilite::cases(),
-            'personnalisationMaxDefaut' => DotationModeleService::PERSONNALISATION_MAX_DEFAUT,
-            'affectations' => $affectations,
-            'apercu' => $this->preview->build($modele, $affectations),
-            'categories' => $this->categoryRepository->findBy([], ['minYear' => 'ASC']),
-            'teams' => $this->teamRepository->findBySeason($season),
-            'licencies' => $this->licencieRepository->findValidatedBySeason($season),
-            'dirigeants' => $this->dirigeantRepository->findBySeason($season),
-            'roles' => DirigeantRole::cases(),
-        ]);
+        return $this->render('admin/stock/dotations/form.html.twig', $this->formContext->build($modele));
     }
 
     #[Route('/{id}/choix/reglages', name: 'choix_reglages', methods: ['POST'])]
@@ -189,8 +164,8 @@ class DotationController extends AbstractController
     public function modeleDelete(DotationModele $modele, Request $request): Response
     {
         $this->csrf->valider('dotation_modele_delete_' . $modele->getId(), $request);
-        $this->em->remove($modele);
-        $this->em->flush();
+
+        $this->modeleService->supprimer($modele);
         $this->addFlash('success', 'Modèle supprimé.');
 
         return $this->redirectToRoute('admin_stock_dotations_index');
@@ -201,21 +176,19 @@ class DotationController extends AbstractController
     {
         $this->csrf->valider('dotation_ligne_add_' . $modele->getId(), $request);
 
-        $item = $this->itemRepository->find((int) $request->request->get('stock_item_id'));
-        if ($item === null) {
-            $this->addFlash('error', 'Article introuvable.');
+        try {
+            $ligne = $this->modeleService->ajouterArticle(
+                $modele,
+                (int) $request->request->get('stock_item_id'),
+                (int) $request->request->get('quantite', 1),
+            );
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
 
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
-        $ligne = (new DotationModeleLigne())
-            ->setStockItem($item)
-            ->setQuantite(max(1, (int) $request->request->get('quantite', 1)));
-
-        $modele->addLigne($ligne);
-        $this->em->persist($ligne);
-        $this->em->flush();
-        $this->addFlash('success', sprintf('« %s » ajouté au modèle.', $item->getNom()));
+        $this->addFlash('success', sprintf('« %s » ajouté au modèle.', $ligne->getStockItem()->getNom()));
 
         return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
     }
@@ -226,46 +199,20 @@ class DotationController extends AbstractController
         $this->csrf->valider('dotation_choix_add_' . $modele->getId(), $request);
 
         $nom = trim((string) $request->request->get('nom', ''));
-        if ($nom === '') {
-            $this->addFlash('error', 'Donnez un nom au choix (ex : « Veste »).');
+
+        try {
+            $ajoutes = $this->modeleService->creerChoix(
+                $modele,
+                $nom,
+                array_map('intval', (array) $request->request->all('stock_item_ids')),
+                (int) $request->request->get('quantite', 1),
+            );
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
 
             return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
         }
 
-        $itemIds = array_unique(array_filter(array_map('intval', (array) $request->request->all('stock_item_ids'))));
-        if (count($itemIds) < 2) {
-            $this->addFlash('error', 'Un choix doit proposer au moins 2 articles.');
-
-            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
-        }
-
-        $quantite = max(1, (int) $request->request->get('quantite', 1));
-        $ajoutes = 0;
-        foreach ($itemIds as $itemId) {
-            $item = $this->itemRepository->find($itemId);
-            if ($item === null) {
-                continue;
-            }
-            // Toutes les options naissent ouvertes à tout le monde : l'éligibilité et le texte à
-            // personnaliser se règlent ensuite dans le panneau du choix, où l'aperçu montre
-            // immédiatement la conséquence.
-            $ligne = (new DotationModeleLigne())
-                ->setStockItem($item)
-                ->setQuantite($quantite)
-                ->setGroupeChoix($nom)
-                ->setEligibilite(DotationEligibilite::TOUS);
-            $modele->addLigne($ligne);
-            $this->em->persist($ligne);
-            ++$ajoutes;
-        }
-
-        if ($ajoutes < 2) {
-            $this->addFlash('error', 'Articles introuvables : choix non créé.');
-
-            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
-        }
-
-        $this->em->flush();
         $this->addFlash('success', sprintf(
             'Choix « %s » ajouté (%d options). Réglez maintenant qui a droit à quoi, et le texte à personnaliser.',
             $nom,
@@ -278,15 +225,10 @@ class DotationController extends AbstractController
     #[Route('/{id}/choix/supprimer', name: 'choix_delete', methods: ['POST'])]
     public function choixDelete(DotationModele $modele, Request $request): Response
     {
-        $nom = trim((string) $request->request->get('nom', ''));
         $this->csrf->valider('dotation_choix_delete_' . $modele->getId(), $request);
 
-        foreach ($modele->getLignes() as $ligne) {
-            if ($ligne->getGroupeChoix() === $nom) {
-                $this->em->remove($ligne);
-            }
-        }
-        $this->em->flush();
+        $nom = trim((string) $request->request->get('nom', ''));
+        $this->modeleService->supprimerChoix($modele, $nom);
         $this->addFlash('success', sprintf('Choix « %s » retiré.', $nom));
 
         return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
@@ -295,7 +237,6 @@ class DotationController extends AbstractController
     #[Route('/lignes/{id}/reglages', name: 'ligne_reglages', methods: ['POST'])]
     public function ligneReglages(DotationModeleLigne $ligne, Request $request): Response
     {
-        $modeleId = $ligne->getModele()->getId();
         $this->csrf->valider('dotation_ligne_reglages_' . $ligne->getId(), $request);
 
         $max = trim((string) $request->request->get('personnalisation_max', ''));
@@ -309,7 +250,7 @@ class DotationController extends AbstractController
 
         $this->addFlash('success', sprintf('Réglages de « %s » enregistrés.', $ligne->getStockItem()->getNom()));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $ligne->getModele()->getId()]);
     }
 
     #[Route('/lignes/{id}/supprimer', name: 'ligne_delete', methods: ['POST'])]
@@ -317,6 +258,7 @@ class DotationController extends AbstractController
     {
         $modeleId = $ligne->getModele()->getId();
         $this->csrf->valider('dotation_ligne_delete_' . $ligne->getId(), $request);
+
         try {
             $this->modeleService->removeLigne($ligne);
         } catch (\DomainException $e) {
@@ -335,52 +277,25 @@ class DotationController extends AbstractController
     {
         $this->csrf->valider('dotation_affectation_new', $request);
 
-        $modele = $this->modeleRepository->find((int) $request->request->get('modele_id'));
-        if ($modele === null) {
-            $this->addFlash('error', 'Modèle introuvable.');
+        $data = new DotationAffectationData(
+            (int) $request->request->get('modele_id'),
+            DotationCibleType::tryFrom((string) $request->request->get('cible_type', '')) ?? DotationCibleType::DEFAUT,
+            $request->request->get('cible_id'),
+        );
+
+        try {
+            $affectation = $this->affectationService->creer($data, $season);
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
 
             return $this->redirectToRoute('admin_stock_dotations_index');
         }
 
-        $affectation = (new DotationAffectation())->setSeason($season)->setModele($modele);
-        $cible = $request->request->get('cible_type');
-        $cibleId = $request->request->get('cible_id');
-
-        switch ($cible) {
-            case 'category':
-                $affectation->setCategory($this->categoryRepository->find((int) $cibleId));
-                break;
-            case 'team':
-                $affectation->setTeam($this->teamRepository->find((int) $cibleId));
-                break;
-            case 'licencie':
-                $affectation->setLicencie($cibleId ? $this->licencieRepository->findByUuid(Uuid::fromString($cibleId)) : null);
-                break;
-            case 'dirigeant':
-                $affectation->setDirigeant($cibleId ? $this->dirigeantRepository->findByUuid(Uuid::fromString($cibleId)) : null);
-                break;
-            case 'role':
-                $affectation->setRole(DirigeantRole::tryFrom((string) $cibleId));
-                break;
-            case 'default':
-            default:
-                // aucune cible → affectation par défaut
-                break;
-        }
-
-        if ($cible !== 'default' && $affectation->priorite() === 0) {
-            $this->addFlash('error', 'Cible invalide pour cette affectation.');
-
-            return $this->redirectToRoute('admin_stock_dotations_index');
-        }
-
-        $this->em->persist($affectation);
-        $this->em->flush();
         $this->addFlash('success', sprintf('Ce kit est maintenant attribué à : %s.', $affectation->cibleLabel()));
 
         // Une affectation appartient toujours à un kit : on revient sur sa page, là où l'aperçu
         // se met à jour en conséquence.
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $affectation->getModele()->getId()]);
     }
 
     #[Route('/affectations/{id}/supprimer', name: 'affectation_delete', methods: ['POST'])]
@@ -388,8 +303,8 @@ class DotationController extends AbstractController
     {
         $modeleId = $affectation->getModele()->getId();
         $this->csrf->valider('dotation_affectation_delete_' . $affectation->getId(), $request);
-        $this->em->remove($affectation);
-        $this->em->flush();
+
+        $this->affectationService->supprimer($affectation);
         $this->addFlash('success', 'Attribution retirée.');
 
         return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
@@ -403,8 +318,8 @@ class DotationController extends AbstractController
         return $this->render('admin/stock/dotations/suivi.html.twig', [
             'season' => $season,
             'groupes' => $this->besoinService->getSuiviGroupes($season),
-            'taillesConnues' => ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'],
-            'pointures' => array_map('strval', range(28, 48)),
+            'taillesConnues' => Tailles::toutes(),
+            'pointures' => Tailles::pointures(),
         ]);
     }
 
