@@ -5,7 +5,9 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Licenciés', route: 'admin_licencies_list' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs', route: 'admin_licencies_list' },
     { label: licencie.nomPrenom, route: 'admin_licencies_show', params: { uuid: licencie.uuid } },
     { label: 'Corriger l\'identité' }
 ] } %}

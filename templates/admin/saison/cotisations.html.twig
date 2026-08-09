@@ -1,0 +1,62 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Cotisations{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Cotisations' }
+] } %}
+
+<div class="season-form-page">
+
+    <div class="season-form-card">
+        <h1 class="season-form-header">Cotisations</h1>
+        <p class="config-teams-intro">
+            Le montant dû par un licencié est celui de son équipe. À défaut d'équipe, ou si
+            l'équipe n'a pas de montant propre, c'est la cotisation par défaut qui s'applique.
+        </p>
+        <hr class="season-form-divider">
+
+        <form method="post" action="{{ path('admin_cotisations_defaut') }}" class="cotisations-defaut">
+            <input type="hidden" name="_token" value="{{ csrf_token('cotisation_defaut') }}">
+            <div class="field">
+                <label class="field-label" for="cotisation_defaut">Cotisation par défaut (€)</label>
+                <input type="number" min="0" step="1" id="cotisation_defaut" name="cotisation_defaut"
+                       value="{{ season.cotisationDefaut }}" class="field-input" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+        </form>
+    </div>
+
+    <div class="season-form-card">
+        <h2 class="season-form-header" style="font-size:var(--font-size-lg)">Cotisation par équipe</h2>
+        <hr class="season-form-divider">
+
+        {% if teams is empty %}
+            <p class="season-form-empty">
+                Aucune équipe configurée. <a href="{{ path('admin_equipes_index') }}">Créer une équipe →</a>
+            </p>
+        {% else %}
+            <ul class="config-teams-list">
+                {% for team in teams %}
+                    <li class="config-teams-item">
+                        <form method="post" action="{{ path('admin_cotisations_equipe', {id: team.id}) }}" class="cotisations-team-row">
+                            <input type="hidden" name="_token" value="{{ csrf_token('cotisation_team_' ~ team.id) }}">
+                            <span class="config-teams-name">{{ team.name }}</span>
+                            <input type="number" min="0" step="1" name="cotisation" value="{{ team.cotisation }}"
+                                   class="field-input field-input-compact cotisations-team-input"
+                                   placeholder="{{ season.cotisationDefaut }} (défaut)"
+                                   aria-label="Cotisation de {{ team.name }}">
+                            <button type="submit" class="btn btn-ghost">Enregistrer</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+            <p class="config-teams-hint">Laissez un champ vide pour que l'équipe suive la cotisation par défaut.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

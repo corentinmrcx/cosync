@@ -34,11 +34,29 @@
     white-space: nowrap;
 }
 
+/* Lien secondaire sous les cartes (reprendre la saison, gérer les saisons) */
+.dashboard-season-link {
+    display: block;
+    max-width: 860px;
+    margin: 1.5rem auto 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.dashboard-season-link:hover {
+    text-decoration: underline;
+}
+
 .dashboard-hub {
     display: flex;
     flex-wrap: wrap;
     gap: 1.25rem;
     max-width: 860px;
+    /* width explicite : dans un conteneur en colonne (tableau de bord d'une saison), les
+       marges automatiques rétréciraient la grille à son contenu et empileraient les cartes. */
+    width: 100%;
     margin: 0 auto;
 }
 

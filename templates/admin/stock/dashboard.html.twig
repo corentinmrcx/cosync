@@ -6,6 +6,7 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
     { label: 'Stock' }
 ] } %}
 
@@ -122,6 +123,14 @@
             <h2 class="stock-home-section-title">Accès rapides</h2>
         </div>
         <div class="quicklink-grid">
+            <a href="{{ path('admin_stock_gestion') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('list', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Gérer le stock</span>
+                    <span class="quicklink-text">Catalogue des articles, stock par taille, entrées et sorties</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
             <a href="{{ path('admin_stock_dotations_suivi') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('clipboard-list', 20) }}</span>
                 <span class="quicklink-body">

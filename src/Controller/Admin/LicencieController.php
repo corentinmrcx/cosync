@@ -39,7 +39,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
-#[Route('/admin/licencies', name: 'admin_licencies_')]
+#[Route('/admin/effectif/joueurs', name: 'admin_licencies_')]
 class LicencieController extends AbstractController
 {
     public function __construct(

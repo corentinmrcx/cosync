@@ -26,7 +26,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * Remplace les deux écrans d'édition de règlement, un par destinataire : le nombre de
  * documents n'est plus une constante du code, donc l'écran non plus.
  */
-#[Route('/admin/config/documents', name: 'admin_documents_')]
+#[Route('/admin/effectif/documents', name: 'admin_documents_')]
 class DocumentSignableController extends AbstractController
 {
     public function __construct(

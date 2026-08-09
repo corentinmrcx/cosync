@@ -16,9 +16,12 @@
 @import './components/loader.css';
 @import './components/custom-select.css';
 @import './components/stock-ui.css';
+@import './components/todo-list.css';
 @import './pages/login.css';
 @import './pages/dashboard.css';
 @import './pages/import.css';
+@import './pages/effectif.css';
+@import './pages/saison.css';
 @import './pages/licencies.css';
 @import './pages/licencie-show.css';
 @import './pages/licencie-edit.css';

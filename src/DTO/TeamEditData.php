@@ -4,23 +4,24 @@ namespace App\DTO;
 
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Édition d'une équipe depuis l'écran « Équipes ». La cotisation n'en fait pas partie :
+ * elle se règle sur l'écran « Cotisations », qui rassemble tous les montants de la saison.
+ */
 final class TeamEditData
 {
     /** @param list<int> $categoryIds */
     public function __construct(
         public readonly ?string $nom,
-        public readonly ?int $cotisation,
         public readonly array $categoryIds,
     ) {}
 
     public static function fromRequest(Request $request): self
     {
         $champs = $request->request->all('team');
-        $cotisation = trim((string) ($champs['cotisation'] ?? ''));
 
         return new self(
             trim((string) ($champs['name'] ?? '')) ?: null,
-            $cotisation === '' ? null : (int) $cotisation,
             array_map('intval', (array) ($champs['categories'] ?? [])),
         );
     }

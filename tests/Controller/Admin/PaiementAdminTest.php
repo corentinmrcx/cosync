@@ -35,7 +35,7 @@ final class PaiementAdminTest extends WebTestCase
         $admin = $this->loginAdmin($client);
         $uuid = $this->seedLicencie();
 
-        $client->request('POST', '/admin/licencies/' . $uuid . '/ajouter-paiement', [
+        $client->request('POST', '/admin/effectif/joueurs/' . $uuid . '/ajouter-paiement', [
             '_token' => $this->token($client, $uuid, '/ajouter-paiement'),
             'mode' => 'cheque',
             'montant' => '40,50',
@@ -119,7 +119,7 @@ final class PaiementAdminTest extends WebTestCase
         $this->loginAdmin($client);
         $uuid = $this->seedLicencie();
 
-        $client->request('POST', '/admin/licencies/' . $uuid . '/ajouter-paiement', [
+        $client->request('POST', '/admin/effectif/joueurs/' . $uuid . '/ajouter-paiement', [
             '_token' => $this->token($client, $uuid, '/ajouter-paiement'),
             'mode' => 'bitcoin',
             'montant' => '85',
@@ -135,7 +135,7 @@ final class PaiementAdminTest extends WebTestCase
         $this->loginAdmin($client);
         $uuid = $this->seedLicencie();
 
-        $client->request('POST', '/admin/licencies/' . $uuid . '/ajouter-paiement', [
+        $client->request('POST', '/admin/effectif/joueurs/' . $uuid . '/ajouter-paiement', [
             '_token' => 'jeton-bidon',
             'mode' => 'especes',
             'montant' => '85',
@@ -157,7 +157,7 @@ final class PaiementAdminTest extends WebTestCase
         $this->payer($client, $uuid, '40');
         $id = $this->transactionsDe($uuid)[0]->getId();
 
-        $client->request('POST', '/admin/licencies/' . $uuid . '/paiements/' . $id . '/supprimer', [
+        $client->request('POST', '/admin/effectif/joueurs/' . $uuid . '/paiements/' . $id . '/supprimer', [
             '_token' => $this->token($client, $uuid, '/paiements/' . $id . '/supprimer'),
         ]);
 
@@ -176,7 +176,7 @@ final class PaiementAdminTest extends WebTestCase
         $this->payer($client, $uuid, '40');
         $id = $this->transactionsDe($uuid)[0]->getId();
 
-        $client->request('POST', '/admin/licencies/' . $autre . '/paiements/' . $id . '/supprimer', [
+        $client->request('POST', '/admin/effectif/joueurs/' . $autre . '/paiements/' . $id . '/supprimer', [
             '_token' => $this->token($client, $uuid, '/paiements/' . $id . '/supprimer'),
         ]);
 
@@ -192,11 +192,11 @@ final class PaiementAdminTest extends WebTestCase
         $this->loginAdmin($client);
         $uuid = $this->seedLicencie();
 
-        $client->request('POST', '/admin/licencies/' . $uuid . '/valider-manuellement', [
+        $client->request('POST', '/admin/effectif/joueurs/' . $uuid . '/valider-manuellement', [
             '_token' => $this->token($client, $uuid, '/valider-manuellement'),
         ]);
 
-        self::assertResponseRedirects('/admin/licencies/' . $uuid);
+        self::assertResponseRedirects('/admin/effectif/joueurs/' . $uuid);
         self::assertSame(LicenceStatus::VALIDATED, $this->reloadDossier($uuid)->getStatus());
         self::assertCount(0, $this->transactionsDe($uuid), 'Valider ne crée aucune transaction fictive');
         self::assertCount(1, self::getMailerMessages());
@@ -209,7 +209,7 @@ final class PaiementAdminTest extends WebTestCase
         $client = static::createClient();
         $uuid = $this->seedLicencie();
 
-        $client->request('POST', '/admin/licencies/' . $uuid . '/valider-manuellement', ['_token' => 'x']);
+        $client->request('POST', '/admin/effectif/joueurs/' . $uuid . '/valider-manuellement', ['_token' => 'x']);
 
         self::assertResponseRedirects();
         self::assertStringContainsString('/login', (string) $client->getResponse()->headers->get('Location'));
@@ -220,7 +220,7 @@ final class PaiementAdminTest extends WebTestCase
 
     private function payer(KernelBrowser $client, string $uuid, string $montant): void
     {
-        $client->request('POST', '/admin/licencies/' . $uuid . '/ajouter-paiement', [
+        $client->request('POST', '/admin/effectif/joueurs/' . $uuid . '/ajouter-paiement', [
             '_token' => $this->token($client, $uuid, '/ajouter-paiement'),
             'mode' => 'especes',
             'montant' => $montant,
@@ -234,7 +234,7 @@ final class PaiementAdminTest extends WebTestCase
      */
     private function token(KernelBrowser $client, string $uuid, string $actionSuffixe): string
     {
-        $crawler = $client->request('GET', '/admin/licencies/' . $uuid);
+        $crawler = $client->request('GET', '/admin/effectif/joueurs/' . $uuid);
         $champ = $crawler->filter('form[action$="' . $actionSuffixe . '"] input[name="_token"]');
 
         self::assertGreaterThan(0, $champ->count(), sprintf('Formulaire %s introuvable sur la fiche.', $actionSuffixe));

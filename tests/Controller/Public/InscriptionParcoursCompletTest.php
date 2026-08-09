@@ -8,6 +8,7 @@ use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
+use App\Service\Referentiel\ClubSettingsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\MailerAssertionsTrait;
@@ -467,7 +468,8 @@ final class InscriptionParcoursCompletTest extends WebTestCase
     ): string {
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85)->setIban($iban);
+        $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
+        self::getContainer()->get(ClubSettingsService::class)->get()->setIban($iban);
         $category = (new Category())->setCode($code)->setLabel($label)->setIsEcoleFoot($code !== 'SENIOR');
 
         $licencie = (new Licencie())

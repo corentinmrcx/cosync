@@ -1,0 +1,148 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Effectif{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif' }
+] } %}
+
+<div class="effectif-page">
+
+    <div class="effectif-header">
+        <div>
+            <h1 class="effectif-title">Effectif</h1>
+            <p class="effectif-subtitle">Joueurs et dirigeants de la saison, suivi des dossiers et des signatures</p>
+        </div>
+    </div>
+
+    {# — Tuiles de synthèse — #}
+    <div class="stat-grid">
+        <div class="stat-card stat-card-primary">
+            <span class="stat-card-icon">{{ ui.icon('users', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ data.nbJoueurs }}</span>
+                <span class="stat-card-label">Joueur{{ data.nbJoueurs > 1 ? 's' : '' }}</span>
+            </span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-icon">{{ ui.icon('shield', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ data.nbDirigeants }}</span>
+                <span class="stat-card-label">Dirigeant{{ data.nbDirigeants > 1 ? 's' : '' }}</span>
+            </span>
+        </div>
+        <div class="stat-card {{ data.nbFormulairesEnAttente > 0 ? 'stat-card-warning' }}">
+            <span class="stat-card-icon">{{ ui.icon('clipboard-list', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ data.nbFormulairesEnAttente }}</span>
+                <span class="stat-card-label">Formulaire{{ data.nbFormulairesEnAttente > 1 ? 's' : '' }} en attente</span>
+            </span>
+        </div>
+        <div class="stat-card {{ data.nbPaiementsEnAttente > 0 ? 'stat-card-warning' }}">
+            <span class="stat-card-icon">{{ ui.icon('euro', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ data.nbPaiementsEnAttente }}</span>
+                <span class="stat-card-label">Paiement{{ data.nbPaiementsEnAttente > 1 ? 's' : '' }} à encaisser</span>
+            </span>
+        </div>
+        <div class="stat-card {{ data.nbSignaturesEnAttente > 0 ? 'stat-card-warning' }}">
+            <span class="stat-card-icon">{{ ui.icon('file-text', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ data.nbSignaturesEnAttente }}</span>
+                <span class="stat-card-label">Signature{{ data.nbSignaturesEnAttente > 1 ? 's' : '' }} en attente</span>
+            </span>
+        </div>
+    </div>
+
+    {# — À faire — #}
+    <div class="effectif-section">
+        <div class="effectif-section-header">
+            <h2 class="effectif-section-title">À faire</h2>
+        </div>
+
+        {% if data.rienAFaire %}
+            <p class="effectif-empty">Tous les dossiers sont à jour</p>
+        {% else %}
+            <div class="todo-list">
+                {% if data.nbLiensNonEnvoyes > 0 %}
+                    {% include 'components/todo-item.html.twig' with {
+                        count: data.nbLiensNonEnvoyes,
+                        label: "lien#{data.nbLiensNonEnvoyes > 1 ? 's' : ''} d'inscription jamais envoyé#{data.nbLiensNonEnvoyes > 1 ? 's' : ''}",
+                        route: 'admin_licencies_list',
+                        params: { status: 'imported' },
+                    } only %}
+                {% endif %}
+                {% if data.nbFormulairesSansReponse > 0 %}
+                    {% include 'components/todo-item.html.twig' with {
+                        count: data.nbFormulairesSansReponse,
+                        label: "formulaire#{data.nbFormulairesSansReponse > 1 ? 's' : ''} envoyé#{data.nbFormulairesSansReponse > 1 ? 's' : ''} sans réponse",
+                        route: 'admin_licencies_list',
+                        params: { status: 'link_sent' },
+                    } only %}
+                {% endif %}
+                {% if data.nbPaiementsEnAttente > 0 %}
+                    {% include 'components/todo-item.html.twig' with {
+                        count: data.nbPaiementsEnAttente,
+                        label: "dossier#{data.nbPaiementsEnAttente > 1 ? 's' : ''} complet#{data.nbPaiementsEnAttente > 1 ? 's' : ''} en attente de paiement",
+                        route: 'admin_licencies_list',
+                        params: { status: 'form_completed' },
+                    } only %}
+                {% endif %}
+                {% if data.nbSignaturesEnAttente > 0 %}
+                    {% include 'components/todo-item.html.twig' with {
+                        count: data.nbSignaturesEnAttente,
+                        label: "signature#{data.nbSignaturesEnAttente > 1 ? 's' : ''} de document en attente",
+                        route: 'admin_documents_list',
+                    } only %}
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# — Accès rapides — #}
+    <div class="effectif-section">
+        <div class="effectif-section-header">
+            <h2 class="effectif-section-title">Accès rapides</h2>
+        </div>
+        <div class="quicklink-grid">
+            <a href="{{ path('admin_licencies_list') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('users', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Joueurs</span>
+                    <span class="quicklink-text">Dossiers des licenciés joueurs : formulaire, autorisations, paiement</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_dirigeants_list') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('shield', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Dirigeants</span>
+                    <span class="quicklink-text">Encadrement du club : rôles, équipement, clés et documents</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_import_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('import', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Import FootClubs</span>
+                    <span class="quicklink-text">Mettre à jour l'effectif depuis un export XLSX FootClubs</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_documents_list') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('file-text', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Documents à signer</span>
+                    <span class="quicklink-text">Règlements et chartes : avancement des signatures, relances</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

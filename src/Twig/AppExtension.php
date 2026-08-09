@@ -3,6 +3,7 @@
 namespace App\Twig;
 
 use App\Repository\SeasonRepository;
+use App\Service\Referentiel\ClubSettingsService;
 use App\Service\Referentiel\Tailles;
 use App\Service\Saison\SeasonContext;
 use Twig\Extension\AbstractExtension;
@@ -15,13 +16,22 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
     public function __construct(
         private readonly SeasonContext $seasonContext,
         private readonly SeasonRepository $seasonRepository,
+        private readonly ClubSettingsService $clubSettings,
         private readonly string $nomClub,
     ) {}
 
     public function getGlobals(): array
     {
+        $season = $this->seasonContext->getCurrentSeason();
+
         return [
             'club_nom' => $this->nomClub,
+            // Maillon « saison » du fil d'Ariane. null quand aucune saison n'existe : le
+            // composant breadcrumb saute alors le maillon au lieu de rompre le rendu.
+            'navbar_saison_label' => $season !== null ? 'Saison ' . $season->getLabel() : null,
+            // Coordonnées bancaires du club : lues par le formulaire public, la page de
+            // confirmation et le mail de confirmation, rendus depuis trois contextes différents.
+            'club_rib' => $this->clubSettings->get(),
             'navbar_current_season' => $this->seasonContext->getCurrentSeason(),
             'navbar_seasons' => $this->seasonRepository->findBy([], ['createdAt' => 'DESC']),
         ];

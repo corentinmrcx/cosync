@@ -5,7 +5,7 @@
 {% block corps %}
     {% set intentionValues = intentions|map(m => m.value) %}
     {% set aRemettreAuLocal = intentionValues|filter(v => v in ['cheque', 'especes', 'pass_sport', 'caf', 'ancv']) %}
-    {% set titulaire = licencie.season.titulaireCompte|default(club_nom) %}
+    {% set titulaire = club_rib.titulaireCompte|default(club_nom) %}
 
     {# — Hero — #}
         <tr>
@@ -48,7 +48,7 @@
         </tr>
 
         {# — Instructions de paiement, selon le mode déclaré — #}
-        {% if 'virement' in intentionValues and licencie.season.accepteVirement %}
+        {% if 'virement' in intentionValues and club_rib.accepteVirement %}
             <tr>
                 <td style="padding: 20px 40px 0;" class="px">
                     <p style="margin: 0 0 10px; font-size: 15px; font-weight: 700; color: {{ c.texteFort }};">Régler par virement</p>
@@ -56,9 +56,9 @@
                            style="background: #eff6ff; border-radius: 10px; border: 1px solid #bfdbfe;">
                         <tr>
                             <td style="padding: 18px 24px; font-size: 14px; line-height: 1.8; color: {{ c.texteCourant }};">
-                                IBAN : <strong style="color: {{ c.texteFort }};">{{ licencie.season.iban }}</strong><br>
-                                {% if licencie.season.bic %}
-                                    BIC : <strong style="color: {{ c.texteFort }};">{{ licencie.season.bic }}</strong><br>
+                                IBAN : <strong style="color: {{ c.texteFort }};">{{ club_rib.iban }}</strong><br>
+                                {% if club_rib.bic %}
+                                    BIC : <strong style="color: {{ c.texteFort }};">{{ club_rib.bic }}</strong><br>
                                 {% endif %}
                                 Titulaire : <strong style="color: {{ c.texteFort }};">{{ titulaire }}</strong><br>
                                 Libellé à indiquer : <strong style="color: {{ c.texteFort }};">{{ libelleVirement }}</strong>

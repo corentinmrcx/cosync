@@ -33,7 +33,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         $fixtures->documentDirigeant($this->season);
         self::getContainer()->get(EntityManagerInterface::class)->flush();
 
-        $client->request('GET', '/admin/config/documents');
+        $client->request('GET', '/admin/effectif/documents');
         $html = (string) $client->getResponse()->getContent();
 
         self::assertResponseIsSuccessful();
@@ -59,7 +59,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         $this->makeLicencie('MARTIN');
         $em->flush();
 
-        $client->request('GET', '/admin/config/documents');
+        $client->request('GET', '/admin/effectif/documents');
         $html = (string) $client->getResponse()->getContent();
 
         self::assertStringContainsString('2 en attente', $html);
@@ -68,7 +68,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         $fixtures->signerParLicencie($document, $signataire);
         $em->flush();
 
-        $client->request('GET', '/admin/config/documents');
+        $client->request('GET', '/admin/effectif/documents');
         $html = (string) $client->getResponse()->getContent();
 
         self::assertStringContainsString('1 en attente', $html);
@@ -89,7 +89,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         $fixtures->signerParLicencie($document, $licencie);
         $em->flush();
 
-        $client->request('GET', '/admin/config/documents');
+        $client->request('GET', '/admin/effectif/documents');
 
         self::assertStringContainsString('Tout le monde a signé', (string) $client->getResponse()->getContent());
     }
@@ -103,7 +103,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         (new DocumentFixtures($em))->documentLicencie($this->season);
         $em->flush();
 
-        $client->request('GET', '/admin/config/documents');
+        $client->request('GET', '/admin/effectif/documents');
 
         self::assertStringNotContainsString('Tout le monde a signé', (string) $client->getResponse()->getContent());
     }
@@ -113,12 +113,12 @@ final class DocumentSignableCrudTest extends WebTestCase
         $client = static::createClient();
         $this->loginAdmin($client);
 
-        $crawler = $client->request('GET', '/admin/config/documents/nouveau');
+        $crawler = $client->request('GET', '/admin/effectif/documents/nouveau');
         self::assertResponseIsSuccessful();
 
         $token = $crawler->filter('form#document-form input[name="_token"]')->attr('value');
 
-        $client->request('POST', '/admin/config/documents/nouveau', [
+        $client->request('POST', '/admin/effectif/documents/nouveau', [
             '_token' => $token,
             'titre' => 'Charte d\'engagement — Communication',
             'libelle' => 'la charte d\'engagement communication du Foyer de Soudron',
@@ -127,7 +127,7 @@ final class DocumentSignableCrudTest extends WebTestCase
             'actif' => '1',
         ]);
 
-        self::assertResponseRedirects('/admin/config/documents');
+        self::assertResponseRedirects('/admin/effectif/documents');
 
         $document = $this->findByCode('charte_d_engagement_communication');
 
@@ -148,7 +148,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         $dirigeant = $fixtures->documentDirigeant($this->season, contenuHtml: '<p>Texte dirigeants</p>');
         $em->flush();
 
-        $url = '/admin/config/documents/' . $dirigeant->getId() . '/modifier';
+        $url = '/admin/effectif/documents/' . $dirigeant->getId() . '/modifier';
         $crawler = $client->request('GET', $url);
         $token = $crawler->filter('form#document-form input[name="_token"]')->attr('value');
 
@@ -161,7 +161,7 @@ final class DocumentSignableCrudTest extends WebTestCase
             'actif' => '1',
         ]);
 
-        self::assertResponseRedirects('/admin/config/documents');
+        self::assertResponseRedirects('/admin/effectif/documents');
 
         $em->clear();
         self::assertSame('<p>Texte dirigeants v2</p>', $em->find(DocumentSignable::class, $dirigeant->getId())->getContenuHtml());
@@ -178,15 +178,15 @@ final class DocumentSignableCrudTest extends WebTestCase
         $em->flush();
         $id = $document->getId();
 
-        $client->request('POST', '/admin/config/documents/' . $id . '/modifier', [
+        $client->request('POST', '/admin/effectif/documents/' . $id . '/modifier', [
             '_token' => 'invalide',
             'titre' => 'Piraté',
             'libelle' => 'le document piraté',
             'cible' => 'dirigeant',
             'contenu_html' => '<p>Piraté</p>',
-        ], [], ['HTTP_REFERER' => '/admin/config/documents/' . $id . '/modifier']);
+        ], [], ['HTTP_REFERER' => '/admin/effectif/documents/' . $id . '/modifier']);
 
-        self::assertResponseRedirects('/admin/config/documents/' . $id . '/modifier');
+        self::assertResponseRedirects('/admin/effectif/documents/' . $id . '/modifier');
 
         $em->clear();
         self::assertSame('<p>Original</p>', $em->find(DocumentSignable::class, $id)->getContenuHtml());
@@ -201,7 +201,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         $document = (new DocumentFixtures($em))->documentDirigeant($this->season);
         $em->flush();
 
-        $client->request('GET', '/admin/config/documents/' . $document->getId() . '/apercu');
+        $client->request('GET', '/admin/effectif/documents/' . $document->getId() . '/apercu');
 
         self::assertResponseIsSuccessful();
         self::assertResponseHeaderSame('Content-Type', 'application/pdf');
@@ -228,17 +228,17 @@ final class DocumentSignableCrudTest extends WebTestCase
 
         // La liste n'offre plus le bouton dès qu'il y a une signature ; on force la
         // requête pour vérifier que le contrôleur refuse aussi, et pas seulement l'UI.
-        $client->request('GET', '/admin/config/documents');
+        $client->request('GET', '/admin/effectif/documents');
         self::assertStringNotContainsString(
-            '/admin/config/documents/' . $id . '/supprimer',
+            '/admin/effectif/documents/' . $id . '/supprimer',
             (string) $client->getResponse()->getContent(),
         );
 
-        $client->request('POST', '/admin/config/documents/' . $id . '/supprimer', [
+        $client->request('POST', '/admin/effectif/documents/' . $id . '/supprimer', [
             '_token' => $this->csrf($client, 'document_delete_' . $id),
         ]);
 
-        self::assertResponseRedirects('/admin/config/documents');
+        self::assertResponseRedirects('/admin/effectif/documents');
 
         $em->clear();
         self::assertNotNull($em->find(DocumentSignable::class, $id), 'Supprimer emporterait la signature recueillie.');
@@ -266,7 +266,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         $fixtures->signerParDirigeant($document, $dejaSigne);
         $em->flush();
 
-        $url = '/admin/config/documents/' . $document->getId() . '/relancer';
+        $url = '/admin/effectif/documents/' . $document->getId() . '/relancer';
         $crawler = $client->request('GET', $url);
         $html = (string) $client->getResponse()->getContent();
 
@@ -281,7 +281,7 @@ final class DocumentSignableCrudTest extends WebTestCase
 
         $client->request('POST', $url, ['_token' => $token]);
 
-        self::assertResponseRedirects('/admin/config/documents');
+        self::assertResponseRedirects('/admin/effectif/documents');
 
         $em->clear();
 
@@ -304,9 +304,9 @@ final class DocumentSignableCrudTest extends WebTestCase
         $document = (new DocumentFixtures($em))->documentLicencie($this->season);
         $em->flush();
 
-        $client->request('GET', '/admin/config/documents/' . $document->getId() . '/relancer');
+        $client->request('GET', '/admin/effectif/documents/' . $document->getId() . '/relancer');
 
-        self::assertResponseRedirects('/admin/config/documents');
+        self::assertResponseRedirects('/admin/effectif/documents');
     }
 
     private function makeLicencie(string $nom): \App\Entity\Licencie
@@ -350,7 +350,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         $client = static::createClient();
         $this->makeSeason();
 
-        $client->request('GET', '/admin/config/documents');
+        $client->request('GET', '/admin/effectif/documents');
 
         self::assertResponseRedirects();
         self::assertStringContainsString('/login', (string) $client->getResponse()->headers->get('Location'));

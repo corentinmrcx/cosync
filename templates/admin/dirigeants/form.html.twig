@@ -5,6 +5,8 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
     { label: 'Dirigeants', route: 'admin_dirigeants_list' },
     { label: dirigeant ? dirigeant.nomPrenom : 'Nouveau dirigeant' }
 ] } %}

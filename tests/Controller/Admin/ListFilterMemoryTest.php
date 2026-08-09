@@ -20,11 +20,11 @@ final class ListFilterMemoryTest extends WebTestCase
         $this->loginAdmin($client);
 
         // 1. Visite avec un filtre → il est mémorisé.
-        $client->request('GET', '/admin/licencies?status=validated');
+        $client->request('GET', '/admin/effectif/joueurs?status=validated');
         self::assertResponseIsSuccessful();
 
         // 2. Retour sur la liste nue → redirection vers l'URL filtrée.
-        $client->request('GET', '/admin/licencies');
+        $client->request('GET', '/admin/effectif/joueurs');
         self::assertResponseRedirects();
         self::assertStringContainsString('status=validated', (string) $client->getResponse()->headers->get('Location'));
     }
@@ -34,7 +34,7 @@ final class ListFilterMemoryTest extends WebTestCase
         $client = static::createClient();
         $this->loginAdmin($client);
 
-        $client->request('GET', '/admin/licencies');
+        $client->request('GET', '/admin/effectif/joueurs');
         self::assertResponseIsSuccessful();
     }
 
@@ -44,13 +44,13 @@ final class ListFilterMemoryTest extends WebTestCase
         $this->loginAdmin($client);
 
         // Mémorise un filtre…
-        $client->request('GET', '/admin/licencies?status=validated');
+        $client->request('GET', '/admin/effectif/joueurs?status=validated');
         // …puis réinitialise (URL avec seulement search vide, sans statut).
-        $client->request('GET', '/admin/licencies?search=');
+        $client->request('GET', '/admin/effectif/joueurs?search=');
         self::assertResponseIsSuccessful();
 
         // Retour nu : plus rien à restaurer.
-        $client->request('GET', '/admin/licencies');
+        $client->request('GET', '/admin/effectif/joueurs');
         self::assertResponseIsSuccessful();
     }
 

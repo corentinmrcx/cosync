@@ -19,8 +19,23 @@ final class SeasonService
             throw new \DomainException(sprintf('La saison "%s" existe déjà.', $season->getLabel()));
         }
 
+        $this->reprendreReglagesDeLaDerniereSaison($season);
+
         $this->em->persist($season);
         $this->em->flush();
+    }
+
+    /**
+     * Le texte de l'attestation de clé change rarement d'une saison à l'autre : le reprendre
+     * évite une re-saisie à chaque rentrée. Le RIB, lui, appartient au club (ClubSettings).
+     */
+    private function reprendreReglagesDeLaDerniereSaison(Season $season): void
+    {
+        $precedente = $this->seasonRepo->findMostRecent();
+
+        if ($precedente !== null && $season->getAttestationCleText() === null) {
+            $season->setAttestationCleText($precedente->getAttestationCleText());
+        }
     }
 
     public function update(Season $season): void
@@ -40,6 +55,12 @@ final class SeasonService
     public function renommerParAnnee(Season $season, int $anneeDeDebut): void
     {
         $season->setLabel($anneeDeDebut . '-' . ($anneeDeDebut + 1));
+        $this->em->flush();
+    }
+
+    public function definirCotisationDefaut(Season $season, int $montant): void
+    {
+        $season->setCotisationDefaut($montant);
         $this->em->flush();
     }
 

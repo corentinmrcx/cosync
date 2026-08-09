@@ -20,7 +20,8 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Configuration', route: 'admin_config_index' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
     { label: 'Documents à signer', route: 'admin_documents_list' },
     { label: titrePage }
 ] } %}

@@ -1,25 +1,26 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}CoSync — Saisons{% endblock %}
+{% block title %}CoSync — Gérer les saisons{% endblock %}
 
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Saisons' }
+    { label: 'Saisons', route: 'admin_seasons_index' },
+    { label: 'Gérer' }
 ] } %}
 
 <div class="season-form-page">
     <div class="season-list-wrap">
 
         <div class="season-list-header">
-            <h1 class="season-list-title">Saisons</h1>
-            <a href="{{ path('admin_seasons_new') }}" class="btn btn-primary">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Nouvelle saison
-            </a>
+            <h1 class="season-list-title">Gérer les saisons</h1>
         </div>
+        <p class="season-list-intro">
+            Modifier une saison, c'est changer son année de début et sa cotisation par défaut.
+            Pour en créer une ou entrer dans l'une d'elles, revenez à l'écran
+            <a href="{{ path('admin_seasons_index') }}">Saisons</a>. Une saison qui contient des
+            licenciés ou des dirigeants ne peut pas être supprimée.
+        </p>
 
         {% if seasons is empty %}
             <p class="season-list-empty">Aucune saison créée.</p>
@@ -34,8 +35,9 @@
                         <div class="season-list-item-info">
                             <span class="season-list-item-label">{{ season.label }}</span>
                             {% if isActive %}
-                                <span class="season-list-badge-active">Active</span>
+                                <span class="season-list-badge-active">En cours</span>
                             {% endif %}
+                            {# Les compteurs disent aussi pourquoi le bouton Supprimer manque. #}
                             <span class="season-list-item-stats">
                                 {{ stat.licencies }} licencié{{ stat.licencies > 1 ? 's' : '' }}
                                 · {{ stat.dirigeants }} dirigeant{{ stat.dirigeants > 1 ? 's' : '' }}
@@ -43,13 +45,7 @@
                         </div>
 
                         <div class="season-list-item-actions">
-                            {% if not isActive %}
-                                <form method="post" action="{{ path('admin_seasons_switch', {id: season.id}) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('season_switch_' ~ season.id) }}">
-                                    <input type="hidden" name="returnTo" value="{{ path('admin_seasons_list') }}">
-                                    <button type="submit" class="season-list-btn-activate">Activer</button>
-                                </form>
-                            {% endif %}
+                            <a href="{{ path('admin_seasons_edit', {id: season.id}) }}" class="season-list-btn-activate">Modifier</a>
 
                             {% if canDelete %}
                                 {% include 'components/_form_suppression.html.twig' with {

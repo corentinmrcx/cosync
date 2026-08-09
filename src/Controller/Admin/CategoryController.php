@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/admin/categories', name: 'admin_categories_')]
+#[Route('/admin/club/categories-fff', name: 'admin_categories_')]
 class CategoryController extends AbstractController
 {
     public function __construct(

@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/admin/import', name: 'admin_import_')]
+#[Route('/admin/effectif/import', name: 'admin_import_')]
 class ImportController extends AbstractController
 {
     public function __construct(

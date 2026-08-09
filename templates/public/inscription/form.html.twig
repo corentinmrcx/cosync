@@ -364,7 +364,7 @@
 
             {# Le virement n'est proposé que si le club a renseigné un IBAN :
                l'annoncer sans pouvoir donner les coordonnées enverrait le licencié dans le mur. #}
-            {% set modes = (licencie.season.accepteVirement
+            {% set modes = (club_rib.accepteVirement
                 ? [{ value: 'virement', label: 'Virement bancaire' }]
                 : []) | merge([
                 { value: 'cheque',     label: 'Chèque' },
@@ -398,16 +398,15 @@
 
             {# Blocs info — s'affichent selon le mode sélectionné (unique ou multiple) #}
             <div class="inscription-payment-infos">
-                {% if licencie.season.accepteVirement %}
+                {% if club_rib.accepteVirement %}
                     <div x-show="isPaymentModeActive('virement')" class="inscription-payment-info">
                         {% include 'components/_coordonnees_bancaires.html.twig' with {
-                            season:  licencie.season,
                             libelle: libelleVirement,
                         } only %}
                     </div>
                 {% endif %}
                 <div x-show="isPaymentModeActive('cheque')" class="inscription-payment-info">
-                    Chèque à l'ordre de <strong>{{ licencie.season.titulaireCompte|default('Foyer de Soudron') }}</strong>, à remettre à un dirigeant.
+                    Chèque à l'ordre de <strong>{{ club_rib.titulaireCompte|default(club_nom) }}</strong>, à remettre à un dirigeant.
                 </div>
                 <div x-show="isPaymentModeActive('especes')" class="inscription-payment-info">
                     Espèces à remettre à un dirigeant.

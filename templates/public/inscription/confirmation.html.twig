@@ -32,10 +32,9 @@
             </div>
 
             {% set intentionValues = intentions|map(m => m.value) %}
-            {% if 'virement' in intentionValues and licencie.season.accepteVirement %}
+            {% if 'virement' in intentionValues and club_rib.accepteVirement %}
                 <div class="inscription-payment-info" style="margin-top: 1rem;">
                     {% include 'components/_coordonnees_bancaires.html.twig' with {
-                        season:  licencie.season,
                         libelle: libelleVirement,
                     } only %}
                 </div>

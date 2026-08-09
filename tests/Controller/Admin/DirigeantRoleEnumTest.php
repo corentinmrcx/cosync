@@ -24,7 +24,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
     {
         $client = static::createClient();
         $this->loginAdmin($client);
-        $crawler = $client->request('GET', '/admin/dirigeants/nouveau');
+        $crawler = $client->request('GET', '/admin/effectif/dirigeants/nouveau');
 
         self::assertResponseIsSuccessful();
 
@@ -48,7 +48,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
         $this->loginAdmin($client);
         $dirigeant = $this->makeDirigeant('CHEF', DirigeantRole::RESPONSABLE_FOOT);
 
-        $crawler = $client->request('GET', '/admin/dirigeants/' . $dirigeant->getUuid() . '/modifier');
+        $crawler = $client->request('GET', '/admin/effectif/dirigeants/' . $dirigeant->getUuid() . '/modifier');
 
         self::assertResponseIsSuccessful();
         $xData = (string) $crawler->filter('div[x-data^="textCombobox"]')->attr('x-data');
@@ -124,7 +124,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
         $this->makeDirigeant('CHEF', DirigeantRole::RESPONSABLE_FOOT);
         $this->makeDirigeant('BENEVOLE', DirigeantRole::DIRIGEANT);
 
-        $client->request('GET', '/admin/dirigeants?role=' . DirigeantRole::RESPONSABLE_FOOT->value);
+        $client->request('GET', '/admin/effectif/dirigeants?role=' . DirigeantRole::RESPONSABLE_FOOT->value);
 
         self::assertResponseIsSuccessful();
         $html = (string) $client->getResponse()->getContent();
@@ -141,7 +141,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
         $this->makeDirigeant('CHEF', DirigeantRole::RESPONSABLE_FOOT);
         $this->makeDirigeant('BENEVOLE', DirigeantRole::DIRIGEANT);
 
-        $client->request('GET', '/admin/dirigeants?role=42');
+        $client->request('GET', '/admin/effectif/dirigeants?role=42');
 
         self::assertResponseIsSuccessful();
         $html = (string) $client->getResponse()->getContent();
@@ -151,7 +151,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
 
     private function submitNouveauDirigeant(KernelBrowser $client, string $role): void
     {
-        $crawler = $client->request('GET', '/admin/dirigeants/nouveau');
+        $crawler = $client->request('GET', '/admin/effectif/dirigeants/nouveau');
         $form = $crawler->selectButton('Ajouter le dirigeant')->form();
 
         $form['dirigeant[nom]'] = 'BUREAU';

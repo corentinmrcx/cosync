@@ -9,6 +9,7 @@ use App\Entity\Season;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
 use App\Service\Mail\MailerService;
+use App\Service\Referentiel\ClubSettingsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\FrameworkBundle\Test\MailerAssertionsTrait;
@@ -124,7 +125,7 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
         }
     }
 
-    /** Une saison sans IBAN ne doit pas empêcher l'envoi — elle masque juste le bloc. */
+    /** Un club sans IBAN ne doit pas empêcher l'envoi — cela masque juste le bloc. */
     public function testUneSaisonSansIbanEnvoieQuandMemeLeMail(): void
     {
         $licencie = $this->seed([PaymentMode::VIREMENT], avecIban: false);
@@ -257,8 +258,13 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
         ++$n;
 
         $season = (new Season())->setLabel($label)->setCotisationDefaut(85);
+
+        // Le RIB appartient au club, pas à la saison : c'est ClubSettings qui le porte.
+        $club = self::getContainer()->get(ClubSettingsService::class)->get();
         if ($avecIban) {
-            $season->setIban(self::IBAN)->setBic(self::BIC)->setTitulaireCompte('Association Test');
+            $club->setIban(self::IBAN)->setBic(self::BIC)->setTitulaireCompte('Association Test');
+        } else {
+            $club->setIban(null)->setBic(null)->setTitulaireCompte(null);
         }
 
         $category = (new Category())->setCode('SENIOR' . $n)->setLabel('Séniors')->setIsEcoleFoot(false);

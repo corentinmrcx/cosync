@@ -48,7 +48,7 @@ final class FicheDocumentsChecklistTest extends WebTestCase
         $fixtures->signerParDirigeant($reglement, $dirigeant, 'drive-file-id');
         $em->flush();
 
-        $client->request('GET', '/admin/dirigeants/' . $dirigeant->getUuid());
+        $client->request('GET', '/admin/effectif/dirigeants/' . $dirigeant->getUuid());
         $html = (string) $client->getResponse()->getContent();
 
         self::assertResponseIsSuccessful();
@@ -77,7 +77,7 @@ final class FicheDocumentsChecklistTest extends WebTestCase
         $fixtures->signerParDirigeant($reglement, $dirigeant, '/var/www/html/var/pdfs/abc.pdf');
         $em->flush();
 
-        $client->request('GET', '/admin/dirigeants/' . $dirigeant->getUuid());
+        $client->request('GET', '/admin/effectif/dirigeants/' . $dirigeant->getUuid());
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('Upload en attente', (string) $client->getResponse()->getContent());
@@ -115,7 +115,7 @@ final class FicheDocumentsChecklistTest extends WebTestCase
         // sans ce clear, la page ne verrait pas de dossier club.
         $em->clear();
 
-        $client->request('GET', '/admin/licencies/' . $licencie->getUuid());
+        $client->request('GET', '/admin/effectif/joueurs/' . $licencie->getUuid());
         $html = (string) $client->getResponse()->getContent();
 
         self::assertResponseIsSuccessful();
@@ -128,7 +128,7 @@ final class FicheDocumentsChecklistTest extends WebTestCase
         );
         $em->flush();
 
-        $client->request('GET', '/admin/licencies/' . $licencie->getUuid());
+        $client->request('GET', '/admin/effectif/joueurs/' . $licencie->getUuid());
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString(

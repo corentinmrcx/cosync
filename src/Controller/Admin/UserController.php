@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
-#[Route('/admin/config/utilisateurs', name: 'admin_users_')]
+#[Route('/admin/club/utilisateurs', name: 'admin_users_')]
 class UserController extends AbstractController
 {
     public function __construct(
@@ -25,7 +25,7 @@ class UserController extends AbstractController
     #[Route('', name: 'list')]
     public function list(#[CurrentUser] ?User $currentUser): Response
     {
-        return $this->render('admin/config/utilisateurs/list.html.twig', [
+        return $this->render('admin/club/utilisateurs/list.html.twig', [
             'lignes' => $this->userService->lignes($this->userRepo->findBy([], ['email' => 'ASC']), $currentUser),
             'isDiag' => $this->userService->estSuperAdmin($currentUser),
         ]);
@@ -45,7 +45,7 @@ class UserController extends AbstractController
             return $this->redirectToRoute('admin_users_list');
         }
 
-        return $this->render('admin/config/utilisateurs/form.html.twig', [
+        return $this->render('admin/club/utilisateurs/form.html.twig', [
             'form' => $form,
             'title' => 'Nouvel utilisateur',
             'user' => null,
@@ -73,7 +73,7 @@ class UserController extends AbstractController
             return $this->redirectToRoute('admin_users_list');
         }
 
-        return $this->render('admin/config/utilisateurs/form.html.twig', [
+        return $this->render('admin/club/utilisateurs/form.html.twig', [
             'form' => $form,
             'title' => sprintf('Modifier "%s"', $user->getEmail()),
             'user' => $user,

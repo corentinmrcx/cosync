@@ -47,9 +47,19 @@
                 <strong>Source de vérité</strong> — FootClubs reste la référence pour l'identité FFF des licenciés. CoSync gère uniquement les données « club ». Un ré-import depuis FootClubs ne touche jamais aux données club déjà saisies.
             </div>
 
+            <h3 class="doc-h3">Comment l'application est organisée</h3>
+            <p class="doc-p">L'accueil ne propose que deux portes, et c'est la clé pour s'y retrouver :</p>
+            <ul class="doc-ul">
+                <li><strong>Saisons</strong> — une carte par saison. Cliquer sur une carte fait <em>entrer</em> dans cette saison : c'est là que vit le travail quotidien (<em>Effectif</em> — joueurs, dirigeants, import, documents à signer —, <em>Stock</em>, <em>Club house</em>, plus les cotisations et les équipes).</li>
+                <li><strong>Le club</strong> — ce qui ne dépend d'aucune saison : coordonnées bancaires, catégories FFF, comptes utilisateurs.</li>
+            </ul>
+            <div class="doc-tip">
+                <strong>Où suis-je ?</strong> — le fil d'Ariane, juste sous le bandeau rouge, indique en permanence où vous êtes : « Tableau de bord › Saison 2025-2026 › Effectif › Joueurs ». Il rappelle donc la saison dans laquelle vous travaillez, et chacun de ses maillons permet de remonter d'un niveau. Pour changer de saison, revenez au tableau de bord et ouvrez <em>Saisons</em>.
+            </div>
+
             <h3 class="doc-h3">Le vocabulaire</h3>
             <ul class="doc-ul">
-                <li><strong>Saison</strong> — toutes les données sont rattachées à une saison (ex. 2025‑2026). Une seule saison est active à la fois.</li>
+                <li><strong>Saison</strong> — toutes les données de la vie du club sont rattachées à une saison (ex. 2025‑2026). Vous travaillez dans une saison à la fois.</li>
                 <li><strong>Licencié</strong> — un joueur importé depuis FootClubs.</li>
                 <li><strong>Dossier club</strong> — les données collectées via le formulaire public (tailles, autorisations, signature, paiement).</li>
                 <li><strong>Dirigeant</strong> — un encadrant (président, éducateur, arbitre…), géré à part des licenciés.</li>
@@ -70,25 +80,23 @@
         <section id="saison" class="doc-section">
             <h2 class="doc-h2">Préparer une saison</h2>
 
-            <p class="doc-p">Tout commence par une saison active. Rendez-vous dans le menu <em>Saison → Nouvelle saison</em>, ou dans <em>Configuration</em> pour ajuster la saison en cours.</p>
-
-            <h3 class="doc-h3">Paramètres de la saison</h3>
-            <ol class="doc-ol">
-                <li>Choisissez l'année de début : le libellé « Saison 2025–2026 » se construit tout seul.</li>
-                <li>Indiquez la <strong>cotisation par défaut</strong> (le montant appliqué à un licencié si son équipe n'a pas de tarif propre).</li>
-                <li>Enregistrez.</li>
-            </ol>
+            <p class="doc-p">Tout commence par une saison. Depuis l'accueil, ouvrez <em>Saisons</em> puis cliquez sur <strong>« Nouvelle saison »</strong> : indiquez l'année de début (le libellé « Saison 2025–2026 » se construit tout seul) et la cotisation par défaut. La saison créée devient aussitôt celle dans laquelle vous travaillez. La modification (année, cotisation par défaut) et la suppression se font depuis <em>Saisons → Gérer les saisons</em>.</p>
 
             <h3 class="doc-h3">Les équipes</h3>
-            <p class="doc-p">Dans <em>Configuration → Équipes de la saison</em>, cliquez sur <strong>« Ajouter une équipe »</strong> pour dévoiler le formulaire :</p>
+            <p class="doc-p">Dans <em>Saison → Équipes</em>, cliquez sur <strong>« Ajouter une équipe »</strong> :</p>
             <ol class="doc-ol">
                 <li>Nom de l'équipe (ex. « U15 A »).</li>
-                <li>Cotisation propre (facultatif) : laissez vide pour utiliser la cotisation par défaut de la saison.</li>
-                <li>Catégories FFF associées : elles permettent l'assignation automatique des licenciés à l'import et le filtrage du tableau de bord.</li>
+                <li>Catégories FFF associées : elles permettent l'assignation automatique des licenciés à l'import et le filtrage des listes.</li>
             </ol>
 
-            <h3 class="doc-h3">Le règlement intérieur</h3>
-            <p class="doc-p">Toujours dans <em>Configuration</em>, le bouton <strong>« Éditer le règlement intérieur »</strong> ouvre l'éditeur du texte que le licencié devra lire et signer dans le formulaire public.</p>
+            <h3 class="doc-h3">Les cotisations</h3>
+            <p class="doc-p">Tous les montants de la saison se règlent au même endroit, dans <em>Saison → Cotisations</em> : la <strong>cotisation par défaut</strong>, puis le montant propre à chaque équipe. Une équipe dont le champ reste vide suit la cotisation par défaut.</p>
+
+            <h3 class="doc-h3">Les coordonnées bancaires</h3>
+            <p class="doc-p">L'IBAN du club se saisit au niveau du club, dans <em>Le club → Coordonnées bancaires</em>, et non dans la saison : il reste valable d'une année sur l'autre. Sans IBAN renseigné, l'option « virement » n'apparaît pas dans le formulaire d'inscription.</p>
+
+            <h3 class="doc-h3">Les documents à signer</h3>
+            <p class="doc-p">Le règlement intérieur et les autres chartes se gèrent dans <em>Effectif → Documents à signer</em> : chaque document actif est lu et signé dans le formulaire public, puis archivé sur Drive.</p>
         </section>
 
         {# ───────────────────────────── 3. IMPORT ───────────────────────────── #}
@@ -109,7 +117,7 @@
 
             <h3 class="doc-h3">Importer dans CoSync</h3>
             <ol class="doc-ol">
-                <li>Allez dans <em>Import</em> et déposez le fichier XLSX.</li>
+                <li>Allez dans <em>Effectif → Import FootClubs</em> et déposez le fichier XLSX.</li>
                 <li>CoSync nettoie les données (noms en majuscules, prénoms capitalisés, téléphones au format +33, emails en minuscules) et ignore les non‑joueurs (dirigeants, éducateurs).</li>
                 <li>Pour chaque licencié : mise à jour s'il existe déjà, création + envoi automatique du lien s'il est nouveau.</li>
                 <li>Un rapport s'affiche : X mis à jour, Y créés, Z erreurs.</li>
@@ -143,7 +151,7 @@
         <section id="suivi" class="doc-section">
             <h2 class="doc-h2">Suivre les inscriptions</h2>
 
-            <p class="doc-p">Le menu <em>Licenciés</em> affiche le tableau de bord de tous les licenciés de la saison, filtrable par équipe, catégorie et statut.</p>
+            <p class="doc-p"><em>Effectif → Joueurs</em> affiche la liste de tous les licenciés joueurs de la saison, filtrable par équipe, catégorie et statut. Le hub <em>Effectif</em> en donne la synthèse : compteurs, dossiers en attente et accès rapides.</p>
 
             <h3 class="doc-h3">Les badges de statut</h3>
             <ul class="doc-ul">
@@ -182,7 +190,7 @@
         {# ───────────────────────────── 7. DIRIGEANTS ───────────────────────────── #}
         <section id="dirigeants" class="doc-section">
             <h2 class="doc-h2">Les dirigeants</h2>
-            <p class="doc-p">Le menu <em>Dirigeants</em> gère les encadrants indépendamment des licenciés. Chaque dirigeant a un <strong>rôle</strong> (président, éducateur, arbitre…) issu d'un référentiel modifiable, et peut lui aussi recevoir une dotation (voir la section dédiée).</p>
+            <p class="doc-p"><em>Effectif → Dirigeants</em> gère les encadrants indépendamment des joueurs. Chaque dirigeant a un <strong>rôle</strong> (président, éducateur, arbitre…) issu d'un référentiel modifiable, et peut lui aussi recevoir une dotation (voir la section dédiée).</p>
         </section>
 
         {# ───────────────────────────── 8. STOCK ───────────────────────────── #}

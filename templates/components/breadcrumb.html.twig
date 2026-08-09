@@ -1,5 +1,13 @@
+{# Un maillon sans libellé est sauté : c'est le cas du maillon « saison » tant qu'aucune
+   saison n'existe. #}
+{% set maillons = [] %}
+{% for item in items %}
+    {% if item.label is not empty %}
+        {% set maillons = maillons|merge([item]) %}
+    {% endif %}
+{% endfor %}
 <nav class="breadcrumb">
-    {% for item in items %}
+    {% for item in maillons %}
         {% if not loop.last %}
             <a href="{{ path(item.route, item.params ?? {}) }}" class="breadcrumb-link">{{ item.label }}</a>
             <span class="breadcrumb-sep">›</span>

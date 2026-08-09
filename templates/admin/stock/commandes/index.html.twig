@@ -5,6 +5,7 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
     { label: 'Stock', route: 'admin_stock_dashboard' },
     { label: 'Commandes' }
 ] } %}

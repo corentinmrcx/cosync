@@ -16,7 +16,12 @@ final class TeamService
         private readonly CategoryRepository $categoryRepository,
     ) {}
 
-    /** @throws \DomainException si le nom est vide */
+    /**
+     * Une équipe naît sans cotisation propre : elle suit la cotisation par défaut de la
+     * saison tant que l'écran « Cotisations » ne lui en attribue pas une.
+     *
+     * @throws \DomainException si le nom est vide
+     */
     public function creer(TeamSetupData $data, Season $season): Team
     {
         $nom = trim($data->name);
@@ -26,8 +31,7 @@ final class TeamService
 
         $team = (new Team())
             ->setName($nom)
-            ->setSeason($season)
-            ->setCotisation($data->cotisation);
+            ->setSeason($season);
 
         foreach ($data->categories as $category) {
             $team->addCategory($category);
@@ -47,7 +51,6 @@ final class TeamService
         }
 
         $team->setName($data->nom);
-        $team->setCotisation($data->cotisation);
 
         $team->getCategories()->clear();
         foreach ($data->categoryIds as $categoryId) {
@@ -57,6 +60,17 @@ final class TeamService
             }
         }
 
+        $this->em->flush();
+    }
+
+    /** null = l'équipe suit la cotisation par défaut de la saison. */
+    public function definirCotisation(Team $team, ?int $cotisation): void
+    {
+        if ($cotisation !== null && $cotisation < 0) {
+            throw new \DomainException('Une cotisation ne peut pas être négative.');
+        }
+
+        $team->setCotisation($cotisation);
         $this->em->flush();
     }
 
