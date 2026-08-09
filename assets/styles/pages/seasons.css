@@ -62,20 +62,7 @@
     line-height: 1.5;
 }
 
-.season-form-years {
-    display: flex;
-    align-items: flex-end;
-    gap: 0.75rem;
-}
-
 .season-form-years .season-form-field { flex: 1; }
-
-.season-form-years-sep {
-    font-size: var(--font-size-lg);
-    color: var(--color-text-muted);
-    padding-bottom: 0.625rem;
-    flex-shrink: 0;
-}
 
 .season-form-field {
     display: flex;
