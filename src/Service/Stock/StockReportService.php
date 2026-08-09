@@ -2,6 +2,12 @@
 
 namespace App\Service\Stock;
 
+use App\DTO\Stock\StockAlerte;
+use App\DTO\Stock\StockInventaireLigne;
+use App\DTO\Stock\StockLigne;
+use App\DTO\Stock\StockSection;
+use App\DTO\Stock\StockTableauDeBord;
+use App\DTO\Stock\StockTailleLigne;
 use App\Entity\StockItem;
 use App\Enum\StockAlerteNiveau;
 use App\Repository\StockCategoryRepository;
@@ -20,29 +26,25 @@ final class StockReportService
         private readonly StockMovementRepository $movementRepository,
     ) {}
 
-    /**
-     * @return array<int, array{category: \App\Entity\StockCategory|null, items: array<int, array<string, mixed>>}>
-     */
+    /** @return list<StockSection<StockLigne>> */
     public function getStockSummary(bool $includeArchived = false): array
     {
         return $this->parCategorie(
             $this->itemRepository->findAllOrdered($includeArchived),
-            $this->ligneAvecTailles(...),
+            $this->ligneDeGestion(...),
         );
     }
 
-    /**
-     * Compteurs et articles en alerte pour le tableau de bord.
-     *
-     * @return array{
-     *   nbArticles: int,
-     *   nbAlertes: int,
-     *   nbRuptures: int,
-     *   valeurStock: float,
-     *   alertes: array<int, array{item: StockItem, stock: int, status: string}>
-     * }
-     */
-    public function getDashboardData(): array
+    /** @return list<StockSection<StockInventaireLigne>> */
+    public function getInventaireData(): array
+    {
+        return $this->parCategorie(
+            $this->itemRepository->findAllOrdered(),
+            $this->ligneDInventaire(...),
+        );
+    }
+
+    public function getDashboardData(): StockTableauDeBord
     {
         $items = $this->itemRepository->findAllOrdered();
 
@@ -62,7 +64,7 @@ final class StockReportService
                 continue;
             }
 
-            $alertes[] = ['item' => $item, 'stock' => $stock, 'status' => $niveau->value];
+            $alertes[] = new StockAlerte($item, $stock, $niveau);
             if ($niveau === StockAlerteNiveau::RUPTURE) {
                 ++$nbRuptures;
             }
@@ -70,27 +72,13 @@ final class StockReportService
 
         usort($alertes, $this->rupturesEnTete(...));
 
-        return [
-            'nbArticles' => count($items),
+        return new StockTableauDeBord(
+            count($items),
             // Stock bas uniquement : une rupture n'est pas comptée deux fois.
-            'nbAlertes' => count($alertes) - $nbRuptures,
-            'nbRuptures' => $nbRuptures,
-            'valeurStock' => $valeurStock,
-            'alertes' => $alertes,
-        ];
-    }
-
-    /**
-     * État complet pour la feuille d'inventaire : une ligne par taille présente en stock,
-     * ou une seule ligne « — » pour les articles sans taille.
-     *
-     * @return array<int, array{category: \App\Entity\StockCategory|null, items: array<int, array<string, mixed>>}>
-     */
-    public function getInventaireData(): array
-    {
-        return $this->parCategorie(
-            $this->itemRepository->findAllOrdered(),
-            $this->ligneInventaire(...),
+            count($alertes) - $nbRuptures,
+            $nbRuptures,
+            $valeurStock,
+            $alertes,
         );
     }
 
@@ -98,10 +86,12 @@ final class StockReportService
      * Regroupe les articles par catégorie, dans l'ordre des catégories, les articles sans
      * catégorie fermant la liste.
      *
-     * @param StockItem[]                            $items
-     * @param callable(StockItem): array<string, mixed> $ligne
+     * @template T of StockLigne|StockInventaireLigne
      *
-     * @return array<int, array{category: \App\Entity\StockCategory|null, items: array<int, array<string, mixed>>}>
+     * @param StockItem[]           $items
+     * @param callable(StockItem): T $ligne
+     *
+     * @return list<StockSection<T>>
      */
     private function parCategorie(array $items, callable $ligne): array
     {
@@ -110,71 +100,56 @@ final class StockReportService
             $parCategorie[$item->getCategory()?->getId() ?? 0][] = $item;
         }
 
-        $regroupes = [];
+        $sections = [];
         foreach ($this->categoryRepository->findAllOrderedByPosition() as $category) {
             $articles = $parCategorie[$category->getId()] ?? [];
             if ($articles !== []) {
-                $regroupes[] = ['category' => $category, 'items' => array_map($ligne, $articles)];
+                $sections[] = new StockSection($category, array_map($ligne, $articles));
             }
         }
 
         if (($parCategorie[0] ?? []) !== []) {
-            $regroupes[] = ['category' => null, 'items' => array_map($ligne, $parCategorie[0])];
+            $sections[] = new StockSection(null, array_map($ligne, $parCategorie[0]));
         }
 
-        return $regroupes;
+        return $sections;
     }
 
-    /**
-     * Ligne du tableau de gestion. `taillesMap` (taille → stock) alimente la modale de mouvement.
-     *
-     * @return array{item: StockItem, stock: int, status: string, tailles: array<int, array{taille: string, stock: int}>, hasTailles: bool, taillesMap: array<string, int>}
-     */
-    private function ligneAvecTailles(StockItem $item): array
+    private function ligneDeGestion(StockItem $item): StockLigne
     {
         $tailles = $this->ventilationParTaille($item);
 
         $taillesMap = [];
         foreach ($tailles as $ligne) {
-            if ($ligne['taille'] !== '—') {
-                $taillesMap[$ligne['taille']] = $ligne['stock'];
+            if (!$ligne->sansTaille()) {
+                $taillesMap[$ligne->taille] = $ligne->stock;
             }
         }
 
-        return $this->ligne($item) + [
-            'tailles' => $tailles,
-            'hasTailles' => $taillesMap !== [],
-            'taillesMap' => $taillesMap,
-        ];
-    }
-
-    /**
-     * @return array{item: StockItem, total: int, status: string, tailles: array<int, array{taille: string, stock: int}>}
-     */
-    private function ligneInventaire(StockItem $item): array
-    {
-        $tailles = $this->ventilationParTaille($item) ?: [['taille' => '—', 'stock' => 0]];
-        $ligne = $this->ligne($item);
-
-        return ['item' => $item, 'total' => $ligne['stock'], 'status' => $ligne['status'], 'tailles' => $tailles];
-    }
-
-    /** @return array{item: StockItem, stock: int, status: string} */
-    private function ligne(StockItem $item): array
-    {
         $stock = $this->movementRepository->getCurrentStock($item);
 
-        return [
-            'item' => $item,
-            'stock' => $stock,
-            'status' => StockAlerteNiveau::pour($stock, $item->getAlertSeuil())->value,
-        ];
+        return new StockLigne($item, $stock, $this->niveau($item, $stock), $tailles, $taillesMap);
+    }
+
+    private function ligneDInventaire(StockItem $item): StockInventaireLigne
+    {
+        $tailles = $this->ventilationParTaille($item)
+            ?: [new StockTailleLigne(StockTailleLigne::SANS_TAILLE, 0)];
+
+        $stock = $this->movementRepository->getCurrentStock($item);
+
+        return new StockInventaireLigne($item, $stock, $this->niveau($item, $stock), $tailles);
+    }
+
+    private function niveau(StockItem $item, int $stock): StockAlerteNiveau
+    {
+        return StockAlerteNiveau::pour($stock, $item->getAlertSeuil());
     }
 
     /**
      * Ventilation du stock par taille, triée. La clé vide (article sans taille) s'affiche « — ».
      *
-     * @return array<int, array{taille: string, stock: int}>
+     * @return list<StockTailleLigne>
      */
     private function ventilationParTaille(StockItem $item): array
     {
@@ -183,19 +158,18 @@ final class StockReportService
 
         $lignes = [];
         foreach ($parTaille as $taille => $stock) {
-            $lignes[] = ['taille' => $taille === '' ? '—' : $taille, 'stock' => $stock];
+            $lignes[] = new StockTailleLigne(
+                $taille === '' ? StockTailleLigne::SANS_TAILLE : (string) $taille,
+                $stock,
+            );
         }
 
         return $lignes;
     }
 
-    /**
-     * @param array{status: string} $a
-     * @param array{status: string} $b
-     */
-    private function rupturesEnTete(array $a, array $b): int
+    private function rupturesEnTete(StockAlerte $a, StockAlerte $b): int
     {
-        $rang = static fn (array $alerte): int => $alerte['status'] === StockAlerteNiveau::RUPTURE->value ? 0 : 1;
+        $rang = static fn (StockAlerte $alerte): int => $alerte->niveau === StockAlerteNiveau::RUPTURE ? 0 : 1;
 
         return $rang($a) <=> $rang($b);
     }

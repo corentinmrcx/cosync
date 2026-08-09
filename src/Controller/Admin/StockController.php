@@ -8,6 +8,7 @@ use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
 use App\Entity\User;
+use App\Enum\StockActionManuelle;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
@@ -141,8 +142,16 @@ class StockController extends AbstractController
     {
         $this->csrf->valider('stock_movement_' . $item->getId(), $request);
 
+        $action = StockActionManuelle::tryFrom((string) $request->request->get('action', ''));
+
+        if ($action === null) {
+            $this->addFlash('error', 'Action invalide.');
+
+            return $this->redirectToRoute('admin_stock_gestion');
+        }
+
         $data = new ManualMovementData(
-            action: (string) $request->request->get('action', ''),
+            action: $action,
             quantite: (int) $request->request->get('quantite', 0),
             taille: trim((string) $request->request->get('taille', '')) ?: null,
             note: trim((string) $request->request->get('note', '')) ?: null,

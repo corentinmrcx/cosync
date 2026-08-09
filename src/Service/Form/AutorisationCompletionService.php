@@ -4,6 +4,7 @@ namespace App\Service\Form;
 
 use App\DTO\AutorisationCompletionData;
 use App\Entity\Licencie;
+use App\Enum\AutorisationManquante;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationTransportPdfService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,43 +23,45 @@ final class AutorisationCompletionService
     ) {}
 
     /**
-     * Autorisations applicables encore non renseignées (null) pour ce licencié.
+     * Autorisations applicables encore sans réponse pour ce licencié.
      * Vide tant que le formulaire initial n'a pas été complété.
      *
-     * @return string[] parmi : photo, accident, transport_dirigeants, transport_parents, volontaire
+     * @return list<AutorisationManquante>
      */
-    public function missingKeys(Licencie $licencie): array
+    public function manquantes(Licencie $licencie): array
     {
         $dossier = $licencie->getDossierClub();
+
         if ($dossier === null || $dossier->getFormCompletedAt() === null) {
             return [];
         }
 
-        $missing = [];
-        if ($dossier->getAutorisationPhoto() === null) {
-            $missing[] = 'photo';
-        }
-        if ($licencie->getCategory()->isJeune()) {
-            if ($dossier->getAutorisationAccident() === null) {
-                $missing[] = 'accident';
+        $estJeune = $licencie->getCategory()->isJeune();
+
+        $sansReponse = [
+            AutorisationManquante::PHOTO->value => $dossier->getAutorisationPhoto(),
+            AutorisationManquante::ACCIDENT->value => $dossier->getAutorisationAccident(),
+            AutorisationManquante::TRANSPORT_DIRIGEANTS->value => $dossier->getAutorisationTransportDirigeants(),
+            AutorisationManquante::TRANSPORT_PARENTS->value => $dossier->getAutorisationTransportParents(),
+            AutorisationManquante::VOLONTAIRE->value => $dossier->getVolontaireTransport(),
+        ];
+
+        $manquantes = [];
+        foreach (AutorisationManquante::cases() as $autorisation) {
+            if ($autorisation->reserveeAuxJeunes() && !$estJeune) {
+                continue;
             }
-            if ($dossier->getAutorisationTransportDirigeants() === null) {
-                $missing[] = 'transport_dirigeants';
-            }
-            if ($dossier->getAutorisationTransportParents() === null) {
-                $missing[] = 'transport_parents';
-            }
-            if ($dossier->getVolontaireTransport() === null) {
-                $missing[] = 'volontaire';
+            if ($sansReponse[$autorisation->value] === null) {
+                $manquantes[] = $autorisation;
             }
         }
 
-        return $missing;
+        return $manquantes;
     }
 
     public function hasMissing(Licencie $licencie): bool
     {
-        return $this->missingKeys($licencie) !== [];
+        return $this->manquantes($licencie) !== [];
     }
 
     /**

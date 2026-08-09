@@ -2,13 +2,13 @@
 
 namespace App\Controller\Public;
 
-use App\DTO\AutorisationCompletionData;
+use App\Enum\AutorisationManquante;
 use App\Repository\LicencieRepository;
 use App\Repository\TransactionRepository;
 use App\Security\CsrfGuard;
 use App\Service\CotisationResolver;
 use App\Service\Document\DocumentRequirementResolver;
-use App\Service\Form\AttestationTransportRequestFactory;
+use App\Service\Form\AutorisationCompletionRequestFactory;
 use App\Service\Form\AutorisationCompletionService;
 use App\Service\Form\DotationChoixRequestFactory;
 use App\Service\Form\InscriptionFormRequestFactory;
@@ -36,7 +36,7 @@ class InscriptionController extends AbstractController
         private readonly AutorisationCompletionService $completionService,
         private readonly CsrfGuard $csrf,
         private readonly InscriptionFormRequestFactory $formFactory,
-        private readonly AttestationTransportRequestFactory $attestationFactory,
+        private readonly AutorisationCompletionRequestFactory $completionFactory,
         private readonly DocumentRequirementResolver $documentResolver,
     ) {}
 
@@ -141,14 +141,14 @@ class InscriptionController extends AbstractController
             return $this->render('public/inscription/expired.html.twig');
         }
 
-        $manquants = $this->completionService->missingKeys($licencie);
+        $manquants = $this->completionService->manquantes($licencie);
         if ($manquants === []) {
             return $this->render('public/inscription/completer_done.html.twig', ['rienAFaire' => true]);
         }
 
         return $this->render('public/inscription/completer.html.twig', [
             'licencie' => $licencie,
-            'manquants' => $manquants,
+            'manquants' => AutorisationManquante::valeurs($manquants),
             'isJeune' => $licencie->getCategory()->isJeune(),
         ]);
     }
@@ -164,12 +164,12 @@ class InscriptionController extends AbstractController
 
         $this->csrf->valider('inscription_completer', $request);
 
-        $manquants = $this->completionService->missingKeys($licencie);
+        $manquants = $this->completionService->manquantes($licencie);
         if ($manquants === []) {
             return $this->render('public/inscription/completer_done.html.twig', ['rienAFaire' => true]);
         }
 
-        $data = $this->buildCompletionData($request, $manquants);
+        $data = $this->completionFactory->fromRequest($request, $manquants);
         if ($data === null) {
             $this->addFlash('error', 'Merci de répondre à toutes les questions.');
 
@@ -179,58 +179,5 @@ class InscriptionController extends AbstractController
         $this->completionService->apply($licencie, $data);
 
         return $this->render('public/inscription/completer_done.html.twig', ['rienAFaire' => false]);
-    }
-
-    /**
-     * Construit les réponses de complétion à partir des seules autorisations demandées.
-     * Null si une réponse attendue manque.
-     *
-     * @param string[] $manquants
-     */
-    private function buildCompletionData(Request $request, array $manquants): ?AutorisationCompletionData
-    {
-        $bool = static fn (?string $raw): ?bool => $raw === '1' ? true : ($raw === '0' ? false : null);
-
-        $photo = $accident = $dirig = $parent = $vol = null;
-        $attestation = null;
-
-        if (in_array('photo', $manquants, true)) {
-            $photo = $bool($request->request->get('autorisation_photo'));
-            if ($photo === null) {
-                return null;
-            }
-        }
-        if (in_array('accident', $manquants, true)) {
-            $accident = $bool($request->request->get('autorisation_accident'));
-            if ($accident === null) {
-                return null;
-            }
-        }
-        if (in_array('transport_dirigeants', $manquants, true)) {
-            $dirig = $bool($request->request->get('autorisation_transport_dirigeants'));
-            if ($dirig === null) {
-                return null;
-            }
-        }
-        if (in_array('transport_parents', $manquants, true)) {
-            $parent = $bool($request->request->get('autorisation_transport_parents'));
-            if ($parent === null) {
-                return null;
-            }
-        }
-        if (in_array('volontaire', $manquants, true)) {
-            $vol = $bool($request->request->get('volontaire_transport'));
-            if ($vol === null) {
-                return null;
-            }
-            if ($vol === true) {
-                $attestation = $this->attestationFactory->fromRequest($request);
-                if ($attestation === null) {
-                    return null;
-                }
-            }
-        }
-
-        return new AutorisationCompletionData($photo, $accident, $dirig, $parent, $vol, $attestation);
     }
 }

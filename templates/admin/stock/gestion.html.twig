@@ -77,9 +77,9 @@
                                     </div>
                                 </td>
                                 <td class="stock-col-stock">
-                                    <span class="stock-badge stock-badge-{{ row.status }}">
+                                    <span class="stock-badge stock-badge-{{ row.niveau.value }}">
                                         {{ row.stock }}
-                                        {% if row.stock <= 0 %}Rupture{% elseif row.status == 'warning' %}Stock bas{% endif %}
+                                        {{ row.niveau.label }}
                                     </span>
                                 </td>
                                 <td class="stock-col-seuil">

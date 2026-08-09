@@ -4,6 +4,7 @@ namespace App\Tests\Service\Stock;
 
 use App\DTO\ManualMovementData;
 use App\Enum\LicenceStatus;
+use App\Enum\StockActionManuelle;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
@@ -21,7 +22,7 @@ final class StockMovementServiceTest extends StockIntegrationTestCase
         $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $this->em->flush();
 
-        $data = new ManualMovementData('entree', 5, 'L', null, null);
+        $data = new ManualMovementData(StockActionManuelle::ENTREE, 5, 'L', null, null);
         $movement = $this->mouvements()->recordManualMovement($veste, $data, null);
 
         self::assertSame(StockMovementType::ENTREE, $movement->getType());
@@ -35,7 +36,7 @@ final class StockMovementServiceTest extends StockIntegrationTestCase
         $this->em->flush();
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->mouvements()->recordManualMovement($veste, new ManualMovementData('dotation', 1, 'L', null, null), null);
+        $this->mouvements()->recordManualMovement($veste, new ManualMovementData(StockActionManuelle::DOTATION, 1, 'L', null, null), null);
     }
 
     public function testRecordManualMovementDotationLicencieNonValideEstRefusee(): void
@@ -49,7 +50,7 @@ final class StockMovementServiceTest extends StockIntegrationTestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->mouvements()->recordManualMovement(
             $veste,
-            new ManualMovementData('dotation', 1, 'L', null, (string) $licencie->getUuid()),
+            new ManualMovementData(StockActionManuelle::DOTATION, 1, 'L', null, (string) $licencie->getUuid()),
             null,
         );
     }
@@ -60,7 +61,7 @@ final class StockMovementServiceTest extends StockIntegrationTestCase
         $this->em->flush();
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->mouvements()->recordManualMovement($veste, new ManualMovementData('sortie', 3, 'L', null, null), null);
+        $this->mouvements()->recordManualMovement($veste, new ManualMovementData(StockActionManuelle::SORTIE, 3, 'L', null, null), null);
     }
 
     public function testDeleteManualMovementRecalculeLeStock(): void
@@ -68,7 +69,7 @@ final class StockMovementServiceTest extends StockIntegrationTestCase
         $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $this->em->flush();
 
-        $movement = $this->mouvements()->recordManualMovement($veste, new ManualMovementData('entree', 5, 'L', null, null), null);
+        $movement = $this->mouvements()->recordManualMovement($veste, new ManualMovementData(StockActionManuelle::ENTREE, 5, 'L', null, null), null);
         self::assertSame(5, $this->mouvements()->getCurrentStock($veste));
 
         $this->mouvements()->deleteManualMovement($movement);

@@ -82,34 +82,19 @@ final class StockMovementService
      */
     public function recordManualMovement(StockItem $item, ManualMovementData $data, ?User $createdBy): StockMovement
     {
-        $map = [
-            'entree' => [StockMovementType::ENTREE, StockMovementSource::MANUEL],
-            'sortie' => [StockMovementType::SORTIE, StockMovementSource::MANUEL],
-            'dotation' => [StockMovementType::SORTIE, StockMovementSource::DOTATION],
-            'rebut' => [StockMovementType::REBUT,  StockMovementSource::MANUEL],
-        ];
-
-        if (!isset($map[$data->action])) {
-            throw new \InvalidArgumentException('Action invalide.');
-        }
-        [$type, $source] = $map[$data->action];
-
-        $licencie = null;
-        if ($source === StockMovementSource::DOTATION) {
-            $licencie = $this->resolveValidatedLicencie($data->licencieUuid);
-        }
+        $licencie = $data->action->exigeUnLicencie()
+            ? $this->resolveValidatedLicencie($data->licencieUuid)
+            : null;
 
         $movement = $this->recordMovement(
             $item,
             $data->quantite,
-            $type,
-            $source,
+            $data->action->type(),
+            $data->action->source(),
             $createdBy,
             $data->note,
             taille: $data->taille,
-            // Sortie/rebut manuels bloqués au-delà du stock réel ; la dotation reste libre
-            // (équipement souvent fabriqué à la commande, stock à zéro légitime).
-            preventNegative: in_array($data->action, ['sortie', 'rebut'], true),
+            preventNegative: $data->action->interditLeDecouvert(),
         );
 
         if ($licencie !== null) {

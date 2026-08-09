@@ -2,17 +2,19 @@
 
 namespace App\DTO;
 
+use App\Enum\StockActionManuelle;
+
 /**
- * Données d'un mouvement de stock saisi à la main depuis la modale de gestion.
- * Transformé depuis la Request par le contrôleur, consommé par StockMovementService::recordManualMovement().
+ * Mouvement de stock saisi à la main depuis la modale de gestion.
  */
 final class ManualMovementData
 {
     public function __construct(
-        public readonly string $action,        // entree | sortie | dotation | rebut
+        public readonly StockActionManuelle $action,
         public readonly int $quantite,
         public readonly ?string $taille,
         public readonly ?string $note,
-        public readonly ?string $licencieUuid, // requis pour une dotation
+        /** Requis pour une dotation : c'est la personne qui reçoit l'article. */
+        public readonly ?string $licencieUuid,
     ) {}
 }

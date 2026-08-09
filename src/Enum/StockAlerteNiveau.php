@@ -31,4 +31,13 @@ enum StockAlerteNiveau: string
     {
         return $this !== self::OK;
     }
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::OK => '',
+            self::BAS => 'Stock bas',
+            self::RUPTURE => 'Rupture',
+        };
+    }
 }
