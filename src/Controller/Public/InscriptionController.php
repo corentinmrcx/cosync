@@ -12,6 +12,7 @@ use App\Service\Dotation\DotationModeleService;
 use App\Service\Dotation\DotationResolver;
 use App\Service\Inscription\AutorisationCompletionRequestFactory;
 use App\Service\Inscription\AutorisationCompletionService;
+use App\Service\Inscription\InscriptionFormConfig;
 use App\Service\Inscription\InscriptionFormRequestFactory;
 use App\Service\Inscription\InscriptionFormService;
 use App\Service\Payment\CotisationResolver;
@@ -36,6 +37,7 @@ class InscriptionController extends AbstractController
         private readonly AutorisationCompletionService $completionService,
         private readonly CsrfGuard $csrf,
         private readonly InscriptionFormRequestFactory $formFactory,
+        private readonly InscriptionFormConfig $formConfig,
         private readonly AutorisationCompletionRequestFactory $completionFactory,
         private readonly DocumentRequirementResolver $documentResolver,
     ) {}
@@ -65,11 +67,9 @@ class InscriptionController extends AbstractController
             'montant' => $this->cotisationResolver->resolve($licencie),
             'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
             'dotationGroupes' => $this->resolver->getChoiceGroups($licencie),
-            // Personnalisations dues sans qu'aucune question de choix ne soit posée :
-            // groupe à option unique (nouveau licencié) ou article fixe personnalisé.
-            'dotationAutos' => $this->resolver->getAutoPersonnalisationRequests($licencie),
             'personnalisationMaxDefaut' => DotationModeleService::PERSONNALISATION_MAX_DEFAUT,
             'documents' => $this->documentResolver->manquantsPourLicencie($licencie),
+            'config' => $this->formConfig->pour($licencie),
         ]);
     }
 

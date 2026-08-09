@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
 use App\Repository\DossierClubRepository;
+use App\Service\Drive\DrivePath;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DossierClubRepository::class)]
@@ -319,5 +320,17 @@ class DossierClub
         $this->status = $status;
 
         return $this;
+    }
+
+    /** Le PDF est-il sur Drive ? Tant qu'il ne l'est pas, la colonne porte un chemin local. */
+    public function attestationTransportEstArchivee(): bool
+    {
+        return DrivePath::estArchive($this->getAttestationTransportDriveId());
+    }
+
+    /** La cotisation est-elle soldée ? C'est ce que porte le statut VALIDATED. */
+    public function estValidee(): bool
+    {
+        return $this->status === LicenceStatus::VALIDATED;
     }
 }

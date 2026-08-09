@@ -14,35 +14,24 @@
             Merci {{ dirigeant.prenom }}, votre dossier dirigeant a bien été enregistré.
         </p>
 
-        <dl style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+        <dl class="recap">
             {% if dirigeant.tailleHaut %}
-            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
-                <span style="color: #6b7280; font-weight: 500;">Taille haut</span>
-                <span style="font-weight: 600;">{{ dirigeant.tailleHaut }}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
-                <span style="color: #6b7280; font-weight: 500;">Taille bas</span>
-                <span style="font-weight: 600;">{{ dirigeant.tailleBas }}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
-                <span style="color: #6b7280; font-weight: 500;">Pointure</span>
-                <span style="font-weight: 600;">{{ dirigeant.pointure }}</span>
-            </div>
+                {% include 'components/_recap_ligne.html.twig' with { libelle: 'Taille haut', valeur: dirigeant.tailleHaut } only %}
+                {% include 'components/_recap_ligne.html.twig' with { libelle: 'Taille bas', valeur: dirigeant.tailleBas } only %}
+                {% include 'components/_recap_ligne.html.twig' with { libelle: 'Pointure', valeur: dirigeant.pointure } only %}
             {% endif %}
             {% if dirigeant.autorisationPhoto is not null %}
-            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
-                <span style="color: #6b7280; font-weight: 500;">Droit à l'image</span>
-                <span style="font-weight: 600;">{{ dirigeant.autorisationPhoto ? 'Accordé' : 'Refusé' }}</span>
-            </div>
+                {% include 'components/_recap_ligne.html.twig' with {
+                    libelle: "Droit à l'image",
+                    valeur: dirigeant.autorisationPhoto ? 'Accordé' : 'Refusé',
+                } only %}
             {% endif %}
-            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
-                <span style="color: #6b7280; font-weight: 500;">Transport des licenciés</span>
-                <span style="font-weight: 600;">{{ dirigeant.volontaireTransport ? 'Oui' : 'Non' }}</span>
-            </div>
+            {% include 'components/_recap_ligne.html.twig' with {
+                libelle: 'Transport des licenciés',
+                valeur: dirigeant.volontaireTransport ? 'Oui' : 'Non',
+            } only %}
         </dl>
 
-        <p style="margin-top: 1.5rem; font-size: 0.8125rem; color: #9ca3af; line-height: 1.6;">
-            Pour toute question, contactez le club directement.
-        </p>
+        <p class="recap-note">Pour toute question, contactez le club directement.</p>
     </div>
 {% endblock %}

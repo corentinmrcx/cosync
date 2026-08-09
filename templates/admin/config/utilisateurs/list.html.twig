@@ -29,22 +29,21 @@
                 </tr>
             </thead>
             <tbody>
-                {% for user in users %}
-                    {% set isCurrentUser = app.user.id == user.id %}
-                    {% set isDiagAccount = diagEmail != '' and user.email == diagEmail %}
+                {% for ligne in lignes %}
+                    {% set user = ligne.user %}
                     <tr class="users-row">
                         <td class="users-td-email">
                             {{ user.email }}
-                            {% if isDiagAccount %}
+                            {% if ligne.estSuperAdmin %}
                                 <span class="users-badge-diag" title="Compte super-admin protégé">Super-admin</span>
                             {% endif %}
                         </td>
                         <td>
                             <div class="users-actions-cell">
-                                {% if not isDiagAccount %}
+                                {% if ligne.modifiable %}
                                     <a href="{{ path('admin_users_edit', {id: user.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
                                 {% endif %}
-                                {% if not isCurrentUser and not isDiagAccount %}
+                                {% if ligne.supprimable %}
                                     <form method="post" action="{{ path('admin_users_delete', {id: user.id}) }}">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete_user_' ~ user.id) }}">
                                         <button type="submit" class="btn btn-danger btn-sm"

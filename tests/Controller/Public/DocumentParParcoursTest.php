@@ -140,18 +140,24 @@ final class DocumentParParcoursTest extends WebTestCase
      */
     private function assertBootstrapAlpineValide(\Symfony\Component\DomCrawler\Crawler $crawler, string $htmlBrut): void
     {
-        self::assertStringContainsString('documents: [{&quot;id&quot;:', $htmlBrut);
-        self::assertStringNotContainsString('documents: [{"', $htmlBrut, 'Un guillemet brut refermerait l\'attribut x-data.');
+        self::assertStringContainsString('&quot;documents&quot;:', $htmlBrut);
+        self::assertDoesNotMatchRegularExpression('/\w+Form\(\{"/', $htmlBrut, 'Un guillemet brut refermerait l\'attribut x-data.');
 
+        $config = self::configAlpine($crawler);
+
+        self::assertCount(1, $config['documents']);
+        self::assertArrayHasKey('id', $config['documents'][0]);
+    }
+
+    /** @return array<string, mixed> configuration passée à inscriptionForm() */
+    private static function configAlpine(\Symfony\Component\DomCrawler\Crawler $crawler): array
+    {
         $xData = (string) $crawler->filter('.inscription-page')->attr('x-data');
 
-        preg_match('/documents: (\[.*?\])/s', $xData, $m);
-        self::assertNotEmpty($m, 'documents doit être présent dans le x-data.');
+        preg_match('/\w+Form\((.*)\)/s', $xData, $m);
+        self::assertNotEmpty($m, 'Le x-data doit appeler la fabrique du formulaire.');
 
-        $documents = json_decode($m[1], true, flags: JSON_THROW_ON_ERROR);
-
-        self::assertCount(1, $documents);
-        self::assertArrayHasKey('id', $documents[0]);
+        return json_decode($m[1], true, flags: JSON_THROW_ON_ERROR);
     }
 
     public function testUnDocumentCibleParRoleSuitLeRoleDuDirigeant(): void

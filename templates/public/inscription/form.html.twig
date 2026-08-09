@@ -2,29 +2,7 @@
 
 {% block title %}Inscription – Foyer de Soudron{% endblock %}
 
-{% block page_attributs %}
-     {# dotationFlocages : { groupe: [{ id, max, article }] } — quelles options réclament un texte.
-        dotationAutoFlocages : [{ cle, max, article }] — textes dus sans question de choix.
-        `article` sert au récapitulatif : avec deux flocages, deux mots en capitales ne se
-        distinguent pas l'un de l'autre.
-
-        Liste et non table indexée par id : `merge` renumérote les clés entières, l'identifiant
-        de l'article serait perdu et aucun flocage ne serait jamais détecté côté Alpine. #}
-     {% set flocagesParGroupe = {} %}
-     {% for grp in dotationGroupes|default([]) %}
-         {% set options = [] %}
-         {% for opt in grp.options|filter(o => o.personnalisationRequise) %}
-             {% set options = options|merge([{
-                 id: opt.stockItem.id,
-                 max: opt.personnalisationMaxLength ?? personnalisationMaxDefaut,
-                 article: opt.stockItem.nom,
-             }]) %}
-         {% endfor %}
-         {% if options is not empty %}
-             {% set flocagesParGroupe = flocagesParGroupe|merge({ (grp.groupe): options }) %}
-         {% endif %}
-     {% endfor %}
-     x-data="inscriptionForm({ isJeune: {{ licencie.category.isJeune ? 'true' : 'false' }}, montant: {{ montant }}, documents: {{ documents|map(d => {id: d.id})|json_encode }}, dotationGroupes: {{ (dotationGroupes|default([]))|map(g => g.groupe)|json_encode }}, dotationFlocages: {{ flocagesParGroupe|json_encode }}, dotationAutoFlocages: {{ (dotationAutos|default([]))|map(a => { cle: a.cle, max: a.ligne.personnalisationMaxLength ?? personnalisationMaxDefaut, article: a.ligne.stockItem.nom })|json_encode }}{% if demo|default(false) %}, demo: true, demoUrl: '{{ path('public_inscription_demo_confirmation') }}'{% endif %} })"{% endblock %}
+{% block page_attributs %} x-data="inscriptionForm({{ config|json_encode }})"{% endblock %}
 
 {% block entete_droite %}
     <span class="inscription-header-step" x-text="`Étape ${displayStep} sur ${totalSteps}`"></span>

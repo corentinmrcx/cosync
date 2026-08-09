@@ -2,6 +2,7 @@
 
 namespace App\Service\Compte;
 
+use App\DTO\LigneUtilisateur;
 use App\Entity\User;
 use App\Service\Ops\BetaModeService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -53,6 +54,27 @@ final class UserService
 
         $this->em->remove($user);
         $this->em->flush();
+    }
+
+    /**
+     * Liste des comptes avec les actions réellement permises sur chacun.
+     *
+     * @param User[] $users
+     *
+     * @return list<LigneUtilisateur>
+     */
+    public function lignes(array $users, ?User $auteur): array
+    {
+        return array_map(function (User $user) use ($auteur): LigneUtilisateur {
+            $superAdmin = $this->estSuperAdmin($user);
+
+            return new LigneUtilisateur(
+                $user,
+                $superAdmin,
+                modifiable: !$superAdmin,
+                supprimable: !$superAdmin && $auteur?->getId() !== $user->getId(),
+            );
+        }, $users);
     }
 
     public function estSuperAdmin(?User $user): bool

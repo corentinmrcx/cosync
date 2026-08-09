@@ -7,7 +7,6 @@ use App\Form\UserType;
 use App\Repository\UserRepository;
 use App\Security\CsrfGuard;
 use App\Service\Compte\UserService;
-use App\Service\Ops\BetaModeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,15 +20,13 @@ class UserController extends AbstractController
         private readonly CsrfGuard $csrf,
         private readonly UserService $userService,
         private readonly UserRepository $userRepo,
-        private readonly BetaModeService $betaModeService,
     ) {}
 
     #[Route('', name: 'list')]
     public function list(#[CurrentUser] ?User $currentUser): Response
     {
         return $this->render('admin/config/utilisateurs/list.html.twig', [
-            'users' => $this->userRepo->findBy([], ['email' => 'ASC']),
-            'diagEmail' => $this->betaModeService->getRedirectEmail(),
+            'lignes' => $this->userService->lignes($this->userRepo->findBy([], ['email' => 'ASC']), $currentUser),
             'isDiag' => $this->userService->estSuperAdmin($currentUser),
         ]);
     }

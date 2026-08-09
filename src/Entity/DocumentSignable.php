@@ -284,6 +284,25 @@ class DocumentSignable
      * Ni rôle ni personne désignée = tous les dirigeants ; sinon, l'union des deux
      * ciblages (« les responsables d'équipe, plus Marie »).
      */
+    /**
+     * Qui est visé, en clair : les rôles puis les personnes nommément désignées.
+     * Vide pour un document adressé à tous.
+     */
+    public function ciblesLabel(): string
+    {
+        if ($this->viseTousLesDirigeants()) {
+            return '';
+        }
+
+        $cibles = array_map(static fn (DirigeantRole $role): string => $role->label(), $this->getRoles());
+
+        foreach ($this->getDirigeants() as $dirigeant) {
+            $cibles[] = $dirigeant->getNomPrenom();
+        }
+
+        return implode(', ', $cibles);
+    }
+
     public function concerne(Dirigeant $dirigeant): bool
     {
         if ($this->viseTousLesDirigeants()) {

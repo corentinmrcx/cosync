@@ -7,6 +7,7 @@ use App\Entity\Dirigeant;
 use App\Repository\DirigeantRepository;
 use App\Security\CsrfGuard;
 use App\Service\Dirigeant\DirigeantDossierCompletion;
+use App\Service\Dirigeant\DirigeantFormConfig;
 use App\Service\Dirigeant\DirigeantFormService;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Document\SignatureCollector;
@@ -27,6 +28,7 @@ class DirigeantController extends AbstractController
         private readonly DirigeantFormService $formService,
         private readonly CsrfGuard $csrf,
         private readonly SignatureCollector $signatureCollector,
+        private readonly DirigeantFormConfig $formConfig,
         private readonly AttestationTransportRequestFactory $attestationFactory,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DirigeantDossierCompletion $dossierCompletion,
@@ -51,10 +53,8 @@ class DirigeantController extends AbstractController
 
         return $this->render('public/dirigeant/form.html.twig', [
             'dirigeant' => $dirigeant,
-            'needTaille' => $dirigeant->getLicencie() === null && $dirigeant->getTailleHaut() === null,
-            'needPhoto' => $dirigeant->getLicencie() === null && $dirigeant->getAutorisationPhoto() === null,
-            'needTransport' => $dirigeant->getVolontaireTransport() === null,
             'documents' => $this->documentResolver->manquantsPourDirigeant($dirigeant),
+            'config' => $this->formConfig->pour($dirigeant),
         ]);
     }
 

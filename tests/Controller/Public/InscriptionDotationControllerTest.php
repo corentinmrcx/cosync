@@ -78,12 +78,7 @@ final class InscriptionDotationControllerTest extends WebTestCase
         ['uuid' => $uuid, 'tshirt' => $tshirtId] = $this->seed(NatureLicence::RENOUVELLEMENT);
 
         $crawler = $client->request('GET', '/inscription/' . $uuid);
-        $xData = $crawler->filter('.inscription-page')->attr('x-data');
-
-        preg_match('/dotationFlocages: (\{.*?\}\]\})/', $xData, $m);
-        self::assertNotEmpty($m, 'dotationFlocages doit être présent dans le x-data.');
-
-        $flocages = json_decode(html_entity_decode($m[1]), true, flags: JSON_THROW_ON_ERROR);
+        $flocages = $this->configAlpine($crawler)['dotationFlocages'];
 
         self::assertSame(
             [$tshirtId],
@@ -92,6 +87,17 @@ final class InscriptionDotationControllerTest extends WebTestCase
         );
         self::assertSame(self::MAX_FLOCAGE, $flocages['Dotation'][0]['max']);
         self::assertSame('T-shirt', $flocages['Dotation'][0]['article']);
+    }
+
+    /** @return array<string, mixed> configuration passée à inscriptionForm() */
+    private function configAlpine(\Symfony\Component\DomCrawler\Crawler $crawler): array
+    {
+        $xData = (string) $crawler->filter('.inscription-page')->attr('x-data');
+
+        preg_match('/inscriptionForm\((.*)\)/s', $xData, $m);
+        self::assertNotEmpty($m, 'Le x-data doit appeler inscriptionForm().');
+
+        return json_decode($m[1], true, flags: JSON_THROW_ON_ERROR);
     }
 
     public function testNouveauLicencieNeVoitAucuneQuestionDeDotation(): void

@@ -2,15 +2,7 @@
 
 {% block title %}Dossier dirigeant — Foyer de Soudron{% endblock %}
 
-{% block page_attributs %}
-     x-data="dirigeantForm({
-         needTaille: {{ needTaille ? 'true' : 'false' }},
-         needPhoto: {{ needPhoto ? 'true' : 'false' }},
-         needTransport: {{ needTransport ? 'true' : 'false' }},
-         {# Pas de |raw : les guillemets du JSON doivent être échappés, sinon ils
-            referment l'attribut x-data et tout le composant Alpine casse. #}
-         documents: {{ documents|map(d => {id: d.id})|json_encode }}
-     })"{% endblock %}
+{% block page_attributs %} x-data="dirigeantForm({{ config|json_encode }})"{% endblock %}
 
 {% block entete_droite %}
     <span class="inscription-header-step" x-text="`Étape ${displayStep} sur ${totalSteps}`"></span>
@@ -49,7 +41,7 @@
             </button>
         </div>
 
-        {% if needTaille %}
+        {% if config.needTaille %}
         {# ── Étape 2 : Équipement ── #}
         <div x-show="step === 2" class="inscription-card">
             <h2 class="inscription-step-title">Tailles d'équipement</h2>
@@ -147,13 +139,13 @@
         </div>
         {% endif %}
 
-        {% if needPhoto or needTransport %}
+        {% if config.needPhoto or config.needTransport %}
         {# ── Étape 3 : Autorisations ── #}
         <div x-show="step === 3" class="inscription-card">
             <h2 class="inscription-step-title">Autorisations</h2>
             <div class="inscription-fields">
 
-                {% if needPhoto %}
+                {% if config.needPhoto %}
                 <div class="inscription-question-block">
                     <span class="inscription-question-label">Droit à l'image *</span>
                     <span class="inscription-question-hint">Autorisation de diffuser des photos/vidéos vous concernant sur les supports du club.</span>
@@ -170,8 +162,8 @@
                 </div>
                 {% endif %}
 
-                {% if needTransport %}
-                {% if needPhoto %}<hr class="inscription-question-divider">{% endif %}
+                {% if config.needTransport %}
+                {% if config.needPhoto %}<hr class="inscription-question-divider">{% endif %}
                 <div class="inscription-question-block">
                     <span class="inscription-question-label">Transport des licenciés *</span>
                     <span class="inscription-question-hint">Acceptez-vous de transporter des licenciés du club lors des déplacements ?</span>
@@ -192,7 +184,7 @@
         </div>
         {% endif %}
 
-        {% if needTransport %}
+        {% if config.needTransport %}
         {# ── Étape 4 : Attestation transport (uniquement si volontaire) ── #}
         <div x-show="step === 4" class="inscription-card">
             <h2 class="inscription-step-title">Attestation de transport</h2>

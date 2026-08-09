@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Enum\DirigeantRole;
 use App\Repository\DirigeantRepository;
+use App\Service\Drive\DrivePath;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
@@ -435,5 +436,17 @@ class Dirigeant
 
         return $this->tailleHaut !== null && $this->tailleBas !== null
             && $this->pointure !== null && $this->autorisationPhoto !== null;
+    }
+
+    /** Le PDF est-il sur Drive ? Tant qu'il ne l'est pas, la colonne porte un chemin local. */
+    public function attestationTransportEstArchivee(): bool
+    {
+        return DrivePath::estArchive($this->getAttestationTransportDriveId());
+    }
+
+    /** Le PDF est-il sur Drive ? Tant qu'il ne l'est pas, la colonne porte un chemin local. */
+    public function attestationCleEstArchivee(): bool
+    {
+        return DrivePath::estArchive($this->getAttestationCleSignePath());
     }
 }

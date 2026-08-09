@@ -8,6 +8,7 @@ use App\Entity\Season;
 use App\Enum\DocumentCible;
 use App\Repository\DocumentSignableRepository;
 use App\Repository\SeasonRepository;
+use App\Service\Inscription\InscriptionFormConfig;
 use App\Service\Payment\CotisationResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,6 +24,7 @@ class InscriptionDemoController extends AbstractController
 {
     public function __construct(
         private readonly CotisationResolver $cotisationResolver,
+        private readonly InscriptionFormConfig $formConfig,
         private readonly SeasonRepository $seasonRepo,
         private readonly DocumentSignableRepository $documentRepo,
     ) {}
@@ -65,6 +67,11 @@ class InscriptionDemoController extends AbstractController
             'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
             'documents' => $documents,
             'demo' => true,
+            'config' => $this->formConfig->pourDemo(
+                $licencie,
+                $documents,
+                $this->generateUrl('public_inscription_demo_confirmation'),
+            ),
         ]);
     }
 

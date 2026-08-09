@@ -45,16 +45,7 @@
                                     {% if doc.viseTousLesDirigeants %}
                                         <span>Tous les dirigeants</span>
                                     {% else %}
-                                        <span>
-                                            {%- set cibles = [] -%}
-                                            {%- for role in doc.roles -%}
-                                                {%- set cibles = cibles|merge([role.label()]) -%}
-                                            {%- endfor -%}
-                                            {%- for d in doc.dirigeants -%}
-                                                {%- set cibles = cibles|merge([d.nomPrenom]) -%}
-                                            {%- endfor -%}
-                                            {{ cibles|join(', ') }}
-                                        </span>
+                                        <span>{{ doc.ciblesLabel }}</span>
                                     {% endif %}
                                 {% endif %}
 
