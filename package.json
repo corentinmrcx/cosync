@@ -19,7 +19,7 @@
         "dev": "encore dev",
         "watch": "encore dev --watch",
         "build": "encore production --progress",
-        "lint:css": "stylelint \"assets/styles/**/*.css\"",
+        "lint:css": "stylelint \"assets/styles/**/*.css\" && php bin/check-css-imports.php",
         "lint:js": "eslint assets/",
         "lint": "npm run lint:css && npm run lint:js",
         "fix:css": "stylelint \"assets/styles/**/*.css\" --fix",
