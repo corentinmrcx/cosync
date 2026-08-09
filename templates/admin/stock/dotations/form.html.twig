@@ -5,7 +5,7 @@
 {# Le sélecteur d'article, identique partout où l'on désigne un article du stock :
    vêtements d'abord (taille déduite automatiquement), puis le reste. #}
 {% macro articleSelect(vetements, autres, name, placeholder, model = null) %}
-    <select name="{{ name }}" class="dot-select" required
+    <select name="{{ name }}" class="field-input" required
             {% if model %}x-model="{{ model }}"{% endif %}>
         <option value="">{{ placeholder }}</option>
         {% if vetements is not empty %}
@@ -59,7 +59,7 @@
         <h2 class="dot-card-title">Le kit</h2>
         <form method="post" action="{{ path('admin_stock_dotations_edit', {id: modele.id}) }}" class="dot-inline-form">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_edit_' ~ modele.id) }}">
-            <input type="text" name="nom" class="dot-input" value="{{ modele.nom }}" required>
+            <input type="text" name="nom" class="field-input" value="{{ modele.nom }}" required>
             <label class="dot-check">
                 <input type="checkbox" name="actif" value="1" {{ modele.actif ? 'checked' : '' }}> Actif
             </label>
@@ -102,7 +102,7 @@
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_new') }}">
             <input type="hidden" name="modele_id" value="{{ modele.id }}">
 
-            <select name="cible_type" class="dot-select" x-model="cible" aria-label="Type de cible">
+            <select name="cible_type" class="field-input" x-model="cible" aria-label="Type de cible">
                 <option value="team">Équipe</option>
                 <option value="category">Catégorie FFF</option>
                 <option value="role">Rôle dirigeant</option>
@@ -111,19 +111,19 @@
                 <option value="default">Par défaut (toute la saison)</option>
             </select>
 
-            <select name="cible_id" class="dot-select" x-show="cible === 'team'" x-cloak :disabled="cible !== 'team'" aria-label="Équipe">
+            <select name="cible_id" class="field-input" x-show="cible === 'team'" x-cloak :disabled="cible !== 'team'" aria-label="Équipe">
                 {% for t in teams %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
             </select>
-            <select name="cible_id" class="dot-select" x-show="cible === 'category'" x-cloak :disabled="cible !== 'category'" aria-label="Catégorie">
+            <select name="cible_id" class="field-input" x-show="cible === 'category'" x-cloak :disabled="cible !== 'category'" aria-label="Catégorie">
                 {% for c in categories %}<option value="{{ c.id }}">{{ c.label }}</option>{% endfor %}
             </select>
-            <select name="cible_id" class="dot-select" x-show="cible === 'role'" x-cloak :disabled="cible !== 'role'" aria-label="Rôle dirigeant">
+            <select name="cible_id" class="field-input" x-show="cible === 'role'" x-cloak :disabled="cible !== 'role'" aria-label="Rôle dirigeant">
                 {% for r in roles %}<option value="{{ r.value }}">{{ r.label() }}</option>{% endfor %}
             </select>
-            <select name="cible_id" class="dot-select" x-show="cible === 'licencie'" x-cloak :disabled="cible !== 'licencie'" aria-label="Licencié">
+            <select name="cible_id" class="field-input" x-show="cible === 'licencie'" x-cloak :disabled="cible !== 'licencie'" aria-label="Licencié">
                 {% for l in licencies %}<option value="{{ l.uuid }}">{{ l.nom }} {{ l.prenom }}</option>{% endfor %}
             </select>
-            <select name="cible_id" class="dot-select" x-show="cible === 'dirigeant'" x-cloak :disabled="cible !== 'dirigeant'" aria-label="Dirigeant">
+            <select name="cible_id" class="field-input" x-show="cible === 'dirigeant'" x-cloak :disabled="cible !== 'dirigeant'" aria-label="Dirigeant">
                 {% for d in dirigeants %}<option value="{{ d.uuid }}">{{ d.nomPrenom }}</option>{% endfor %}
             </select>
 
@@ -167,9 +167,9 @@
                               x-data="{ perso: {{ ligne.personnalisationRequise ? 'true' : 'false' }} }">
                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_reglages_' ~ ligne.id) }}">
 
-                            <div class="dot-field">
-                                <label class="dot-field-label" for="fx-elig-{{ ligne.id }}">Qui y a droit</label>
-                                <select id="fx-elig-{{ ligne.id }}" name="eligibilite" class="dot-select">
+                            <div class="field">
+                                <label class="field-label" for="fx-elig-{{ ligne.id }}">Qui y a droit</label>
+                                <select id="fx-elig-{{ ligne.id }}" name="eligibilite" class="field-input">
                                     {% for cas in eligibilites %}
                                         <option value="{{ cas.value }}" {{ ligne.eligibilite == cas ? 'selected' : '' }}>{{ cas.label }}</option>
                                     {% endfor %}
@@ -183,14 +183,14 @@
 
                             <div class="dot-perso" x-show="perso" x-cloak>
                                 <div class="dot-row">
-                                    <div class="dot-field">
-                                        <label class="dot-field-label" for="fx-lab-{{ ligne.id }}">Question posée au licencié</label>
-                                        <input id="fx-lab-{{ ligne.id }}" type="text" name="personnalisation_label" class="dot-text"
+                                    <div class="field">
+                                        <label class="field-label" for="fx-lab-{{ ligne.id }}">Question posée au licencié</label>
+                                        <input id="fx-lab-{{ ligne.id }}" type="text" name="personnalisation_label" class="field-input"
                                                value="{{ ligne.personnalisationLabel }}" placeholder="Ex : Nom à floquer au dos">
                                     </div>
-                                    <div class="dot-field dot-field-narrow">
-                                        <label class="dot-field-label" for="fx-max-{{ ligne.id }}">Caractères max.</label>
-                                        <input id="fx-max-{{ ligne.id }}" type="number" name="personnalisation_max" class="dot-text"
+                                    <div class="field dot-field-narrow">
+                                        <label class="field-label" for="fx-max-{{ ligne.id }}">Caractères max.</label>
+                                        <input id="fx-max-{{ ligne.id }}" type="number" name="personnalisation_max" class="field-input"
                                                min="1" max="60" value="{{ ligne.personnalisationMaxLength }}"
                                                placeholder="{{ personnalisationMaxDefaut }}">
                                     </div>
@@ -214,7 +214,7 @@
         <form method="post" action="{{ path('admin_stock_dotations_ligne_add', {id: modele.id}) }}" class="dot-add-row">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_add_' ~ modele.id) }}">
             {{ ui.articleSelect(vetements, autres, 'stock_item_id', '— Ajouter un article —') }}
-            <input type="number" name="quantite" class="dot-text dot-text-qty" min="1" value="1" title="Quantité" aria-label="Quantité">
+            <input type="number" name="quantite" class="field-input dot-text-qty" min="1" value="1" title="Quantité" aria-label="Quantité">
             <button type="submit" class="btn btn-ghost">+ Ajouter</button>
         </form>
 
@@ -250,13 +250,13 @@
                 <form method="post" action="{{ path('admin_stock_dotations_choix_rename', {id: modele.id}) }}" class="dot-choix-title">
                     <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_rename_' ~ modele.id) }}">
                     <input type="hidden" name="ancien" value="{{ nom }}">
-                    <div class="dot-field">
-                        <label class="dot-field-label" for="nom-{{ loop.index }}">Question affichée au licencié</label>
+                    <div class="field">
+                        <label class="field-label" for="nom-{{ loop.index }}">Question affichée au licencié</label>
                         <div class="dot-inline">
-                            <input id="nom-{{ loop.index }}" type="text" name="nouveau" class="dot-text" value="{{ nom }}" required>
+                            <input id="nom-{{ loop.index }}" type="text" name="nouveau" class="field-input" value="{{ nom }}" required>
                             <button type="submit" class="btn btn-ghost">Renommer</button>
                         </div>
-                        <p class="dot-help">Ce texte s'affiche tel quel dans le formulaire public. Les réponses déjà saisies suivent le renommage.</p>
+                        <p class="field-hint">Ce texte s'affiche tel quel dans le formulaire public. Les réponses déjà saisies suivent le renommage.</p>
                     </div>
                 </form>
 
@@ -311,18 +311,18 @@
             <p class="dot-section-title">Nouveau choix</p>
 
             <div class="dot-row">
-                <div class="dot-field">
-                    <label class="dot-field-label" for="new-choix-nom">Question affichée au licencié</label>
-                    <input id="new-choix-nom" type="text" name="nom" class="dot-text" placeholder="Ex : Votre dotation au choix" required>
+                <div class="field">
+                    <label class="field-label" for="new-choix-nom">Question affichée au licencié</label>
+                    <input id="new-choix-nom" type="text" name="nom" class="field-input" placeholder="Ex : Votre dotation au choix" required>
                 </div>
-                <div class="dot-field dot-field-narrow">
-                    <label class="dot-field-label" for="new-choix-qte">Quantité</label>
-                    <input id="new-choix-qte" type="number" name="quantite" class="dot-text" min="1" value="1">
+                <div class="field dot-field-narrow">
+                    <label class="field-label" for="new-choix-qte">Quantité</label>
+                    <input id="new-choix-qte" type="number" name="quantite" class="field-input" min="1" value="1">
                 </div>
             </div>
 
-            <div class="dot-field">
-                <span class="dot-field-label">Articles proposés</span>
+            <div class="field">
+                <span class="field-label">Articles proposés</span>
                 <template x-for="(option, i) in options" :key="i">
                     <div class="dot-inline dot-inline-stack">
                         {{ ui.articleSelect(vetements, autres, 'stock_item_ids[]', '— Choisir un article —', 'options[i]') }}
@@ -331,7 +331,7 @@
                     </div>
                 </template>
                 <button type="button" class="btn btn-ghost dot-btn-ghost-start" @click="options.push('')">+ Une option de plus</button>
-                <p class="dot-help">Le licencié en retiendra une seule. Vous réglerez ensuite qui a droit à quoi.</p>
+                <p class="field-hint">Le licencié en retiendra une seule. Vous réglerez ensuite qui a droit à quoi.</p>
             </div>
 
             <div class="dot-choix-actions">

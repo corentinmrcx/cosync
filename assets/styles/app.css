@@ -1,6 +1,10 @@
 
 @import './components/button.css';
 @import './components/checklist.css';
+@import './components/card.css';
+@import './components/data-table.css';
+@import './components/modal.css';
+@import './components/form-field.css';
 @import './components/empty-state.css';
 @import './components/navbar.css';
 @import './components/footer.css';

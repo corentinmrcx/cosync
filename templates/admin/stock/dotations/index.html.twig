@@ -61,7 +61,7 @@
 
         <form method="post" action="{{ path('admin_stock_dotations_new') }}" class="dot-inline-form">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_new') }}">
-            <input type="text" name="nom" class="dot-input" placeholder="Nom du kit (ex : Kit sénior)" required>
+            <input type="text" name="nom" class="field-input" placeholder="Nom du kit (ex : Kit sénior)" required>
             <button type="submit" class="btn btn-primary">+ Nouveau kit</button>
         </form>
     </div>

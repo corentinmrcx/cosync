@@ -1,0 +1,77 @@
+/* ── Carte ────────────────────────────────────────────────────────────────────
+   Le bloc de contenu de l'administration : fond blanc, cadre léger, coins arrondis.
+   Une page ne redéfinit pas une carte, elle en pose une.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.card {
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.card-titre {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.card-compteur {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.card-corps {
+    padding: 1.25rem;
+}
+
+/* Note de bas de carte : précision secondaire, jamais une action. */
+.card-note {
+    margin: 0;
+    padding: 0.875rem 1.25rem;
+    border-top: 1px solid var(--color-border);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* ── En-tête de page ────────────────────────────────────────────────────────── */
+
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.page-titre {
+    margin: 0;
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+}
+
+.page-sous-titre {
+    margin: 0.25rem 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.page-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}

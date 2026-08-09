@@ -1,0 +1,72 @@
+/* ── Tableaux de données ──────────────────────────────────────────────────────
+   Toutes les listes de l'administration. Une page ne redéfinit pas un tableau :
+   elle l'enveloppe dans .table-wrapper et pose .table.
+
+   Le wrapper porte le cadre et le défilement horizontal : sur mobile, c'est lui
+   qui glisse, jamais la page.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.table-wrapper {
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow-x: auto;
+    box-shadow: var(--shadow-card);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.table thead tr {
+    border-bottom: 2.5px solid var(--color-primary);
+}
+
+.table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-base);
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 0.875rem 1rem;
+    color: var(--color-text-body);
+}
+
+.table tbody tr {
+    border-top: 1px solid var(--color-border);
+}
+
+.table tbody tr:first-child {
+    border-top: none;
+}
+
+/* Survol : réservé aux lignes cliquables, pour ne pas suggérer une action inexistante. */
+.table-cliquable tbody tr:hover {
+    background: var(--color-row-hover);
+    cursor: pointer;
+}
+
+/* Colonne d'actions : au plus près du bord, sans étirer les colonnes de contenu. */
+.table-actions {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.table-actions-cellule {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Tableau compact : listes denses (mouvements de stock, suivi des dotations). */
+.table-compact th { padding: 0.5rem 0.75rem; }
+.table-compact td { padding: 0.5rem 0.75rem; }

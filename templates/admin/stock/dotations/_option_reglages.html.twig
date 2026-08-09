@@ -15,9 +15,9 @@
         {% endif %}
     </div>
 
-    <div class="dot-field">
-        <label class="dot-field-label" for="elig-{{ ligne.id }}">Qui y a droit</label>
-        <select id="elig-{{ ligne.id }}" name="reglages[{{ ligne.id }}][eligibilite]" class="dot-select">
+    <div class="field">
+        <label class="field-label" for="elig-{{ ligne.id }}">Qui y a droit</label>
+        <select id="elig-{{ ligne.id }}" name="reglages[{{ ligne.id }}][eligibilite]" class="field-input">
             {% for cas in eligibilites %}
                 <option value="{{ cas.value }}" {{ ligne.eligibilite == cas ? 'selected' : '' }}>{{ cas.label }}</option>
             {% endfor %}
@@ -31,19 +31,19 @@
 
     <div class="dot-perso" x-show="perso" x-cloak>
         <div class="dot-row">
-            <div class="dot-field">
-                <label class="dot-field-label" for="lab-{{ ligne.id }}">Question posée au licencié</label>
+            <div class="field">
+                <label class="field-label" for="lab-{{ ligne.id }}">Question posée au licencié</label>
                 <input id="lab-{{ ligne.id }}" type="text" name="reglages[{{ ligne.id }}][personnalisation_label]"
-                       class="dot-text" value="{{ ligne.personnalisationLabel }}"
+                       class="field-input" value="{{ ligne.personnalisationLabel }}"
                        placeholder="Ex : Nom à floquer au dos">
             </div>
-            <div class="dot-field dot-field-narrow">
-                <label class="dot-field-label" for="max-{{ ligne.id }}">Caractères max.</label>
+            <div class="field dot-field-narrow">
+                <label class="field-label" for="max-{{ ligne.id }}">Caractères max.</label>
                 <input id="max-{{ ligne.id }}" type="number" name="reglages[{{ ligne.id }}][personnalisation_max]"
-                       class="dot-text" min="1" max="60" value="{{ ligne.personnalisationMaxLength }}"
+                       class="field-input" min="1" max="60" value="{{ ligne.personnalisationMaxLength }}"
                        placeholder="{{ personnalisationMaxDefaut }}">
             </div>
         </div>
-        <p class="dot-help">Le licencié saisira ce texte et devra en confirmer l'orthographe avant l'envoi.</p>
+        <p class="field-hint">Le licencié saisira ce texte et devra en confirmer l'orthographe avant l'envoi.</p>
     </div>
 </li>

@@ -22,14 +22,14 @@
             <h2 class="stock-categories-card-title">Nouvelle catégorie</h2>
             {{ form_start(newCategoryForm, {attr: {class: 'stock-categories-form'}}) }}
                 <div class="stock-categories-form-row">
-                    <div class="stock-categories-field" style="flex:3">
+                    <div class="field" style="flex:3">
                         {{ form_label(newCategoryForm.name) }}
-                        {{ form_widget(newCategoryForm.name, {attr: {class: 'stock-categories-input'}}) }}
+                        {{ form_widget(newCategoryForm.name, {attr: {class: 'field-input'}}) }}
                         {{ form_errors(newCategoryForm.name) }}
                     </div>
-                    <div class="stock-categories-field">
+                    <div class="field">
                         {{ form_label(newCategoryForm.position) }}
-                        {{ form_widget(newCategoryForm.position, {attr: {class: 'stock-categories-input stock-categories-input-position'}}) }}
+                        {{ form_widget(newCategoryForm.position, {attr: {class: 'field-input stock-categories-input-position'}}) }}
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Créer</button>
@@ -68,8 +68,8 @@
                                 style="display:none"
                             >
                                 <input type="hidden" name="stock_category[_token]" value="{{ csrf_token('stock_category') }}">
-                                <input type="text" name="stock_category[name]" value="{{ category.name }}" class="stock-categories-input" required>
-                                <input type="number" name="stock_category[position]" value="{{ category.position }}" class="stock-categories-input stock-categories-input-position">
+                                <input type="text" name="stock_category[name]" value="{{ category.name }}" class="field-input" required>
+                                <input type="number" name="stock_category[position]" value="{{ category.position }}" class="field-input stock-categories-input-position">
                                 <button type="submit" class="btn btn-primary btn-sm">Sauvegarder</button>
                                 <button type="button" class="btn btn-ghost btn-sm" @click="editingId = null">Annuler</button>
                             </form>

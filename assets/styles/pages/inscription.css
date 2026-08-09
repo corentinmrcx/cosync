@@ -167,36 +167,6 @@
     gap: 1rem;
 }
 
-.inscription-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-}
-
-.inscription-label {
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    color: var(--color-text-body);
-}
-
-.inscription-select {
-    padding: 0.75rem 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-base);
-    background: var(--color-bg-page);
-    outline: none;
-    transition: border-color 0.15s;
-    width: 100%;
-    cursor: pointer;
-}
-
-.inscription-select:focus {
-    border-color: var(--color-primary);
-}
-
 /* — Questions Oui/Non — */
 .inscription-question-block {
     display: flex;
@@ -840,23 +810,6 @@
     margin: 0 0 1.25rem;
 }
 
-.inscription-input {
-    padding: 0.75rem 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-base);
-    background: var(--color-bg-page);
-    outline: none;
-    transition: border-color 0.15s;
-    width: 100%;
-}
-
-.inscription-input:focus {
-    border-color: var(--color-primary);
-}
-
 .inscription-input-error {
     border-color: var(--color-danger);
 }
@@ -866,25 +819,6 @@
     color: var(--color-danger);
     font-weight: 600;
     margin-top: 0.25rem;
-}
-
-.inscription-textarea {
-    padding: 0.75rem 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-base);
-    background: var(--color-bg-page);
-    outline: none;
-    transition: border-color 0.15s;
-    width: 100%;
-    resize: vertical;
-    min-height: 5rem;
-}
-
-.inscription-textarea:focus {
-    border-color: var(--color-primary);
 }
 
 /* — Attestation de remise de clés (récépissé court) — */

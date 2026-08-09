@@ -81,8 +81,8 @@
     {% if detentions is empty %}
         <p class="clubhouse-empty">Aucun mouvement de clé ne correspond à cette recherche.</p>
     {% else %}
-        <div class="clubhouse-table-wrapper">
-            <table class="clubhouse-table resp-table">
+        <div class="table-wrapper">
+            <table class="table resp-table">
                 <thead>
                     <tr>
                         <th>Personne</th>
@@ -149,8 +149,8 @@
 
     {# — Modale de saisie d'un mouvement — #}
     <div class="clubhouse-modal" x-show="modaleOuverte" x-cloak @click.self="modaleOuverte = false">
-        <div class="clubhouse-modal-box">
-            <h2 class="clubhouse-modal-title">Enregistrer un mouvement de clé</h2>
+        <div class="modal">
+            <h2 class="modal-titre">Enregistrer un mouvement de clé</h2>
             <p class="clubhouse-modal-hint">
                 L'historique n'est jamais modifié : une erreur se corrige par un mouvement inverse.
             </p>
@@ -159,8 +159,8 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('cle_mouvement') }}">
 
                 <div class="clubhouse-form-row">
-                    <label class="clubhouse-form-label" for="cle-dirigeant">Personne</label>
-                    <select name="dirigeant" id="cle-dirigeant" class="clubhouse-form-input" x-model="personne" required>
+                    <label class="field-label" for="cle-dirigeant">Personne</label>
+                    <select name="dirigeant" id="cle-dirigeant" class="field-input" x-model="personne" required>
                         <option value="">— Sélectionner —</option>
                         {% for candidat in candidats %}
                             <option value="{{ candidat.uuid }}">{{ candidat.nomPrenom }}</option>
@@ -169,8 +169,8 @@
                 </div>
 
                 <div class="clubhouse-form-row">
-                    <label class="clubhouse-form-label" for="cle-type">Type de mouvement</label>
-                    <select name="type" id="cle-type" class="clubhouse-form-input" x-model="typeMouvement" required>
+                    <label class="field-label" for="cle-type">Type de mouvement</label>
+                    <select name="type" id="cle-type" class="field-input" x-model="typeMouvement" required>
                         <option value="remise">Remise</option>
                         <option value="restitution">Restitution</option>
                         <option value="perte">Perte</option>
@@ -178,23 +178,23 @@
                 </div>
 
                 <div class="clubhouse-form-row">
-                    <label class="clubhouse-form-label" for="cle-quantite">Nombre de clés</label>
-                    <input type="number" name="quantite" id="cle-quantite" class="clubhouse-form-input" value="1" min="1" required>
+                    <label class="field-label" for="cle-quantite">Nombre de clés</label>
+                    <input type="number" name="quantite" id="cle-quantite" class="field-input" value="1" min="1" required>
                 </div>
 
                 <div class="clubhouse-form-row">
-                    <label class="clubhouse-form-label" for="cle-date">Date</label>
-                    <input type="date" name="date_mouvement" id="cle-date" class="clubhouse-form-input"
+                    <label class="field-label" for="cle-date">Date</label>
+                    <input type="date" name="date_mouvement" id="cle-date" class="field-input"
                            value="{{ 'now'|date('Y-m-d') }}" required>
                 </div>
 
                 <div class="clubhouse-form-row">
-                    <label class="clubhouse-form-label" for="cle-note">Note (facultatif)</label>
-                    <input type="text" name="note" id="cle-note" class="clubhouse-form-input"
+                    <label class="field-label" for="cle-note">Note (facultatif)</label>
+                    <input type="text" name="note" id="cle-note" class="field-input"
                            placeholder="Ex. : clé du portail arrière">
                 </div>
 
-                <div class="clubhouse-modal-actions">
+                <div class="modal-actions">
                     <button type="button" class="btn btn-ghost" @click="modaleOuverte = false">Annuler</button>
                     <button type="submit" class="btn btn-primary">Enregistrer</button>
                 </div>

@@ -117,28 +117,28 @@
                         <hr class="inscription-question-divider">
                         <p class="inscription-attestation-intro">Ces informations sont nécessaires pour assurer la sécurité des enfants transportés. Elles ne seront pas conservées en base de données — seul le document signé sera archivé.</p>
 
-                        <div class="inscription-field">
-                            <label class="inscription-label">Nom *</label>
+                        <div class="field">
+                            <label class="field-label">Nom *</label>
                             <input type="text" name="attestation_nom_conducteur" x-model="nomConducteur"
-                                   class="inscription-input" placeholder="NOM" autocomplete="family-name">
+                                   class="field-input" placeholder="NOM" autocomplete="family-name">
                         </div>
 
-                        <div class="inscription-field">
-                            <label class="inscription-label">Prénom *</label>
+                        <div class="field">
+                            <label class="field-label">Prénom *</label>
                             <input type="text" name="attestation_prenom_conducteur" x-model="prenomConducteur"
-                                   class="inscription-input" placeholder="Prénom" autocomplete="given-name">
+                                   class="field-input" placeholder="Prénom" autocomplete="given-name">
                         </div>
 
-                        <div class="inscription-field">
-                            <label class="inscription-label">Numéro de permis de conduire *</label>
+                        <div class="field">
+                            <label class="field-label">Numéro de permis de conduire *</label>
                             <input type="text" name="attestation_num_permis" x-model="numPermis"
-                                   class="inscription-input" placeholder="Ex : 01AA00000" autocomplete="off">
+                                   class="field-input" placeholder="Ex : 01AA00000" autocomplete="off">
                         </div>
 
-                        <div class="inscription-field">
-                            <label class="inscription-label">Nom et adresse de l'assurance *</label>
+                        <div class="field">
+                            <label class="field-label">Nom et adresse de l'assurance *</label>
                             <textarea name="attestation_assurance" x-model="assuranceNomAdresse"
-                                      class="inscription-textarea" rows="3"
+                                      class="field-input" rows="3"
                                       placeholder="Ex : Macif — 12 rue de la Paix, 75001 Paris"></textarea>
                         </div>
 
@@ -147,10 +147,10 @@
                             <span class="inscription-checkbox-text">Véhicule neuf, sans contrôle technique à ce jour</span>
                         </label>
 
-                        <div class="inscription-field" x-show="!vehiculeNeuf">
-                            <label class="inscription-label">Date du dernier contrôle technique *</label>
+                        <div class="field" x-show="!vehiculeNeuf">
+                            <label class="field-label">Date du dernier contrôle technique *</label>
                             <input type="date" name="attestation_date_ct" x-model="dateCT"
-                                   class="inscription-input" :class="dateCTFuture ? 'inscription-input-error' : ''"
+                                   class="field-input" :class="dateCTFuture ? 'inscription-input-error' : ''"
                                    max="{{ 'now'|date('Y-m-d') }}">
                             <p x-show="dateCTFuture" class="inscription-field-error">
                                 La date du contrôle technique ne peut pas être dans le futur.

@@ -43,29 +43,29 @@
 
             <hr class="document-edit-divider">
 
-            <div class="document-edit-field">
-                <label class="document-edit-label" for="titre">Titre du document</label>
+            <div class="field">
+                <label class="field-label" for="titre">Titre du document</label>
                 <input type="text" id="titre" name="titre" required maxlength="150"
-                       class="document-edit-input"
+                       class="field-input"
                        placeholder="Ex : Charte d'engagement — Communication / Réseaux sociaux"
                        value="{{ document ? document.titre : '' }}">
-                <p class="document-edit-field-hint">Affiché en tête de l'étape de signature et du PDF.</p>
+                <p class="field-hint">Affiché en tête de l'étape de signature et du PDF.</p>
             </div>
 
-            <div class="document-edit-field">
-                <label class="document-edit-label" for="libelle">Désignation dans la phrase d'acceptation</label>
+            <div class="field">
+                <label class="field-label" for="libelle">Désignation dans la phrase d'acceptation</label>
                 <input type="text" id="libelle" name="libelle" required maxlength="255"
-                       class="document-edit-input"
+                       class="field-input"
                        placeholder="Ex : la charte d'engagement communication du Foyer de Soudron"
                        value="{{ document ? document.libelle : '' }}">
-                <p class="document-edit-field-hint">
+                <p class="field-hint">
                     Complète « J'ai lu et j'accepte … » dans le formulaire et « …reconnais avoir lu et accepté … » dans le PDF.
                     Commencez par l'article (le, la, l').
                 </p>
             </div>
 
-            <div class="document-edit-field">
-                <span class="document-edit-label">Qui doit le signer ?</span>
+            <div class="field">
+                <span class="field-label">Qui doit le signer ?</span>
                 <div class="document-edit-radio-row">
                     <label class="document-edit-radio">
                         <input type="radio" name="cible" value="dirigeant" x-model="cible"
@@ -78,14 +78,14 @@
                         Les licenciés
                     </label>
                 </div>
-                <p class="document-edit-field-hint" x-show="cible === 'licencie'" x-cloak>
+                <p class="field-hint" x-show="cible === 'licencie'" x-cloak>
                     Un document destiné aux licenciés s'adresse à toute la saison : aucun ciblage plus fin.
                 </p>
             </div>
 
-            <div x-show="cible === 'dirigeant'" x-cloak class="document-edit-field">
-                <span class="document-edit-label">Rôles concernés</span>
-                <p class="document-edit-field-hint">
+            <div x-show="cible === 'dirigeant'" x-cloak class="field">
+                <span class="field-label">Rôles concernés</span>
+                <p class="field-hint">
                     Ne rien cocher ici ni ci-dessous = le document est demandé à tous les dirigeants.
                 </p>
                 <div class="document-edit-checklist">
@@ -102,9 +102,9 @@
                 </div>
             </div>
 
-            <div x-show="cible === 'dirigeant'" x-cloak class="document-edit-field">
-                <span class="document-edit-label">Ou des personnes précises</span>
-                <p class="document-edit-field-hint">
+            <div x-show="cible === 'dirigeant'" x-cloak class="field">
+                <span class="field-label">Ou des personnes précises</span>
+                <p class="field-hint">
                     Pour un document qui ne correspond à aucun rôle — la charte communication, par exemple.
                     S'ajoute aux rôles cochés ci-dessus.
                 </p>
@@ -126,7 +126,7 @@
                 {% endif %}
             </div>
 
-            <div class="document-edit-field">
+            <div class="field">
                 <label class="document-edit-check" style="padding:0">
                     <input type="checkbox" name="actif" value="1" {{ document is null or document.actif ? 'checked' : '' }}>
                     <span>
@@ -136,8 +136,8 @@
                 </label>
             </div>
 
-            <div class="document-edit-field">
-                <label class="document-edit-label">Texte du document</label>
+            <div class="field">
+                <label class="field-label">Texte du document</label>
                 <div class="document-edit-editor-wrapper">
                     <div id="quill-editor" class="document-edit-editor">{{ document ? document.contenuHtml|raw : '' }}</div>
                 </div>

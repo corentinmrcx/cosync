@@ -77,7 +77,7 @@
                 @input="verifier()"
                 autocomplete="off"
                 placeholder="SUPPRIMER"
-                class="diag-input diag-purge-input"
+                class="field-input diag-purge-input"
             >
             <div class="diag-purge-footer">
                 <button
@@ -103,7 +103,7 @@
         <hr class="diag-divider">
         <form method="post" action="{{ path('admin_diag_test_mail') }}" class="diag-form">
             <input type="hidden" name="_token" value="{{ csrf_token('test_mail') }}">
-            <input type="email" name="test_email" placeholder="votre@email.fr" required class="diag-input">
+            <input type="email" name="test_email" placeholder="votre@email.fr" required class="field-input">
             <button type="submit" class="btn btn-primary btn-lg">Envoyer</button>
         </form>
     </div>
@@ -115,7 +115,7 @@
         <hr class="diag-divider">
         <form method="post" action="{{ path('admin_diag_test_validation_mail') }}" class="diag-form">
             <input type="hidden" name="_token" value="{{ csrf_token('test_validation_mail') }}">
-            <input type="email" name="test_email" placeholder="votre@email.fr" required class="diag-input">
+            <input type="email" name="test_email" placeholder="votre@email.fr" required class="field-input">
             <div class="diag-radio-group">
                 <label class="diag-radio-label">
                     <input type="radio" name="profil" value="jeune" checked> Jeune (U6–U19)

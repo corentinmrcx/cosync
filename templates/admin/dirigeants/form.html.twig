@@ -26,7 +26,7 @@
             les coordonnées et les tailles se rempliront automatiquement.
         </p>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.licencie) }}
             {{ form_widget(form.licencie) }}
             {{ form_errors(form.licencie) }}
@@ -46,12 +46,12 @@
         <p class="licencie-edit-section">Identité</p>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.nom) }}
                 {{ form_widget(form.nom) }}
                 {{ form_errors(form.nom) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.prenom) }}
                 {{ form_widget(form.prenom) }}
                 {{ form_errors(form.prenom) }}
@@ -59,12 +59,12 @@
         </div>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.dateNaissance) }}
                 {{ form_widget(form.dateNaissance) }}
                 {{ form_errors(form.dateNaissance) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.numLicence) }}
                 {{ form_widget(form.numLicence) }}
                 {{ form_errors(form.numLicence) }}
@@ -77,12 +77,12 @@
         <p class="licencie-edit-section">Contact</p>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.email) }}
                 {{ form_widget(form.email) }}
                 {{ form_errors(form.email) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.telephone) }}
                 {{ form_widget(form.telephone) }}
                 {{ form_errors(form.telephone) }}
@@ -96,7 +96,7 @@
 
         <div class="season-form-row">
 
-            <div class="season-form-field">
+            <div class="field">
                 {% do form.role.setRendered %}
                 {% include 'components/text-combobox.html.twig' with {
                     name: field_name(form.role),
@@ -110,7 +110,7 @@
                 {{ form_errors(form.role) }}
             </div>
 
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.team) }}
                 {{ form_widget(form.team) }}
                 {{ form_errors(form.team) }}
@@ -124,17 +124,17 @@
         <p class="licencie-new-hint" style="margin-bottom: 0.5rem;">Pré-rempli depuis le profil joueur si disponible. Laissez vide si non renseigné.</p>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.tailleHaut) }}
                 {{ form_widget(form.tailleHaut) }}
                 {{ form_errors(form.tailleHaut) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.tailleBas) }}
                 {{ form_widget(form.tailleBas) }}
                 {{ form_errors(form.tailleBas) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.pointure) }}
                 {{ form_widget(form.pointure) }}
                 {{ form_errors(form.pointure) }}

@@ -46,8 +46,8 @@
                 <span class="stock-dashboard-section-count">{{ section.items|length }} article{{ section.items|length > 1 ? 's' : '' }}</span>
             </div>
 
-            <div class="stock-dashboard-table-wrapper">
-                <table class="stock-dashboard-table resp-table">
+            <div class="table-wrapper">
+                <table class="table resp-table">
                     <thead>
                         <tr>
                             <th class="stock-col-nom">Article</th>
@@ -138,18 +138,18 @@
     {% endfor %}
 
     {# Modale mouvement #}
-    <div class="stock-modal-backdrop" x-show="modalOpen" x-transition.opacity style="display:none">
-        <div class="stock-modal" @click.outside="closeModal()">
-            <div class="stock-modal-header">
-                <h3 class="stock-modal-title" x-text="'Mouvement — ' + itemNom"></h3>
-                <button type="button" class="stock-modal-close" @click="closeModal()">✕</button>
+    <div class="modal-voile" x-show="modalOpen" x-transition.opacity style="display:none">
+        <div class="modal" @click.outside="closeModal()">
+            <div class="modal-header">
+                <h3 class="modal-titre" x-text="'Mouvement — ' + itemNom"></h3>
+                <button type="button" class="modal-fermer" @click="closeModal()">✕</button>
             </div>
 
-            <form :action="formAction" method="post" class="stock-modal-form">
+            <form :action="formAction" method="post" class="modal-corps">
                 <input type="hidden" name="_token" :value="csrfToken">
 
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label">Action</label>
+                <div class="field">
+                    <label class="field-label">Action</label>
                     <div class="stock-modal-actions-grid">
                         <label class="stock-modal-radio" :class="{ active: action === 'entree' }">
                             <input type="radio" name="action" value="entree" x-model="action"> Entrée (réassort)
@@ -166,9 +166,9 @@
                     </div>
                 </div>
 
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label">Quantité</label>
-                    <input type="number" name="quantite" min="1" x-model="quantite" class="stock-modal-input" required>
+                <div class="field">
+                    <label class="field-label">Quantité</label>
+                    <input type="number" name="quantite" min="1" x-model="quantite" class="field-input" required>
                     <span class="stock-modal-hint" x-text="'Stock total : ' + stockActuel"></span>
                     <div class="stock-modal-stocklist" x-show="taillesEntries.length">
                         <span class="stock-modal-stocklist-label">En stock par taille</span>
@@ -183,9 +183,9 @@
                     </div>
                 </div>
 
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label">Taille <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(optionnel)</span></label>
-                    <select name="taille" x-model="taille" class="stock-modal-select">
+                <div class="field">
+                    <label class="field-label">Taille <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(optionnel)</span></label>
+                    <select name="taille" x-model="taille" class="field-input">
                         <option value="">— Sans taille —</option>
                         {% for t in taillesConnues %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
                     </select>
@@ -195,9 +195,9 @@
                           x-text="'Disponible en ' + taille + ' : ' + dispoTaille"></span>
                 </div>
 
-                <div class="stock-modal-field" x-show="action === 'dotation'" x-transition>
-                    <label class="stock-modal-label">Licencié <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(paiement confirmé uniquement)</span></label>
-                    <select name="licencie_uuid" class="stock-modal-select">
+                <div class="field" x-show="action === 'dotation'" x-transition>
+                    <label class="field-label">Licencié <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(paiement confirmé uniquement)</span></label>
+                    <select name="licencie_uuid" class="field-input">
                         <option value="">— Sélectionner un licencié —</option>
                         {% if licenciesValides is empty %}
                             <option disabled>Aucun licencié avec paiement confirmé</option>
@@ -209,15 +209,15 @@
                     </select>
                 </div>
 
-                <div class="stock-modal-field" x-show="action === 'rebut' || action === 'sortie' || action === 'dotation'" x-transition>
-                    <label class="stock-modal-label">
+                <div class="field" x-show="action === 'rebut' || action === 'sortie' || action === 'dotation'" x-transition>
+                    <label class="field-label">
                         Note / justification
                         <span x-show="action === 'rebut'" style="color: var(--color-danger)">*</span>
                     </label>
-                    <textarea name="note" class="stock-modal-textarea" :required="action === 'rebut'" rows="2" placeholder="Raison, contexte…"></textarea>
+                    <textarea name="note" class="field-input" :required="action === 'rebut'" rows="2" placeholder="Raison, contexte…"></textarea>
                 </div>
 
-                <div class="stock-modal-footer">
+                <div class="modal-actions">
                     <button type="button" class="btn btn-ghost" @click="closeModal()">Annuler</button>
                     <button type="submit" class="btn btn-primary" :disabled="!action || quantite < 1">Enregistrer</button>
                 </div>

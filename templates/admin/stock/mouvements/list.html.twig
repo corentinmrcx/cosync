@@ -17,7 +17,7 @@
     </div>
 
     <form method="get" class="stock-mouvements-filters">
-        <select name="item_id" class="stock-mouvements-filter-select">
+        <select name="item_id" class="field-input field-input-compact">
             <option value="">Tous les articles</option>
             {% for item in items %}
                 <option value="{{ item.id }}" {{ filters.item_id is defined and filters.item_id == item.id ? 'selected' : '' }}>
@@ -26,7 +26,7 @@
             {% endfor %}
         </select>
 
-        <select name="type" class="stock-mouvements-filter-select">
+        <select name="type" class="field-input field-input-compact">
             <option value="">Tous les types</option>
             {% for type in types %}
                 <option value="{{ type.value }}" {{ filters.type is defined and filters.type == type.value ? 'selected' : '' }}>
@@ -35,7 +35,7 @@
             {% endfor %}
         </select>
 
-        <select name="source" class="stock-mouvements-filter-select">
+        <select name="source" class="field-input field-input-compact">
             <option value="">Toutes les sources</option>
             {% for source in sources %}
                 <option value="{{ source.value }}" {{ filters.source is defined and filters.source == source.value ? 'selected' : '' }}>
@@ -44,8 +44,8 @@
             {% endfor %}
         </select>
 
-        <input type="date" name="date_from" class="stock-mouvements-filter-input" value="{{ filters.date_from ?? '' }}" title="Du">
-        <input type="date" name="date_to" class="stock-mouvements-filter-input" value="{{ filters.date_to ?? '' }}" title="Au">
+        <input type="date" name="date_from" class="field-input field-input-compact" value="{{ filters.date_from ?? '' }}" title="Du">
+        <input type="date" name="date_to" class="field-input field-input-compact" value="{{ filters.date_to ?? '' }}" title="Au">
 
         <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
         {% if filters is not empty %}
@@ -56,8 +56,8 @@
     {% if movements is empty %}
         <div class="stock-mouvements-empty">Aucun mouvement trouvé.</div>
     {% else %}
-        <div class="stock-mouvements-table-wrapper">
-            <table class="stock-mouvements-table resp-table">
+        <div class="table-wrapper">
+            <table class="table resp-table">
                 <thead>
                     <tr>
                         <th>Date</th>

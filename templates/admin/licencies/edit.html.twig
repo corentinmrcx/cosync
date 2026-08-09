@@ -21,7 +21,7 @@
         {# — Équipe — #}
         <p class="licencie-edit-section">Équipe</p>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.team) }}
             {{ form_widget(form.team) }}
             {{ form_errors(form.team) }}
@@ -36,19 +36,19 @@
             <p class="licencie-edit-note">Le licencié n'a pas encore complété son formulaire d'inscription.</p>
         {% endif %}
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.tailleHaut) }}
             {{ form_widget(form.tailleHaut) }}
             {{ form_errors(form.tailleHaut) }}
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.tailleBas) }}
             {{ form_widget(form.tailleBas) }}
             {{ form_errors(form.tailleBas) }}
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.pointure) }}
             {{ form_widget(form.pointure) }}
             {{ form_errors(form.pointure) }}

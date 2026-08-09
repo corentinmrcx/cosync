@@ -34,13 +34,13 @@
             <h1 class="season-form-header">Paramètres de la saison</h1>
             <hr class="season-form-divider">
 
-            <div class="season-form-field" x-data="{ year: {{ form.startYear.vars.value }} }">
+            <div class="field" x-data="{ year: {{ form.startYear.vars.value }} }">
                 {{ form_label(form.startYear) }}
                 {{ form_widget(form.startYear, { attr: { 'x-model.number': 'year' } }) }}
                 <p class="season-form-preview" x-text="'Saison ' + year + '–' + (year + 1)"></p>
             </div>
 
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.cotisationDefaut) }}
                 {{ form_widget(form.cotisationDefaut) }}
                 {{ form_help(form.cotisationDefaut) }}
@@ -49,13 +49,13 @@
 
             <hr class="season-form-divider">
             <h2 class="season-form-subheader">Coordonnées bancaires</h2>
-            <p class="season-form-hint">
+            <p class="field-hint">
                 Affichées au licencié qui règle par virement, dans le formulaire, sur la page
                 de confirmation et dans le mail de confirmation.
             </p>
 
             {% for champ in [form.iban, form.bic, form.titulaireCompte] %}
-                <div class="season-form-field">
+                <div class="field">
                     {{ form_label(champ) }}
                     {{ form_widget(champ) }}
                     {{ form_help(champ) }}
@@ -110,16 +110,16 @@
                                   x-show="editingTeam === {{ team.id }}"
                                   style="display:none">
                                 <input type="hidden" name="_token" value="{{ csrf_token('edit_team_' ~ team.id) }}">
-                                <div class="season-form-field" style="margin:0">
-                                    <label class="season-form-label" style="font-size:var(--font-size-xs)">Nom</label>
-                                    <input type="text" name="team[name]" value="{{ team.name }}" class="season-form-input" required>
+                                <div class="field" style="margin:0">
+                                    <label class="field-label" style="font-size:var(--font-size-xs)">Nom</label>
+                                    <input type="text" name="team[name]" value="{{ team.name }}" class="field-input" required>
                                 </div>
-                                <div class="season-form-field" style="margin:0">
-                                    <label class="season-form-label" style="font-size:var(--font-size-xs)">Cotisation (€)</label>
-                                    <input type="number" min="0" step="1" name="team[cotisation]" value="{{ team.cotisation }}" class="season-form-input" placeholder="Cotisation par défaut">
+                                <div class="field" style="margin:0">
+                                    <label class="field-label" style="font-size:var(--font-size-xs)">Cotisation (€)</label>
+                                    <input type="number" min="0" step="1" name="team[cotisation]" value="{{ team.cotisation }}" class="field-input" placeholder="Cotisation par défaut">
                                 </div>
-                                <div class="season-form-field" style="margin:0">
-                                    <label class="season-form-label" style="font-size:var(--font-size-xs)">Catégories FFF</label>
+                                <div class="field" style="margin:0">
+                                    <label class="field-label" style="font-size:var(--font-size-xs)">Catégories FFF</label>
                                     {% include 'components/multi-select.html.twig' with {
                                         ms_name: 'team[categories][]',
                                         ms_options: ms_opts,
@@ -149,18 +149,18 @@
                 <p class="season-form-header" style="font-size:var(--font-size-sm);font-weight:700;color:var(--color-text-body)">Ajouter une équipe</p>
 
                 {{ form_start(newTeamForm, {attr: {class: 'config-teams-add-form'}}) }}
-                    <div class="season-form-field">
+                    <div class="field">
                         {{ form_label(newTeamForm.name) }}
                         {{ form_widget(newTeamForm.name) }}
                         {{ form_errors(newTeamForm.name) }}
                     </div>
-                    <div class="season-form-field">
+                    <div class="field">
                         {{ form_label(newTeamForm.cotisation) }}
                         {{ form_widget(newTeamForm.cotisation) }}
                         {{ form_help(newTeamForm.cotisation) }}
                         {{ form_errors(newTeamForm.cotisation) }}
                     </div>
-                    <div class="season-form-field">
+                    <div class="field">
                         {{ form_label(newTeamForm.categories) }}
                         {# Widget Symfony rendu caché — les coches sont gérées par le composant Alpine ci-dessous #}
                         <div style="display:none">{{ form_widget(newTeamForm.categories) }}</div>

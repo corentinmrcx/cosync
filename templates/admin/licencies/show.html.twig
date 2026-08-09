@@ -30,11 +30,11 @@
      }">
 
     {# — Modale gestion des paiements — #}
-    <div x-show="paymentsModal" class="licencie-modal-backdrop" @click.self="paymentsModal = false" x-cloak>
-        <div class="licencie-modal licencie-modal-wide">
-            <div class="licencie-modal-header">
-                <h2 class="licencie-modal-title">Gestion des paiements</h2>
-                <button type="button" @click="paymentsModal = false" class="licencie-modal-close">✕</button>
+    <div x-show="paymentsModal" class="modal-voile" @click.self="paymentsModal = false" x-cloak>
+        <div class="modal licencie-modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-titre">Gestion des paiements</h2>
+                <button type="button" @click="paymentsModal = false" class="modal-fermer">✕</button>
             </div>
 
             {# Bilan #}
@@ -93,12 +93,12 @@
             <hr class="licencie-modal-divider">
 
             {# Formulaire ajout paiement #}
-            <form method="post" action="{{ path('admin_licencies_add_payment', {uuid: licencie.uuid}) }}" class="licencie-modal-form">
+            <form method="post" action="{{ path('admin_licencies_add_payment', {uuid: licencie.uuid}) }}" class="modal-corps">
                 <input type="hidden" name="_token" value="{{ csrf_token('add_payment_' ~ licencie.uuid) }}">
 
-                <div class="licencie-modal-field">
-                    <label class="licencie-modal-label">Mode de paiement *</label>
-                    <select name="mode" x-model="addMode" required class="licencie-modal-input">
+                <div class="field">
+                    <label class="field-label">Mode de paiement *</label>
+                    <select name="mode" x-model="addMode" required class="field-input">
                         {% for m in paymentModes %}
                             <option value="{{ m.value }}">{{ m.label() }}</option>
                         {% endfor %}
@@ -106,27 +106,27 @@
                 </div>
 
                 <div class="licencie-modal-row">
-                    <div class="licencie-modal-field">
-                        <label class="licencie-modal-label">Montant (€) *</label>
-                        <input type="number" name="montant" x-model="addMontant" step="0.01" min="0.01" required class="licencie-modal-input">
+                    <div class="field">
+                        <label class="field-label">Montant (€) *</label>
+                        <input type="number" name="montant" x-model="addMontant" step="0.01" min="0.01" required class="field-input">
                     </div>
-                    <div class="licencie-modal-field">
-                        <label class="licencie-modal-label">Date *</label>
-                        <input type="date" name="date_paiement" x-model="addDate" required class="licencie-modal-input">
+                    <div class="field">
+                        <label class="field-label">Date *</label>
+                        <input type="date" name="date_paiement" x-model="addDate" required class="field-input">
                     </div>
                 </div>
 
-                <div class="licencie-modal-field" x-show="['cheque', 'virement'].includes(addMode)">
-                    <label class="licencie-modal-label">Référence <span class="licencie-modal-hint">(n° chèque, référence virement)</span></label>
-                    <input type="text" name="reference" x-model="addReference" class="licencie-modal-input" placeholder="Ex : 1234567">
+                <div class="field" x-show="['cheque', 'virement'].includes(addMode)">
+                    <label class="field-label">Référence <span class="licencie-modal-hint">(n° chèque, référence virement)</span></label>
+                    <input type="text" name="reference" x-model="addReference" class="field-input" placeholder="Ex : 1234567">
                 </div>
 
-                <div class="licencie-modal-field">
-                    <label class="licencie-modal-label">Remarque <span class="licencie-modal-optional">(facultatif)</span></label>
-                    <input type="text" name="note" x-model="addNote" class="licencie-modal-input" placeholder="Ex : 1er chèque sur 3">
+                <div class="field">
+                    <label class="field-label">Remarque <span class="licencie-modal-optional">(facultatif)</span></label>
+                    <input type="text" name="note" x-model="addNote" class="field-input" placeholder="Ex : 1er chèque sur 3">
                 </div>
 
-                <div class="licencie-modal-actions">
+                <div class="modal-actions">
                     {% if licencie.dossierClub and licencie.dossierClub.status.value != 'validated' %}
                     <button type="submit"
                             form="validate-manually-form-{{ licencie.uuid }}"
@@ -415,7 +415,7 @@
             </div>
 
             {% if transactions is not empty %}
-            <table class="licencie-show-dotations-table licencie-payments-table">
+            <table class="table licencie-payments-table">
                 <thead>
                     <tr>
                         <th>Mode</th>
@@ -447,7 +447,7 @@
         {% if dotations is not empty %}
         <div class="licencie-show-card licencie-show-card-full">
             <h2 class="licencie-show-card-title">Équipements attribués</h2>
-            <table class="licencie-show-dotations-table">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Article</th>

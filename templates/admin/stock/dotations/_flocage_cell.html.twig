@@ -19,7 +19,7 @@
                   action="{{ path('admin_stock_dotations_besoin_personnalisation', {id: besoin.id}) }}"
                   class="dot-taille-form">
                 <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_personnalisation_' ~ besoin.id) }}">
-                <input type="text" name="personnalisation" class="dot-flocage-input" maxlength="60"
+                <input type="text" name="personnalisation" class="field-input field-input-compact" maxlength="60"
                        value="{{ besoin.personnalisation }}" placeholder="Texte à floquer"
                        x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
                 <button type="submit" class="dot-taille-ok" title="Valider">✓</button>

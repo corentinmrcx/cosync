@@ -17,14 +17,14 @@
 
         <hr class="season-form-divider">
 
-        <div class="season-form-field" x-data="{ year: {{ form.startYear.vars.value }} }">
+        <div class="field" x-data="{ year: {{ form.startYear.vars.value }} }">
             {{ form_label(form.startYear) }}
             {{ form_widget(form.startYear, { attr: { 'x-model.number': 'year' } }) }}
             {{ form_errors(form.startYear) }}
             <p class="season-form-preview" x-text="'Saison ' + year + '–' + (year + 1)"></p>
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.cotisationDefaut) }}
             {{ form_widget(form.cotisationDefaut) }}
             {{ form_help(form.cotisationDefaut) }}

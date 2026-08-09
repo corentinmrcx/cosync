@@ -18,8 +18,8 @@
         {% if categories is empty %}
             <p class="season-form-empty">Aucune catégorie. Lancez <code>php bin/console app:seed-referential</code> pour initialiser le référentiel.</p>
         {% else %}
-            <div class="cat-table-wrap">
-                <table class="cat-table">
+            <div class="table-wrapper">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Code</th>
@@ -61,12 +61,12 @@
 
         {{ form_start(form, {attr: {class: 'cat-add-form'}}) }}
             <div class="cat-add-row">
-                <div class="season-form-field">
+                <div class="field">
                     {{ form_label(form.code) }}
                     {{ form_widget(form.code) }}
                     {{ form_errors(form.code) }}
                 </div>
-                <div class="season-form-field cat-add-label-field">
+                <div class="field cat-add-label-field">
                     {{ form_label(form.label) }}
                     {{ form_widget(form.label) }}
                     {{ form_errors(form.label) }}

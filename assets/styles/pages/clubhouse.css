@@ -115,39 +115,6 @@
     border-radius: var(--radius-lg);
 }
 
-.clubhouse-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: var(--font-size-sm);
-}
-
-.clubhouse-table th {
-    text-align: left;
-    padding: 0.65rem 0.85rem;
-    background: var(--color-bg-muted);
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--color-text-muted);
-    border-bottom: 1px solid var(--color-border);
-}
-
-.clubhouse-table td {
-    padding: 0.7rem 0.85rem;
-    border-bottom: 1px solid var(--color-border);
-    color: var(--color-text-body);
-    vertical-align: middle;
-}
-
-.clubhouse-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.clubhouse-table tbody tr:nth-child(even) {
-    background: var(--color-bg-subtle);
-}
-
 .clubhouse-nom {
     display: block;
     font-weight: 600;
@@ -230,39 +197,11 @@
     z-index: 50;
 }
 
-.clubhouse-modal-box {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    width: 100%;
-    max-width: 420px;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 1.5rem;
-    background: var(--color-bg-page);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-modal);
-}
-
-.clubhouse-modal-title {
-    margin: 0;
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    color: var(--color-text-base);
-}
-
 .clubhouse-modal-hint {
     margin: 0;
     font-size: var(--font-size-xs);
     line-height: 1.5;
     color: var(--color-text-muted);
-}
-
-.clubhouse-modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
 }
 
 /* — Formulaire — */
@@ -276,27 +215,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-}
-
-.clubhouse-form-label {
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    color: var(--color-text-muted);
-}
-
-.clubhouse-form-input {
-    padding: 0.5rem 0.65rem;
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: inherit;
-    color: var(--color-text-base);
-    background: var(--color-bg-page);
-}
-
-.clubhouse-form-input:focus {
-    outline: none;
-    border-color: var(--color-primary);
 }
 
 /* — Éditeur du texte d'attestation — */

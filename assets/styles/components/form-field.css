@@ -1,0 +1,78 @@
+/* ── Champs de formulaire ─────────────────────────────────────────────────────
+   Un seul socle pour toute l'application. Le projet en avait deux, appliqués sans
+   règle : bordure 1.5px sur les formulaires publics et de configuration, 1px plus
+   foncée dans les écrans de stock. Les deux coexistaient à l'écran.
+
+   Tailles : par défaut, -compact dans un tableau ou une barre d'outils.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.field-label {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-body);
+}
+
+.field-input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    background: var(--color-bg-page);
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.field-input:focus {
+    border-color: var(--color-primary);
+}
+
+.field-input:disabled {
+    background: var(--color-bg-muted);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+}
+
+.field-input-compact {
+    padding: 0.4rem 0.625rem;
+    font-size: var(--font-size-xs);
+}
+
+/* Message sous le champ : ce qu'on attend, ou pourquoi c'est refusé. */
+.field-hint {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.field-erreur {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-danger);
+}
+
+.field-input-invalide {
+    border-color: var(--color-danger);
+}
+
+/* Case à cocher alignée avec son libellé, cliquable sur toute la ligne. */
+.field-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.field-checkbox input {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+}

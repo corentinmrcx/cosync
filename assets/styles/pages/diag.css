@@ -59,22 +59,6 @@
     cursor: pointer;
 }
 
-.diag-input {
-    flex: 1;
-    padding: 0.625rem 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-base);
-    background: var(--color-bg-page);
-    outline: none;
-    transition: border-color 0.15s;
-    min-width: 0;
-}
-
-.diag-input:focus { border-color: var(--color-primary); }
-
 .diag-btn-success {
     background: var(--color-success);
 }
