@@ -122,9 +122,10 @@ Il n'y a **pas de saison active globale** : chaque admin travaille dans la saiso
 choix (`User.selectedSeason` + session, via `SeasonContext`). Le montant dû est résolu par
 `CotisationResolver` — équipe d'abord, défaut de la saison ensuite.
 
-Dette connue : les colonnes `reglement_text` et `reglement_dirigeant_text` existent encore en
-base mais ne sont plus mappées (remplacées par `DocumentSignable`). Leur `DROP` est une perte
-de données : migration dédiée, après le go-live.
+Les colonnes `reglement_text` et `reglement_dirigeant_text`, non mappées depuis la bascule vers
+`DocumentSignable`, ont été supprimées par `Version20260809103000` — avec celles de signature de
+`dossier_club` et `dirigeant`. La migration recompte les données historiques et refuse de
+s'appliquer si une seule n'a pas son équivalent dans `document_signature` / `document_signable`.
 
 ### Category (référentiel FFF, fixe)
 ```php

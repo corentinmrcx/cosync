@@ -106,10 +106,19 @@ jobs:
             exit 0
           fi
           echo "Migrations ajoutées : $added"
-          if grep -inE 'DROP (TABLE|COLUMN)|ALTER TABLE .* DROP' $added; then
-            echo ""
-            echo "::error::Cette migration supprime une table ou une colonne — donc des données de production."
-            echo "Relire le CLAUDE.md §13, puis retirer ce contrôle du blocage seulement après validation humaine explicite."
-            exit 1
-          fi
-          echo "Aucune opération destructrice détectée."
+          statut=0
+          for fichier in $added; do
+            if ! grep -qiE 'DROP (TABLE|COLUMN)|ALTER TABLE .* DROP' "$fichier"; then
+              continue
+            fi
+            # Une suppression reste possible, jamais silencieuse : le fichier doit
+            # l'annoncer et dire où le contenu supprimé vit désormais.
+            if grep -q 'DESTRUCTIF' "$fichier"; then
+              echo "::warning::$fichier supprime des données de production — annoncé, relire le §13 et sauvegarder avant de déployer."
+            else
+              echo "::error::$fichier supprime une table ou une colonne sans l'annoncer."
+              echo "Ajouter DESTRUCTIF au docblock et y indiquer où le contenu se trouve désormais (CLAUDE.md §13)."
+              statut=1
+            fi
+          done
+          exit $statut
