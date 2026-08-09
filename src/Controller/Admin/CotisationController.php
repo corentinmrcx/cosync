@@ -4,7 +4,6 @@ namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
 use App\Entity\Season;
-use App\Entity\Team;
 use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
 use App\Service\Referentiel\TeamService;
@@ -58,16 +57,19 @@ class CotisationController extends AbstractController
         return $this->redirectToRoute('admin_cotisations_index');
     }
 
-    #[Route('/equipes/{id}', name: 'equipe', methods: ['POST'])]
-    public function equipe(Team $team, Request $request): Response
-    {
-        $this->csrf->valider('cotisation_team_' . $team->getId(), $request);
-
-        $saisie = trim((string) $request->request->get('cotisation'));
+    /**
+     * Les équipes se règlent d'un bloc : on ajuste plusieurs montants, on enregistre une fois.
+     */
+    #[Route('/equipes', name: 'equipes', methods: ['POST'])]
+    public function equipes(
+        #[CurrentSeason] Season $season,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('cotisations_equipes', $request);
 
         try {
-            $this->teamService->definirCotisation($team, $saisie === '' ? null : (int) $saisie);
-            $this->addFlash('success', sprintf('Cotisation de "%s" mise à jour.', $team->getName()));
+            $this->teamService->definirCotisations($season, $request->request->all('cotisations'));
+            $this->addFlash('success', 'Cotisations par équipe mises à jour.');
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
         }

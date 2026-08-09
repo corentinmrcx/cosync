@@ -256,13 +256,16 @@
 
 .cotisations-defaut-actions { justify-content: center; }
 
-.cotisations-team-row {
+/* La liste, la mention et le bouton unique ne forment qu'un formulaire : c'est la carte
+   qui donne le rythme, pas chaque ligne. */
+.cotisations-equipes {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 0.875rem;
+    flex-direction: column;
+    gap: 1.25rem;
 }
 
+/* .config-teams-name impose white-space:nowrap : sans cette surcharge, un nom long
+   pousserait le champ hors de la carte au lieu d'être tronqué. */
 .cotisations-team-name {
     flex: 1;
     min-width: 0;
@@ -270,9 +273,30 @@
     text-overflow: ellipsis;
 }
 
-.cotisations-team-input {
-    width: 5.5rem;
+/* Le « € » est un frère du champ, pas un ornement posé dessus : un nombre nu ne dit pas son unité. */
+.cotisations-team-champ {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
     flex: none;
+}
+
+.cotisations-team-input {
+    width: 6rem;
+    text-align: right;
+    /* Les flèches natives volent la place du montant et se cognent au texte aligné à droite. */
+    appearance: textfield;
+}
+
+.cotisations-team-input::-webkit-outer-spin-button,
+.cotisations-team-input::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+}
+
+.cotisations-team-unite {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
 }
 
 /* ============================================================

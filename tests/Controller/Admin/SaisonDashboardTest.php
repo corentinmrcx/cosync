@@ -68,8 +68,8 @@ final class SaisonDashboardTest extends WebTestCase
         $team = $this->creerEquipe();
 
         $crawler = $client->request('GET', '/admin/saison/cotisations');
-        $form = $crawler->filter('form[action="/admin/saison/cotisations/equipes/' . $team->getId() . '"]')->form();
-        $form['cotisation'] = '150';
+        $form = $crawler->filter('form[action="/admin/saison/cotisations/equipes"]')->form();
+        $form['cotisations[' . $team->getId() . ']'] = '150';
         $client->submit($form);
 
         self::assertSame(150, $this->rechargerEquipe()->getCotisation());
@@ -83,8 +83,8 @@ final class SaisonDashboardTest extends WebTestCase
         $team = $this->creerEquipe(cotisation: 150);
 
         $crawler = $client->request('GET', '/admin/saison/cotisations');
-        $form = $crawler->filter('form[action="/admin/saison/cotisations/equipes/' . $team->getId() . '"]')->form();
-        $form['cotisation'] = '';
+        $form = $crawler->filter('form[action="/admin/saison/cotisations/equipes"]')->form();
+        $form['cotisations[' . $team->getId() . ']'] = '';
         $client->submit($form);
 
         self::assertNull($this->rechargerEquipe()->getCotisation());

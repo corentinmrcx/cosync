@@ -7,6 +7,7 @@ use App\DTO\TeamSetupData;
 use App\Entity\Season;
 use App\Entity\Team;
 use App\Repository\CategoryRepository;
+use App\Repository\TeamRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class TeamService
@@ -14,6 +15,7 @@ final class TeamService
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly CategoryRepository $categoryRepository,
+        private readonly TeamRepository $teamRepository,
     ) {}
 
     /**
@@ -63,15 +65,59 @@ final class TeamService
         $this->em->flush();
     }
 
-    /** null = l'équipe suit la cotisation par défaut de la saison. */
-    public function definirCotisation(Team $team, ?int $cotisation): void
+    /**
+     * Fixe en un seul envoi la cotisation de chaque équipe de la saison.
+     *
+     * On parcourt les équipes de la saison, pas les clés reçues : un id d'équipe étranger à
+     * la saison est ainsi ignoré sans contrôle supplémentaire, et une équipe absente du POST
+     * garde sa cotisation. Tout est validé avant la première écriture pour qu'une saisie
+     * fautive ne laisse pas la moitié de la liste enregistrée.
+     *
+     * @param array<array-key, mixed> $saisies cotisation brute indexée par id d'équipe ;
+     *                                         chaîne vide = l'équipe suit le défaut de la saison
+     *
+     * @throws \DomainException si un montant est invalide — dans ce cas rien n'est écrit
+     */
+    public function definirCotisations(Season $season, array $saisies): void
     {
-        if ($cotisation !== null && $cotisation < 0) {
-            throw new \DomainException('Une cotisation ne peut pas être négative.');
+        /** @var \SplObjectStorage<Team, ?int> $aEcrire */
+        $aEcrire = new \SplObjectStorage();
+
+        foreach ($this->teamRepository->findBySeason($season) as $team) {
+            $cle = (string) $team->getId();
+            if (!array_key_exists($cle, $saisies)) {
+                continue;
+            }
+
+            $aEcrire[$team] = $this->normaliserCotisation($saisies[$cle], $team);
         }
 
-        $team->setCotisation($cotisation);
+        foreach ($aEcrire as $team) {
+            $team->setCotisation($aEcrire[$team]);
+        }
+
         $this->em->flush();
+    }
+
+    /**
+     * @throws \DomainException si la saisie n'est pas un entier positif ou une chaîne vide
+     */
+    private function normaliserCotisation(mixed $saisie, Team $team): ?int
+    {
+        if (!is_scalar($saisie)) {
+            throw new \DomainException(sprintf('Cotisation illisible pour "%s".', $team->getName()));
+        }
+
+        $saisie = trim((string) $saisie);
+        if ($saisie === '') {
+            return null;
+        }
+
+        if (!ctype_digit($saisie)) {
+            throw new \DomainException(sprintf('La cotisation de "%s" doit être un montant entier positif.', $team->getName()));
+        }
+
+        return (int) $saisie;
     }
 
     public function supprimer(Team $team): void
