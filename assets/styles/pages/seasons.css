@@ -277,6 +277,37 @@
 }
 
 /* ============================================================
+   Page cotisations
+   ============================================================ */
+
+.cotisations-defaut {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.cotisations-defaut-actions { justify-content: center; }
+
+.cotisations-team-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+}
+
+.cotisations-team-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cotisations-team-input {
+    width: 5.5rem;
+    flex: none;
+}
+
+/* ============================================================
    Page liste des saisons
    ============================================================ */
 

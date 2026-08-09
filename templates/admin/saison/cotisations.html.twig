@@ -26,7 +26,9 @@
                 <input type="number" min="0" step="1" id="cotisation_defaut" name="cotisation_defaut"
                        value="{{ season.cotisationDefaut }}" class="field-input" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+            <div class="season-form-actions cotisations-defaut-actions">
+                <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+            </div>
         </form>
     </div>
 
@@ -35,16 +37,14 @@
         <hr class="season-form-divider">
 
         {% if teams is empty %}
-            <p class="season-form-empty">
-                Aucune équipe configurée. <a href="{{ path('admin_equipes_index') }}">Créer une équipe →</a>
-            </p>
+            <p class="season-form-empty">Aucune équipe configurée.</p>
         {% else %}
             <ul class="config-teams-list">
                 {% for team in teams %}
                     <li class="config-teams-item">
                         <form method="post" action="{{ path('admin_cotisations_equipe', {id: team.id}) }}" class="cotisations-team-row">
                             <input type="hidden" name="_token" value="{{ csrf_token('cotisation_team_' ~ team.id) }}">
-                            <span class="config-teams-name">{{ team.name }}</span>
+                            <span class="config-teams-name cotisations-team-name">{{ team.name }}</span>
                             <input type="number" min="0" step="1" name="cotisation" value="{{ team.cotisation }}"
                                    class="field-input field-input-compact cotisations-team-input"
                                    placeholder="{{ season.cotisationDefaut }} (défaut)"
