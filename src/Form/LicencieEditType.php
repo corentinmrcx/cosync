@@ -6,6 +6,7 @@ use App\Entity\Licencie;
 use App\Entity\Team;
 use App\Enum\NatureLicence;
 use App\Repository\TeamRepository;
+use App\Service\Referentiel\Tailles;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -18,18 +19,8 @@ class LicencieEditType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $tailleChoices = [
-            'Adulte' => ['XS' => 'XS', 'S' => 'S', 'M' => 'M', 'L' => 'L', 'XL' => 'XL', 'XXL' => 'XXL', '3XL' => '3XL', '4XL' => '4XL'],
-            'Enfant' => [
-                '6 ans' => '6 ans', '8 ans' => '8 ans', '10 ans' => '10 ans',
-                '12 ans' => '12 ans', '14 ans' => '14 ans', '16 ans' => '16 ans',
-            ],
-        ];
-
-        $pointureChoices = [];
-        foreach (range(24, 50) as $p) {
-            $pointureChoices[(string) $p] = (string) $p;
-        }
+        $tailleChoices = Tailles::choixGroupes();
+        $pointureChoices = Tailles::choixPointures();
 
         $season = $options['season'];
 

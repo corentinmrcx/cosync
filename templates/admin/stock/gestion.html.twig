@@ -241,8 +241,7 @@ function stockMovementModal() {
             return document.getElementById('csrf-' + this.itemId)?.value ?? '';
         },
         get taillesEntries() {
-            const order = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL',
-                           '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'];
+            const order = {{ tailles_toutes()|json_encode|raw }};
             const rank = (t) => {
                 const i = order.indexOf(t);
                 return i === -1 ? order.length : i;

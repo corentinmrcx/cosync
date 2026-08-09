@@ -5,7 +5,7 @@ namespace App\Service\Drive;
 use App\Entity\Season;
 use App\Service\ClubHouse\AttestationCleRecapService;
 use App\Service\Pdf\AttestationCleRecapPdfService;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use App\Service\Pdf\PdfStorage;
 
 /**
  * Régénère le récapitulatif des détenteurs de clés et remplace celui déjà présent
@@ -26,32 +26,26 @@ final class AttestationCleRecapDriveSync
         private readonly AttestationCleRecapService $recapService,
         private readonly AttestationCleRecapPdfService $recapPdf,
         private readonly DriveUploaderService $driveUploader,
-        #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
+        private readonly PdfStorage $storage,
     ) {}
 
     public function sync(Season $season): bool
     {
-        $binary = $this->recapPdf->generate($season, $this->recapService->buildRows($season));
-
-        $dir = $this->projectDir . '/var/pdfs';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        $tmpPath = sprintf('%s/attestation_cle_recap_%d.pdf', $dir, $season->getId());
+        $cheminTemporaire = $this->storage->ecrire(
+            sprintf('attestation_cle_recap_%d.pdf', $season->getId()),
+            $this->recapPdf->generate($season, $this->recapService->buildRows($season)),
+        );
 
         try {
-            file_put_contents($tmpPath, $binary);
-
             return $this->driveUploader->replaceAtPath(
-                $tmpPath,
+                $cheminTemporaire,
                 $season->getLabel(),
                 self::DRIVE_PATH,
                 self::FILENAME,
                 'recap-attestation-cle-' . $season->getId(),
             ) !== null;
         } finally {
-            @unlink($tmpPath);
+            @unlink($cheminTemporaire);
         }
     }
 }

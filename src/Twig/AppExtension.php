@@ -3,10 +3,12 @@
 namespace App\Twig;
 
 use App\Repository\SeasonRepository;
+use App\Service\Referentiel\Tailles;
 use App\Service\SeasonContext;
 use Twig\Extension\AbstractExtension;
 use Twig\Extension\GlobalsInterface;
 use Twig\TwigFilter;
+use Twig\TwigFunction;
 
 class AppExtension extends AbstractExtension implements GlobalsInterface
 {
@@ -27,6 +29,16 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
     {
         return [
             new TwigFilter('phone_format', $this->formatPhone(...)),
+        ];
+    }
+
+    public function getFunctions(): array
+    {
+        return [
+            new TwigFunction('tailles_adulte', static fn (): array => Tailles::ADULTE),
+            new TwigFunction('tailles_enfant', static fn (): array => Tailles::ENFANT),
+            new TwigFunction('tailles_toutes', Tailles::toutes(...)),
+            new TwigFunction('pointures', Tailles::pointures(...)),
         ];
     }
 

@@ -4,91 +4,75 @@ namespace App\Service\Pdf;
 
 use App\Entity\Dirigeant;
 use App\Entity\Season;
-use Dompdf\Dompdf;
-use Dompdf\Options;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Twig\Environment;
 
 /**
- * Attestation individuelle de remise de clés du club house,
- * signée par un détenteur de clés.
+ * Attestation individuelle de remise de clés du club house, signée par un détenteur.
  */
 final class AttestationClePdfService
 {
+    private const TEMPLATE = 'pdf/attestation_cle_signee.html.twig';
+
     public function __construct(
-        private readonly Environment $twig,
-        #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
+        private readonly PdfRenderer $renderer,
+        private readonly AssetEncoder $assets,
+        private readonly PdfStorage $storage,
     ) {}
 
-    /**
-     * Génère l'attestation signée d'un dirigeant dans var/pdfs/.
-     * Retourne le chemin absolu du fichier généré.
-     */
+    /** @return string chemin absolu du PDF écrit */
     public function generateSignee(
         Dirigeant $dirigeant,
         string $signatureDataUrl,
         int $nbCles,
         ?\DateTimeImmutable $remiseLe = null,
     ): string {
-        $html = $this->twig->render('pdf/attestation_cle_signee.html.twig', [
-            'prenom' => $dirigeant->getPrenom(),
-            'nom' => $dirigeant->getNom(),
-            'season' => $dirigeant->getSeason(),
-            'nbCles' => $nbCles,
-            'remiseLe' => $remiseLe,
-            'signatureDataUrl' => $signatureDataUrl,
-            'signedAt' => new \DateTimeImmutable(),
-            'logoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
-            'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
-        ]);
-
-        $dir = $this->projectDir . '/var/pdfs';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        $path = $dir . '/' . $dirigeant->getUuid() . '_attestation_cle.pdf';
-        file_put_contents($path, $this->renderPdf($html));
-
-        return $path;
+        return $this->storage->ecrire(
+            $dirigeant->getUuid() . '_attestation_cle.pdf',
+            $this->renderer->render(self::TEMPLATE, $this->contexte(
+                $dirigeant->getPrenom(),
+                $dirigeant->getNom(),
+                $dirigeant->getSeason(),
+                $nbCles,
+                $remiseLe,
+                $signatureDataUrl,
+            )),
+        );
     }
 
     /** Aperçu admin sans signature — retourne le binaire du PDF. */
     public function generatePreview(Season $season): string
     {
-        $html = $this->twig->render('pdf/attestation_cle_signee.html.twig', [
-            'prenom' => 'Prénom',
-            'nom' => 'NOM',
+        return $this->renderer->render(self::TEMPLATE, $this->contexte(
+            'Prénom',
+            'NOM',
+            $season,
+            1,
+            new \DateTimeImmutable(),
+            '',
+            previewMode: true,
+        ));
+    }
+
+    /** @return array<string, mixed> */
+    private function contexte(
+        string $prenom,
+        string $nom,
+        Season $season,
+        int $nbCles,
+        ?\DateTimeImmutable $remiseLe,
+        string $signatureDataUrl,
+        bool $previewMode = false,
+    ): array {
+        return [
+            'prenom' => $prenom,
+            'nom' => $nom,
             'season' => $season,
-            'nbCles' => 1,
-            'remiseLe' => new \DateTimeImmutable(),
-            'signatureDataUrl' => '',
+            'nbCles' => $nbCles,
+            'remiseLe' => $remiseLe,
+            'signatureDataUrl' => $signatureDataUrl,
             'signedAt' => new \DateTimeImmutable(),
-            'logoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
-            'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
-            'previewMode' => true,
-        ]);
-
-        return $this->renderPdf($html);
-    }
-
-    private function renderPdf(string $html): string
-    {
-        $options = new Options();
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('isRemoteEnabled', false);
-        $options->set('defaultFont', 'Arial');
-
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        return $dompdf->output();
-    }
-
-    private function encodeImage(string $path): string
-    {
-        return 'data:image/png;base64,' . base64_encode((string) file_get_contents($path));
+            'logoDataUrl' => $this->assets->logoClub(),
+            'foyerLogoDataUrl' => $this->assets->logoFoyer(),
+            'previewMode' => $previewMode,
+        ];
     }
 }

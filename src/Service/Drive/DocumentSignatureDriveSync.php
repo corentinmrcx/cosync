@@ -6,65 +6,46 @@ use App\Entity\DocumentSignature;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Archive sur Drive le PDF d'un document signé, quel que soit le document et quel que
- * soit le signataire : le chemin de destination et le nom de fichier sont portés par le
- * document lui-même. Remplace les services d'archivage qui existaient par document.
+ * Archive le PDF d'un document signé, quel que soit le document et quel que soit le
+ * signataire : le chemin de destination et le préfixe de fichier sont portés par le
+ * document lui-même.
  *
- * En cas d'échec, le PDF reste en local et sera retenté par app:drive-retry-upload.
+ * @extends LocalFileDriveSync<DocumentSignature>
  */
-final class DocumentSignatureDriveSync
+final class DocumentSignatureDriveSync extends LocalFileDriveSync
 {
     public function __construct(
-        private readonly DriveUploaderService $driveUploader,
+        DriveUploaderService $driveUploader,
+        EntityManagerInterface $em,
         private readonly DriveFilenameSanitizer $sanitizer,
-        private readonly EntityManagerInterface $em,
-    ) {}
-
-    /**
-     * Retourne true si le PDF est désormais sur Drive (ou l'était déjà),
-     * false si l'upload a échoué ou si le fichier local est introuvable.
-     */
-    public function sync(DocumentSignature $signature): bool
-    {
-        $localPath = $signature->getDrivePath();
-
-        // Déjà sur Drive (l'ID n'est pas un chemin de fichier local) → rien à faire.
-        if ($localPath === null || !str_starts_with($localPath, '/')) {
-            return $localPath !== null;
-        }
-
-        if (!file_exists($localPath)) {
-            return false;
-        }
-
-        $document = $signature->getDocument();
-
-        $driveId = $this->driveUploader->uploadToPath(
-            $localPath,
-            $document->getSeason()->getLabel(),
-            $document->getDriveSegments(),
-            $this->buildFilename($signature),
-            (string) $signature->getId(),
-        );
-
-        if ($driveId === null) {
-            return false;
-        }
-
-        $signature->setDrivePath($driveId);
-        $this->em->flush();
-        @unlink($localPath);
-
-        return true;
+    ) {
+        parent::__construct($driveUploader, $em);
     }
 
-    private function buildFilename(DocumentSignature $signature): string
+    protected function cheminActuel(object $sujet): ?string
     {
-        return sprintf(
-            '%s_%s_%s.pdf',
-            $signature->getDocument()->getFilePrefix(),
-            $this->sanitizer->sanitize($signature->getNom()),
-            $this->sanitizer->sanitize($signature->getPrenom()),
+        return $sujet->getDrivePath();
+    }
+
+    protected function enregistrerDriveId(object $sujet, string $driveId): void
+    {
+        $sujet->setDrivePath($driveId);
+    }
+
+    protected function destination(object $sujet): DriveDestination
+    {
+        $document = $sujet->getDocument();
+
+        return new DriveDestination(
+            $document->getSeason()->getLabel(),
+            $document->getDriveSegments(),
+            sprintf(
+                '%s_%s_%s.pdf',
+                $document->getFilePrefix(),
+                $this->sanitizer->sanitize($sujet->getNom()),
+                $this->sanitizer->sanitize($sujet->getPrenom()),
+            ),
+            (string) $sujet->getId(),
         );
     }
 }

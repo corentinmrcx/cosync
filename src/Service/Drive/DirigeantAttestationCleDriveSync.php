@@ -6,61 +6,44 @@ use App\Entity\Dirigeant;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Archive l'attestation de remise de clés signée d'un dirigeant sur Drive,
- * dans {saison}/Club house/Clés/Attestations de remise/.
+ * Archive l'attestation de remise de clés signée d'un dirigeant.
  *
- * En cas d'échec, le fichier local est conservé : il porte la seule copie de la
- * signature, le rattrapage se fait par DriveRetryUploadCommand.
+ * @extends LocalFileDriveSync<Dirigeant>
  */
-final class DirigeantAttestationCleDriveSync
+final class DirigeantAttestationCleDriveSync extends LocalFileDriveSync
 {
     /** @var string[] */
-    private const DRIVE_PATH = ['Club house', 'Clés', 'Attestations de remise'];
+    private const SEGMENTS = ['Club house', 'Clés', 'Attestations de remise'];
 
     public function __construct(
-        private readonly DriveUploaderService $driveUploader,
+        DriveUploaderService $driveUploader,
+        EntityManagerInterface $em,
         private readonly DriveFilenameSanitizer $sanitizer,
-        private readonly EntityManagerInterface $em,
-    ) {}
-
-    public function sync(Dirigeant $dirigeant): bool
-    {
-        $localPath = $dirigeant->getAttestationCleSignePath();
-
-        // Déjà sur Drive (pas un chemin local) → rien à faire.
-        if ($localPath === null || !str_starts_with($localPath, '/')) {
-            return $localPath !== null;
-        }
-
-        if (!file_exists($localPath)) {
-            return false;
-        }
-
-        $driveId = $this->driveUploader->uploadToPath(
-            $localPath,
-            $dirigeant->getSeason()->getLabel(),
-            self::DRIVE_PATH,
-            $this->buildFilename($dirigeant),
-            (string) $dirigeant->getUuid(),
-        );
-
-        if ($driveId === null) {
-            return false;
-        }
-
-        $dirigeant->setAttestationCleSignePath($driveId);
-        $this->em->flush();
-        @unlink($localPath);
-
-        return true;
+    ) {
+        parent::__construct($driveUploader, $em);
     }
 
-    private function buildFilename(Dirigeant $dirigeant): string
+    protected function cheminActuel(object $sujet): ?string
     {
-        return sprintf(
-            'Attestation_cle_%s_%s.pdf',
-            $this->sanitizer->sanitize($dirigeant->getNom()),
-            $this->sanitizer->sanitize($dirigeant->getPrenom()),
+        return $sujet->getAttestationCleSignePath();
+    }
+
+    protected function enregistrerDriveId(object $sujet, string $driveId): void
+    {
+        $sujet->setAttestationCleSignePath($driveId);
+    }
+
+    protected function destination(object $sujet): DriveDestination
+    {
+        return new DriveDestination(
+            $sujet->getSeason()->getLabel(),
+            self::SEGMENTS,
+            sprintf(
+                'Attestation_cle_%s_%s.pdf',
+                $this->sanitizer->sanitize($sujet->getNom()),
+                $this->sanitizer->sanitize($sujet->getPrenom()),
+            ),
+            (string) $sujet->getUuid(),
         );
     }
 }

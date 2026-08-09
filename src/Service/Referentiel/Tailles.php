@@ -35,6 +35,27 @@ final class Tailles
         return array_map('strval', range(self::POINTURE_MIN, self::POINTURE_MAX));
     }
 
+    /**
+     * Choix groupés Adulte / Enfant pour un ChoiceType.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public static function choixGroupes(): array
+    {
+        return [
+            'Adulte' => array_combine(self::ADULTE, self::ADULTE),
+            'Enfant' => array_combine(self::ENFANT, self::ENFANT),
+        ];
+    }
+
+    /** @return array<string, string> */
+    public static function choixPointures(): array
+    {
+        $pointures = self::pointures();
+
+        return array_combine($pointures, $pointures);
+    }
+
     /** Rang d'affichage d'une taille ; les valeurs inconnues sont rejetées en fin de liste. */
     public static function rang(string $taille): int
     {

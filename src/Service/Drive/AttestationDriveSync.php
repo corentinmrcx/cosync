@@ -3,51 +3,33 @@
 namespace App\Service\Drive;
 
 use App\Entity\DossierClub;
-use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Synchronise l'attestation transport PDF d'un dossier vers Drive (pattern
- * identique à DocumentSignatureDriveSync pour les documents signés).
+ * Archive l'attestation de transport signée d'un licencié.
+ *
+ * @extends LocalFileDriveSync<DossierClub>
  */
-final class AttestationDriveSync
+final class AttestationDriveSync extends LocalFileDriveSync
 {
-    public function __construct(
-        private readonly DriveUploaderService $driveUploader,
-        private readonly EntityManagerInterface $em,
-    ) {}
-
-    public function sync(DossierClub $dossier): bool
+    protected function cheminActuel(object $sujet): ?string
     {
-        $localPath = $dossier->getAttestationTransportDriveId();
+        return $sujet->getAttestationTransportDriveId();
+    }
 
-        // Déjà sur Drive (pas un chemin local) → rien à faire.
-        if ($localPath === null || !str_starts_with($localPath, '/')) {
-            return $localPath !== null;
-        }
+    protected function enregistrerDriveId(object $sujet, string $driveId): void
+    {
+        $sujet->setAttestationTransportDriveId($driveId);
+    }
 
-        if (!file_exists($localPath)) {
-            return false;
-        }
+    protected function destination(object $sujet): DriveDestination
+    {
+        $licencie = $sujet->getLicencie();
 
-        $licencie = $dossier->getLicencie();
-        $filename = basename($localPath);
-
-        $driveId = $this->driveUploader->uploadToSubFolder(
-            $localPath,
+        return new DriveDestination(
             $licencie->getSeason()->getLabel(),
-            'Attestations Transport',
-            $filename,
+            ['Attestations Transport'],
+            basename((string) $this->cheminActuel($sujet)),
             (string) $licencie->getUuid(),
         );
-
-        if ($driveId === null) {
-            return false;
-        }
-
-        $dossier->setAttestationTransportDriveId($driveId);
-        $this->em->flush();
-        @unlink($localPath);
-
-        return true;
     }
 }
