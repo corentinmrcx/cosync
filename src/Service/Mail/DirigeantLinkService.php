@@ -4,7 +4,6 @@ namespace App\Service\Mail;
 
 use App\DTO\RelanceResultat;
 use App\Entity\Dirigeant;
-use App\Service\Mail\LienPublic;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class DirigeantLinkService

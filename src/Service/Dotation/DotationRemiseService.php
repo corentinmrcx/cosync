@@ -2,13 +2,13 @@
 
 namespace App\Service\Dotation;
 
-use App\Service\Stock\StockMovementService;
 use App\Entity\DotationBesoin;
 use App\Entity\StockMovement;
 use App\Entity\User;
 use App\Enum\DotationBesoinStatut;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
+use App\Service\Stock\StockMovementService;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**

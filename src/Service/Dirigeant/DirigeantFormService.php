@@ -6,9 +6,9 @@ use App\DTO\DirigeantPublicFormData;
 use App\Entity\Dirigeant;
 use App\Repository\DocumentSignableRepository;
 use App\Service\Document\DocumentSignatureService;
+use App\Service\Dotation\DotationBesoinSynchronizer;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationTransportPdfService;
-use App\Service\Dotation\DotationBesoinSynchronizer;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class DirigeantFormService

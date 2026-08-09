@@ -2,11 +2,9 @@
 
 namespace App\Service\Dotation;
 
-use App\Entity\DotationModeleLigne;
 use App\DTO\DotationChoixData;
+use App\Entity\DotationModeleLigne;
 use App\Entity\Licencie;
-use App\Service\Dotation\DotationModeleService;
-use App\Service\Dotation\DotationResolver;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -40,7 +38,7 @@ final class DotationChoixRequestFactory
             }
 
             $idsProposes = array_map(
-                static fn (\App\Entity\DotationModeleLigne $l): int => $l->getStockItem()->getId(),
+                static fn (DotationModeleLigne $l): int => $l->getStockItem()->getId(),
                 $groupe['options'],
             );
             // Sans ce contrôle, n'importe quel identifiant posté serait accepté et stocké.

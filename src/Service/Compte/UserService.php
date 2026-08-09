@@ -2,8 +2,8 @@
 
 namespace App\Service\Compte;
 
-use App\Service\Ops\BetaModeService;
 use App\Entity\User;
+use App\Service\Ops\BetaModeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 

@@ -2,7 +2,6 @@
 
 namespace App\Service\Licencie;
 
-use App\Service\Payment\CotisationResolver;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\Transaction;
@@ -10,8 +9,9 @@ use App\Entity\User;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
 use App\Repository\TransactionRepository;
-use App\Service\Mail\MailerService;
 use App\Service\Dotation\DotationBesoinSynchronizer;
+use App\Service\Mail\MailerService;
+use App\Service\Payment\CotisationResolver;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**

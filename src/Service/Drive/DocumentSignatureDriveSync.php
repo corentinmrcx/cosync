@@ -15,7 +15,7 @@ use Doctrine\ORM\EntityManagerInterface;
 final class DocumentSignatureDriveSync extends LocalFileDriveSync
 {
     public function __construct(
-        DriveUploaderService $driveUploader,
+        DriveUploader $driveUploader,
         EntityManagerInterface $em,
         private readonly DriveFilenameSanitizer $sanitizer,
     ) {

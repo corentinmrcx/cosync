@@ -8,7 +8,7 @@ use Google\Service\Drive\DriveFile;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-final class DriveUploaderService
+final class DriveUploaderService implements DriveUploader
 {
     public function __construct(
         #[Autowire('%env(GOOGLE_DRIVE_CREDENTIALS_JSON)%')] private readonly string $credentialsPath,

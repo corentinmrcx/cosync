@@ -4,7 +4,6 @@ namespace App\Service\Mail;
 
 use App\Entity\Licencie;
 use App\Enum\LicenceStatus;
-use App\Service\Mail\LienPublic;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class InscriptionLinkService

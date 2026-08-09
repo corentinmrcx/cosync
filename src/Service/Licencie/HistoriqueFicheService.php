@@ -2,13 +2,13 @@
 
 namespace App\Service\Licencie;
 
-use App\Service\Mail\LienPublic;
 use App\DTO\EvenementHistorique;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
 use App\Entity\Transaction;
 use App\Enum\PaymentMode;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Mail\LienPublic;
 
 /**
  * Chronologie affichée sur une fiche : ce qui s'est passé pour cette personne, dans l'ordre.

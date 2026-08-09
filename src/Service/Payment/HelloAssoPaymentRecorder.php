@@ -6,7 +6,6 @@ use App\Entity\Licencie;
 use App\Enum\PaymentMode;
 use App\Repository\LicencieRepository;
 use App\Repository\TransactionRepository;
-use App\Service\Payment\CotisationResolver;
 use App\Service\Licencie\PaiementService;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Psr\Log\LoggerInterface;

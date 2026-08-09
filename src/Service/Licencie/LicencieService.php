@@ -2,7 +2,6 @@
 
 namespace App\Service\Licencie;
 
-use App\Service\Mail\LienPublic;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
 use App\Entity\DossierClub;
@@ -12,8 +11,9 @@ use App\Enum\LicenceStatus;
 use App\Enum\NatureLicence;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
-use App\Service\Import\DataSanitizer;
 use App\Service\Dotation\DotationBesoinSynchronizer;
+use App\Service\Import\DataSanitizer;
+use App\Service\Mail\LienPublic;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class LicencieService

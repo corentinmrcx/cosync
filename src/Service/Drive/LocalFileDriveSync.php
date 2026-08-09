@@ -16,7 +16,7 @@ use Doctrine\ORM\EntityManagerInterface;
 abstract class LocalFileDriveSync
 {
     public function __construct(
-        protected readonly DriveUploaderService $driveUploader,
+        protected readonly DriveUploader $driveUploader,
         protected readonly EntityManagerInterface $em,
     ) {}
 

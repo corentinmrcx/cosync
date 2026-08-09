@@ -16,7 +16,7 @@ final class DirigeantAttestationCleDriveSync extends LocalFileDriveSync
     private const SEGMENTS = ['Club house', 'Clés', 'Attestations de remise'];
 
     public function __construct(
-        DriveUploaderService $driveUploader,
+        DriveUploader $driveUploader,
         EntityManagerInterface $em,
         private readonly DriveFilenameSanitizer $sanitizer,
     ) {

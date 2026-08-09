@@ -2,11 +2,11 @@
 
 namespace App\Repository;
 
-use App\Enum\DotationBesoinStatut;
 use App\Entity\Dirigeant;
 use App\Entity\DotationBesoin;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Enum\DotationBesoinStatut;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -50,7 +50,7 @@ class DotationBesoinRepository extends ServiceEntityRepository
             ->where('b.season = :season')
             ->andWhere('b.statut = :statut')
             ->setParameter('season', $season)
-            ->setParameter('statut', \App\Enum\DotationBesoinStatut::A_DONNER)
+            ->setParameter('statut', DotationBesoinStatut::A_DONNER)
             ->getQuery()
             ->getResult();
     }

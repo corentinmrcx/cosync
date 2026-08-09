@@ -2,11 +2,11 @@
 
 namespace App\Repository;
 
-use App\Entity\Licencie;
 use App\Entity\Dirigeant;
-use App\Enum\StockMovementSource;
+use App\Entity\Licencie;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
+use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -86,38 +86,38 @@ class StockMovementRepository extends ServiceEntityRepository
         return $this->findOneBy(['sumupTransactionId' => $txId]);
     }
 
-    public function hasDotation(StockItem $item, \App\Entity\Licencie $licencie): bool
+    public function hasDotation(StockItem $item, Licencie $licencie): bool
     {
         return $this->count([
             'item' => $item,
             'licencie' => $licencie,
-            'source' => \App\Enum\StockMovementSource::DOTATION,
+            'source' => StockMovementSource::DOTATION,
         ]) > 0;
     }
 
     /** @return StockMovement[] */
-    public function findDotationsByDirigeant(\App\Entity\Dirigeant $dirigeant): array
+    public function findDotationsByDirigeant(Dirigeant $dirigeant): array
     {
         return $this->createQueryBuilder('m')
             ->join('m.item', 'i')
             ->where('m.dirigeant = :dirigeant')
             ->andWhere('m.source = :source')
             ->setParameter('dirigeant', $dirigeant)
-            ->setParameter('source', \App\Enum\StockMovementSource::DOTATION)
+            ->setParameter('source', StockMovementSource::DOTATION)
             ->orderBy('m.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
     /** @return StockMovement[] */
-    public function findDotationsByLicencie(\App\Entity\Licencie $licencie): array
+    public function findDotationsByLicencie(Licencie $licencie): array
     {
         return $this->createQueryBuilder('m')
             ->join('m.item', 'i')
             ->where('m.licencie = :licencie')
             ->andWhere('m.source = :source')
             ->setParameter('licencie', $licencie)
-            ->setParameter('source', \App\Enum\StockMovementSource::DOTATION)
+            ->setParameter('source', StockMovementSource::DOTATION)
             ->orderBy('m.createdAt', 'DESC')
             ->getQuery()
             ->getResult();

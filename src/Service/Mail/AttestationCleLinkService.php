@@ -3,7 +3,6 @@
 namespace App\Service\Mail;
 
 use App\Entity\Dirigeant;
-use App\Service\Mail\LienPublic;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**

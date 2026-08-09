@@ -4,7 +4,6 @@ namespace App\Service\ClubHouse;
 
 use App\DTO\AttestationCleSignatureData;
 use App\Entity\Dirigeant;
-use App\Service\ClubHouse\CleRegistreService;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationClePdfService;
 use Doctrine\ORM\EntityManagerInterface;
