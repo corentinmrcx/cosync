@@ -7,44 +7,9 @@
     ms_selected    (array)        IDs entiers pré-sélectionnés, ex: [5, 7]
     ms_placeholder (string|null)  Texte affiché quand rien n'est sélectionné
 #}
-<script>
-if (!window.multiSelectWidget) {
-    window.multiSelectWidget = function(opts, sel, placeholder) {
-        return {
-            open: false,
-            top: 0, left: 0, width: 0,
-            options: opts,
-            selected: (sel || []).map(Number),
-            placeholder: placeholder || '— Choisir —',
-            toggle() {
-                if (!this.open) {
-                    const r = this.$refs.trigger.getBoundingClientRect();
-                    this.top  = (window.innerHeight - r.bottom < 260) ? r.top - 260 - 4 : r.bottom + 4;
-                    this.left = r.left;
-                    this.width = r.width;
-                }
-                this.open = !this.open;
-            },
-            isSelected(v) { return this.selected.includes(Number(v)); },
-            pick(v) {
-                v = Number(v);
-                const i = this.selected.indexOf(v);
-                i === -1 ? this.selected.push(v) : this.selected.splice(i, 1);
-            },
-            label() {
-                if (!this.selected.length) return this.placeholder;
-                const names = this.options
-                    .filter(o => this.selected.includes(Number(o.value)))
-                    .map(o => o.label);
-                return names.length > 2 ? names.length + ' catégories' : names.join(', ');
-            }
-        };
-    };
-}
-</script>
 
 <div class="cselect"
-     x-data="multiSelectWidget({{ ms_options|json_encode }}, {{ ms_selected|json_encode }}, {{ (ms_placeholder ?? '— Choisir —')|json_encode }})"
+     x-data="multiSelect({{ ms_options|json_encode }}, {{ ms_selected|json_encode }}, {{ (ms_placeholder ?? '— Choisir —')|json_encode }})"
      @click.outside="open = false">
 
     <button type="button"

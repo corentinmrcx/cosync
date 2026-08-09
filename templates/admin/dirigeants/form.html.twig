@@ -155,58 +155,22 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const data = {{ licenciesSizes|json_encode|raw }};
-
-    const licencieSelect  = document.getElementById('{{ form.licencie.vars.id }}');
-    const nomInput        = document.getElementById('{{ form.nom.vars.id }}');
-    const prenomInput     = document.getElementById('{{ form.prenom.vars.id }}');
-    const emailInput      = document.getElementById('{{ form.email.vars.id }}');
-    const telephoneInput  = document.getElementById('{{ form.telephone.vars.id }}');
-    const dateInput       = document.getElementById('{{ form.dateNaissance.vars.id }}');
-    const numLicenceInput = document.getElementById('{{ form.numLicence.vars.id }}');
-    const tailleHautSelect = document.getElementById('{{ form.tailleHaut.vars.id }}');
-    const talleBasSelect   = document.getElementById('{{ form.tailleBas.vars.id }}');
-    const pointureSelect   = document.getElementById('{{ form.pointure.vars.id }}');
-
-    const banner   = document.getElementById('dirigeant-sync-banner');
-    const syncName = document.getElementById('dirigeant-sync-name');
-
-    if (!licencieSelect) return;
-
-    function syncFromLicencie(uuid) {
-        if (!uuid || !data[uuid]) {
-            if (banner) banner.style.display = 'none';
-            return;
-        }
-        const d = data[uuid];
-        const selectedOption = licencieSelect.options[licencieSelect.selectedIndex];
-
-        if (nomInput        && d.nom)          nomInput.value        = d.nom;
-        if (prenomInput     && d.prenom)       prenomInput.value     = d.prenom;
-        if (emailInput      && d.email)        emailInput.value      = d.email;
-        if (telephoneInput  && d.telephone)    telephoneInput.value  = d.telephone;
-        if (dateInput       && d.dateNaissance) dateInput.value      = d.dateNaissance;
-        if (numLicenceInput && d.numLicence)   numLicenceInput.value = d.numLicence;
-        if (tailleHautSelect && d.tailleHaut)  tailleHautSelect.value = d.tailleHaut;
-        if (talleBasSelect   && d.tailleBas)   talleBasSelect.value   = d.tailleBas;
-        if (pointureSelect   && d.pointure)    pointureSelect.value   = d.pointure;
-
-        if (banner)   banner.style.display = 'flex';
-        if (syncName) syncName.textContent = selectedOption.text;
-    }
-
-    licencieSelect.addEventListener('change', function () {
-        syncFromLicencie(this.value);
-    });
-
-    // Sur la page d'édition : si un licencié est déjà lié, afficher le bandeau
-    {% if dirigeant and dirigeant.licencie %}
-    if (banner)   banner.style.display = 'flex';
-    if (syncName) syncName.textContent = '{{ dirigeant.licencie.nomPrenom }}';
-    {% endif %}
-});
-
-</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => dirigeantPrefill({
+            licencies: {{ licenciesSizes|json_encode|raw }},
+            champs: {
+                licencie: '{{ form.licencie.vars.id }}',
+                nom: '{{ form.nom.vars.id }}',
+                prenom: '{{ form.prenom.vars.id }}',
+                email: '{{ form.email.vars.id }}',
+                telephone: '{{ form.telephone.vars.id }}',
+                dateNaissance: '{{ form.dateNaissance.vars.id }}',
+                numLicence: '{{ form.numLicence.vars.id }}',
+                tailleHaut: '{{ form.tailleHaut.vars.id }}',
+                tailleBas: '{{ form.tailleBas.vars.id }}',
+                pointure: '{{ form.pointure.vars.id }}',
+            },
+            licencieDejaLie: {{ (dirigeant and dirigeant.licencie ? dirigeant.licencie.nomPrenom : null)|json_encode }},
+        }));
+    </script>
 {% endblock %}

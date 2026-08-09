@@ -9,7 +9,10 @@
     { label: 'Gestion' }
 ] } %}
 
-<div class="stock-dashboard-page" x-data="stockMovementModal()">
+<div class="stock-dashboard-page" x-data="stockMouvementModal({
+        urlMouvement: '{{ path('admin_stock_items_movement', {id: '__ID__'}) }}',
+        ordreTailles: {{ tailles_toutes()|json_encode }},
+     })">
 
     <div class="stock-dashboard-header">
         <h1 class="stock-dashboard-title">Gestion du stock</h1>
@@ -224,52 +227,6 @@
 
 </div>
 
-<script>
-function stockMovementModal() {
-    return {
-        modalOpen: false,
-        itemId: null,
-        itemNom: '',
-        stockActuel: 0,
-        taillesStock: {},
-        action: 'entree',
-        quantite: 1,
-        taille: '',
-        get formAction() {
-            return `/admin/stock/items/${this.itemId}/mouvement`;
-        },
-        get csrfToken() {
-            return document.getElementById('csrf-' + this.itemId)?.value ?? '';
-        },
-        get taillesEntries() {
-            const order = {{ tailles_toutes()|json_encode|raw }};
-            const rank = (t) => {
-                const i = order.indexOf(t);
-                return i === -1 ? order.length : i;
-            };
-            return Object.entries(this.taillesStock)
-                .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b));
-        },
-        get dispoTaille() {
-            return this.taillesStock[this.taille] ?? 0;
-        },
-        openModal(id, nom, stock) {
-            this.itemId    = id;
-            this.itemNom   = nom;
-            this.stockActuel = stock;
-            const raw = document.getElementById('tailles-' + id)?.value;
-            this.taillesStock = raw ? JSON.parse(raw) : {};
-            this.action    = 'entree';
-            this.quantite  = 1;
-            this.taille    = '';
-            this.modalOpen = true;
-        },
-        closeModal() {
-            this.modalOpen = false;
-        },
-    };
-}
-</script>
 
 {# Tokens CSRF + stock par taille (JSON) cachés pour chaque item, lus par la modale #}
 {% for section in summary %}

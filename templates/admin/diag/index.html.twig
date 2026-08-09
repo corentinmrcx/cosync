@@ -55,26 +55,7 @@
     {# ── Purge des données (beta uniquement) ── #}
     {% if betaActive %}
     <div class="diag-card diag-card-danger"
-         x-data="{
-             word: '',
-             ready: false,
-             countdown: 0,
-             timer: null,
-             check() {
-                 clearTimeout(this.timer);
-                 this.ready = false;
-                 this.countdown = 0;
-                 if (this.word === 'SUPPRIMER') {
-                     this.countdown = 3;
-                     const tick = () => {
-                         this.countdown--;
-                         if (this.countdown <= 0) { this.ready = true; }
-                         else { this.timer = setTimeout(tick, 1000); }
-                     };
-                     this.timer = setTimeout(tick, 1000);
-                 }
-             }
-         }">
+         x-data="confirmationPurge()">
         <h2 class="diag-card-title diag-card-title-danger">Purge des données de test</h2>
         <p class="diag-card-desc">
             Supprime <strong>toutes</strong> les données métier : saisons, équipes, licenciés, dirigeants, dossiers,
@@ -92,8 +73,8 @@
             <input
                 type="text"
                 name="confirmation"
-                x-model="word"
-                @input="check()"
+                x-model="mot"
+                @input="verifier()"
                 autocomplete="off"
                 placeholder="SUPPRIMER"
                 class="diag-input diag-purge-input"
@@ -102,13 +83,13 @@
                 <button
                     type="submit"
                     class="btn btn-primary btn-lg diag-btn-danger"
-                    :disabled="!ready"
-                    x-bind:class="ready ? '' : 'diag-btn-disabled'"
+                    :disabled="!pret"
+                    x-bind:class="pret ? '' : 'diag-btn-disabled'"
                 >
                     Supprimer toutes les données
                 </button>
-                <span class="diag-countdown" x-show="word === 'SUPPRIMER' && !ready && countdown > 0">
-                    Disponible dans <strong x-text="countdown"></strong>s…
+                <span class="diag-countdown" x-show="mot === 'SUPPRIMER' && !pret && compteARebours > 0">
+                    Disponible dans <strong x-text="compteARebours"></strong>s…
                 </span>
             </div>
         </form>

@@ -10,6 +10,7 @@ module.exports = [
                 ...globals.browser,
                 Alpine: 'readonly',
                 initEditeurRiche: 'readonly',
+                dirigeantPrefill: 'readonly',
             },
         },
         rules: {
