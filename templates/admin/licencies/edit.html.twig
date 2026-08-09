@@ -31,6 +31,18 @@
 
         <hr class="season-form-divider">
 
+        {# — Licence — #}
+        <p class="licencie-edit-section">Licence</p>
+
+        <div class="field">
+            {{ form_label(form.natureLicence) }}
+            {{ form_widget(form.natureLicence) }}
+            {{ form_errors(form.natureLicence) }}
+            {{ form_help(form.natureLicence) }}
+        </div>
+
+        <hr class="season-form-divider">
+
         {# — Équipement — #}
         <p class="licencie-edit-section">Équipement</p>
 
@@ -56,7 +68,10 @@
             {{ form_errors(form.pointure) }}
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+        <div class="season-form-actions">
+            <a href="{{ path('admin_licencies_show', { uuid: licencie.uuid }) }}" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+        </div>
 
     {{ form_end(form) }}
 

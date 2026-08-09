@@ -55,8 +55,6 @@
     margin: 0;
 }
 
-.season-form-years .season-form-field { flex: 1; }
-
 .season-form-checkbox {
     display: flex;
     align-items: center;
@@ -89,13 +87,15 @@
         flex-direction: row;
         align-items: flex-start;
     }
-    .season-form-row > .season-form-field { flex: 1; }
+    /* Colonnes de largeur égale : sans flex-basis à 0, chaque champ se dimensionne
+       sur son contenu et la ligne part de travers (un select court, un input long). */
+    .season-form-row > .field { flex: 1 1 0; min-width: 0; }
 }
 
 .season-form-actions {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 0.75rem;
 }
 
@@ -253,8 +253,6 @@
     flex-direction: column;
     gap: 1.25rem;
 }
-
-.cotisations-defaut-actions { justify-content: center; }
 
 /* La liste, la mention et le bouton unique ne forment qu'un formulaire : c'est la carte
    qui donne le rythme, pas chaque ligne. */

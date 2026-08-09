@@ -63,6 +63,13 @@
             <p class="licencie-new-hint">Facultatif si l'export FootClubs est indisponible. Sera mis à jour automatiquement lors du prochain import.</p>
         </div>
 
+        <div class="field">
+            {{ form_label(form.natureLicence) }}
+            {{ form_widget(form.natureLicence) }}
+            {{ form_errors(form.natureLicence) }}
+            {{ form_help(form.natureLicence) }}
+        </div>
+
         <hr class="season-form-divider">
 
         <p class="licencie-edit-section">Contact</p>
