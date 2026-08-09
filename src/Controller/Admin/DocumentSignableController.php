@@ -45,7 +45,6 @@ class DocumentSignableController extends AbstractController
         $documents = $this->documentRepo->findBySeason($season);
 
         return $this->render('admin/documents/list.html.twig', [
-            'season' => $season,
             'documents' => $documents,
             'stats' => $this->documentService->statistiques($documents, $season),
         ]);

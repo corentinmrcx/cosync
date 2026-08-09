@@ -1,12 +1,13 @@
-/* Liste des documents que le club fait signer — /admin/config/documents */
+/* Liste des documents que le club fait signer — /admin/effectif/documents */
 
 .documents-page {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1.25rem;
+    gap: 1.5rem;
+    padding: 1.5rem;
     max-width: 1100px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .documents-card {
@@ -22,19 +23,30 @@
 
 .documents-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
 }
 
+/* Bloc titre + explications : porte lui-même son espacement, pour que la liste
+   et la page de relance soient resserrées de la même façon. */
+.documents-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
 .documents-title {
-    font-size: var(--font-size-xl);
-    font-weight: 700;
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
     color: var(--color-text-base);
 }
 
 .documents-intro {
+    margin: 0;
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
     line-height: 1.5;
