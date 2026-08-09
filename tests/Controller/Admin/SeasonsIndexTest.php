@@ -44,6 +44,8 @@ final class SeasonsIndexTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertCount(2, $crawler->filter('a:contains("Modifier")'));
+        // Les deux saisons sont vides : la saison de travail se supprime comme l'autre.
+        self::assertCount(2, $crawler->filter('button:contains("Supprimer")'));
         self::assertCount(0, $crawler->filter('button:contains("Y travailler")'));
         self::assertStringNotContainsString(
             'Nouvelle saison',

@@ -391,7 +391,8 @@
     border-radius: var(--radius-xl);
 }
 
-.season-list-item-stats {
+/* Dit pourquoi le bouton Supprimer manque : sans ce texte, l'absence reste inexpliquée. */
+.season-list-item-blocage {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
     width: 100%;

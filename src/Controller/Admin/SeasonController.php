@@ -4,12 +4,11 @@ namespace App\Controller\Admin;
 
 use App\Entity\Season;
 use App\Form\SeasonType;
-use App\Repository\DirigeantRepository;
-use App\Repository\LicencieRepository;
 use App\Repository\SeasonRepository;
 use App\Security\CsrfGuard;
 use App\Service\Saison\SeasonContext;
 use App\Service\Saison\SeasonService;
+use App\Service\Saison\SeasonSuppressionGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,10 +19,9 @@ class SeasonController extends AbstractController
 {
     public function __construct(
         private readonly SeasonRepository $seasonRepo,
-        private readonly LicencieRepository $licencieRepo,
-        private readonly DirigeantRepository $dirigeantRepo,
         private readonly SeasonContext $seasonContext,
         private readonly SeasonService $seasonService,
+        private readonly SeasonSuppressionGuard $suppressionGuard,
         private readonly CsrfGuard $csrf,
     ) {}
 
@@ -46,28 +44,26 @@ class SeasonController extends AbstractController
         return $this->render('admin/seasons/list.html.twig', [
             'seasons' => $seasons,
             'current' => $this->seasonContext->getCurrentSeason(),
-            'stats' => $this->compterParSaison($seasons),
+            'blocages' => $this->blocageParSaison($seasons),
         ]);
     }
 
     /**
-     * Effectifs par saison : ils disent pourquoi une saison ne peut pas être supprimée.
+     * Pourquoi chaque saison ne peut pas être supprimée : l'écran affiche la raison à la
+     * place du bouton, un bouton absent sans explication n'apprend rien à l'admin.
      *
      * @param Season[] $seasons
      *
-     * @return array<int, array{licencies: int, dirigeants: int}>
+     * @return array<int, ?string>
      */
-    private function compterParSaison(array $seasons): array
+    private function blocageParSaison(array $seasons): array
     {
-        $stats = [];
+        $blocages = [];
         foreach ($seasons as $season) {
-            $stats[$season->getId()] = [
-                'licencies' => $this->licencieRepo->count(['season' => $season]),
-                'dirigeants' => $this->dirigeantRepo->count(['season' => $season]),
-            ];
+            $blocages[$season->getId()] = $this->suppressionGuard->raison($season);
         }
 
-        return $stats;
+        return $blocages;
     }
 
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]
@@ -133,30 +129,33 @@ class SeasonController extends AbstractController
     ): Response {
         $this->csrf->valider('season_delete_' . $season->getId(), $request);
 
-        $current = $this->seasonContext->getCurrentSeason();
-        if ($current !== null && $current->getId() === $season->getId()) {
-            $this->addFlash('error', 'Impossible de supprimer la saison dans laquelle vous travaillez. Entrez d\'abord dans une autre saison.');
-
-            return $this->redirectToRoute('admin_seasons_list');
-        }
-
-        $licencieCount = $this->licencieRepo->count(['season' => $season]);
-        $dirigeantCount = $this->dirigeantRepo->count(['season' => $season]);
-
-        if ($licencieCount > 0 || $dirigeantCount > 0) {
-            $this->addFlash('error', sprintf(
-                'Impossible de supprimer "%s" : elle contient %d licencié(s) et %d dirigeant(s).',
-                $season->getLabel(),
-                $licencieCount,
-                $dirigeantCount,
-            ));
+        // Le template masque le bouton, mais c'est ce contrôle-ci qui fait foi.
+        $raison = $this->suppressionGuard->raison($season);
+        if ($raison !== null) {
+            $this->addFlash('error', sprintf('Impossible de supprimer "%s". %s.', $season->getLabel(), $raison));
 
             return $this->redirectToRoute('admin_seasons_list');
         }
 
         $label = $season->getLabel();
+        $current = $this->seasonContext->getCurrentSeason();
+
+        // Supprimer la saison dans laquelle on travaille est permis : sans cela, une saison
+        // créée par erreur devient courante à sa création et n'est plus jamais supprimable.
+        // On bascule d'abord, sinon l'admin se retrouverait dans une saison qui n'existe plus.
+        $repli = $current !== null && $current->getId() === $season->getId()
+            ? $this->suppressionGuard->remplacantePour($season)
+            : null;
+
+        if ($repli !== null) {
+            $this->seasonContext->setCurrentSeason($repli);
+        }
+
         $this->seasonService->delete($season);
-        $this->addFlash('success', sprintf('Saison "%s" supprimée.', $label));
+
+        $this->addFlash('success', $repli !== null
+            ? sprintf('Saison "%s" supprimée. Vous travaillez désormais sur "%s".', $label, $repli->getLabel())
+            : sprintf('Saison "%s" supprimée.', $label));
 
         return $this->redirectToRoute('admin_seasons_list');
     }
