@@ -5,7 +5,7 @@ namespace App\ArgumentResolver;
 use App\Attribute\CurrentSeason;
 use App\Entity\Season;
 use App\Exception\AucuneSeasonException;
-use App\Service\SeasonContext;
+use App\Service\Saison\SeasonContext;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;

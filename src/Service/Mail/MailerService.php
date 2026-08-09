@@ -4,7 +4,7 @@ namespace App\Service\Mail;
 
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
-use App\Service\CotisationResolver;
+use App\Service\Payment\CotisationResolver;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 

@@ -4,9 +4,9 @@ namespace App\Controller\Admin;
 
 use App\Security\CsrfGuard;
 use App\Security\Voter\SuperAdminVoter;
-use App\Service\BetaModeService;
+use App\Service\Ops\BetaModeService;
 use App\Service\Mail\DiagMailerService;
-use App\Service\PurgeService;
+use App\Service\Ops\PurgeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

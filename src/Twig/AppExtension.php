@@ -4,7 +4,7 @@ namespace App\Twig;
 
 use App\Repository\SeasonRepository;
 use App\Service\Referentiel\Tailles;
-use App\Service\SeasonContext;
+use App\Service\Saison\SeasonContext;
 use Twig\Extension\AbstractExtension;
 use Twig\Extension\GlobalsInterface;
 use Twig\TwigFilter;

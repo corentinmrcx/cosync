@@ -2,7 +2,7 @@
 
 namespace App\Service\Mail;
 
-use App\Service\BetaModeService;
+use App\Service\Ops\BetaModeService;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Mailer\MailerInterface;

@@ -5,7 +5,7 @@ namespace App\Controller\Public;
 use App\Entity\Licencie;
 use App\Repository\LicencieRepository;
 use App\Security\CsrfGuard;
-use App\Service\CotisationResolver;
+use App\Service\Payment\CotisationResolver;
 use App\Service\Payment\HelloAssoCheckoutService;
 use App\Service\Payment\HelloAssoException;
 use App\Service\Payment\HelloAssoPaymentRecorder;

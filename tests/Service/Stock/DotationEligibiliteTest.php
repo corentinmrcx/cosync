@@ -7,7 +7,7 @@ use App\Entity\Licencie;
 use App\Enum\DotationEligibilite;
 use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
-use App\Service\Stock\DotationResolver;
+use App\Service\Dotation\DotationResolver;
 
 /**
  * Éligibilité des options de dotation selon la nature de la licence.

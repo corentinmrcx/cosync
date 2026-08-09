@@ -681,14 +681,44 @@ DATABASE_URL=
 | Élément | Convention | Exemple |
 |---|---|---|
 | Entités | PascalCase | `Licencie`, `DossierClub` |
-| Services | PascalCase + Suffix `Service` | `ImportService`, `PdfGeneratorService` |
-| DTOs | PascalCase + Suffix `Data` | `InscriptionFormData` |
+| Services | PascalCase + suffixe de rôle (cf. ci-dessous) | `ImportService`, `PdfRenderer` |
+| DTOs | PascalCase, suffixe `Data` pour une entrée de formulaire | `InscriptionFormData`, `DotationAvancement` |
 | Enums | PascalCase | `LicenceStatus`, `PaymentMode` |
 | Controllers | PascalCase + Suffix `Controller` | `ImportController` |
 | Routes admin | snake_case préfixé | `admin_licencies_list` |
 | Routes public | snake_case préfixé | `public_inscription_show` |
 | Templates | snake_case | `admin/licencies/list.html.twig` |
 | Variables Twig | camelCase | `{{ licencie.nomPrenom }}` |
+
+### Suffixe des services : le rôle, pas le mot « Service »
+
+`Service` est le suffixe par défaut, pas le seul autorisé. Quand une classe a un rôle
+plus précis, le nom le dit — c'est plus informatif que `XxxService` :
+
+| Suffixe | Rôle | Exemple |
+|---|---|---|
+| `Service` | orchestre une opération métier | `LicencieService`, `PaiementService` |
+| `Resolver` | choisit une valeur parmi plusieurs règles | `CotisationResolver`, `DotationResolver` |
+| `Factory` | construit un DTO depuis une `Request` | `InscriptionFormRequestFactory` |
+| `Presenter` | met en forme pour l'affichage, n'écrit rien | `DotationSuiviPresenter` |
+| `Synchronizer` | aligne un état sur un autre, idempotent | `DotationBesoinSynchronizer` |
+| `Sync` | archive un fichier local vers Drive | `DocumentSignatureDriveSync` |
+| `Renderer`, `Storage`, `Encoder` | infrastructure technique | `PdfRenderer`, `PdfStorage` |
+| `Context`, `Guard`, `Collector`, `Filter` | rôle explicite en un mot | `SeasonContext`, `CsrfGuard` |
+
+Règle de tri : **une classe sans suffixe de rôle est une erreur**, sauf pour un référentiel de
+constantes (`Tailles`, `LienPublic`). Un lecteur doit savoir ce que fait la classe avant
+de l'ouvrir.
+
+### Organisation de `src/Service/`
+
+Un dossier = un domaine métier, pas une couche technique. `Licencie/`, `Dirigeant/`,
+`Inscription/`, `Dotation/`, `Stock/`, `ClubHouse/`, `Saison/`, `Referentiel/`, `Compte/`,
+`Document/`, `Payment/`, `Import/`, `Mail/`, `Pdf/`, `Drive/`, `Ops/` (exploitation),
+`Ui/` (état d'affichage).
+
+**Aucun service à la racine de `src/Service/`.** Si le domaine d'une nouvelle classe
+n'est pas évident, c'est le signe qu'elle en fait trop.
 
 ---
 

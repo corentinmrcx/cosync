@@ -10,7 +10,7 @@ use App\Entity\StockItem;
 use App\Entity\Team;
 use App\Enum\DirigeantRole;
 use App\Enum\DotationEligibilite;
-use App\Service\Stock\DotationModelePreview;
+use App\Service\Dotation\DotationModelePreview;
 use PHPUnit\Framework\TestCase;
 
 /**

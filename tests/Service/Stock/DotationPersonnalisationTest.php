@@ -2,6 +2,7 @@
 
 namespace App\Tests\Service\Stock;
 
+use App\Service\Dotation\DotationResolver;
 use App\Entity\DotationBesoin;
 use App\Entity\Licencie;
 use App\Enum\DotationBesoinStatut;
@@ -9,9 +10,9 @@ use App\Enum\DotationEligibilite;
 use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Repository\DotationBesoinRepository;
-use App\Service\Stock\DotationBesoinSynchronizer;
-use App\Service\Stock\DotationRemiseService;
-use App\Service\Stock\DotationSuiviPresenter;
+use App\Service\Dotation\DotationBesoinSynchronizer;
+use App\Service\Dotation\DotationRemiseService;
+use App\Service\Dotation\DotationSuiviPresenter;
 
 /**
  * Propagation du texte de flocage, du dossier du licencié jusqu'au besoin matérialisé.
@@ -203,7 +204,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
 
-        $resolver = $this->service(\App\Service\Stock\DotationResolver::class);
+        $resolver = $this->service(\App\Service\Dotation\DotationResolver::class);
 
         self::assertCount(1, $resolver->getChoiceGroups($licencie), 'Le groupe est bien posé en question.');
 
@@ -232,7 +233,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
 
-        $resolver = $this->service(\App\Service\Stock\DotationResolver::class);
+        $resolver = $this->service(\App\Service\Dotation\DotationResolver::class);
 
         self::assertSame([], $resolver->getChoiceGroups($licencie), 'Un nouveau licencié n\'a pas le choix.');
         self::assertSame(

@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller\Webhook;
 
+use App\Service\Payment\HelloAssoWebhookVerifier;
 use App\Repository\TransactionRepository;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;

@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Enum\DotationBesoinStatut;
 use App\Entity\Dirigeant;
 use App\Entity\DotationBesoin;
 use App\Entity\Licencie;

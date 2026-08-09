@@ -5,7 +5,7 @@ namespace App\Controller\Public;
 use App\DTO\AttestationCleSignatureData;
 use App\Repository\DirigeantRepository;
 use App\Security\CsrfGuard;
-use App\Service\AttestationCleFormService;
+use App\Service\ClubHouse\AttestationCleFormService;
 use App\Service\ClubHouse\CleRegistreService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;

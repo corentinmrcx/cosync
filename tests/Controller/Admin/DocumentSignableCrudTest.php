@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller\Admin;
 
+use App\Entity\Dirigeant;
 use App\Entity\DocumentSignable;
 use App\Entity\Season;
 use App\Entity\User;

@@ -8,7 +8,7 @@ use App\Entity\Season;
 use App\Enum\DocumentCible;
 use App\Repository\DocumentSignableRepository;
 use App\Repository\SeasonRepository;
-use App\Service\CotisationResolver;
+use App\Service\Payment\CotisationResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;

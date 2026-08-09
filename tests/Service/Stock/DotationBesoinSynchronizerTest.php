@@ -2,6 +2,7 @@
 
 namespace App\Tests\Service\Stock;
 
+use App\Entity\DotationBesoin;
 use App\Entity\Licencie;
 use App\Enum\DotationAvancementStatut;
 use App\Enum\DotationBesoinStatut;
@@ -10,9 +11,9 @@ use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Repository\DotationBesoinRepository;
 use App\Repository\StockMovementRepository;
-use App\Service\Stock\DotationBesoinSynchronizer;
-use App\Service\Stock\DotationRemiseService;
-use App\Service\Stock\DotationSuiviPresenter;
+use App\Service\Dotation\DotationBesoinSynchronizer;
+use App\Service\Dotation\DotationRemiseService;
+use App\Service\Dotation\DotationSuiviPresenter;
 
 final class DotationBesoinSynchronizerTest extends StockIntegrationTestCase
 {

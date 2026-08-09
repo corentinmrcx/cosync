@@ -2,7 +2,7 @@
 
 namespace App\Tests\Service\Form;
 
-use App\Service\Form\AttestationTransportRequestFactory;
+use App\Service\Inscription\AttestationTransportRequestFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 

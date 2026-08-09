@@ -9,7 +9,7 @@ use App\Service\ClubHouse\AttestationCleRecapService;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationClePdfService;
 use App\Service\Pdf\AttestationCleRecapPdfService;
-use App\Service\SeasonService;
+use App\Service\Saison\SeasonService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

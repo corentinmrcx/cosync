@@ -7,7 +7,7 @@ use App\Entity\DotationAffectation;
 use App\Entity\DotationModele;
 use App\Entity\Season;
 use App\Enum\DirigeantRole;
-use App\Service\Stock\DotationResolver;
+use App\Service\Dotation\DotationResolver;
 
 /**
  * Dotation de l'encadrement : un responsable, un responsable d'équipe et un dirigeant standard ne

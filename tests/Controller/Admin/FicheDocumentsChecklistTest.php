@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller\Admin;
 
+use App\Entity\DocumentSignable;
 use App\Entity\Category;
 use App\Entity\Dirigeant;
 use App\Entity\DossierClub;

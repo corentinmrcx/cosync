@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use App\Service\Backup\DatabaseBackupService;
+use App\Service\Ops\DatabaseBackupService;
 use App\Service\Drive\DriveUploaderService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;

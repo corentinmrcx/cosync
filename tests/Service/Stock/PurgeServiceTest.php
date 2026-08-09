@@ -8,7 +8,7 @@ use App\Entity\StockCategory;
 use App\Enum\CleMouvementType;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementType;
-use App\Service\PurgeService;
+use App\Service\Ops\PurgeService;
 use App\Tests\Support\DocumentFixtures;
 
 final class PurgeServiceTest extends StockIntegrationTestCase

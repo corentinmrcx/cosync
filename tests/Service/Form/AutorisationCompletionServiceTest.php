@@ -9,7 +9,7 @@ use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Enum\AutorisationManquante;
 use App\Enum\LicenceStatus;
-use App\Service\Form\AutorisationCompletionService;
+use App\Service\Inscription\AutorisationCompletionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 

@@ -4,7 +4,7 @@ namespace App\Service\Payment;
 
 use App\DTO\HelloAssoCheckoutIntent;
 use App\Entity\Licencie;
-use App\Service\CotisationResolver;
+use App\Service\Payment\CotisationResolver;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**

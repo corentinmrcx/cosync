@@ -4,7 +4,7 @@ namespace App\Tests\Service\Stock;
 
 use App\Entity\Licencie;
 use App\Enum\StockItemVetementType;
-use App\Service\Stock\DotationResolver;
+use App\Service\Dotation\DotationResolver;
 
 final class DotationResolverTest extends StockIntegrationTestCase
 {

@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller\Public;
 
+use App\Entity\DocumentSignature;
 use App\Entity\CleMouvement;
 use App\Entity\Dirigeant;
 use App\Entity\Season;

@@ -7,7 +7,7 @@ use App\Entity\DossierClub;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Enum\LicenceStatus;
-use App\Service\BetaModeService;
+use App\Service\Ops\BetaModeService;
 use App\Service\Mail\InscriptionLinkService;
 use App\Service\Mail\MailerService;
 use Doctrine\ORM\EntityManagerInterface;

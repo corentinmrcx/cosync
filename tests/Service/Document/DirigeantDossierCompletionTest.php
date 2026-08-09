@@ -8,7 +8,7 @@ use App\Entity\DossierClub;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Enum\LicenceStatus;
-use App\Service\DirigeantDossierCompletion;
+use App\Service\Dirigeant\DirigeantDossierCompletion;
 use App\Tests\Support\DocumentFixtures;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;

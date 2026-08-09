@@ -8,7 +8,7 @@ use App\Form\CategoryCreateType;
 use App\Repository\CategoryRepository;
 use App\Repository\LicencieRepository;
 use App\Security\CsrfGuard;
-use App\Service\CategoryService;
+use App\Service\Referentiel\CategoryService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

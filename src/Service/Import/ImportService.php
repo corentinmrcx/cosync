@@ -15,7 +15,7 @@ use App\Repository\DirigeantRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Service\Import\Layout\ImportLayoutResolver;
-use App\Service\LienPublic;
+use App\Service\Mail\LienPublic;
 use App\Service\Mail\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;

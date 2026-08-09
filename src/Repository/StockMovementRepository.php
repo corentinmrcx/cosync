@@ -2,6 +2,9 @@
 
 namespace App\Repository;
 
+use App\Entity\Licencie;
+use App\Entity\Dirigeant;
+use App\Enum\StockMovementSource;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
 use App\Enum\StockMovementType;

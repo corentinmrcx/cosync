@@ -6,7 +6,7 @@ use App\Entity\Category;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\Team;
-use App\Service\CotisationResolver;
+use App\Service\Payment\CotisationResolver;
 use PHPUnit\Framework\TestCase;
 
 final class CotisationResolverTest extends TestCase
