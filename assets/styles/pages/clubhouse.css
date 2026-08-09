@@ -37,24 +37,6 @@
     gap: 0.5rem;
 }
 
-/* — Boutons — */
-.clubhouse-btn-primary,
-.clubhouse-btn-secondary,
-.clubhouse-btn-cancel,
-.clubhouse-btn-sm {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    text-decoration: none;
-    border: 1px solid transparent;
-    cursor: pointer;
-    font-family: inherit;
-}
-
 .clubhouse-btn-link {
     background: none;
     border: none;

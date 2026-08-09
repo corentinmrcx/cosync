@@ -308,7 +308,6 @@
     justify-content: flex-end;
 }
 
-.import-btn-primary,
 .import-btn-secondary {
     padding: 0.625rem 1.25rem;
     border-radius: var(--radius-md);
@@ -316,9 +315,6 @@
     font-weight: 700;
     text-decoration: none;
     transition: background 0.15s;
-}
-
-.import-btn-secondary {
     background: var(--color-bg-subtle);
     color: var(--color-text-base);
     border: 1px solid var(--color-border);

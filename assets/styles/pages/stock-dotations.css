@@ -736,9 +736,9 @@
     .dot-affect-form { flex-direction: column; align-items: stretch; }
 
     .dot-inline-form > .dot-input,
-    .dot-inline-form > .dot-btn-primary,
+    .dot-inline-form > .btn,
     .dot-affect-form > .dot-input,
-    .dot-affect-form > .dot-btn-primary { width: 100%; }
+    .dot-affect-form > .btn { width: 100%; }
     .dot-input-qty { flex-basis: auto; }
 
     /* Barres « contrôle + bouton » : le bouton passe sous le champ, pleine largeur */

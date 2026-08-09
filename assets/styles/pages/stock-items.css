@@ -157,18 +157,6 @@
     background: var(--color-bg-page);
 }
 
-.stock-mouvements-filter-btn {
-    padding: 0.4rem 0.875rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    cursor: pointer;
-    font-family: var(--font-sans);
-}
-
 .stock-mouvements-filter-reset {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);

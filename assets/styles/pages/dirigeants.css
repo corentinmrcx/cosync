@@ -6,22 +6,6 @@
     background-color: var(--color-bg-subtle);
     gap: 1.25rem;
 }
-
-/* — Bouton ajout — */
-.dirigeants-add-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    text-decoration: none;
-    border-radius: var(--radius-md);
-    transition: background 0.15s;
-}
-
 /* — Vide — */
 .dirigeants-empty {
     text-align: center;
