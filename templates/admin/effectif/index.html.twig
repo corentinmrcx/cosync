@@ -58,51 +58,6 @@
         </div>
     </div>
 
-    {# — À faire — #}
-    <div class="effectif-section">
-        <div class="effectif-section-header">
-            <h2 class="effectif-section-title">À faire</h2>
-        </div>
-
-        {% if data.rienAFaire %}
-            <p class="effectif-empty">Tous les dossiers sont à jour</p>
-        {% else %}
-            <div class="todo-list">
-                {% if data.nbLiensNonEnvoyes > 0 %}
-                    {% include 'components/todo-item.html.twig' with {
-                        count: data.nbLiensNonEnvoyes,
-                        label: "lien#{data.nbLiensNonEnvoyes > 1 ? 's' : ''} d'inscription jamais envoyé#{data.nbLiensNonEnvoyes > 1 ? 's' : ''}",
-                        route: 'admin_licencies_list',
-                        params: { status: 'imported' },
-                    } only %}
-                {% endif %}
-                {% if data.nbFormulairesSansReponse > 0 %}
-                    {% include 'components/todo-item.html.twig' with {
-                        count: data.nbFormulairesSansReponse,
-                        label: "formulaire#{data.nbFormulairesSansReponse > 1 ? 's' : ''} envoyé#{data.nbFormulairesSansReponse > 1 ? 's' : ''} sans réponse",
-                        route: 'admin_licencies_list',
-                        params: { status: 'link_sent' },
-                    } only %}
-                {% endif %}
-                {% if data.nbPaiementsEnAttente > 0 %}
-                    {% include 'components/todo-item.html.twig' with {
-                        count: data.nbPaiementsEnAttente,
-                        label: "dossier#{data.nbPaiementsEnAttente > 1 ? 's' : ''} complet#{data.nbPaiementsEnAttente > 1 ? 's' : ''} en attente de paiement",
-                        route: 'admin_licencies_list',
-                        params: { status: 'form_completed' },
-                    } only %}
-                {% endif %}
-                {% if data.nbSignaturesEnAttente > 0 %}
-                    {% include 'components/todo-item.html.twig' with {
-                        count: data.nbSignaturesEnAttente,
-                        label: "signature#{data.nbSignaturesEnAttente > 1 ? 's' : ''} de document en attente",
-                        route: 'admin_documents_list',
-                    } only %}
-                {% endif %}
-            </div>
-        {% endif %}
-    </div>
-
     {# — Accès rapides — #}
     <div class="effectif-section">
         <div class="effectif-section-header">

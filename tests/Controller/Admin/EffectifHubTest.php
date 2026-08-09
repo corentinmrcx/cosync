@@ -13,10 +13,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-/**
- * Hub Effectif : compteurs de population et liste « À faire » pointant vers les
- * listes filtrées.
- */
+/** Hub Effectif : compteurs de population et accès rapides. */
 final class EffectifHubTest extends WebTestCase
 {
     private ?Season $season = null;
@@ -36,21 +33,6 @@ final class EffectifHubTest extends WebTestCase
         self::assertSame('1', $valeurs[1], '1 dirigeant');
         self::assertSame('1', $valeurs[2], '1 formulaire en attente (lien jamais envoyé)');
         self::assertSame('1', $valeurs[3], '1 paiement à encaisser');
-    }
-
-    public function testLaListeAFairePointeVersLesListesFiltrees(): void
-    {
-        $client = static::createClient();
-        $this->loginAdmin($client);
-        $this->creerEffectif();
-
-        $client->request('GET', '/admin/effectif');
-        $html = (string) $client->getResponse()->getContent();
-
-        self::assertStringContainsString('inscription jamais envoyé', $html);
-        self::assertStringContainsString('/admin/effectif/joueurs?status=imported', $html);
-        self::assertStringContainsString('dossier complet en attente de paiement', $html);
-        self::assertStringContainsString('/admin/effectif/joueurs?status=form_completed', $html);
     }
 
     public function testLeHubProposeLesQuatreAccesRapides(): void

@@ -19,12 +19,4 @@ final class EffectifTableauDeBord
     {
         return $this->nbLiensNonEnvoyes + $this->nbFormulairesSansReponse;
     }
-
-    public function rienAFaire(): bool
-    {
-        return $this->nbLiensNonEnvoyes === 0
-            && $this->nbFormulairesSansReponse === 0
-            && $this->nbPaiementsEnAttente === 0
-            && $this->nbSignaturesEnAttente === 0;
-    }
 }
