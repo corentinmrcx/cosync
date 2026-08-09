@@ -16,8 +16,6 @@ final class PdfGeneratorService
      * Le nom de fichier combine l'identifiant du signataire et le code du document :
      * une personne qui signe plusieurs documents (le règlement dirigeants et une charte,
      * par exemple) ne peut pas en écraser un avec l'autre.
-     *
-     * @return string chemin absolu du PDF écrit
      */
     public function generateSignedDocument(
         DocumentSignable $document,

@@ -18,7 +18,6 @@ final class AttestationClePdfService
         private readonly PdfStorage $storage,
     ) {}
 
-    /** @return string chemin absolu du PDF écrit */
     public function generateSignee(
         Dirigeant $dirigeant,
         string $signatureDataUrl,

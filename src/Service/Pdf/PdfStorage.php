@@ -18,7 +18,6 @@ final class PdfStorage
         #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
     ) {}
 
-    /** @return string chemin absolu du fichier écrit */
     public function ecrire(string $nomFichier, string $contenu): string
     {
         $repertoire = $this->repertoire();

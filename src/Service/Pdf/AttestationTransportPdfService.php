@@ -15,7 +15,6 @@ final class AttestationTransportPdfService
         private readonly PdfStorage $storage,
     ) {}
 
-    /** @return string chemin absolu du PDF écrit */
     public function generate(AttestationTransportData $data, string $nom, string $prenom, string $seasonLabel): string
     {
         $pdf = $this->renderer->render('pdf/attestation_transport.html.twig', [
