@@ -22,6 +22,11 @@ security:
                 default_target_path: admin_dashboard
                 username_parameter: email
                 password_parameter: password
+            # Anti-force-brute : le back-office repose sur un mot de passe admin unique,
+            # c'est la surface de compromission de toute l'application.
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
             logout:
                 path: security_logout
                 target: security_login

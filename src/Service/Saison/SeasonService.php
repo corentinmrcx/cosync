@@ -4,6 +4,7 @@ namespace App\Service\Saison;
 
 use App\Entity\Season;
 use App\Repository\SeasonRepository;
+use App\Service\Document\RichTextSanitizer;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class SeasonService
@@ -11,6 +12,7 @@ final class SeasonService
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly SeasonRepository $seasonRepo,
+        private readonly RichTextSanitizer $sanitizer,
     ) {}
 
     public function create(Season $season): void
@@ -66,7 +68,7 @@ final class SeasonService
 
     public function updateAttestationCleText(Season $season, ?string $attestationCleText): void
     {
-        $season->setAttestationCleText($attestationCleText);
+        $season->setAttestationCleText($this->sanitizer->assainir($attestationCleText));
         $this->em->flush();
     }
 

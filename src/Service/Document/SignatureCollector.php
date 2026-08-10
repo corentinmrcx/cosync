@@ -14,11 +14,9 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class SignatureCollector
 {
-    /** Un canvas signé dépasse rarement 300 Ko ; au-delà, la requête est suspecte. */
-    private const TAILLE_MAX = 2_800_000;
-
     public function __construct(
         private readonly DocumentRequirementResolver $documentResolver,
+        private readonly SignatureImageValidator $signatureValidator,
     ) {}
 
     /** @return array<int, string>|null null si une signature attendue manque ou est invalide */
@@ -49,7 +47,7 @@ final class SignatureCollector
         foreach ($attendus as $document) {
             $signature = $soumises[$document->getId()] ?? null;
 
-            if (!$this->estValide($signature)) {
+            if (!$this->signatureValidator->estValide($signature)) {
                 return null;
             }
 
@@ -57,13 +55,5 @@ final class SignatureCollector
         }
 
         return $retenues;
-    }
-
-    private function estValide(mixed $signature): bool
-    {
-        return is_string($signature)
-            && $signature !== ''
-            && str_starts_with($signature, 'data:image/')
-            && strlen($signature) <= self::TAILLE_MAX;
     }
 }

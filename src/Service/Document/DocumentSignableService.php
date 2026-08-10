@@ -30,6 +30,7 @@ final class DocumentSignableService
         private readonly DocumentSignatureRepository $signatureRepository,
         private readonly LicencieRepository $licencieRepository,
         private readonly DocumentRequirementResolver $requirementResolver,
+        private readonly RichTextSanitizer $sanitizer,
     ) {}
 
     public function creer(DocumentSignableData $data, Season $season): DocumentSignable
@@ -122,7 +123,7 @@ final class DocumentSignableService
         $document
             ->setTitre($data->titre)
             ->setLibelle($data->libelle)
-            ->setContenuHtml($data->contenuHtml)
+            ->setContenuHtml($this->sanitizer->assainir($data->contenuHtml))
             ->setCible($data->cible)
             ->setActif($data->actif);
 

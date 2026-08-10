@@ -20,7 +20,7 @@ use Symfony\Component\Uid\Uuid;
  */
 final class AttestationCleFormControllerTest extends WebTestCase
 {
-    private const SIGNATURE = 'data:image/png;base64,iVBORw0KGgo=';
+    private const SIGNATURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
     public function testLeFormulaireAfficheCeQueLaPersonneAtteste(): void
     {

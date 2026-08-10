@@ -3,6 +3,7 @@
 namespace App\Service\Inscription;
 
 use App\DTO\AttestationTransportData;
+use App\Service\Document\SignatureImageValidator;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -12,6 +13,10 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class AttestationTransportRequestFactory
 {
+    public function __construct(
+        private readonly SignatureImageValidator $signatureValidator,
+    ) {}
+
     public function fromRequest(Request $request): ?AttestationTransportData
     {
         $nomConducteur = trim($request->request->get('attestation_nom_conducteur', ''));
@@ -30,7 +35,7 @@ final class AttestationTransportRequestFactory
             return null;
         }
 
-        if (!str_starts_with($sigAttest, 'data:image/') || strlen($sigAttest) > 2_800_000) {
+        if (!$this->signatureValidator->estValide($sigAttest)) {
             return null;
         }
 

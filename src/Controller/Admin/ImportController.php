@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Security\CsrfGuard;
 use App\Service\Import\ImportService;
 use App\Service\Saison\SeasonContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,6 +17,7 @@ class ImportController extends AbstractController
     public function __construct(
         private readonly SeasonContext $seasonContext,
         private readonly ImportService $importService,
+        private readonly CsrfGuard $csrf,
     ) {}
 
     #[Route('', name: 'index', methods: ['GET'])]
@@ -35,6 +37,8 @@ class ImportController extends AbstractController
     #[Route('', name: 'process', methods: ['POST'])]
     public function process(Request $request): Response
     {
+        $this->csrf->valider('import_xlsx', $request);
+
         $season = $this->seasonContext->getCurrentSeason();
 
         if ($season === null) {

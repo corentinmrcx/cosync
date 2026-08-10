@@ -8,6 +8,7 @@ use App\Repository\AttestationCleRepository;
 use App\Security\CsrfGuard;
 use App\Service\Cle\AttestationCleFormService;
 use App\Service\Cle\CleRegistreService;
+use App\Service\Document\SignatureImageValidator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,6 +29,7 @@ class AttestationCleController extends AbstractController
         private readonly CleRegistreService $registre,
         private readonly AttestationCleFormService $formService,
         private readonly CsrfGuard $csrf,
+        private readonly SignatureImageValidator $signatureValidator,
     ) {}
 
     #[Route('/{uuid}', name: 'show', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
@@ -117,9 +119,7 @@ class AttestationCleController extends AbstractController
     {
         $signatureData = (string) $request->request->get('signature_data', '');
 
-        if ($signatureData === ''
-            || !str_starts_with($signatureData, 'data:image/')
-            || strlen($signatureData) > 2_800_000) {
+        if (!$this->signatureValidator->estValide($signatureData)) {
             return null;
         }
 

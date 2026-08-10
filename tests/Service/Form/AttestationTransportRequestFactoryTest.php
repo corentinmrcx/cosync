@@ -2,6 +2,7 @@
 
 namespace App\Tests\Service\Form;
 
+use App\Service\Document\SignatureImageValidator;
 use App\Service\Inscription\AttestationTransportRequestFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,13 +13,14 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class AttestationTransportRequestFactoryTest extends TestCase
 {
-    private const SIGNATURE = 'data:image/png;base64,iVBORw0KGgo=';
+    /** PNG 1×1 valide : le validateur décode et vérifie réellement les octets PNG. */
+    private const SIGNATURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
     private AttestationTransportRequestFactory $factory;
 
     protected function setUp(): void
     {
-        $this->factory = new AttestationTransportRequestFactory();
+        $this->factory = new AttestationTransportRequestFactory(new SignatureImageValidator());
     }
 
     public function testVehiculeNeufRendLaDateFacultative(): void
