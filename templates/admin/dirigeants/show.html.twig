@@ -106,9 +106,9 @@
             </dl>
         </div>
 
-        {# — Équipement — #}
+        {# — Dossier club — #}
         <div class="licencie-show-card">
-            <h2 class="licencie-show-card-title">Équipement</h2>
+            <h2 class="licencie-show-card-title">Dossier club</h2>
 
             <dl class="licencie-show-dl">
                 <div class="licencie-show-dl-row">
@@ -132,15 +132,6 @@
                 : dirigeant.autorisationPhoto %}
 
             <ul class="licencie-show-checklist">
-                {# Formulaire dirigeant #}
-                {% include 'components/_checklist_item.html.twig' with {
-                    etat: dossierComplet ? 'fait' : 'attente',
-                    label: 'Formulaire dirigeant',
-                    detail: dossierComplet
-                        ? (dirigeant.formCompletedAt ? 'le ' ~ dirigeant.formCompletedAt|date('d/m/Y') : null)
-                        : (dirigeant.formTokenValid ? 'Lien envoyé' : null),
-                } only %}
-
                 {# Droit à l'image #}
                 {% include 'components/_checklist_item.html.twig' with {
                     etat: photoVal is null ? 'attente' : (photoVal ? 'accorde' : 'refuse'),
