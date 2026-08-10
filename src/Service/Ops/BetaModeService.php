@@ -17,7 +17,18 @@ final class BetaModeService
 
     public function enable(): void
     {
-        touch($this->lockFile);
+        // var/ est vidé au déploiement et absent d'un checkout neuf : sans ce mkdir,
+        // touch() échoue silencieusement et le mode beta reste inactif — donc les mails
+        // partent aux vrais licenciés alors que l'admin croit les avoir coupés.
+        $repertoire = \dirname($this->lockFile);
+
+        if (!is_dir($repertoire) && !mkdir($repertoire, 0775, true) && !is_dir($repertoire)) {
+            throw new \RuntimeException(sprintf('Impossible de créer le répertoire des verrous : %s', $repertoire));
+        }
+
+        if (!touch($this->lockFile)) {
+            throw new \RuntimeException(sprintf('Impossible d\'activer le mode beta : %s n\'a pas pu être créé.', $this->lockFile));
+        }
     }
 
     public function disable(): void
