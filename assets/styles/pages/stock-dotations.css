@@ -258,6 +258,9 @@
 @media (min-width: 480px) {
     .dot-row { flex-direction: row; }
     .dot-row .dot-field { flex: 1; }
+    /* Les formulaires posent `.field`, pas `.dot-field` : sans cette règle les colonnes
+       ne s'égalisaient jamais et les champs restaient à la largeur de leur contenu. */
+    .dot-row > .field:not(.dot-field-narrow) { flex: 1; min-width: 0; }
     .dot-row .dot-field-narrow { flex: 0 0 9rem; }
 }
 
@@ -268,8 +271,14 @@
     gap: 0.5rem;
 }
 
+/* `.field-input` porte `width: 100%` : en élément flex, cette largeur le fait passer
+   seul à la ligne. On lui rend un comportement de colonne extensible. */
 .dot-inline > .dot-select,
-.dot-inline > .dot-text { flex: 1 1 auto; }
+.dot-inline > .dot-text,
+.dot-inline > .field-input,
+.dot-inline-form > .field-input,
+.dot-add-row > .field-input { flex: 1 1 auto; width: auto; min-width: 0; }
+
 
 .dot-inline-stack { margin-bottom: 0.5rem; }
 
@@ -359,7 +368,7 @@
 
 .dot-choix-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
 }
 
 /* — Une option d'un choix — */
@@ -722,6 +731,7 @@
 }
 
 .dot-taille-ok { color: var(--color-success); }
+
 .dot-taille-ok:hover { background: var(--color-success-bg); border-color: var(--color-success); }
 
 @media (max-width: 640px) {

@@ -11,7 +11,7 @@
         {% if vetements is not empty %}
             <optgroup label="Vêtements (taille automatique)">
                 {% for item in vetements %}
-                    <option value="{{ item.id }}">{{ item.nom }} — {{ item.typeVetement.label }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
+                    <option value="{{ item.id }}">{{ item.nom }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
                 {% endfor %}
             </optgroup>
         {% endif %}
@@ -58,13 +58,17 @@
     {# — Réglages du kit — #}
     <div class="dot-card">
         <h2 class="dot-card-title">Le kit</h2>
-        <form method="post" action="{{ path('admin_dotations_edit', {id: modele.id}) }}" class="dot-inline-form">
+        <form method="post" action="{{ path('admin_dotations_edit', {id: modele.id}) }}" class="dot-choix-body">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_edit_' ~ modele.id) }}">
-            <input type="text" name="nom" class="field-input" value="{{ modele.nom }}" required>
-            <label class="dot-check">
-                <input type="checkbox" name="actif" value="1" {{ modele.actif ? 'checked' : '' }}> Actif
-            </label>
-            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <div class="dot-inline">
+                <input type="text" name="nom" class="field-input" value="{{ modele.nom }}" required aria-label="Nom du kit">
+                <label class="dot-check">
+                    <input type="checkbox" name="actif" value="1" {{ modele.actif ? 'checked' : '' }}> Actif
+                </label>
+            </div>
+            <div class="dot-choix-actions">
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
         </form>
 
     </div>
