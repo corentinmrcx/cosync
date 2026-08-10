@@ -133,15 +133,20 @@ jobs:
             # Ce que l'on traque, c'est la perte de contenu : une table ou une colonne
             # qui disparaît. DROP NOT NULL / DEFAULT / CONSTRAINT / INDEX assouplit le
             # schéma sans effacer une seule ligne.
-            if ! echo "$corps" \
+            # On teste le contenu récolté, jamais le code retour de « grep -qv » : sur une
+            # entrée vide il vaut 1 chez GNU grep et 0 ailleurs, ce qui inverse la garde
+            # sans rien afficher.
+            suppressions=$(printf '%s\n' "$corps" \
               | grep -iE 'DROP (TABLE|COLUMN)|ALTER TABLE .* DROP ' \
-              | grep -qivE 'DROP (NOT NULL|DEFAULT|CONSTRAINT|INDEX)'; then
+              | grep -ivE 'DROP (NOT NULL|DEFAULT|CONSTRAINT|INDEX)' || true)
+            if [ -z "$suppressions" ]; then
               continue
             fi
             # Une suppression reste possible, jamais silencieuse : le fichier doit
             # l'annoncer et dire où le contenu supprimé vit désormais. « NON DESTRUCTIF »
             # ne vaut pas annonce — sinon la garde se désamorce toute seule.
-            if grep 'DESTRUCTIF' "$fichier" | grep -qv 'NON DESTRUCTIF'; then
+            annonce=$(grep 'DESTRUCTIF' "$fichier" | grep -v 'NON DESTRUCTIF' || true)
+            if [ -n "$annonce" ]; then
               echo "::warning::$fichier supprime des données de production — annoncé, relire le §13 et sauvegarder avant de déployer."
             else
               echo "::error::$fichier supprime une table ou une colonne sans l'annoncer."
