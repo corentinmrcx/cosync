@@ -20,8 +20,24 @@ class Season
     #[ORM\Column(options: ['default' => 0])]
     private int $cotisationDefaut = 0;
 
+    /*
+     * Les textes des règlements intérieurs vivaient ici, une colonne par destinataire.
+     * Ils sont désormais portés par DocumentSignable, créé depuis l'admin : ajouter un
+     * document ne demande plus de migration. Les colonnes reglement_text et
+     * reglement_dirigeant_text subsistent en base, dé-mappées, le temps de valider la
+     * bascule en production (voir la migration Version20260807233000).
+     */
+
+    /** Texte de l'attestation de remise signée par les détenteurs de clés du local */
     #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $reglementText = null;
+    private ?string $attestationCleText = null;
+
+    /*
+     * Les coordonnées bancaires ont vécu ici, une colonne par champ. Le RIB appartient au
+     * club et non à la saison : il est porté par ClubSettings depuis Version20260809160000.
+     * Les colonnes iban, bic et titulaire_compte subsistent en base, dé-mappées, le temps
+     * de valider la bascule en production.
+     */
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
@@ -44,6 +60,7 @@ class Season
     public function setLabel(string $label): static
     {
         $this->label = $label;
+
         return $this;
     }
 
@@ -55,17 +72,19 @@ class Season
     public function setCotisationDefaut(int $cotisationDefaut): static
     {
         $this->cotisationDefaut = $cotisationDefaut;
+
         return $this;
     }
 
-    public function getReglementText(): ?string
+    public function getAttestationCleText(): ?string
     {
-        return $this->reglementText;
+        return $this->attestationCleText;
     }
 
-    public function setReglementText(?string $reglementText): static
+    public function setAttestationCleText(?string $attestationCleText): static
     {
-        $this->reglementText = $reglementText;
+        $this->attestationCleText = $attestationCleText;
+
         return $this;
     }
 

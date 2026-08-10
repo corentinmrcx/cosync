@@ -1,0 +1,23 @@
+{# Bouton de l'application.
+
+   variante : primary | secondary | ghost | danger   (défaut : secondary)
+   taille   : sm | lg | block                        (facultatif)
+   href     : rend un lien plutôt qu'un <button>
+   type     : submit | button | reset                (défaut : submit)
+   icone    : nom d'icône de components/_icon.html.twig
+   attrs    : attributs HTML supplémentaires, déjà échappés (ex. Alpine)
+#}
+{% import 'components/_icon.html.twig' as ui %}
+{% set classes = 'btn btn-' ~ (variante|default('secondary')) ~ (taille is defined ? ' btn-' ~ taille : '') ~ (classe is defined ? ' ' ~ classe : '') %}
+
+{% if href is defined %}
+    <a href="{{ href }}" class="{{ classes }}"{{ attrs is defined ? attrs|raw : '' }}>
+        {%- if icone is defined %}{{ ui.icon(icone, 16) }}{% endif -%}
+        {{ libelle }}
+    </a>
+{% else %}
+    <button type="{{ type|default('submit') }}" class="{{ classes }}"{{ attrs is defined ? attrs|raw : '' }}{{ disabled|default(false) ? ' disabled' : '' }}>
+        {%- if icone is defined %}{{ ui.icon(icone, 16) }}{% endif -%}
+        {{ libelle }}
+    </button>
+{% endif %}

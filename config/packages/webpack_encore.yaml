@@ -40,6 +40,10 @@ framework:
 #        # Available in version 1.2
 #        cache: true
 
-#when@test:
-#    webpack_encore:
-#        strict_mode: false
+# Les tests PHP valident le rendu Symfony, pas la chaîne de build : exiger
+# public/build/ ferait échouer toute page étendant base.html.twig sur une machine
+# ou un runner CI où `npm run build` n'a pas tourné. La compilation des assets est
+# vérifiée par le job « front » de la CI, qui est le bon endroit pour ça.
+when@test:
+    webpack_encore:
+        strict_mode: false

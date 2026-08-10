@@ -2,7 +2,8 @@
 
 namespace App\Tests\Service\Form;
 
-use App\Service\Form\AttestationTransportRequestFactory;
+use App\Service\Document\SignatureImageValidator;
+use App\Service\Inscription\AttestationTransportRequestFactory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -12,20 +13,21 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class AttestationTransportRequestFactoryTest extends TestCase
 {
-    private const SIGNATURE = 'data:image/png;base64,iVBORw0KGgo=';
+    /** PNG 1×1 valide : le validateur décode et vérifie réellement les octets PNG. */
+    private const SIGNATURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
     private AttestationTransportRequestFactory $factory;
 
     protected function setUp(): void
     {
-        $this->factory = new AttestationTransportRequestFactory();
+        $this->factory = new AttestationTransportRequestFactory(new SignatureImageValidator());
     }
 
     public function testVehiculeNeufRendLaDateFacultative(): void
     {
         $data = $this->factory->fromRequest($this->buildRequest([
             'attestation_vehicule_neuf' => '1',
-            'attestation_date_ct'       => '',
+            'attestation_date_ct' => '',
         ]));
 
         self::assertNotNull($data);
@@ -66,7 +68,7 @@ final class AttestationTransportRequestFactoryTest extends TestCase
     {
         $data = $this->factory->fromRequest($this->buildRequest([
             'attestation_vehicule_neuf' => '1',
-            'attestation_num_permis'    => '',
+            'attestation_num_permis' => '',
         ]));
 
         self::assertNull($data);
@@ -76,13 +78,13 @@ final class AttestationTransportRequestFactoryTest extends TestCase
     private function buildRequest(array $overrides): Request
     {
         $params = array_merge([
-            'attestation_nom_conducteur'    => 'Martin',
+            'attestation_nom_conducteur' => 'Martin',
             'attestation_prenom_conducteur' => 'Kevin',
-            'attestation_num_permis'        => '123456789',
-            'attestation_assurance'         => 'Macif — 12 rue de la Paix',
-            'attestation_date_ct'           => '2024-03-15',
-            'attestation_signature_data'    => self::SIGNATURE,
-            'attestation_engagement'        => '1',
+            'attestation_num_permis' => '123456789',
+            'attestation_assurance' => 'Macif — 12 rue de la Paix',
+            'attestation_date_ct' => '2024-03-15',
+            'attestation_signature_data' => self::SIGNATURE,
+            'attestation_engagement' => '1',
         ], $overrides);
 
         return new Request(request: $params);

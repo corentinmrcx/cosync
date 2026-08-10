@@ -1,24 +1,19 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}CoSync — Saisons{% endblock %}
+{% block title %}CoSync — Gérer les saisons{% endblock %}
 
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Saisons' }
+    { label: 'Saisons', route: 'admin_seasons_index' },
+    { label: 'Gérer' }
 ] } %}
 
 <div class="season-form-page">
     <div class="season-list-wrap">
 
         <div class="season-list-header">
-            <h1 class="season-list-title">Saisons</h1>
-            <a href="{{ path('admin_seasons_new') }}" class="season-list-new-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Nouvelle saison
-            </a>
+            <h1 class="season-list-title">Gérer les saisons</h1>
         </div>
 
         {% if seasons is empty %}
@@ -27,36 +22,29 @@
             <ul class="season-list">
                 {% for season in seasons %}
                     {% set isActive = current and current.id == season.id %}
-                    {% set stat = stats[season.id] %}
-                    {% set canDelete = not isActive and stat.licencies == 0 and stat.dirigeants == 0 %}
+                    {% set blocage = blocages[season.id] %}
 
                     <li class="season-list-item {{ isActive ? 'season-list-item-active' : '' }}">
                         <div class="season-list-item-info">
                             <span class="season-list-item-label">{{ season.label }}</span>
                             {% if isActive %}
-                                <span class="season-list-badge-active">Active</span>
+                                <span class="season-list-badge-active">En cours</span>
                             {% endif %}
-                            <span class="season-list-item-stats">
-                                {{ stat.licencies }} licencié{{ stat.licencies > 1 ? 's' : '' }}
-                                · {{ stat.dirigeants }} dirigeant{{ stat.dirigeants > 1 ? 's' : '' }}
+                            {# Un bouton Supprimer absent sans raison n'apprend rien à l'admin. #}
+                            <span class="season-list-item-blocage">
+                                {{ blocage is null ? 'Vide : elle peut être supprimée' : blocage }}
                             </span>
                         </div>
 
                         <div class="season-list-item-actions">
-                            {% if not isActive %}
-                                <form method="post" action="{{ path('admin_seasons_switch', {id: season.id}) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('season_switch_' ~ season.id) }}">
-                                    <input type="hidden" name="returnTo" value="{{ path('admin_seasons_list') }}">
-                                    <button type="submit" class="season-list-btn-activate">Activer</button>
-                                </form>
-                            {% endif %}
+                            <a href="{{ path('admin_seasons_edit', {id: season.id}) }}" class="season-list-btn-activate">Modifier</a>
 
-                            {% if canDelete %}
-                                <form method="post" action="{{ path('admin_seasons_delete', {id: season.id}) }}"
-                                      onsubmit="return confirm('Supprimer la saison {{ season.label }} ? Cette action est irréversible.')">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('season_delete_' ~ season.id) }}">
-                                    <button type="submit" class="season-list-btn-delete">Supprimer</button>
-                                </form>
+                            {% if blocage is null %}
+                                {% include 'components/_form_suppression.html.twig' with {
+                                    action: path('admin_seasons_delete', {id: season.id}),
+                                    jeton: 'season_delete_' ~ season.id,
+                                    message: 'Supprimer la saison ' ~ season.label ~ ' ? Cette action est irréversible.',
+                                } only %}
                             {% endif %}
                         </div>
                     </li>

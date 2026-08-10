@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Dirigeant;
 use App\Entity\Season;
+use App\Enum\DirigeantRole;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
@@ -61,17 +62,28 @@ class DirigeantRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /** Dirigeants de la saison qui n'ont pas encore complété leur formulaire. */
+    public function countFormulairesEnAttente(Season $season): int
+    {
+        return (int) $this->createQueryBuilder('d')
+            ->select('COUNT(d.uuid)')
+            ->where('d.season = :season')
+            ->andWhere('d.formCompletedAt IS NULL')
+            ->setParameter('season', $season)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /** @return Dirigeant[] */
     public function findBySeasonWithFilters(
         Season $season,
         ?string $search,
         ?int $teamId,
-        ?int $roleId,
+        ?DirigeantRole $role,
     ): array {
         $qb = $this->createQueryBuilder('d')
-            ->leftJoin('d.role', 'r')
             ->leftJoin('d.team', 't')
-            ->addSelect('r', 't')
+            ->addSelect('t')
             ->where('d.season = :season')
             ->setParameter('season', $season)
             ->orderBy('d.nom', 'ASC')
@@ -87,9 +99,9 @@ class DirigeantRepository extends ServiceEntityRepository
                 ->setParameter('teamId', $teamId);
         }
 
-        if ($roleId !== null) {
-            $qb->andWhere('r.id = :roleId')
-                ->setParameter('roleId', $roleId);
+        if ($role !== null) {
+            $qb->andWhere('d.role = :role')
+                ->setParameter('role', $role);
         }
 
         return $qb->getQuery()->getResult();

@@ -5,6 +5,8 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
     { label: 'Dirigeants', route: 'admin_dirigeants_list' },
     { label: dirigeant.nomPrenom }
 ] } %}
@@ -14,13 +16,11 @@
     <div class="licencie-show-header">
         <div>
             <h1 class="licencie-show-title">{{ dirigeant.nomPrenom }}</h1>
-            {% if dirigeant.role %}
-                <p class="dirigeant-show-role">{{ dirigeant.role }}</p>
-            {% endif %}
+            <p class="dirigeant-show-role">{{ dirigeant.role.label() }}</p>
         </div>
 
         <div class="licencie-show-header-actions">
-            <a href="{{ path('admin_dirigeants_edit', {uuid: dirigeant.uuid}) }}" class="licencie-show-edit-btn">
+            <a href="{{ path('admin_dirigeants_edit', {uuid: dirigeant.uuid}) }}" class="btn btn-secondary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -28,11 +28,11 @@
                 Modifier
             </a>
 
-            {% if not dirigeant.isPublicFormComplete %}
+            {% if not dossierComplet %}
                 {% if dirigeant.email %}
                     <form method="post" action="{{ path('admin_dirigeants_send_link', {uuid: dirigeant.uuid}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_send_link_' ~ dirigeant.uuid) }}">
-                        <button type="submit" class="licencie-show-send-btn">
+                        <button type="submit" class="btn btn-primary">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13"/>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -106,9 +106,9 @@
             </dl>
         </div>
 
-        {# — Équipement — #}
+        {# — Dossier club — #}
         <div class="licencie-show-card">
-            <h2 class="licencie-show-card-title">Équipement</h2>
+            <h2 class="licencie-show-card-title">Dossier club</h2>
 
             <dl class="licencie-show-dl">
                 <div class="licencie-show-dl-row">
@@ -132,91 +132,60 @@
                 : dirigeant.autorisationPhoto %}
 
             <ul class="licencie-show-checklist">
-                {# Formulaire dirigeant #}
-                <li class="licencie-show-check-item">
-                    {% if dirigeant.isPublicFormComplete %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span class="licencie-show-check-label">Formulaire dirigeant</span>
-                        {% if dirigeant.formCompletedAt %}<span class="licencie-show-check-date">le {{ dirigeant.formCompletedAt|date('d/m/Y') }}</span>{% endif %}
-                    {% elseif dirigeant.formTokenValid %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span class="licencie-show-check-label licencie-show-check-label-pending">Formulaire dirigeant</span>
-                        <span class="licencie-show-check-badge-pending">Lien envoyé</span>
-                    {% else %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span class="licencie-show-check-label licencie-show-check-label-pending">Formulaire dirigeant</span>
-                        <span class="licencie-show-check-badge-pending">En attente</span>
-                    {% endif %}
-                </li>
-
                 {# Droit à l'image #}
-                <li class="licencie-show-check-item">
-                    {% if photoVal is null %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span class="licencie-show-check-label licencie-show-check-label-pending">Droit à l'image</span>
-                        <span class="licencie-show-check-badge-pending">En attente</span>
-                    {% elseif photoVal %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span class="licencie-show-check-label">Droit à l'image</span>
-                        <span class="licencie-show-check-badge-yes">Accordé</span>
-                    {% else %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        <span class="licencie-show-check-label">Droit à l'image</span>
-                        <span class="licencie-show-check-badge-no">Refusé</span>
-                    {% endif %}
-                </li>
+                {% include 'components/_checklist_item.html.twig' with {
+                    etat: photoVal is null ? 'attente' : (photoVal ? 'accorde' : 'refuse'),
+                    label: "Droit à l'image",
+                    detail: photoVal is null ? null : (photoVal ? 'Accordé' : 'Refusé'),
+                } only %}
 
                 {# Transport des licenciés #}
-                <li class="licencie-show-check-item">
-                    {% if dirigeant.volontaireTransport is null %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span class="licencie-show-check-label licencie-show-check-label-pending">Transport des licenciés</span>
-                        <span class="licencie-show-check-badge-pending">En attente</span>
-                    {% elseif dirigeant.volontaireTransport %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span class="licencie-show-check-label">Transport des licenciés</span>
-                        <span class="licencie-show-check-badge-yes">Oui</span>
-                    {% else %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        <span class="licencie-show-check-label">Transport des licenciés</span>
-                        <span class="licencie-show-check-badge-neutral">Non</span>
-                    {% endif %}
-                </li>
+                {% include 'components/_checklist_item.html.twig' with {
+                    etat: dirigeant.volontaireTransport is null ? 'attente' : (dirigeant.volontaireTransport ? 'accorde' : 'refuse'),
+                    label: "Transport des licenciés",
+                    detail: dirigeant.volontaireTransport is null ? null : (dirigeant.volontaireTransport ? 'Accordé' : 'Refusé'),
+                } only %}
 
                 {# Attestation transport — uniquement si volontaire #}
                 {% if dirigeant.volontaireTransport %}
-                <li class="licencie-show-check-item licencie-show-check-item-sub">
-                    {% if dirigeant.attestationTransportDriveId is not null and not (dirigeant.attestationTransportDriveId starts with '/') %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span class="licencie-show-check-label">Attestation transport</span>
-                        <span class="licencie-show-check-badge-yes">Archivée sur Drive</span>
-                    {% else %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span class="licencie-show-check-label licencie-show-check-label-pending">Attestation transport</span>
-                        <span class="licencie-show-check-badge-pending">Upload en attente</span>
-                    {% endif %}
-                </li>
+                {% include 'components/_checklist_item.html.twig' with {
+                    etat: dirigeant.attestationTransportEstArchivee ? 'fait' : 'attente',
+                    label: 'Attestation transport',
+                    detail: dirigeant.attestationTransportEstArchivee ? 'Archivée sur Drive' : 'Upload en attente',
+                } only %}
                 {% endif %}
 
-                {# Règlement intérieur signé #}
-                <li class="licencie-show-check-item">
-                    {% if dirigeant.hasSignedReglement %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span class="licencie-show-check-label">Règlement intérieur</span>
-                        {% if dirigeant.reglementSignePath is null and dirigeant.licencie is not null %}
-                            <span class="licencie-show-check-badge-yes">Signé (dossier joueur)</span>
-                        {% elseif dirigeant.reglementSignePath starts with '/' %}
-                            <span class="licencie-show-check-badge-pending">Upload en attente</span>
-                        {% else %}
-                            <span class="licencie-show-check-badge-yes">Archivé sur Drive</span>
-                        {% endif %}
-                    {% else %}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span class="licencie-show-check-label licencie-show-check-label-pending">Règlement intérieur</span>
-                        <span class="licencie-show-check-badge-pending">En attente</span>
-                    {% endif %}
-                </li>
+                {# Documents à signer — la liste suit ce que la saison demande à ce dirigeant #}
+                {% for doc in documents %}
+                    {% set signature = signatures[doc.id] ?? null %}
+                    {% include 'components/_checklist_item.html.twig' with {
+                        etat: signature ? 'fait' : 'attente',
+                        label: doc.titre,
+                        detail: signature
+                            ? (signature.uploadPending ? 'Upload en attente' : 'Archivé sur Drive')
+                            : null,
+                    } only %}
+                {% endfor %}
+
+                {# Attestation de remise de clés — affichée seulement pour les détenteurs de clés #}
+                {% if cleRow and cleRow.estDetenteur() %}
+                    {% set attestation = cleRow.attestation %}
+                    {% include 'components/_checklist_item.html.twig' with {
+                        etat: cleRow.attestationAJour() ? 'fait' : 'attente',
+                        label: 'Attestation de remise de clés — saison ' ~ dirigeant.season.label,
+                        detail: attestation and attestation.estSignee()
+                            ? (attestation.estArchivee() ? 'Archivée sur Drive' : 'Upload en attente')
+                            : cleRow.etatAttestation().label(),
+                    } only %}
+                {% endif %}
             </ul>
+
+            {% if cleRow and cleRow.estDetenteur() %}
+                <p class="licencie-show-card-note">
+                    Détient {{ cleRow.detention.solde }} clé{{ cleRow.detention.solde > 1 ? 's' : '' }} du local —
+                    <a href="{{ path('admin_cles_index') }}">voir le registre</a>
+                </p>
+            {% endif %}
         </div>
 
         {# — Historique — #}
@@ -237,7 +206,7 @@
         {% if dotations is not empty %}
         <div class="licencie-show-card licencie-show-card-full">
             <h2 class="licencie-show-card-title">Équipements attribués</h2>
-            <table class="licencie-show-dotations-table">
+            <table class="table">
                 <thead>
                     <tr><th>Article</th><th>Quantité</th><th>Date</th></tr>
                 </thead>

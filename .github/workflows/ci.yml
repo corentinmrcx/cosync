@@ -1,0 +1,157 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - production
+  pull_request:
+  workflow_call:
+
+jobs:
+  php:
+    name: PHP — tests, analyse statique, style
+    runs-on: ubuntu-latest
+
+    services:
+      database:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cosync
+          POSTGRES_USER: cosync
+          POSTGRES_PASSWORD: cosync
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cosync -d cosync"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql://cosync:cosync@127.0.0.1:5432/cosync?serverVersion=16&charset=utf8
+      # Le job tourne sur le runner, pas dans le réseau Docker : le service Postgres
+      # n'est joignable qu'en local. Sans ça, DatabaseBackupService retombe sur son
+      # défaut « database » (nom du service dans compose.yaml) et pg_dump échoue.
+      DATABASE_HOST: 127.0.0.1
+      # En test, Doctrine suffixe la base (« _test », cf. config/packages/doctrine.yaml) :
+      # c'est cosync_test qui est migrée. Le service de sauvegarde, lui, dumpe POSTGRES_DB
+      # sans suffixe — il faut donc l'aligner, sinon il archive la base vide et rapporte
+      # un dump invalide. En prod les deux désignent naturellement la même base.
+      POSTGRES_DB: cosync_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: ctype, iconv, pdo_pgsql, zip, intl, gd
+          coverage: none
+          tools: composer:v2
+
+      - name: Installer les dépendances
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Préparer la base de test
+        run: |
+          php bin/console doctrine:database:create --env=test --if-not-exists
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+
+      - name: Tests
+        run: vendor/bin/phpunit
+
+      # phpstan-symfony lit le conteneur compilé pour typer les appels au container et
+      # aux repositories (cf. containerXmlPath dans phpstan.dist.neon). Le job tourne en
+      # APP_ENV=test : sans ce réchauffage, le cache dev n'existe pas et l'analyse s'arrête
+      # avant d'avoir lu la moindre ligne.
+      - name: Réchauffer le conteneur dev pour PHPStan
+        run: php bin/console cache:warmup --env=dev
+        env:
+          APP_ENV: dev
+
+      - name: Analyse statique
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Style de code
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff --show-progress=none
+
+  front:
+    name: Front — CSS et JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Stylelint
+        run: npm run lint:css
+
+      - name: ESLint
+        run: npm run lint:js
+
+      - name: Build des assets
+        run: npm run build
+
+  migrations:
+    name: Migrations — signaler les opérations destructrices
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Refuser un DROP non annoncé dans une migration ajoutée
+        run: |
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "Pas de base de comparaison, contrôle ignoré."
+            exit 0
+          fi
+          added=$(git diff --name-only --diff-filter=A "$base" HEAD -- migrations/ || true)
+          if [ -z "$added" ]; then
+            echo "Aucune migration ajoutée."
+            exit 0
+          fi
+          echo "Migrations ajoutées : $added"
+          statut=0
+          for fichier in $added; do
+            # Seul up() est déployé. Une migration purement additive dont le down()
+            # défait proprement ses créations n'est pas destructrice : la scanner en
+            # entier obligerait à l'annoncer DESTRUCTIF, donc à mentir.
+            corps=$(sed -n '/function up(/,/function down(/p' "$fichier")
+            # Ce que l'on traque, c'est la perte de contenu : une table ou une colonne
+            # qui disparaît. DROP NOT NULL / DEFAULT / CONSTRAINT / INDEX assouplit le
+            # schéma sans effacer une seule ligne.
+            # On teste le contenu récolté, jamais le code retour de « grep -qv » : sur une
+            # entrée vide il vaut 1 chez GNU grep et 0 ailleurs, ce qui inverse la garde
+            # sans rien afficher.
+            suppressions=$(printf '%s\n' "$corps" \
+              | grep -iE 'DROP (TABLE|COLUMN)|ALTER TABLE .* DROP ' \
+              | grep -ivE 'DROP (NOT NULL|DEFAULT|CONSTRAINT|INDEX)' || true)
+            if [ -z "$suppressions" ]; then
+              continue
+            fi
+            # Une suppression reste possible, jamais silencieuse : le fichier doit
+            # l'annoncer et dire où le contenu supprimé vit désormais. « NON DESTRUCTIF »
+            # ne vaut pas annonce — sinon la garde se désamorce toute seule.
+            annonce=$(grep 'DESTRUCTIF' "$fichier" | grep -v 'NON DESTRUCTIF' || true)
+            if [ -n "$annonce" ]; then
+              echo "::warning::$fichier supprime des données de production — annoncé, relire le §13 et sauvegarder avant de déployer."
+            else
+              echo "::error::$fichier supprime une table ou une colonne sans l'annoncer."
+              echo "Ajouter DESTRUCTIF au docblock et y indiquer où le contenu se trouve désormais (CLAUDE.md §13)."
+              statut=1
+            fi
+          done
+          exit $statut

@@ -2,37 +2,48 @@
 
 namespace App\Controller\Admin;
 
+use App\Security\CsrfGuard;
 use App\Service\Import\ImportService;
-use App\Service\SeasonContext;
+use App\Service\Saison\SeasonContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/admin/import', name: 'admin_import_')]
+#[Route('/admin/effectif/import', name: 'admin_import_')]
 class ImportController extends AbstractController
 {
+    public function __construct(
+        private readonly SeasonContext $seasonContext,
+        private readonly ImportService $importService,
+        private readonly CsrfGuard $csrf,
+    ) {}
+
     #[Route('', name: 'index', methods: ['GET'])]
-    public function index(SeasonContext $seasonContext): Response
+    public function index(): Response
     {
-        if ($seasonContext->getCurrentSeason() === null) {
+        if ($this->seasonContext->getCurrentSeason() === null) {
             $this->addFlash('warning', 'Créez une saison avant de pouvoir importer des licenciés.');
+
             return $this->redirectToRoute('admin_seasons_new');
         }
 
         return $this->render('admin/import/index.html.twig', [
-            'currentSeason' => $seasonContext->getCurrentSeason(),
+            'currentSeason' => $this->seasonContext->getCurrentSeason(),
         ]);
     }
 
     #[Route('', name: 'process', methods: ['POST'])]
-    public function process(Request $request, ImportService $importService, SeasonContext $seasonContext): Response
+    public function process(Request $request): Response
     {
-        $season = $seasonContext->getCurrentSeason();
+        $this->csrf->valider('import_xlsx', $request);
+
+        $season = $this->seasonContext->getCurrentSeason();
 
         if ($season === null) {
             $this->addFlash('error', 'Aucune saison sélectionnée. Créez et activez une saison d\'abord.');
+
             return $this->redirectToRoute('admin_import_index');
         }
 
@@ -40,18 +51,21 @@ class ImportController extends AbstractController
 
         if (!$file instanceof UploadedFile) {
             $this->addFlash('error', 'Aucun fichier reçu.');
+
             return $this->redirectToRoute('admin_import_index');
         }
 
         if ($file->getClientOriginalExtension() !== 'xlsx') {
             $this->addFlash('error', 'Le fichier doit être au format .xlsx');
+
             return $this->redirectToRoute('admin_import_index');
         }
 
         try {
-            $result = $importService->importFromXlsx($file, $season);
+            $result = $this->importService->importFromXlsx($file, $season);
         } catch (\Throwable) {
             $this->addFlash('error', 'Une erreur inattendue est survenue pendant l\'import. Veuillez réessayer.');
+
             return $this->redirectToRoute('admin_import_index');
         }
 

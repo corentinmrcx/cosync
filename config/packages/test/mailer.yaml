@@ -1,3 +1,6 @@
 framework:
     mailer:
+        # Aucun mail ne part réellement. Les messages restent assertables : framework.test
+        # active le MessageLoggerListener, que MailerAssertionsTrait interroge dans les tests
+        # (cf. tests/Service/Mail/MailerServiceTest.php).
         dsn: 'null://null'

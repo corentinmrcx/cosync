@@ -1,0 +1,374 @@
+/* — Club house : registre des clés et attestation de remise — */
+.cles-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* — Header — */
+.cles-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.cles-title {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+}
+
+.cles-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.cles-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.cles-btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-primary);
+    cursor: pointer;
+    text-align: left;
+}
+
+.cles-btn-link:hover {
+    color: var(--color-primary-dark);
+}
+
+/* — Sections — */
+.cles-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-card);
+}
+
+.cles-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.cles-section-title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.cles-empty {
+    margin: 0;
+    padding: 1.5rem;
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-md);
+}
+
+/* — Tableau — */
+.cles-nom {
+    display: block;
+    font-weight: 600;
+    color: var(--color-text-base);
+}
+
+.cles-meta {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.cles-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-xl);
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    font-weight: 700;
+}
+
+.cles-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-end;
+}
+
+/* — Badges — */
+.cles-badge-signee,
+.cles-badge-attente,
+.cles-badge-manquante,
+.cles-badge-renouveler,
+.cles-badge-hors-effectif,
+.cles-badge-remise,
+.cles-badge-restitution,
+.cles-badge-perte {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-xl);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.cles-badge-signee,
+.cles-badge-remise {
+    background: var(--color-status-validated-bg);
+    color: var(--color-status-validated);
+}
+
+.cles-badge-attente,
+.cles-badge-restitution {
+    background: var(--color-status-sent-bg);
+    color: var(--color-status-sent);
+}
+
+.cles-badge-manquante,
+.cles-badge-perte {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.cles-badge-renouveler {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+/* Détient des clés sans figurer à l'effectif de la saison : l'alerte suit la ligne */
+.cles-badge-hors-effectif {
+    margin-left: 0.4rem;
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+/* — Campagne de signature de la saison — */
+.cles-campagne {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.cles-campagne-alerte {
+    background: var(--color-warning-bg);
+    border-color: var(--color-warning);
+}
+
+.cles-campagne-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.cles-campagne-title {
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.cles-campagne-text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+}
+
+/* — Modale de mouvement — */
+.cles-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgb(0 0 0 / 0.45);
+    z-index: 50;
+}
+
+.cles-modal-hint {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+    color: var(--color-text-muted);
+}
+
+/* — Formulaire — */
+.cles-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cles-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+/* — Éditeur du texte d'attestation — */
+.cles-editor-page {
+    padding: 1.5rem;
+    max-width: 1300px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.cles-editor-layout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.cles-editor-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 1 1 480px;
+    min-width: 0;
+    padding: 1.5rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+.cles-editor-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.cles-editor-title {
+    margin: 0;
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+}
+
+.cles-editor-hint {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    line-height: 1.6;
+    color: var(--color-text-muted);
+}
+
+.cles-editor-divider {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 0;
+}
+
+.cles-editor-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.cles-editor-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.cles-editor-wrapper {
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.cles-editor-zone {
+    min-height: 22rem;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    color: var(--color-text-body);
+}
+
+.cles-editor-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* — Panneau d'aperçu — */
+.cles-preview-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 320px;
+    min-width: 0;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.cles-preview-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--color-bg-muted);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.cles-preview-title {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.cles-preview-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.cles-preview-content {
+    flex: 1;
+    padding: 1rem;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    color: var(--color-text-body);
+    overflow-y: auto;
+    max-height: 30rem;
+}
+
+.cles-preview-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    background: var(--color-bg-page);
+    border-top: 1px solid var(--color-border);
+}

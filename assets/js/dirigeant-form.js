@@ -1,13 +1,22 @@
-import { reglementSignature } from './reglement-signature.js';
+import { documentSignatures } from './document-signatures.js';
+import { attestationTransport } from './attestation-transport.js';
 
-export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglement }) {
+/**
+ * Formulaire public du dossier dirigeant.
+ *
+ * Les étapes 1 à 4 sont fixes ; les documents à signer occupent ensuite une étape
+ * chacun, à partir de 5. Leur nombre dépend de la saison et du ciblage du dirigeant,
+ * il n'est donc pas connu du code : `documents` est fourni par le serveur.
+ */
+export function dirigeantForm({ needTaille, needPhoto, needTransport, documents }) {
     return {
-        ...reglementSignature(),
+        ...attestationTransport(),
+
+        ...documentSignatures(documents),
 
         needTaille,
         needPhoto,
         needTransport,
-        needReglement,
 
         step: 1,
 
@@ -21,17 +30,18 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglem
         volontaireTransport: null,
 
         // Étape 4 — attestation transport (uniquement si volontaireTransport === '1')
-        nomConducteur: '',
-        prenomConducteur: '',
-        numPermis: '',
-        assuranceNomAdresse: '',
-        dateCT: '',
-        vehiculeNeuf: false,
-        engagementAttestation: false,
-        signatureDataAttestation: '',
-        signaturePadAttestation: null,
 
         submitting: false,
+
+        /** Numéro d'étape du document de rang `index`. */
+        documentStep(index) {
+            return 5 + index;
+        },
+
+        /** Rang du document affiché à l'étape courante, ou -1 hors des étapes documents. */
+        get currentDocumentIndex() {
+            return this.step >= 5 ? this.step - 5 : -1;
+        },
 
         // Étapes réellement accessibles, calculées selon les champs à collecter
         get steps() {
@@ -39,7 +49,7 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglem
             if (this.needTaille) s.push(2);
             if (this.needPhoto || this.needTransport) s.push(3);
             if (this.needTransport && this.volontaireTransport === '1') s.push(4);
-            if (this.needReglement) s.push(5);
+            this.docs.forEach((_, i) => s.push(this.documentStep(i)));
             return s;
         },
 
@@ -56,16 +66,6 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglem
             return this.step === this.steps[this.steps.length - 1];
         },
 
-        // Vrai si l'utilisateur a saisi une date de CT strictement dans le futur (aujourd'hui autorisé)
-        get dateCTFuture() {
-            if (this.dateCT === '') return false;
-            const d = new Date();
-            const todayStr = d.getFullYear() + '-'
-                + String(d.getMonth() + 1).padStart(2, '0') + '-'
-                + String(d.getDate()).padStart(2, '0');
-            return this.dateCT > todayStr;
-        },
-
         init() {
             // Si transport repasse à « non » et qu'on est sur l'étape attestation → reculer
             this.$watch('volontaireTransport', (val) => {
@@ -78,15 +78,18 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglem
                 if (value === 4) {
                     this.$nextTick(() => this.initAttestationSignaturePad());
                 }
-                if (value === 5) {
-                    this.$nextTick(() => this.markReglementScrolledIfShort());
+                if (value >= 5) {
+                    this.$nextTick(() => this.markDocScrolledIfShort(value - 5));
                 }
             });
 
-            this.$watch('hasRead', (value) => {
-                if (value === true && this.step === 5) {
-                    window.requestAnimationFrame(() => this.initSignaturePad());
-                }
+            // Le pad n'existe dans le DOM qu'une fois la case « J'ai lu » cochée.
+            this.docs.forEach((_, i) => {
+                this.$watch(`docs[${i}].hasRead`, (value) => {
+                    if (value === true && this.step === this.documentStep(i)) {
+                        window.requestAnimationFrame(() => this.initDocPad(i));
+                    }
+                });
             });
         },
 
@@ -101,17 +104,9 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglem
                     if (this.needTransport && this.volontaireTransport === null) return false;
                     return true;
                 case 4: // attestation transport
-                    return this.nomConducteur !== ''
-                        && this.prenomConducteur !== ''
-                        && this.numPermis !== ''
-                        && this.assuranceNomAdresse !== ''
-                        && (this.vehiculeNeuf || (this.dateCT !== '' && !this.dateCTFuture))
-                        && this.engagementAttestation
-                        && this.signatureDataAttestation !== '';
-                case 5: // règlement intérieur
-                    return this.hasRead && this.signatureData !== '';
-                default:
-                    return false;
+                    return this.attestationValide;
+                default: // étapes documents
+                    return this.docReady(this.currentDocumentIndex);
             }
         },
 
@@ -132,30 +127,5 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, needReglem
             }
         },
 
-        initAttestationSignaturePad() {
-            const canvas = this.$refs.signatureCanvasAttestation;
-            if (!canvas || this.signaturePadAttestation) return;
-
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width  = canvas.offsetWidth  * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext('2d').scale(ratio, ratio);
-
-            this.signaturePadAttestation = new SignaturePad(canvas, {
-                backgroundColor: 'rgb(255, 255, 255)',
-                penColor: 'rgb(0, 0, 0)',
-            });
-
-            this.signaturePadAttestation.addEventListener('endStroke', () => {
-                this.signatureDataAttestation = this.signaturePadAttestation.toDataURL('image/png');
-            });
-        },
-
-        clearAttestationSignature() {
-            if (this.signaturePadAttestation) {
-                this.signaturePadAttestation.clear();
-                this.signatureDataAttestation = '';
-            }
-        },
     };
 }

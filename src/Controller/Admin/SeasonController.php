@@ -4,50 +4,73 @@ namespace App\Controller\Admin;
 
 use App\Entity\Season;
 use App\Form\SeasonType;
-use App\Repository\DirigeantRepository;
-use App\Repository\LicencieRepository;
 use App\Repository\SeasonRepository;
-use App\Service\Pdf\PdfGeneratorService;
-use App\Service\SeasonContext;
-use App\Service\SeasonService;
+use App\Security\CsrfGuard;
+use App\Service\Saison\SeasonContext;
+use App\Service\Saison\SeasonService;
+use App\Service\Saison\SeasonSuppressionGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/admin/config/saisons', name: 'admin_seasons_')]
+#[Route('/admin/saisons', name: 'admin_seasons_')]
 class SeasonController extends AbstractController
 {
-    #[Route('', name: 'list', methods: ['GET'])]
-    public function list(
-        SeasonRepository $seasonRepo,
-        LicencieRepository $licencieRepo,
-        DirigeantRepository $dirigeantRepo,
-        SeasonContext $seasonContext,
-    ): Response {
-        $seasons = $seasonRepo->findAllOrdered();
-        $current = $seasonContext->getCurrentSeason();
+    public function __construct(
+        private readonly SeasonRepository $seasonRepo,
+        private readonly SeasonContext $seasonContext,
+        private readonly SeasonService $seasonService,
+        private readonly SeasonSuppressionGuard $suppressionGuard,
+        private readonly CsrfGuard $csrf,
+    ) {}
 
-        $stats = [];
-        foreach ($seasons as $season) {
-            $stats[$season->getId()] = [
-                'licencies'  => $licencieRepo->count(['season' => $season]),
-                'dirigeants' => $dirigeantRepo->count(['season' => $season]),
-            ];
-        }
-
-        return $this->render('admin/seasons/list.html.twig', [
-            'seasons' => $seasons,
-            'current' => $current,
-            'stats'   => $stats,
+    /** Une carte par saison : c'est la porte d'entrée vers le travail dans une saison. */
+    #[Route('', name: 'index', methods: ['GET'])]
+    public function index(): Response
+    {
+        return $this->render('admin/seasons/index.html.twig', [
+            'seasons' => $this->seasonRepo->findAllOrdered(),
+            'current' => $this->seasonContext->getCurrentSeason(),
         ]);
     }
 
+    // Renommage et suppression : accessible même quand aucune saison n'existe encore.
+    #[Route('/gerer', name: 'list', methods: ['GET'])]
+    public function list(): Response
+    {
+        $seasons = $this->seasonRepo->findAllOrdered();
+
+        return $this->render('admin/seasons/list.html.twig', [
+            'seasons' => $seasons,
+            'current' => $this->seasonContext->getCurrentSeason(),
+            'blocages' => $this->blocageParSaison($seasons),
+        ]);
+    }
+
+    /**
+     * Pourquoi chaque saison ne peut pas être supprimée : l'écran affiche la raison à la
+     * place du bouton, un bouton absent sans explication n'apprend rien à l'admin.
+     *
+     * @param Season[] $seasons
+     *
+     * @return array<int, ?string>
+     */
+    private function blocageParSaison(array $seasons): array
+    {
+        $blocages = [];
+        foreach ($seasons as $season) {
+            $blocages[$season->getId()] = $this->suppressionGuard->raison($season);
+        }
+
+        return $blocages;
+    }
+
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]
-    public function new(Request $request, SeasonService $seasonService): Response
+    public function new(Request $request): Response
     {
         $season = new Season();
-        $form   = $this->createForm(SeasonType::class, $season);
+        $form = $this->createForm(SeasonType::class, $season);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -55,48 +78,47 @@ class SeasonController extends AbstractController
             $season->setLabel($startYear . '-' . ($startYear + 1));
 
             try {
-                $seasonService->create($season);
-                $this->addFlash('success', sprintf('Saison "%s" créée.', $season->getLabel()));
-                return $this->redirectToRoute('admin_config_index');
+                $this->seasonService->create($season);
+                $this->seasonContext->setCurrentSeason($season);
+                $this->addFlash('success', sprintf('Saison "%s" créée. Vous y travaillez désormais.', $season->getLabel()));
+
+                return $this->redirectToRoute('admin_saison_dashboard');
             } catch (\DomainException $e) {
                 $this->addFlash('error', $e->getMessage());
             }
         }
 
         return $this->render('admin/seasons/form.html.twig', [
-            'form'  => $form,
+            'form' => $form,
+            'season' => null,
             'title' => 'Nouvelle saison',
         ]);
     }
 
-    #[Route('/{id}/reglement', name: 'reglement', methods: ['GET', 'POST'])]
-    public function reglement(Season $season, Request $request, SeasonService $seasonService): Response
+    #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    public function edit(Season $season, Request $request): Response
     {
-        if ($request->isMethod('POST')) {
-            if (!$this->isCsrfTokenValid('reglement_' . $season->getId(), $request->request->get('_token'))) {
-                $this->addFlash('error', 'Token CSRF invalide.');
-                return $this->redirectToRoute('admin_seasons_reglement', ['id' => $season->getId()]);
+        $form = $this->createForm(SeasonType::class, $season, [
+            'start_year' => $this->seasonService->anneeDeDebut($season),
+            'avec_cotisation' => false,
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $this->seasonService->renommerParAnnee($season, (int) $form->get('startYear')->getData());
+                $this->addFlash('success', sprintf('Saison "%s" mise à jour.', $season->getLabel()));
+
+                return $this->redirectToRoute('admin_seasons_list');
+            } catch (\DomainException $e) {
+                $this->addFlash('error', $e->getMessage());
             }
-
-            $seasonService->updateReglement($season, $request->request->get('reglement_text') ?: null);
-
-            $this->addFlash('success', 'Règlement mis à jour.');
-            return $this->redirectToRoute('admin_config_index');
         }
 
-        return $this->render('admin/seasons/reglement.html.twig', [
+        return $this->render('admin/seasons/form.html.twig', [
+            'form' => $form,
             'season' => $season,
-        ]);
-    }
-
-    #[Route('/{id}/reglement/apercu', name: 'reglement_apercu', methods: ['GET'])]
-    public function reglementApercu(Season $season, PdfGeneratorService $pdfGenerator): Response
-    {
-        $pdfContent = $pdfGenerator->generatePreview($season);
-
-        return new Response($pdfContent, Response::HTTP_OK, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="apercu-reglement-' . $season->getLabel() . '.pdf"',
+            'title' => sprintf('Saison %s', $season->getLabel()),
         ]);
     }
 
@@ -104,57 +126,53 @@ class SeasonController extends AbstractController
     public function delete(
         Season $season,
         Request $request,
-        SeasonService $seasonService,
-        SeasonContext $seasonContext,
-        LicencieRepository $licencieRepo,
-        DirigeantRepository $dirigeantRepo,
     ): Response {
-        if (!$this->isCsrfTokenValid('season_delete_' . $season->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_seasons_list');
-        }
+        $this->csrf->valider('season_delete_' . $season->getId(), $request);
 
-        $current = $seasonContext->getCurrentSeason();
-        if ($current !== null && $current->getId() === $season->getId()) {
-            $this->addFlash('error', 'Impossible de supprimer la saison active. Activez d\'abord une autre saison.');
-            return $this->redirectToRoute('admin_seasons_list');
-        }
+        // Le template masque le bouton, mais c'est ce contrôle-ci qui fait foi.
+        $raison = $this->suppressionGuard->raison($season);
+        if ($raison !== null) {
+            $this->addFlash('error', sprintf('Impossible de supprimer "%s". %s.', $season->getLabel(), $raison));
 
-        $licencieCount  = $licencieRepo->count(['season' => $season]);
-        $dirigeantCount = $dirigeantRepo->count(['season' => $season]);
-
-        if ($licencieCount > 0 || $dirigeantCount > 0) {
-            $this->addFlash('error', sprintf(
-                'Impossible de supprimer "%s" : elle contient %d licencié(s) et %d dirigeant(s).',
-                $season->getLabel(),
-                $licencieCount,
-                $dirigeantCount,
-            ));
             return $this->redirectToRoute('admin_seasons_list');
         }
 
         $label = $season->getLabel();
-        $seasonService->delete($season);
-        $this->addFlash('success', sprintf('Saison "%s" supprimée.', $label));
+        $current = $this->seasonContext->getCurrentSeason();
+
+        // Supprimer la saison dans laquelle on travaille est permis : sans cela, une saison
+        // créée par erreur devient courante à sa création et n'est plus jamais supprimable.
+        // On bascule d'abord, sinon l'admin se retrouverait dans une saison qui n'existe plus.
+        $repli = $current !== null && $current->getId() === $season->getId()
+            ? $this->suppressionGuard->remplacantePour($season)
+            : null;
+
+        if ($repli !== null) {
+            $this->seasonContext->setCurrentSeason($repli);
+        }
+
+        $this->seasonService->delete($season);
+
+        $this->addFlash('success', $repli !== null
+            ? sprintf('Saison "%s" supprimée. Vous travaillez désormais sur "%s".', $label, $repli->getLabel())
+            : sprintf('Saison "%s" supprimée.', $label));
 
         return $this->redirectToRoute('admin_seasons_list');
     }
 
     #[Route('/{id}/switch', name: 'switch', methods: ['POST'])]
-    public function switch(Season $season, SeasonContext $seasonContext, Request $request): Response
+    public function switch(Season $season, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('season_switch_' . $season->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_dashboard');
-        }
+        $this->csrf->valider('season_switch_' . $season->getId(), $request);
 
-        $seasonContext->setCurrentSeason($season);
+        $this->seasonContext->setCurrentSeason($season);
 
         $returnTo = $request->request->get('returnTo', '');
         if ($returnTo !== '' && str_starts_with($returnTo, '/')) {
             return $this->redirect($returnTo);
         }
 
-        return $this->redirectToRoute('admin_dashboard');
+        // Basculer de saison, c'est entrer dedans.
+        return $this->redirectToRoute('admin_saison_dashboard');
     }
 }

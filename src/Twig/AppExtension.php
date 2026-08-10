@@ -3,23 +3,37 @@
 namespace App\Twig;
 
 use App\Repository\SeasonRepository;
-use App\Service\SeasonContext;
+use App\Service\Referentiel\ClubSettingsService;
+use App\Service\Referentiel\Tailles;
+use App\Service\Saison\SeasonContext;
 use Twig\Extension\AbstractExtension;
 use Twig\Extension\GlobalsInterface;
 use Twig\TwigFilter;
+use Twig\TwigFunction;
 
 class AppExtension extends AbstractExtension implements GlobalsInterface
 {
     public function __construct(
         private readonly SeasonContext $seasonContext,
         private readonly SeasonRepository $seasonRepository,
+        private readonly ClubSettingsService $clubSettings,
+        private readonly string $nomClub,
     ) {}
 
     public function getGlobals(): array
     {
+        $season = $this->seasonContext->getCurrentSeason();
+
         return [
+            'club_nom' => $this->nomClub,
+            // Maillon « saison » du fil d'Ariane. null quand aucune saison n'existe : le
+            // composant breadcrumb saute alors le maillon au lieu de rompre le rendu.
+            'navbar_saison_label' => $season !== null ? 'Saison ' . $season->getLabel() : null,
+            // Coordonnées bancaires du club : lues par le formulaire public, la page de
+            // confirmation et le mail de confirmation, rendus depuis trois contextes différents.
+            'club_rib' => $this->clubSettings->get(),
             'navbar_current_season' => $this->seasonContext->getCurrentSeason(),
-            'navbar_seasons'        => $this->seasonRepository->findBy([], ['createdAt' => 'DESC']),
+            'navbar_seasons' => $this->seasonRepository->findBy([], ['createdAt' => 'DESC']),
         ];
     }
 
@@ -27,6 +41,16 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
     {
         return [
             new TwigFilter('phone_format', $this->formatPhone(...)),
+        ];
+    }
+
+    public function getFunctions(): array
+    {
+        return [
+            new TwigFunction('tailles_adulte', static fn (): array => Tailles::ADULTE),
+            new TwigFunction('tailles_enfant', static fn (): array => Tailles::ENFANT),
+            new TwigFunction('tailles_toutes', Tailles::toutes(...)),
+            new TwigFunction('pointures', Tailles::pointures(...)),
         ];
     }
 

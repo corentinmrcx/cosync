@@ -18,11 +18,13 @@ use App\Entity\StockItem;
 use App\Entity\Team;
 use App\Enum\CommandeStatut;
 use App\Enum\DotationBesoinStatut;
+use App\Enum\DotationEligibilite;
 use App\Enum\LicenceStatus;
+use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
-use App\Service\Stock\StockService;
+use App\Service\Stock\StockMovementService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -51,6 +53,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $season = (new Season())->setLabel($label)->setCotisationDefaut(85);
         $this->em->persist($season);
+
         return $season;
     }
 
@@ -58,6 +61,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $cat = (new Category())->setCode($code)->setLabel($code)->setIsEcoleFoot(false);
         $this->em->persist($cat);
+
         return $cat;
     }
 
@@ -65,6 +69,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $team = (new Team())->setName($name)->setSeason($season);
         $this->em->persist($team);
+
         return $team;
     }
 
@@ -72,6 +77,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $f = (new Fournisseur())->setNom($nom);
         $this->em->persist($f);
+
         return $f;
     }
 
@@ -82,6 +88,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     ): StockItem {
         $item = (new StockItem())->setNom($nom)->setTypeVetement($type)->setFournisseur($fournisseur);
         $this->em->persist($item);
+
         return $item;
     }
 
@@ -89,6 +96,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $m = (new DotationModele())->setSeason($season)->setNom($nom);
         $this->em->persist($m);
+
         return $m;
     }
 
@@ -97,10 +105,20 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         StockItem $item,
         int $qte = 1,
         ?string $groupeChoix = null,
+        DotationEligibilite $eligibilite = DotationEligibilite::TOUS,
+        bool $personnalisation = false,
+        ?int $maxLength = null,
     ): DotationModeleLigne {
-        $ligne = (new DotationModeleLigne())->setStockItem($item)->setQuantite($qte)->setGroupeChoix($groupeChoix);
+        $ligne = (new DotationModeleLigne())
+            ->setStockItem($item)
+            ->setQuantite($qte)
+            ->setGroupeChoix($groupeChoix)
+            ->setEligibilite($eligibilite)
+            ->setPersonnalisationRequise($personnalisation)
+            ->setPersonnalisationMaxLength($maxLength);
         $modele->addLigne($ligne);
         $this->em->persist($ligne);
+
         return $ligne;
     }
 
@@ -108,6 +126,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $a = (new DotationAffectation())->setSeason($s)->setModele($m)->setCategory($c);
         $this->em->persist($a);
+
         return $a;
     }
 
@@ -115,6 +134,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
     {
         $a = (new DotationAffectation())->setSeason($s)->setModele($m)->setLicencie($l);
         $this->em->persist($a);
+
         return $a;
     }
 
@@ -124,6 +144,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         ?Team $team = null,
         string $tailleHaut = 'L',
         LicenceStatus $status = LicenceStatus::VALIDATED,
+        ?NatureLicence $nature = null,
     ): Licencie {
         static $n = 0;
         ++$n;
@@ -132,6 +153,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
             ->setPrenom('Joueur' . $n)
             ->setDateNaissance(new \DateTimeImmutable('2000-01-01'))
             ->setCategory($cat)
+            ->setNatureLicence($nature)
             ->setSeason($season);
         if ($team !== null) {
             $licencie->setTeam($team);
@@ -144,6 +166,24 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         $this->em->persist($dossier);
 
         return $licencie;
+    }
+
+    /**
+     * Écrit sur le dossier les réponses que le licencié aurait données au formulaire public.
+     *
+     * @param array<string, int>    $choix            { groupeChoix: stockItemId }
+     * @param array<string, string> $personnalisation { clé: texte à floquer }
+     */
+    protected function setReponsesFormulaire(Licencie $licencie, array $choix, array $personnalisation = []): void
+    {
+        // Le côté inverse du OneToOne n'est hydraté qu'au rechargement : on passe par le
+        // repository pour que le helper fonctionne aussi juste après la création.
+        $dossier = $licencie->getDossierClub()
+            ?? $this->em->getRepository(DossierClub::class)->findOneBy(['licencie' => $licencie]);
+        self::assertNotNull($dossier, 'Le licencié de test doit avoir un dossier club.');
+        $dossier->setDotationChoix($choix);
+        $dossier->setDotationPersonnalisation($personnalisation);
+        $this->em->flush();
     }
 
     protected function makeBesoin(
@@ -160,12 +200,13 @@ abstract class StockIntegrationTestCase extends KernelTestCase
             ->setQuantite($qte)
             ->setStatut($statut);
         $this->em->persist($b);
+
         return $b;
     }
 
     protected function makeMovement(StockItem $item, int $qte, StockMovementType $type, ?string $taille): void
     {
-        self::getContainer()->get(StockService::class)->recordMovement(
+        self::getContainer()->get(StockMovementService::class)->recordMovement(
             $item, $qte, $type, StockMovementSource::MANUEL, null, $type === StockMovementType::REBUT ? 'test' : null, taille: $taille,
         );
     }
@@ -182,6 +223,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         $commande->addLigne($ligne);
         $this->em->persist($commande);
         $this->em->persist($ligne);
+
         return $ligne;
     }
 
@@ -192,6 +234,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         $id = $entity instanceof Licencie || $entity instanceof Dirigeant ? $entity->getUuid() : $entity->getId();
         $this->em->flush();
         $this->em->clear();
+
         return $this->em->find($class, $id);
     }
 }

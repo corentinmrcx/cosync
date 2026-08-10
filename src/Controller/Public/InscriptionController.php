@@ -2,35 +2,53 @@
 
 namespace App\Controller\Public;
 
-use App\DTO\AutorisationCompletionData;
-use App\DTO\InscriptionFormData;
-use App\Enum\PaymentMode;
+use App\Enum\AutorisationManquante;
 use App\Repository\LicencieRepository;
-use App\Service\CotisationResolver;
-use App\Service\Form\AttestationTransportRequestFactory;
-use App\Service\Form\AutorisationCompletionService;
-use App\Service\Form\InscriptionFormService;
-use App\Service\Stock\DotationResolver;
+use App\Repository\TransactionRepository;
+use App\Security\CsrfGuard;
+use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Dotation\DotationChoixRequestFactory;
+use App\Service\Dotation\DotationModeleService;
+use App\Service\Dotation\DotationResolver;
+use App\Service\Inscription\AutorisationCompletionRequestFactory;
+use App\Service\Inscription\AutorisationCompletionService;
+use App\Service\Inscription\InscriptionFormConfig;
+use App\Service\Inscription\InscriptionFormRequestFactory;
+use App\Service\Inscription\InscriptionFormService;
+use App\Service\Payment\CotisationResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Uid\Uuid;
 
 #[Route('/inscription', name: 'public_inscription_')]
 class InscriptionController extends AbstractController
 {
+    /** Un PNG de signature dépasse rarement 2 Mo une fois encodé en base64 ; au-delà, soumission suspecte. */
     public function __construct(
-        private readonly AttestationTransportRequestFactory $attestationFactory,
+        private readonly LicencieRepository $licencieRepo,
+        private readonly DotationResolver $resolver,
+        private readonly CotisationResolver $cotisationResolver,
+        private readonly InscriptionFormService $formService,
+        private readonly DotationChoixRequestFactory $dotationFactory,
+        private readonly TransactionRepository $transactionRepo,
+        private readonly AutorisationCompletionService $completionService,
+        private readonly CsrfGuard $csrf,
+        private readonly InscriptionFormRequestFactory $formFactory,
+        private readonly InscriptionFormConfig $formConfig,
+        private readonly AutorisationCompletionRequestFactory $completionFactory,
+        private readonly DocumentRequirementResolver $documentResolver,
     ) {}
 
-    #[Route('/{uuid}', name: 'show', methods: ['GET'])]
-    public function show(string $uuid, LicencieRepository $licencieRepo, DotationResolver $resolver, CotisationResolver $cotisationResolver): Response
+    #[Route('/{uuid}', name: 'show', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
+    public function show(string $uuid): Response
     {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         $dossier = $licencie->getDossierClub();
@@ -41,260 +59,125 @@ class InscriptionController extends AbstractController
         }
 
         if (!$licencie->isFormTokenValid()) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
         return $this->render('public/inscription/form.html.twig', [
-            'licencie'        => $licencie,
-            'montant'         => $cotisationResolver->resolve($licencie),
-            'dotationGroupes' => $resolver->getChoiceGroups($licencie),
+            'licencie' => $licencie,
+            'montant' => $this->cotisationResolver->resolve($licencie),
+            'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
+            'dotationGroupes' => $this->resolver->getChoiceGroups($licencie),
+            'personnalisationMaxDefaut' => DotationModeleService::PERSONNALISATION_MAX_DEFAUT,
+            'documents' => $this->documentResolver->manquantsPourLicencie($licencie),
+            'config' => $this->formConfig->pour($licencie),
         ]);
     }
 
-    #[Route('/{uuid}', name: 'submit', methods: ['POST'])]
-    public function submit(string $uuid, Request $request, LicencieRepository $licencieRepo, InscriptionFormService $formService, DotationResolver $resolver): Response
+    #[Route('/{uuid}', name: 'submit', methods: ['POST'], requirements: ['uuid' => Requirement::UUID])]
+    public function submit(string $uuid, Request $request): Response
     {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || !$licencie->isFormTokenValid()) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
-        if (!$this->isCsrfTokenValid('inscription_submit', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
+        $this->csrf->valider('inscription_submit', $request);
+
+        $dotation = $this->dotationFactory->fromRequest($request, $licencie);
+        if ($dotation === null) {
+            $this->addFlash('error', 'Vérifiez votre choix de dotation et le texte à personnaliser, puis confirmez son orthographe.');
+
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
-        $choiceGroupKeys = array_map(static fn (array $g): string => $g['groupe'], $resolver->getChoiceGroups($licencie));
-        $data = $this->buildFormData($request, $licencie->getCategory()->isJeune(), $choiceGroupKeys);
+        $data = $this->formFactory->fromRequest($request, $licencie, $licencie->getCategory()->isJeune(), $dotation);
 
         if ($data === null) {
             $this->addFlash('error', 'Formulaire incomplet, veuillez remplir tous les champs.');
+
             return $this->redirectToRoute('public_inscription_show', ['uuid' => $uuid]);
         }
 
-        $formService->submit($licencie, $data);
+        $this->formService->submit($licencie, $data);
+
+        // Paiement par carte : l'inscription est enregistrée d'abord (PDF, signature, Drive),
+        // le licencié ne peut donc rien perdre s'il abandonne sur HelloAsso.
+        if ($request->request->get('pay_online') === '1') {
+            return $this->redirectToRoute('public_helloasso_checkout_start', ['uuid' => $uuid]);
+        }
 
         return $this->redirectToRoute('public_inscription_confirmation', ['uuid' => $uuid]);
     }
 
-    #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'])]
-    public function confirmation(string $uuid, LicencieRepository $licencieRepo, CotisationResolver $cotisationResolver): Response
-    {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+    #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
+    public function confirmation(
+        string $uuid,
+    ): Response {
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || $licencie->getDossierClub() === null) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
+
+        $montant = $this->cotisationResolver->resolve($licencie);
 
         return $this->render('public/inscription/confirmation.html.twig', [
             'licencie' => $licencie,
-            'dossier'  => $licencie->getDossierClub(),
-            'montant'  => $cotisationResolver->resolve($licencie),
+            'dossier' => $licencie->getDossierClub(),
+            'montant' => $montant,
+            'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
+            // Seule une transaction réellement enregistrée autorise à annoncer un paiement reçu.
+            'paiementRecu' => $this->transactionRepo->sumByLicencieAndSeason($licencie, $licencie->getSeason()) >= (float) $montant,
         ]);
     }
 
-    /** @param string[] $choiceGroupKeys */
-    private function buildFormData(Request $request, bool $isJeune, array $choiceGroupKeys = []): ?InscriptionFormData
+    #[Route('/{uuid}/completer', name: 'completer', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
+    public function completer(string $uuid): Response
     {
-        $tailleHaut    = $request->request->get('taille_haut', '');
-        $tailleBas     = $request->request->get('taille_bas', '');
-        $pointure      = $request->request->get('pointure', '');
-        $photoRaw      = $request->request->get('autorisation_photo');
-        $signatureData = $request->request->get('signature_data', '');
-
-        if ($tailleHaut === '' || $tailleBas === '' || $pointure === ''
-            || $photoRaw === null || $signatureData === '') {
-            return null;
-        }
-
-        // Choix de dotation : un par groupe configuré
-        $dotationChoix = [];
-        if ($choiceGroupKeys !== []) {
-            $rawChoix = (array) ($request->request->all()['dotation_choix'] ?? []);
-            foreach ($choiceGroupKeys as $groupe) {
-                $valeur = (int) ($rawChoix[$groupe] ?? 0);
-                if ($valeur <= 0) {
-                    return null;
-                }
-                $dotationChoix[$groupe] = $valeur;
-            }
-        }
-
-        if (!str_starts_with($signatureData, 'data:image/') || strlen($signatureData) > 2_800_000) {
-            return null;
-        }
-
-        $multiPayment = $request->request->get('multi_payment') === '1';
-
-        if ($multiPayment) {
-            $rawModes = (array) ($request->request->all()['payment_intentions'] ?? []);
-            $modes    = [];
-            foreach ($rawModes as $raw) {
-                $m = PaymentMode::tryFrom((string) $raw);
-                if ($m === null) {
-                    return null;
-                }
-                $modes[] = $m;
-            }
-            if (count($modes) === 0) {
-                return null;
-            }
-        } else {
-            $rawMode = $request->request->get('payment_intention', '');
-            $single  = PaymentMode::tryFrom($rawMode);
-            if ($single === null) {
-                return null;
-            }
-            $modes = [$single];
-        }
-
-        $transportDirig     = null;
-        $transportParent    = null;
-        $autorisationAccident = null;
-        $volontaireTransport  = null;
-        $attestationData      = null;
-
-        if ($isJeune) {
-            $dirigRaw    = $request->request->get('autorisation_transport_dirigeants');
-            $parentRaw   = $request->request->get('autorisation_transport_parents');
-            $accidentRaw = $request->request->get('autorisation_accident');
-            $volRaw      = $request->request->get('volontaire_transport');
-
-            if ($dirigRaw === null || $parentRaw === null || $accidentRaw === null || $volRaw === null) {
-                return null;
-            }
-
-            $transportDirig      = $dirigRaw === '1';
-            $transportParent     = $parentRaw === '1';
-            $autorisationAccident = $accidentRaw === '1';
-            $volontaireTransport  = $volRaw === '1';
-
-            if ($volontaireTransport) {
-                $attestationData = $this->attestationFactory->fromRequest($request);
-                if ($attestationData === null) {
-                    return null;
-                }
-            }
-        }
-
-        return new InscriptionFormData(
-            tailleHaut:                      $tailleHaut,
-            tailleBas:                       $tailleBas,
-            pointure:                        $pointure,
-            autorisationPhoto:               $photoRaw === '1',
-            autorisationTransportDirigeants: $transportDirig,
-            autorisationTransportParents:    $transportParent,
-            autorisationAccident:            $autorisationAccident,
-            volontaireTransport:             $volontaireTransport,
-            signatureData:                   $signatureData,
-            paymentIntentions:               $modes,
-            attestationTransport:            $attestationData,
-            dotationChoix:                   $dotationChoix,
-        );
-    }
-
-    #[Route('/{uuid}/completer', name: 'completer', methods: ['GET'])]
-    public function completer(string $uuid, LicencieRepository $licencieRepo, AutorisationCompletionService $completionService): Response
-    {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || !$licencie->isFormTokenValid()) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
-        $manquants = $completionService->missingKeys($licencie);
+        $manquants = $this->completionService->manquantes($licencie);
         if ($manquants === []) {
             return $this->render('public/inscription/completer_done.html.twig', ['rienAFaire' => true]);
         }
 
         return $this->render('public/inscription/completer.html.twig', [
-            'licencie'  => $licencie,
-            'manquants' => $manquants,
-            'isJeune'   => $licencie->getCategory()->isJeune(),
+            'licencie' => $licencie,
+            'manquants' => AutorisationManquante::valeurs($manquants),
+            'isJeune' => $licencie->getCategory()->isJeune(),
         ]);
     }
 
-    #[Route('/{uuid}/completer', name: 'completer_submit', methods: ['POST'])]
-    public function completerSubmit(string $uuid, Request $request, LicencieRepository $licencieRepo, AutorisationCompletionService $completionService): Response
+    #[Route('/{uuid}/completer', name: 'completer_submit', methods: ['POST'], requirements: ['uuid' => Requirement::UUID])]
+    public function completerSubmit(string $uuid, Request $request): Response
     {
-        $licencie = $licencieRepo->findByUuid(Uuid::fromString($uuid));
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
 
         if ($licencie === null || !$licencie->isFormTokenValid()) {
-            return $this->render('public/inscription/expired.html.twig');
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien d\'inscription n\'est plus valide.']);
         }
 
-        if (!$this->isCsrfTokenValid('inscription_completer', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Session expirée, veuillez réessayer.');
-            return $this->redirectToRoute('public_inscription_completer', ['uuid' => $uuid]);
-        }
+        $this->csrf->valider('inscription_completer', $request);
 
-        $manquants = $completionService->missingKeys($licencie);
+        $manquants = $this->completionService->manquantes($licencie);
         if ($manquants === []) {
             return $this->render('public/inscription/completer_done.html.twig', ['rienAFaire' => true]);
         }
 
-        $data = $this->buildCompletionData($request, $manquants);
+        $data = $this->completionFactory->fromRequest($request, $manquants);
         if ($data === null) {
             $this->addFlash('error', 'Merci de répondre à toutes les questions.');
+
             return $this->redirectToRoute('public_inscription_completer', ['uuid' => $uuid]);
         }
 
-        $completionService->apply($licencie, $data);
+        $this->completionService->apply($licencie, $data);
 
         return $this->render('public/inscription/completer_done.html.twig', ['rienAFaire' => false]);
-    }
-
-    /**
-     * Construit les réponses de complétion à partir des seules autorisations demandées.
-     * Null si une réponse attendue manque.
-     *
-     * @param string[] $manquants
-     */
-    private function buildCompletionData(Request $request, array $manquants): ?AutorisationCompletionData
-    {
-        $bool = static fn (?string $raw): ?bool => $raw === '1' ? true : ($raw === '0' ? false : null);
-
-        $photo = $accident = $dirig = $parent = $vol = null;
-        $attestation = null;
-
-        if (in_array('photo', $manquants, true)) {
-            $photo = $bool($request->request->get('autorisation_photo'));
-            if ($photo === null) {
-                return null;
-            }
-        }
-        if (in_array('accident', $manquants, true)) {
-            $accident = $bool($request->request->get('autorisation_accident'));
-            if ($accident === null) {
-                return null;
-            }
-        }
-        if (in_array('transport_dirigeants', $manquants, true)) {
-            $dirig = $bool($request->request->get('autorisation_transport_dirigeants'));
-            if ($dirig === null) {
-                return null;
-            }
-        }
-        if (in_array('transport_parents', $manquants, true)) {
-            $parent = $bool($request->request->get('autorisation_transport_parents'));
-            if ($parent === null) {
-                return null;
-            }
-        }
-        if (in_array('volontaire', $manquants, true)) {
-            $vol = $bool($request->request->get('volontaire_transport'));
-            if ($vol === null) {
-                return null;
-            }
-            if ($vol === true) {
-                $attestation = $this->attestationFactory->fromRequest($request);
-                if ($attestation === null) {
-                    return null;
-                }
-            }
-        }
-
-        return new AutorisationCompletionData($photo, $accident, $dirig, $parent, $vol, $attestation);
     }
 }

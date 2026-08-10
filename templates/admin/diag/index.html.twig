@@ -41,12 +41,12 @@
             {% if not betaActive %}
             <form method="post" action="{{ path('admin_diag_beta_enable') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('beta_enable') }}">
-                <button type="submit" class="diag-btn diag-btn-success">Activer le mode beta</button>
+                <button type="submit" class="btn btn-primary btn-lg diag-btn-success">Activer le mode beta</button>
             </form>
             {% else %}
             <form method="post" action="{{ path('admin_diag_beta_disable') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('beta_disable') }}">
-                <button type="submit" class="diag-btn diag-btn-outline">Désactiver le mode beta</button>
+                <button type="submit" class="btn btn-primary btn-lg diag-btn-outline">Désactiver le mode beta</button>
             </form>
             {% endif %}
         </div>
@@ -55,26 +55,7 @@
     {# ── Purge des données (beta uniquement) ── #}
     {% if betaActive %}
     <div class="diag-card diag-card-danger"
-         x-data="{
-             word: '',
-             ready: false,
-             countdown: 0,
-             timer: null,
-             check() {
-                 clearTimeout(this.timer);
-                 this.ready = false;
-                 this.countdown = 0;
-                 if (this.word === 'SUPPRIMER') {
-                     this.countdown = 3;
-                     const tick = () => {
-                         this.countdown--;
-                         if (this.countdown <= 0) { this.ready = true; }
-                         else { this.timer = setTimeout(tick, 1000); }
-                     };
-                     this.timer = setTimeout(tick, 1000);
-                 }
-             }
-         }">
+         x-data="confirmationPurge()">
         <h2 class="diag-card-title diag-card-title-danger">Purge des données de test</h2>
         <p class="diag-card-desc">
             Supprime <strong>toutes</strong> les données métier : saisons, équipes, licenciés, dirigeants, dossiers,
@@ -92,23 +73,23 @@
             <input
                 type="text"
                 name="confirmation"
-                x-model="word"
-                @input="check()"
+                x-model="mot"
+                @input="verifier()"
                 autocomplete="off"
                 placeholder="SUPPRIMER"
-                class="diag-input diag-purge-input"
+                class="field-input diag-purge-input"
             >
             <div class="diag-purge-footer">
                 <button
                     type="submit"
-                    class="diag-btn diag-btn-danger"
-                    :disabled="!ready"
-                    x-bind:class="ready ? '' : 'diag-btn-disabled'"
+                    class="btn btn-primary btn-lg diag-btn-danger"
+                    :disabled="!pret"
+                    x-bind:class="pret ? '' : 'diag-btn-disabled'"
                 >
                     Supprimer toutes les données
                 </button>
-                <span class="diag-countdown" x-show="word === 'SUPPRIMER' && !ready && countdown > 0">
-                    Disponible dans <strong x-text="countdown"></strong>s…
+                <span class="diag-countdown" x-show="mot === 'SUPPRIMER' && !pret && compteARebours > 0">
+                    Disponible dans <strong x-text="compteARebours"></strong>s…
                 </span>
             </div>
         </form>
@@ -122,8 +103,8 @@
         <hr class="diag-divider">
         <form method="post" action="{{ path('admin_diag_test_mail') }}" class="diag-form">
             <input type="hidden" name="_token" value="{{ csrf_token('test_mail') }}">
-            <input type="email" name="test_email" placeholder="votre@email.fr" required class="diag-input">
-            <button type="submit" class="diag-btn">Envoyer</button>
+            <input type="email" name="test_email" placeholder="votre@email.fr" required class="field-input">
+            <button type="submit" class="btn btn-primary btn-lg">Envoyer</button>
         </form>
     </div>
 
@@ -134,7 +115,7 @@
         <hr class="diag-divider">
         <form method="post" action="{{ path('admin_diag_test_validation_mail') }}" class="diag-form">
             <input type="hidden" name="_token" value="{{ csrf_token('test_validation_mail') }}">
-            <input type="email" name="test_email" placeholder="votre@email.fr" required class="diag-input">
+            <input type="email" name="test_email" placeholder="votre@email.fr" required class="field-input">
             <div class="diag-radio-group">
                 <label class="diag-radio-label">
                     <input type="radio" name="profil" value="jeune" checked> Jeune (U6–U19)
@@ -143,7 +124,7 @@
                     <input type="radio" name="profil" value="senior"> Senior
                 </label>
             </div>
-            <button type="submit" class="diag-btn">Envoyer</button>
+            <button type="submit" class="btn btn-primary btn-lg">Envoyer</button>
         </form>
     </div>
 

@@ -33,7 +33,7 @@ class CreateAdminCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $email    = $input->getArgument('email');
+        $email = $input->getArgument('email');
         $password = $input->getArgument('password');
 
         $user = new User();

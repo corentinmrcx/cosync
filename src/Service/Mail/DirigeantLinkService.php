@@ -2,6 +2,7 @@
 
 namespace App\Service\Mail;
 
+use App\DTO\RelanceResultat;
 use App\Entity\Dirigeant;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -18,9 +19,32 @@ final class DirigeantLinkService
             throw new \LogicException('Impossible d\'envoyer le lien : aucune adresse email pour ce dirigeant.');
         }
 
-        $dirigeant->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
+        $dirigeant->setFormTokenExpiresAt(LienPublic::expiration());
         $this->em->flush();
 
         $this->mailerService->sendDirigeantLink($dirigeant);
+    }
+
+    /**
+     * Relance en masse : les dirigeants sans adresse sont ignorés, pas bloquants.
+     *
+     * @param Dirigeant[] $dirigeants
+     */
+    public function relancerEnMasse(array $dirigeants): RelanceResultat
+    {
+        $envoyes = 0;
+        $sansEmail = 0;
+
+        foreach ($dirigeants as $dirigeant) {
+            if ($dirigeant->getEmail() === null) {
+                ++$sansEmail;
+                continue;
+            }
+
+            $this->send($dirigeant);
+            ++$envoyes;
+        }
+
+        return new RelanceResultat($envoyes, $sansEmail);
     }
 }

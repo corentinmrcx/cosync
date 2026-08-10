@@ -73,6 +73,7 @@ class StockItem
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
+
         return $this;
     }
 
@@ -84,6 +85,7 @@ class StockItem
     public function setMarque(?string $marque): static
     {
         $this->marque = $marque;
+
         return $this;
     }
 
@@ -95,6 +97,7 @@ class StockItem
     public function setTaille(?string $taille): static
     {
         $this->taille = $taille;
+
         return $this;
     }
 
@@ -106,6 +109,7 @@ class StockItem
     public function setCouleur(?string $couleur): static
     {
         $this->couleur = $couleur;
+
         return $this;
     }
 
@@ -117,6 +121,7 @@ class StockItem
     public function setKind(?StockItemKind $kind): static
     {
         $this->kind = $kind;
+
         return $this;
     }
 
@@ -128,6 +133,7 @@ class StockItem
     public function setTypeVetement(?StockItemVetementType $typeVetement): static
     {
         $this->typeVetement = $typeVetement;
+
         return $this;
     }
 
@@ -139,6 +145,7 @@ class StockItem
     public function setPrixAchat(?float $prixAchat): static
     {
         $this->prixAchat = $prixAchat;
+
         return $this;
     }
 
@@ -150,6 +157,7 @@ class StockItem
     public function setRefCatalogue(?string $refCatalogue): static
     {
         $this->refCatalogue = $refCatalogue;
+
         return $this;
     }
 
@@ -161,6 +169,7 @@ class StockItem
     public function setLienAchat(?string $lienAchat): static
     {
         $this->lienAchat = $lienAchat;
+
         return $this;
     }
 
@@ -172,6 +181,7 @@ class StockItem
     public function setFournisseur(?Fournisseur $fournisseur): static
     {
         $this->fournisseur = $fournisseur;
+
         return $this;
     }
 
@@ -183,6 +193,7 @@ class StockItem
     public function setCategory(?StockCategory $category): static
     {
         $this->category = $category;
+
         return $this;
     }
 
@@ -194,6 +205,7 @@ class StockItem
     public function setAlertSeuil(?int $alertSeuil): static
     {
         $this->alertSeuil = $alertSeuil;
+
         return $this;
     }
 
@@ -205,6 +217,7 @@ class StockItem
     public function setActif(bool $actif): static
     {
         $this->actif = $actif;
+
         return $this;
     }
 }

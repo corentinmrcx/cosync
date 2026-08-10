@@ -42,6 +42,12 @@ class TransactionRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** Paiement déjà encaissé chez le prestataire en ligne — garde-fou d'idempotence. */
+    public function findOneByExternalPaymentId(string $externalPaymentId): ?Transaction
+    {
+        return $this->findOneBy(['externalPaymentId' => $externalPaymentId]);
+    }
+
     public function sumByLicencieAndSeason(Licencie $licencie, Season $season): float
     {
         $result = $this->createQueryBuilder('t')

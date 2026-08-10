@@ -22,6 +22,11 @@ security:
                 default_target_path: admin_dashboard
                 username_parameter: email
                 password_parameter: password
+            # Anti-force-brute : le back-office repose sur un mot de passe admin unique,
+            # c'est la surface de compromission de toute l'application.
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
             logout:
                 path: security_logout
                 target: security_login
@@ -30,6 +35,11 @@ security:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/inscription, roles: PUBLIC_ACCESS }
         - { path: ^/dirigeant, roles: PUBLIC_ACCESS }
+        - { path: ^/attestation-cle, roles: PUBLIC_ACCESS }
+        - { path: ^/politique-de-confidentialite, roles: PUBLIC_ACCESS }
+        - { path: ^/mentions-legales, roles: PUBLIC_ACCESS }
+        # Notifications HelloAsso : pas de session, authenticité revérifiée côté service
+        - { path: ^/webhook, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: ROLE_USER }
 
 when@test:

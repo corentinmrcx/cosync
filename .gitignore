@@ -3,6 +3,8 @@
 /.env.local
 /.env.local.php
 /.env.*.local
+# Secrets de production — ne doivent jamais être versionnés
+/.env.prod
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/
@@ -42,3 +44,13 @@ google-service-account.json
 ###> exports FootClubs (données personnelles licenciés — jamais versionnées) ###
 *.xlsx
 ###< exports FootClubs ###
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> phpstan/phpstan ###
+/phpstan.neon
+/.phpstan.cache
+###< phpstan/phpstan ###

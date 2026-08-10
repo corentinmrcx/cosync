@@ -1,0 +1,94 @@
+<?php declare(strict_types=1);
+
+namespace App\Controller\Admin;
+
+use App\Attribute\CurrentSeason;
+use App\DTO\TeamEditData;
+use App\DTO\TeamSetupData;
+use App\Entity\Season;
+use App\Entity\Team;
+use App\Form\TeamSetupType;
+use App\Repository\CategoryRepository;
+use App\Repository\TeamRepository;
+use App\Security\CsrfGuard;
+use App\Service\Referentiel\TeamService;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Route('/admin/saison/equipes', name: 'admin_equipes_')]
+class EquipeController extends AbstractController
+{
+    public function __construct(
+        private readonly TeamService $teamService,
+        private readonly TeamRepository $teamRepo,
+        private readonly CategoryRepository $categoryRepo,
+        private readonly CsrfGuard $csrf,
+    ) {}
+
+    #[Route('', name: 'index', methods: ['GET'])]
+    public function index(
+        #[CurrentSeason] Season $season,
+    ): Response {
+        return $this->render('admin/saison/equipes.html.twig', [
+            'season' => $season,
+            'teams' => $this->teamRepo->findBySeason($season),
+            'newTeamForm' => $this->createForm(TeamSetupType::class, new TeamSetupData(), [
+                'action' => $this->generateUrl('admin_equipes_new'),
+            ]),
+            'categories' => $this->categoryRepo->findBy([], ['minYear' => 'ASC']),
+        ]);
+    }
+
+    #[Route('/nouveau', name: 'new', methods: ['POST'])]
+    public function new(
+        #[CurrentSeason] Season $season,
+        Request $request,
+    ): Response {
+        $form = $this->createForm(TeamSetupType::class, $data = new TeamSetupData());
+        $form->handleRequest($request);
+
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            $this->addFlash('error', 'Le nom de l\'équipe est obligatoire.');
+
+            return $this->redirectToRoute('admin_equipes_index');
+        }
+
+        try {
+            $team = $this->teamService->creer($data, $season);
+            $this->addFlash('success', sprintf('Équipe "%s" créée.', $team->getName()));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_equipes_index');
+    }
+
+    #[Route('/{id}/modifier', name: 'edit', methods: ['POST'])]
+    public function edit(Team $team, Request $request): Response
+    {
+        $this->csrf->valider('edit_team_' . $team->getId(), $request);
+
+        try {
+            $this->teamService->mettreAJour($team, TeamEditData::fromRequest($request));
+            $this->addFlash('success', sprintf('Équipe "%s" mise à jour.', $team->getName()));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_equipes_index');
+    }
+
+    #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
+    public function delete(Team $team, Request $request): Response
+    {
+        $this->csrf->valider('delete_team_' . $team->getId(), $request);
+
+        $name = $team->getName();
+        $this->teamService->supprimer($team);
+        $this->addFlash('success', sprintf('Équipe "%s" supprimée.', $name));
+
+        return $this->redirectToRoute('admin_equipes_index');
+    }
+}

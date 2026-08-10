@@ -16,48 +16,44 @@
         <span class="stock-mouvements-count">{{ total }} mouvement{{ total > 1 ? 's' : '' }}</span>
     </div>
 
-    <form method="get" class="stock-mouvements-filters">
-        <select name="item_id" class="stock-mouvements-filter-select">
-            <option value="">Tous les articles</option>
-            {% for item in items %}
-                <option value="{{ item.id }}" {{ filters.item_id is defined and filters.item_id == item.id ? 'selected' : '' }}>
-                    {{ item.nom }}{% if item.couleur %} — {{ item.couleur }}{% endif %}
-                </option>
-            {% endfor %}
-        </select>
-
-        <select name="type" class="stock-mouvements-filter-select">
-            <option value="">Tous les types</option>
-            {% for type in types %}
-                <option value="{{ type.value }}" {{ filters.type is defined and filters.type == type.value ? 'selected' : '' }}>
-                    {{ type.label() }}
-                </option>
-            {% endfor %}
-        </select>
-
-        <select name="source" class="stock-mouvements-filter-select">
-            <option value="">Toutes les sources</option>
-            {% for source in sources %}
-                <option value="{{ source.value }}" {{ filters.source is defined and filters.source == source.value ? 'selected' : '' }}>
-                    {{ source.label() }}
-                </option>
-            {% endfor %}
-        </select>
-
-        <input type="date" name="date_from" class="stock-mouvements-filter-input" value="{{ filters.date_from ?? '' }}" title="Du">
-        <input type="date" name="date_to" class="stock-mouvements-filter-input" value="{{ filters.date_to ?? '' }}" title="Au">
-
-        <button type="submit" class="stock-mouvements-filter-btn">Filtrer</button>
-        {% if filters is not empty %}
-            <a href="{{ path('admin_stock_mouvements_list') }}" class="stock-mouvements-filter-reset">Réinitialiser</a>
-        {% endif %}
-    </form>
+    {% include 'components/list-toolbar.html.twig' with {
+        search: filters.search ?? '',
+        searchPlaceholder: 'Rechercher un article ou une note…',
+        formId: 'mouvements',
+        activeCount: filters|filter((valeur, cle) => cle != 'search')|length,
+        resetUrl: path('admin_stock_mouvements_list'),
+        filterGroups: [
+            {
+                name: 'item_id',
+                label: 'Article',
+                allLabel: 'Tous les articles',
+                current: filters.item_id ?? '',
+                options: items|map(i => { value: i.id, label: i.nom ~ (i.couleur ? ' — ' ~ i.couleur : '') })
+            },
+            {
+                name: 'type',
+                label: 'Type',
+                allLabel: 'Tous les types',
+                current: filters.type ?? '',
+                options: types|map(t => { value: t.value, label: t.label() })
+            },
+            {
+                name: 'source',
+                label: 'Source',
+                allLabel: 'Toutes les sources',
+                current: filters.source ?? '',
+                options: sources|map(s => { value: s.value, label: s.label() })
+            },
+            { name: 'date_from', label: 'Du', type: 'date', current: filters.date_from ?? '' },
+            { name: 'date_to',   label: 'Au', type: 'date', current: filters.date_to ?? '' }
+        ]
+    } only %}
 
     {% if movements is empty %}
         <div class="stock-mouvements-empty">Aucun mouvement trouvé.</div>
     {% else %}
-        <div class="stock-mouvements-table-wrapper">
-            <table class="stock-mouvements-table resp-table">
+        <div class="table-wrapper">
+            <table class="table resp-table">
                 <thead>
                     <tr>
                         <th>Date</th>

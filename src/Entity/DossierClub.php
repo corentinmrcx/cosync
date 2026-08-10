@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Enum\LicenceStatus;
 use App\Enum\PaymentMode;
 use App\Repository\DossierClubRepository;
+use App\Service\Drive\DrivePath;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DossierClubRepository::class)]
@@ -52,29 +53,60 @@ class DossierClub
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $attestationTransportDriveId = null;
 
-    /** Modes de paiement déclarés par le licencié dans le formulaire (stockés comme tableau de valeurs string) */
+    /**
+     * Modes de paiement déclarés par le licencié dans le formulaire (stockés comme tableau de valeurs string).
+     *
+     * @var list<string>
+     */
     #[ORM\Column(type: 'json')]
     private array $paymentIntentions = [];
 
-    /** Choix de dotation faits au formulaire : { groupeChoix: stockItemId }. Null si aucun choix proposé. */
+    /** Nature du paiement saisie librement quand le licencié a choisi « Autre » (tickets MSA…) */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $paymentAutrePrecision = null;
+
+    /**
+     * Choix de dotation faits au formulaire : { groupeChoix: stockItemId }. Null si aucun choix proposé.
+     *
+     * @var array<string, int|string>|null
+     */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $dotationChoix = null;
 
-    #[ORM\Column]
-    private bool $isSigned = false;
+    /**
+     * Textes de personnalisation saisis au formulaire : { groupeChoix: texte }.
+     * Même espace de clés que dotationChoix — les deux se lisent côte à côte, et le texte
+     * survit à un changement d'option à l'intérieur du groupe.
+     *
+     * @var array<string, string>|null
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $dotationPersonnalisation = null;
 
-    /** Chemin Drive du PDF après upload */
-    #[ORM\Column(length: 500, nullable: true)]
-    private ?string $signaturePath = null;
-
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $signatureDate = null;
+    /*
+     * La signature du règlement intérieur vivait ici (is_signed, signature_path,
+     * signature_date). Elle est désormais une ligne de DocumentSignature, ce qui permet
+     * de demander plusieurs documents au même licencié. Les colonnes subsistent en base,
+     * dé-mappées, le temps de valider la bascule (migration Version20260807233000).
+     */
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $formCompletedAt = null;
 
     #[ORM\Column(enumType: LicenceStatus::class)]
     private LicenceStatus $status = LicenceStatus::IMPORTED;
+
+    /** ID de la dernière intention de paiement HelloAsso créée pour ce dossier */
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $helloassoCheckoutIntentId = null;
+
+    /**
+     * Date de création de cette intention. Sert à borner la réconciliation
+     * (app:helloasso:sync-paiements) : une intention abandonnée depuis longtemps
+     * n'est plus interrogée indéfiniment auprès de l'API HelloAsso.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $helloassoCheckoutStartedAt = null;
 
     public function getId(): int
     {
@@ -89,6 +121,7 @@ class DossierClub
     public function setLicencie(Licencie $licencie): static
     {
         $this->licencie = $licencie;
+
         return $this;
     }
 
@@ -100,6 +133,7 @@ class DossierClub
     public function setTailleHaut(?string $tailleHaut): static
     {
         $this->tailleHaut = $tailleHaut;
+
         return $this;
     }
 
@@ -111,6 +145,7 @@ class DossierClub
     public function setTailleBas(?string $tailleBas): static
     {
         $this->tailleBas = $tailleBas;
+
         return $this;
     }
 
@@ -122,6 +157,7 @@ class DossierClub
     public function setPointure(?string $pointure): static
     {
         $this->pointure = $pointure;
+
         return $this;
     }
 
@@ -133,6 +169,7 @@ class DossierClub
     public function setAutorisationPhoto(?bool $autorisationPhoto): static
     {
         $this->autorisationPhoto = $autorisationPhoto;
+
         return $this;
     }
 
@@ -144,6 +181,7 @@ class DossierClub
     public function setAutorisationTransportDirigeants(?bool $autorisationTransportDirigeants): static
     {
         $this->autorisationTransportDirigeants = $autorisationTransportDirigeants;
+
         return $this;
     }
 
@@ -155,6 +193,7 @@ class DossierClub
     public function setAutorisationTransportParents(?bool $autorisationTransportParents): static
     {
         $this->autorisationTransportParents = $autorisationTransportParents;
+
         return $this;
     }
 
@@ -162,7 +201,7 @@ class DossierClub
     public function getPaymentIntentions(): array
     {
         return array_map(
-            fn(string $v) => PaymentMode::from($v),
+            fn (string $v) => PaymentMode::from($v),
             $this->paymentIntentions,
         );
     }
@@ -170,7 +209,20 @@ class DossierClub
     /** @param PaymentMode[] $modes */
     public function setPaymentIntentions(array $modes): static
     {
-        $this->paymentIntentions = array_map(fn(PaymentMode $m) => $m->value, $modes);
+        $this->paymentIntentions = array_map(fn (PaymentMode $m) => $m->value, $modes);
+
+        return $this;
+    }
+
+    public function getPaymentAutrePrecision(): ?string
+    {
+        return $this->paymentAutrePrecision;
+    }
+
+    public function setPaymentAutrePrecision(?string $precision): static
+    {
+        $this->paymentAutrePrecision = $precision ?: null;
+
         return $this;
     }
 
@@ -184,39 +236,21 @@ class DossierClub
     public function setDotationChoix(?array $dotationChoix): static
     {
         $this->dotationChoix = $dotationChoix ?: null;
+
         return $this;
     }
 
-    public function isSigned(): bool
+    /** @return array<string, string>|null */
+    public function getDotationPersonnalisation(): ?array
     {
-        return $this->isSigned;
+        return $this->dotationPersonnalisation;
     }
 
-    public function setIsSigned(bool $isSigned): static
+    /** @param array<string, string>|null $dotationPersonnalisation */
+    public function setDotationPersonnalisation(?array $dotationPersonnalisation): static
     {
-        $this->isSigned = $isSigned;
-        return $this;
-    }
+        $this->dotationPersonnalisation = $dotationPersonnalisation ?: null;
 
-    public function getSignaturePath(): ?string
-    {
-        return $this->signaturePath;
-    }
-
-    public function setSignaturePath(?string $signaturePath): static
-    {
-        $this->signaturePath = $signaturePath;
-        return $this;
-    }
-
-    public function getSignatureDate(): ?\DateTimeImmutable
-    {
-        return $this->signatureDate;
-    }
-
-    public function setSignatureDate(?\DateTimeImmutable $signatureDate): static
-    {
-        $this->signatureDate = $signatureDate;
         return $this;
     }
 
@@ -228,6 +262,7 @@ class DossierClub
     public function setFormCompletedAt(?\DateTimeImmutable $formCompletedAt): static
     {
         $this->formCompletedAt = $formCompletedAt;
+
         return $this;
     }
 
@@ -239,6 +274,7 @@ class DossierClub
     public function setAutorisationAccident(?bool $autorisationAccident): static
     {
         $this->autorisationAccident = $autorisationAccident;
+
         return $this;
     }
 
@@ -250,6 +286,7 @@ class DossierClub
     public function setVolontaireTransport(?bool $volontaireTransport): static
     {
         $this->volontaireTransport = $volontaireTransport;
+
         return $this;
     }
 
@@ -261,6 +298,31 @@ class DossierClub
     public function setAttestationTransportDriveId(?string $attestationTransportDriveId): static
     {
         $this->attestationTransportDriveId = $attestationTransportDriveId;
+
+        return $this;
+    }
+
+    public function getHelloassoCheckoutIntentId(): ?string
+    {
+        return $this->helloassoCheckoutIntentId;
+    }
+
+    public function setHelloassoCheckoutIntentId(?string $helloassoCheckoutIntentId): static
+    {
+        $this->helloassoCheckoutIntentId = $helloassoCheckoutIntentId;
+
+        return $this;
+    }
+
+    public function getHelloassoCheckoutStartedAt(): ?\DateTimeImmutable
+    {
+        return $this->helloassoCheckoutStartedAt;
+    }
+
+    public function setHelloassoCheckoutStartedAt(?\DateTimeImmutable $helloassoCheckoutStartedAt): static
+    {
+        $this->helloassoCheckoutStartedAt = $helloassoCheckoutStartedAt;
+
         return $this;
     }
 
@@ -272,6 +334,19 @@ class DossierClub
     public function setStatus(LicenceStatus $status): static
     {
         $this->status = $status;
+
         return $this;
+    }
+
+    /** Le PDF est-il sur Drive ? Tant qu'il ne l'est pas, la colonne porte un chemin local. */
+    public function attestationTransportEstArchivee(): bool
+    {
+        return DrivePath::estArchive($this->getAttestationTransportDriveId());
+    }
+
+    /** La cotisation est-elle soldée ? C'est ce que porte le statut VALIDATED. */
+    public function estValidee(): bool
+    {
+        return $this->status === LicenceStatus::VALIDATED;
     }
 }

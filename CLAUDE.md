@@ -5,6 +5,27 @@
 
 ---
 
+## ⚠️ L'application est en production avec des données réelles
+
+La base contient des **signatures manuscrites**, des **PDF signés**, des **autorisations parentales**
+et des **encaissements HelloAsso**. Rien de tout cela n'est reproductible : une signature perdue se
+redemande au licencié, un encaissement perdu se retrouve à la main dans les relevés HelloAsso.
+
+L'époque de la bêta où l'on pouvait faire un `db-reset`, supprimer une migration et repartir d'une
+base vide est **terminée**. Conséquences directes, non négociables :
+
+- ❌ Jamais de `db-reset`, `doctrine:database:drop` ni `doctrine:schema:update --force` sur la prod
+- ❌ Jamais de modification d'une migration déjà déployée — on corrige par une **nouvelle** migration
+- ✅ Tout changement de schéma passe par une migration **relue**, **testée sur une copie des données
+  de prod**, et **précédée d'un dump**
+- ✅ Tout `DROP` de colonne ou de table est signalé explicitement comme une **perte de données**
+  avant d'être proposé — jamais appliqué sans validation humaine
+
+Le rituel complet est décrit au **§13**. En cas de doute sur une évolution de schéma : relire §13
+avant d'écrire la moindre ligne.
+
+---
+
 ## 1. Contexte & Vision
 
 **CoSync** est un cockpit interne pour le Club de Football de Soudron (Marne).
@@ -23,7 +44,8 @@ Ce n'est **pas** un remplacement de FootClubs (outil fédéral FFF). C'est un **
 - Ne recrée pas FootClubs (pas de gestion de licences FFF)
 - Ne stocke pas les données médicales (hors scope RGPD V1)
 - Ne gère pas l'attestation de conduite parentsSection F (trop sensible pour V1)
-- Ne fait pas de paiement en ligne intégré V1 (SumUp lien externe possible, pas de webhook)
+- Ne traite aucune donnée bancaire : le paiement en ligne est intégralement délégué à HelloAsso Checkout
+  (aucun numéro de carte ne transite ni n'est stocké dans CoSync)
 
 ### Philosophie
 - **Aller à l'essentiel.** Si une fonctionnalité peut attendre la V2, elle attend.
@@ -85,24 +107,38 @@ templates/
 
 ## 4. Modèle de Données
 
+> ⚠️ Cette section décrit le modèle **réel**, pas l'intention d'origine. Les écarts avec la V1
+> initiale sont signalés en commentaire : ils sont assumés, pas à « corriger ».
+
 ### Season
 ```php
 id: int
-label: string          // ex: "2025-2026"
-active: bool           // une seule saison active à la fois
-base_costs: json       // { "jeunes": 85, "seniors": 120 }
+label: string                    // ex: "2025-2026"
+cotisation_defaut: int           // remplace base_costs ; Team.cotisation prime si renseignée
+attestation_cle_text: ?text
 created_at: datetime
 ```
+Il n'y a **pas de saison active globale** : chaque admin travaille dans la saison de son
+choix (`User.selectedSeason` + session, via `SeasonContext`). Le montant dû est résolu par
+`CotisationResolver` — équipe d'abord, défaut de la saison ensuite.
+
+Les colonnes `reglement_text` et `reglement_dirigeant_text`, non mappées depuis la bascule vers
+`DocumentSignable`, ont été supprimées par `Version20260809103000` — avec celles de signature de
+`dossier_club` et `dirigeant`. La migration recompte les données historiques et refuse de
+s'appliquer si une seule n'a pas son équivalent dans `document_signature` / `document_signable`.
 
 ### Category (référentiel FFF, fixe)
 ```php
 id: int
 code: string           // "U6", "U7", ..., "U13", "U15", "SENIOR"
 label: string
-is_ecole_foot: bool    // true pour U6 à U13
-min_year: int          // année de naissance min
-max_year: int          // année de naissance max
+is_ecole_foot: bool    // saisi en admin, mais AUCUNE logique métier ne s'en sert
+min_year: int          // jamais renseigné — colonne morte
+max_year: int          // jamais renseigné — colonne morte
 ```
+C'est **`Category::isJeune()`** (`str_starts_with($code, 'U')`) qui décide de l'affichage des
+autorisations parentales dans le formulaire public — donc U14→U19 sont traités comme des jeunes,
+contrairement à `is_ecole_foot`. Utiliser `isJeune()`, jamais `isEcoleFoot`.
 
 ### Team (équipe sportive interne)
 ```php
@@ -114,16 +150,21 @@ season: Season
 ### Licencie
 ```php
 uuid: Uuid             // clé publique, dans l'URL du formulaire
-num_licence: string    // PK FFF, clé d'upsert à l'import
+num_licence: ?string   // clé d'upsert à l'import ; nullable (fallback nom+prénom+naissance)
 nom: string
 prenom: string
 date_naissance: Date
-email: string
-telephone: string
+email: ?string
+telephone: ?string
+voie_rue / code_postal / ville: ?string
 category: Category
 team: ?Team            // assigné manuellement par l'admin
 season: Season
-form_token_expires_at: ?datetime  // expiration du lien public
+nature_licence: ?NatureLicence    // nouvelle demande / mutation / renouvellement
+nature_manuelle: bool             // verrou : l'import ne réécrase pas une correction admin
+form_token_expires_at: ?datetime  // expiration du lien public (30 jours)
+link_sent_at: ?datetime
+created_manually: bool
 imported_at: datetime
 ```
 
@@ -135,14 +176,18 @@ taille_haut: ?string   // Enum: XS/S/M/L/XL/XXL ou taille enfant
 taille_bas: ?string
 pointure: ?string
 autorisation_photo: ?bool
+autorisation_accident: ?bool              // null si non applicable (seniors)
 autorisation_transport_dirigeants: ?bool  // null si non applicable (seniors)
 autorisation_transport_parents: ?bool     // null si non applicable (seniors)
-payment_intention: ?PaymentMode  // ce que le licencié a déclaré vouloir payer
-is_signed: bool
-signature_path: ?string   // chemin Drive après upload
-signature_date: ?datetime
+volontaire_transport: ?bool               // déclenche l'attestation de transport
+attestation_transport_drive_id: ?string   // chemin local tant que l'upload Drive n'a pas eu lieu
+payment_intentions: json                  // liste de PaymentMode (le paiement peut être fractionné)
+dotation_choix: json                      // choix d'équipement par groupe
+dotation_personnalisation: json           // textes de flocage par groupe
+helloasso_checkout_intent_id: ?string
+helloasso_checkout_started_at: ?datetime  // borne la réconciliation des paiements
 form_completed_at: ?datetime
-status: LicenceStatus  // LINK_SENT | FORM_COMPLETED | PAYMENT_CONFIRMED | VALIDATED
+status: LicenceStatus  // IMPORTED | LINK_SENT | FORM_COMPLETED | VALIDATED
 ```
 
 ### Transaction
@@ -179,6 +224,37 @@ created_by: User
 created_at: datetime
 ```
 
+### Detenteur, CleMouvement, AttestationCle — deux échelles de temps
+
+Les clés du local sont le seul domaine où **le fait et l'engagement ne vivent pas dans la
+même échelle de temps**, et c'est délibéré :
+
+| Ce qu'on veut savoir | Où ça vit | Pourquoi |
+|---|---|---|
+| Qui détient une clé, depuis quand | `Detenteur` + `CleMouvement`, **hors saison** | Un trousseau ne change pas de main au 1ᵉʳ juillet |
+| Qui s'est engagé cette année | `AttestationCle`, **par saison** | L'attestation se resigne chaque année |
+
+```php
+Detenteur       // niveau club : nom, prenom, email, telephone, num_licence, qualite
+CleMouvement    // append-only : detenteur, type (REMISE|RESTITUTION|PERTE), quantite, date
+AttestationCle  // append-only : detenteur, season, signed_at, nb_cles, drive_path, uuid public
+```
+
+Conséquences à ne pas défaire :
+
+- `CleMouvement` **ne porte pas de saison**. La colonne `season_id` subsiste en base,
+  dé-mappée. Filtrer le registre par saison ramènerait le défaut d'origine : un solde
+  remis à zéro chaque été alors que les clés sont physiquement dehors.
+- `Detenteur` n'est **pas** un `Dirigeant` : ce dernier est cloisonné par saison et ne
+  fournit donc aucune identité stable. Le rapprochement des deux se fait dans
+  `DetenteurEffectifResolver`, sur le numéro de licence puis sur le nom.
+- Un détenteur qui n'est plus à l'effectif **reste visible**, en alerte « hors effectif ».
+  Ses clés sont dehors : le faire disparaître serait mentir.
+- `AttestationCle` est append-only : une re-signature ajoute une ligne, elle n'écrase pas
+  la précédente. Les deux PDF font foi à leur date.
+- La campagne de renouvellement est **manuelle** (`AttestationCleService::lancerCampagne`).
+  Aucun mail ne part sans décision de l'admin.
+
 ---
 
 ## 5. Enums PHP
@@ -187,10 +263,10 @@ Utilise des `enum` PHP 8.1 stricts, jamais des chaînes en dur dans le code.
 
 ```php
 enum LicenceStatus: string {
+    case IMPORTED = 'imported';           // créé à l'import, lien pas encore envoyé
     case LINK_SENT = 'link_sent';
     case FORM_COMPLETED = 'form_completed';
-    case PAYMENT_CONFIRMED = 'payment_confirmed';
-    case VALIDATED = 'validated';
+    case VALIDATED = 'validated';         // paiement soldé (ou validation manuelle)
 }
 
 enum PaymentMode: string {
@@ -270,21 +346,36 @@ Formulaire multi-étapes Alpine.js, mobile-first, sans login.
 - Autorisation transport par d'autres parents (OUI / NON)
 - Droit à l'image (OUI / NON) — affiché pour TOUS les licenciés
 
-**Étape 4 — Règlement**
-- Affichage texte du règlement intérieur (scrollable)
-- Checkbox "J'ai lu et j'accepte le règlement intérieur"
-- Pad de signature tactile (canvas, bibliothèque Signature_pad.js)
+**Étape 4 — Attestation de transport** *(conditionnel : jeune + volontaire au transport)*
+- Nom/prénom du conducteur, n° de permis, assurance, date de contrôle technique
+- Signature. Un PDF d'attestation est généré et archivé sur Drive.
 
-**Étape 5 — Paiement**
+**Étapes 5..N — Documents à signer** *(une étape par document actif)*
+- Le règlement intérieur n'est plus figé : les documents sont **paramétrables** depuis
+  `/admin/config/documents` (entité `DocumentSignable`), ciblables par population
+  (licenciés, rôles dirigeants, dirigeants nommés).
+- Chaque étape : lecture scrollée du texte + pad de signature tactile (Signature_pad.js).
+- La liste des documents attendus est **recalculée côté serveur** à la soumission : un id
+  envoyé mais non attendu est ignoré, un document attendu manquant rejette la soumission.
+
+**Étape finale — Paiement**
 - Affichage : "Comment souhaitez-vous régler votre cotisation ?"
-- Montant affiché dynamiquement (jeunes : 85€ / seniors : 120€ depuis `season.base_costs`)
-- Options radio :
+- Montant résolu par `CotisationResolver` (cotisation de l'équipe, sinon défaut de la saison)
+- Bouton principal mis en avant : **paiement par carte via HelloAsso** (aucun frais pour le club).
+  Le clic enregistre l'inscription puis redirige vers HelloAsso — le licencié ne peut rien perdre
+  s'il abandonne.
+- Puis, sous un séparateur "ou régler autrement", les options radio :
   - Virement → affiche RIB du club + libellé exact à mettre
   - Chèque → "À l'ordre de [nom club], à remettre au local"
   - Espèces → "À remettre au local lors d'une permanence"
-  - CB en ligne (SumUp) → lien externe + mention frais (ex: "+1,5% de frais")
   - Pass Sport / Chèque CAF / ANCV → "À remettre au local"
 - Mention bien visible : **"Votre inscription ne sera validée qu'à réception du paiement."**
+
+**Règle absolue du paiement en ligne** — une licence n'est jamais marquée payée sans encaissement
+vérifié. Aucune `Transaction` n'est créée sur la foi d'une `returnUrl` ou du corps d'une notification :
+`HelloAssoPaymentRecorder` relit l'état du paiement auprès de l'API HelloAsso (`state === Authorized`)
+avant tout enregistrement, de façon idempotente. Le licencié ne voit jamais autre chose que
+"paiement en cours de validation" tant qu'aucune transaction n'existe.
 
 **Validation finale**
 - Génération PDF règlement signé (template Twig → DomPDF)
@@ -297,17 +388,20 @@ Formulaire multi-étapes Alpine.js, mobile-first, sans login.
 
 URL : `/admin/licencies`
 
-Tableau filtrable (Tailwind, pas de lib externe) :
+Tableau filtrable (CSS natif, pas de lib externe) :
 - Filtres : Saison | Équipe | Catégorie | Statut
 - Colonnes : Nom Prénom | Catégorie | Équipe | Formulaire | Paiement | Statut global
 - Badges colorés pour le statut :
+  - ⚪ `IMPORTED` — Importé, lien pas encore envoyé
   - 🔵 `LINK_SENT` — Lien envoyé
   - 🟡 `FORM_COMPLETED` — Formulaire complété, paiement en attente
   - 🟢 `VALIDATED` — Validé
 
 Action depuis le tableau :
 - "Confirmer paiement" → modal rapide (mode, montant, référence) → crée `Transaction` + passe statut à `VALIDATED`
-- "Renvoyer le lien" → regénère l'UUID et renvoie le mail
+- "Renvoyer le lien" → rouvre la fenêtre de 30 jours et renvoie le mail.
+  ⚠️ L'UUID n'est **pas** régénéré, volontairement : le régénérer invaliderait les liens déjà
+  distribués, ce qui casserait les licenciés en cours de saisie.
 - Clic sur une ligne → fiche détail du licencié
 
 ### D. Archivage Drive
@@ -315,16 +409,45 @@ Action depuis le tableau :
 ```
 Drive/
 └── FC Soudron/
-    └── 2025-2026/
-        ├── U11/
-        │   └── DUPONT_Thomas_123456/
-        │       └── reglement_signe.pdf
-        └── Seniors/
-            └── MARTIN_Kevin_789012/
-                └── reglement_signe.pdf
+    ├── 2025-2026/
+    │   ├── Documents signés/
+    │   │   └── Règlement intérieur/
+    │   │       └── RI_DUPONT_Thomas.pdf
+    │   ├── Attestations Transport/
+    │   └── Club house/Clés/Attestations de remise/
+    └── Sauvegardes/
+        └── 2026-08/
+            └── backup_20260808_023000.sql.gz
 ```
 
-`DriveUploaderService` utilise un Service Account Google (credentials JSON en variable d'env, jamais committé).
+⚠️ Le segment `Club house/Clés` n'a **pas** suivi le renommage du module en « Clés » : il
+désigne des dossiers qui contiennent déjà des PDF archivés, et le renommer laisserait un
+dossier vide à côté des documents signés.
+
+Le classement se fait **par type de document**, pas par équipe ni par licencié : les
+`driveSegments` sont fixés à la création de chaque `DocumentSignable`.
+
+`DriveUploaderService` utilise un Service Account Google (credentials JSON en variable d'env,
+jamais committé).
+
+**L'upload est différé** : le PDF est écrit dans `var/pdfs/`, la colonne `drivePath` porte le
+chemin **local absolu**, et l'upload part sur `kernel.terminate` (`DriveUploadTerminateListener`).
+Une fois sur Drive, la colonne porte l'**ID Drive** — d'où la convention « commence par `/` =
+encore en local ». La commande `app:drive-retry-upload` (cron toutes les 15 min) rattrape les
+échecs. Le fichier local n'est supprimé qu'après un upload réussi : tant que Drive est
+injoignable, c'est la seule copie de la signature.
+
+### E. Tâches planifiées (conteneur `cosync_cron`)
+
+| Fréquence | Commande | Pourquoi |
+|---|---|---|
+| toutes les 15 min | `app:drive-retry-upload` | rattrape les PDF restés en local |
+| toutes les 30 min | `app:helloasso:sync-paiements` | rattrape un encaissement dont la notification n'est jamais arrivée — sans lui, le club encaisse sans que la licence passe en validée |
+| 02h30 | `app:db:backup` | dump PostgreSQL + copie sur le Drive |
+
+⚠️ Toute commande console rend potentiellement du Twig (mails), et `AppExtension` expose la
+saison courante en variable globale. `SeasonContext` doit donc rester utilisable **hors requête
+HTTP** : ne jamais y appeler `RequestStack::getSession()` sans garde.
 
 ---
 
@@ -440,6 +563,35 @@ Quand plusieurs templates partagent la même structure visuelle, extraire en com
 ```
 
 Un composant Twig n'a pas de logique métier. Il affiche ce qu'on lui passe.
+
+### 7.6 bis Boutons — le registre est porté par la variante, pas par le libellé
+
+Une variante de bouton dit **ce que l'action fait**, jamais l'importance qu'on lui prête.
+Se tromper de variante fait mentir l'interface : un « Annuler » en rouge annonce une
+destruction alors qu'il ne fait que refermer un formulaire.
+
+| Variante | Registre | Exemples |
+|---|---|---|
+| `btn-primary` | l'action attendue de l'écran, une seule par zone | Enregistrer, Créer l'article, Ajouter |
+| `btn-secondary` | une autre action, neutre et sans risque | Modifier, Voir les archivés |
+| `btn-ghost` | **fermer sans rien faire** | Annuler, ✕ d'un champ en édition |
+| `btn-danger` | **perte ou revirement de données** | Supprimer, Annuler une remise de dotation |
+
+Deux pièges vérifiés à la relecture :
+
+- « Annuler » n'est `btn-danger` que lorsqu'il **défait un état enregistré** (annuler une
+  remise de dotation régénère un mouvement de stock). Refermer un formulaire, c'est `btn-ghost`.
+- Les boutons d'une même rangée partagent leur taille. Un `btn-primary` pleine taille à côté
+  d'un `btn-sm` dans la même ligne de tableau est un défaut, pas une mise en avant.
+
+**Placement du pied de formulaire** : le couple Enregistrer / Annuler d'une **page de
+formulaire** est **centré** (`justify-content: center`). Seuls les pieds de **modale**
+restent alignés à droite — c'est la convention universelle du genre, et la modale n'est
+pas une page.
+
+**Annuler mène là où mène Enregistrer.** Si le contrôleur redirige vers `admin_stock_gestion`
+après enregistrement, le lien Annuler pointe sur `admin_stock_gestion`, pas sur un écran
+voisin : quitter un formulaire ne doit pas déplacer l'utilisateur.
 
 ### 7.7 Alpine.js — Séparation données/affichage
 
@@ -594,14 +746,44 @@ DATABASE_URL=
 | Élément | Convention | Exemple |
 |---|---|---|
 | Entités | PascalCase | `Licencie`, `DossierClub` |
-| Services | PascalCase + Suffix `Service` | `ImportService`, `PdfGeneratorService` |
-| DTOs | PascalCase + Suffix `Data` | `InscriptionFormData` |
+| Services | PascalCase + suffixe de rôle (cf. ci-dessous) | `ImportService`, `PdfRenderer` |
+| DTOs | PascalCase, suffixe `Data` pour une entrée de formulaire | `InscriptionFormData`, `DotationAvancement` |
 | Enums | PascalCase | `LicenceStatus`, `PaymentMode` |
 | Controllers | PascalCase + Suffix `Controller` | `ImportController` |
 | Routes admin | snake_case préfixé | `admin_licencies_list` |
 | Routes public | snake_case préfixé | `public_inscription_show` |
 | Templates | snake_case | `admin/licencies/list.html.twig` |
 | Variables Twig | camelCase | `{{ licencie.nomPrenom }}` |
+
+### Suffixe des services : le rôle, pas le mot « Service »
+
+`Service` est le suffixe par défaut, pas le seul autorisé. Quand une classe a un rôle
+plus précis, le nom le dit — c'est plus informatif que `XxxService` :
+
+| Suffixe | Rôle | Exemple |
+|---|---|---|
+| `Service` | orchestre une opération métier | `LicencieService`, `PaiementService` |
+| `Resolver` | choisit une valeur parmi plusieurs règles | `CotisationResolver`, `DotationResolver` |
+| `Factory` | construit un DTO depuis une `Request` | `InscriptionFormRequestFactory` |
+| `Presenter` | met en forme pour l'affichage, n'écrit rien | `DotationSuiviPresenter` |
+| `Synchronizer` | aligne un état sur un autre, idempotent | `DotationBesoinSynchronizer` |
+| `Sync` | archive un fichier local vers Drive | `DocumentSignatureDriveSync` |
+| `Renderer`, `Storage`, `Encoder` | infrastructure technique | `PdfRenderer`, `PdfStorage` |
+| `Context`, `Guard`, `Collector`, `Filter` | rôle explicite en un mot | `SeasonContext`, `CsrfGuard` |
+
+Règle de tri : **une classe sans suffixe de rôle est une erreur**, sauf pour un référentiel de
+constantes (`Tailles`, `LienPublic`). Un lecteur doit savoir ce que fait la classe avant
+de l'ouvrir.
+
+### Organisation de `src/Service/`
+
+Un dossier = un domaine métier, pas une couche technique. `Licencie/`, `Dirigeant/`,
+`Inscription/`, `Dotation/`, `Stock/`, `Cle/`, `Saison/`, `Referentiel/`, `Compte/`,
+`Document/`, `Payment/`, `Import/`, `Mail/`, `Pdf/`, `Drive/`, `Ops/` (exploitation),
+`Ui/` (état d'affichage).
+
+**Aucun service à la racine de `src/Service/`.** Si le domaine d'une nouvelle classe
+n'est pas évident, c'est le signe qu'elle en fait trop.
 
 ---
 
@@ -613,16 +795,24 @@ DATABASE_URL=
 - ❌ Credentials Google Drive dans le code source ou le repo Git
 - ❌ Données médicales ou numéro de sécu dans le formulaire public
 - ❌ Supprimer des données licencié lors d'un nouvel import XLSX
-- ❌ Plusieurs saisons actives simultanément
+- ❌ Utiliser `Category::isEcoleFoot` pour décider d'un comportement métier (c'est `isJeune()`)
 - ❌ React / SPA / API REST (hors scope V1)
 - ❌ Logique conditionnelle complexe dans les templates Twig (ça va dans un service ou un helper)
 - ❌ Classes CSS en dur dans le PHP
+
+### Schéma & données (la prod contient des données réelles — cf. bandeau en tête et §13)
+
+- ❌ `db-reset`, `doctrine:database:drop` ou `doctrine:schema:update --force` sur une base contenant des données
+- ❌ Ré-éditer une migration déjà déployée (fait diverger les bases) — corriger par une nouvelle migration
+- ❌ `ADD COLUMN ... NOT NULL` sans `DEFAULT` ni backfill sur une table déjà remplie
+- ❌ Proposer un `DROP` de colonne ou de table sans avoir signalé la perte de données
+- ❌ Déployer une migration sans dump préalable (`make prod-backup` est intégré à `make prod-deploy`)
 
 ---
 
 ## 11. Ordre de Développement Recommandé (V1)
 
-1. **Setup** : Symfony, PostgreSQL, Tailwind, Alpine.js, DomPDF, PhpSpreadsheet
+1. **Setup** : Symfony, PostgreSQL, CSS natif, Alpine.js, DomPDF, PhpSpreadsheet
 2. **Entités & migrations** : toutes les entités + enums
 3. **Auth admin** : login simple email/password
 4. **Import XLSX** : `ImportService` + `DataSanitizer` + UI drag & drop
@@ -685,7 +875,8 @@ Exemples :
 
 ## 13. Évolution du Schéma en Production
 
-> À partir du moment où la prod contient des données réelles, **toute évolution doit transformer
+> **C'est le cas dès maintenant.** La prod contient des signatures manuscrites, des PDF signés, des
+> autorisations parentales et des encaissements HelloAsso : **toute évolution doit transformer
 > l'existant sans le perdre**. La logique métier (services, contrôleurs, formulaires, front) se code
 > exactement pareil — seule la **façon de faire évoluer le schéma** se ritualise.
 
@@ -727,10 +918,37 @@ rôles + UPDATE de backfill + contrainte FK ensuite).
 ### Workflow par changement (avec données en prod)
 
 1. Modifier l'entité
-2. `make:migration` → **relire le SQL**
+2. `make:migration` → **relire le SQL** (`make prod-migrate-dry` affiche le SQL sans l'appliquer)
 3. Restaurer un dump prod en local → `doctrine:migrations:migrate` → vérifier que les données survivent
-4. `vendor/bin/phpunit` (les tests tournent sur base migrée)
+4. `make test` (les tests tournent sur base migrée)
 5. Déployer : **backup** → `doctrine:migrations:migrate` → contrôle
+   (`make prod-deploy` enchaîne `prod-backup` puis `prod-migrate` — le dump est automatique)
+
+### Sauvegardes
+
+La sauvegarde est **automatique et externalisée**, pas à déclencher à la main :
+
+| Quoi | Où |
+|---|---|
+| Dump nightly (02h30) | commande `app:db:backup`, planifiée dans le conteneur `cosync_cron` |
+| Copie locale | volume `cosync_backups` → `var/backups/backup_YYYYmmdd_HHMMSS.sql.gz`, rétention 30 jours |
+| Copie off-site | Google Drive du club → `Sauvegardes/{YYYY-MM}/` (même Service Account que les PDF) |
+| Dump avant migration | `make prod-deploy` appelle `prod-backup` avant `prod-migrate` |
+
+Commandes utiles :
+
+```
+make prod-backup                  # dump immédiat (local + Drive)
+make prod-backup-list             # lister les dumps disponibles
+make prod-restore FILE=backup_….sql.gz
+```
+
+**Un backup jamais restauré n'est pas un backup.** Faire une répétition de restauration sur une base
+locale au moins une fois par saison : `make prod-restore` puis vérifier les comptes de lignes de
+`licencie`, `dossier_club`, `transaction`, `document_signature`.
+
+⚠️ Ne sont **pas** couverts par ce mécanisme : la configuration de Nginx Proxy Manager (certificats
+TLS, domaines) et le contenu du Drive lui-même. À sauvegarder séparément.
 
 ### Référentiels & seeds
 Peupler les référentiels (catégories FFF, rôles dirigeants) via migration **ou** la commande

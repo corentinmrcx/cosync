@@ -5,7 +5,11 @@ namespace App\Controller\Public;
 use App\Entity\Category;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Enum\DocumentCible;
+use App\Repository\DocumentSignableRepository;
 use App\Repository\SeasonRepository;
+use App\Service\Inscription\InscriptionFormConfig;
+use App\Service\Payment\CotisationResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -18,11 +22,24 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 class InscriptionDemoController extends AbstractController
 {
+    public function __construct(
+        private readonly CotisationResolver $cotisationResolver,
+        private readonly InscriptionFormConfig $formConfig,
+        private readonly SeasonRepository $seasonRepo,
+        private readonly DocumentSignableRepository $documentRepo,
+    ) {}
+
     #[Route('/inscription-demo', name: 'public_inscription_demo_show', methods: ['GET'])]
-    public function show(SeasonRepository $seasonRepo): Response
+    public function show(): Response
     {
-        // Saison réelle (lecture seule) pour afficher le vrai règlement et le bon tarif
-        $season = $seasonRepo->findMostRecent();
+        // Saison réelle (lecture seule) pour afficher les vrais documents et le bon tarif
+        $season = $this->seasonRepo->findMostRecent();
+
+        // Le licencié de démo n'existe pas en base : aucune signature ne peut lui être
+        // rattachée, tous les documents actifs de la saison sont donc à signer.
+        $documents = $season === null
+            ? []
+            : $this->documentRepo->findActifsByCible($season, DocumentCible::LICENCIE);
 
         if ($season === null) {
             $season = (new Season())
@@ -46,8 +63,15 @@ class InscriptionDemoController extends AbstractController
 
         return $this->render('public/inscription/form.html.twig', [
             'licencie' => $licencie,
-            'montant'  => $montant,
-            'demo'     => true,
+            'montant' => $montant,
+            'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
+            'documents' => $documents,
+            'demo' => true,
+            'config' => $this->formConfig->pourDemo(
+                $licencie,
+                $documents,
+                $this->generateUrl('public_inscription_demo_confirmation'),
+            ),
         ]);
     }
 

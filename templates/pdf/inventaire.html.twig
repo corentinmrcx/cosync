@@ -67,7 +67,7 @@
                                 </td>
                             {% endif %}
                             <td class="taille">{{ t.taille }}</td>
-                            <td class="stock {{ t.stock <= 0 ? 'rupture' : (row.status == 'warning' ? 'bas') }}">{{ t.stock }}</td>
+                            <td class="stock {{ t.stock <= 0 ? 'rupture' : (row.niveau.value == 'warning' ? 'bas') }}">{{ t.stock }}</td>
                             <td class="compte">_______</td>
                         </tr>
                     {% endfor %}

@@ -1,0 +1,106 @@
+/* ── Champs de formulaire ─────────────────────────────────────────────────────
+   Un seul socle pour toute l'application. Le projet en avait deux, appliqués sans
+   règle : bordure 1.5px sur les formulaires publics et de configuration, 1px plus
+   foncée dans les écrans de stock. Les deux coexistaient à l'écran.
+
+   Tailles : par défaut, -compact dans un tableau ou une barre d'outils.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.field-label {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-body);
+}
+
+.field-input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    color: var(--color-text-body);
+    background: var(--color-bg-page);
+    outline: none;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+}
+
+/* Hauteur imposée aux contrôles d'une seule ligne. Laissés à leur hauteur
+   naturelle, ils ne tombent pas juste : à padding et police identiques, Chrome
+   rend un <input type=text> à 41px, un <select> et un <input type=date> à 43px.
+   Une ligne qui mêle les deux (Rôle + Équipe, Date de naissance + Catégorie)
+   part donc de travers de 2px. Le textarea garde sa hauteur libre : il grandit
+   avec son nombre de lignes. */
+select.field-input,
+input.field-input {
+    height: 2.75rem;
+}
+
+/* Un champ fichier garde la hauteur de son bouton natif, une liste à choix
+   multiples celle de ses options visibles. */
+input[type="file"].field-input,
+select[multiple].field-input { height: auto; }
+
+.field-input:focus {
+    border-color: var(--color-primary);
+}
+
+.field-input:disabled {
+    background: var(--color-bg-muted);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+}
+
+/* Sélecteurs typés : sans ça, la hauteur imposée plus haut (elle aussi typée)
+   l'emporterait sur la version compacte, plus faible en spécificité. */
+select.field-input-compact,
+input.field-input-compact,
+.field-input-compact {
+    padding: 0.4rem 0.625rem;
+    font-size: var(--font-size-xs);
+    height: 2.125rem;
+}
+
+textarea.field-input-compact { height: auto; }
+
+/* Message sous le champ : ce qu'on attend, ou pourquoi c'est refusé. */
+.field-hint {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* Rendu tantôt en <p>, tantôt en <ul> par le thème de formulaire Symfony. */
+.field-erreur {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--font-size-xs);
+    color: var(--color-danger);
+}
+
+.field-input-invalide {
+    border-color: var(--color-danger);
+}
+
+/* Case à cocher alignée avec son libellé, cliquable sur toute la ligne. */
+.field-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.field-checkbox input {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+}

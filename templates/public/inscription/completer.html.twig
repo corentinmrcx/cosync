@@ -2,223 +2,196 @@
 
 {% block title %}Compléter mes autorisations – Foyer de Soudron{% endblock %}
 
-{% block head %}
-    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js" defer></script>
+{% block page_attributs %}
+     x-data="completionForm({ manquants: {{ manquants|json_encode }} })"{% endblock %}
+
+{% block contenu %}
+    {# — Header — #}
+
+    <form method="post"
+          action="{{ path('public_inscription_completer_submit', {uuid: licencie.uuid}) }}"
+          @submit="submitting = true">
+        <input type="hidden" name="_token" value="{{ csrf_token('inscription_completer') }}">
+        <input type="hidden" name="attestation_signature_data" :value="signatureDataAttestation">
+
+        <div class="inscription-card">
+            <h2 class="inscription-step-title">Dernières autorisations</h2>
+            <p class="inscription-attestation-intro">
+                {% if isJeune %}
+                    Le dossier de <strong>{{ licencie.prenom }}</strong> est presque complet. Merci de répondre aux quelques questions ci-dessous — cela prend moins d'une minute.
+                {% else %}
+                    Votre dossier est presque complet. Merci de répondre aux quelques questions ci-dessous — cela prend moins d'une minute.
+                {% endif %}
+            </p>
+
+            {% include 'public/_rgpd_note.html.twig' %}
+
+            <div class="inscription-fields">
+
+                {% if 'photo' in manquants %}
+                    <div class="inscription-question-block">
+                        <span class="inscription-question-label">Droit à l'image *</span>
+                        <span class="inscription-question-hint">Autorisation de diffuser des photos/vidéos du licencié sur les supports du club.</span>
+                        <div class="inscription-radio-group">
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="autorisation_photo" value="1" x-model="autorisationPhoto">
+                                <span class="inscription-radio-label">Oui</span>
+                            </label>
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="autorisation_photo" value="0" x-model="autorisationPhoto">
+                                <span class="inscription-radio-label">Non</span>
+                            </label>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if 'accident' in manquants %}
+                    <div class="inscription-question-block">
+                        <span class="inscription-question-label">Autorisation en cas d'accident *</span>
+                        <span class="inscription-question-hint">J'autorise les dirigeants du club à prendre toutes les mesures nécessaires en cas d'accident survenu dans le cadre de la pratique du football.</span>
+                        <div class="inscription-radio-group">
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="autorisation_accident" value="1" x-model="autorisationAccident">
+                                <span class="inscription-radio-label">Oui</span>
+                            </label>
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="autorisation_accident" value="0" x-model="autorisationAccident">
+                                <span class="inscription-radio-label">Non</span>
+                            </label>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if 'transport_dirigeants' in manquants %}
+                    <div class="inscription-question-block">
+                        <span class="inscription-question-label">Transport par les dirigeants *</span>
+                        <span class="inscription-question-hint">Autorisation que votre enfant soit transporté par les dirigeants du club lors des déplacements.</span>
+                        <div class="inscription-radio-group">
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="autorisation_transport_dirigeants" value="1" x-model="autorisationTransportDirigeants">
+                                <span class="inscription-radio-label">Oui</span>
+                            </label>
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="autorisation_transport_dirigeants" value="0" x-model="autorisationTransportDirigeants">
+                                <span class="inscription-radio-label">Non</span>
+                            </label>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if 'transport_parents' in manquants %}
+                    <div class="inscription-question-block">
+                        <span class="inscription-question-label">Transport par d'autres parents *</span>
+                        <span class="inscription-question-hint">Autorisation que votre enfant soit transporté par d'autres parents lors des déplacements.</span>
+                        <div class="inscription-radio-group">
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="autorisation_transport_parents" value="1" x-model="autorisationTransportParents">
+                                <span class="inscription-radio-label">Oui</span>
+                            </label>
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="autorisation_transport_parents" value="0" x-model="autorisationTransportParents">
+                                <span class="inscription-radio-label">Non</span>
+                            </label>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if 'volontaire' in manquants %}
+                    <div class="inscription-question-block">
+                        <span class="inscription-question-label">Volontaire pour le transport *</span>
+                        <span class="inscription-question-hint">Acceptez-vous de transporter occasionnellement d'autres enfants lors des déplacements du club ?</span>
+                        <div class="inscription-radio-group">
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="volontaire_transport" value="1" x-model="volontaireTransport">
+                                <span class="inscription-radio-label">Oui</span>
+                            </label>
+                            <label class="inscription-radio-option">
+                                <input type="radio" name="volontaire_transport" value="0" x-model="volontaireTransport">
+                                <span class="inscription-radio-label">Non</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {# — Attestation de transport, affichée seulement si volontaire — #}
+                    <div x-show="showAttestation" x-cloak class="inscription-fields">
+                        <hr class="inscription-question-divider">
+                        <p class="inscription-attestation-intro">Ces informations sont nécessaires pour assurer la sécurité des enfants transportés. Elles ne seront pas conservées en base de données — seul le document signé sera archivé.</p>
+
+                        <div class="field">
+                            <label class="field-label">Nom *</label>
+                            <input type="text" name="attestation_nom_conducteur" x-model="nomConducteur"
+                                   class="field-input" placeholder="NOM" autocomplete="family-name">
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label">Prénom *</label>
+                            <input type="text" name="attestation_prenom_conducteur" x-model="prenomConducteur"
+                                   class="field-input" placeholder="Prénom" autocomplete="given-name">
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label">Numéro de permis de conduire *</label>
+                            <input type="text" name="attestation_num_permis" x-model="numPermis"
+                                   class="field-input" placeholder="Ex : 01AA00000" autocomplete="off">
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label">Nom et adresse de l'assurance *</label>
+                            <textarea name="attestation_assurance" x-model="assuranceNomAdresse"
+                                      class="field-input" rows="3"
+                                      placeholder="Ex : Macif — 12 rue de la Paix, 75001 Paris"></textarea>
+                        </div>
+
+                        <label class="inscription-checkbox-row">
+                            <input type="checkbox" name="attestation_vehicule_neuf" value="1" x-model="vehiculeNeuf">
+                            <span class="inscription-checkbox-text">Véhicule neuf, sans contrôle technique à ce jour</span>
+                        </label>
+
+                        <div class="field" x-show="!vehiculeNeuf">
+                            <label class="field-label">Date du dernier contrôle technique *</label>
+                            <input type="date" name="attestation_date_ct" x-model="dateCT"
+                                   class="field-input" :class="dateCTFuture ? 'inscription-input-error' : ''"
+                                   max="{{ 'now'|date('Y-m-d') }}">
+                            <p x-show="dateCTFuture" class="inscription-field-error">
+                                La date du contrôle technique ne peut pas être dans le futur.
+                            </p>
+                        </div>
+
+                        <label class="inscription-checkbox-row">
+                            <input type="checkbox" name="attestation_engagement" value="1" x-model="engagementAttestation">
+                            <span class="inscription-checkbox-text">Je m'engage à prévenir le club en cas de changement de situation (retrait de permis, résiliation d'assurance, défaut de contrôle technique).</span>
+                        </label>
+
+                        <div>
+                            <p class="inscription-signature-label">Signature *</p>
+                            <p class="inscription-signature-hint">Signez dans le cadre ci-dessous avec votre doigt ou votre souris.</p>
+                            <div class="inscription-signature-wrap">
+                                <canvas class="inscription-signature-canvas" x-ref="signatureCanvasAttestation"></canvas>
+                                <div class="inscription-signature-bar">
+                                    <button type="button" @click="clearAttestationSignature" class="inscription-signature-clear">
+                                        Effacer
+                                    </button>
+                                    <span class="inscription-signature-saved" x-show="signatureDataAttestation !== ''">
+                                        ✓ Signature enregistrée
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+            </div>
+
+            <div class="inscription-nav">
+                <button type="submit" :disabled="!canSubmit || submitting" class="btn btn-primary btn-block">
+                    Enregistrer ✓
+                </button>
+            </div>
+        </div>
+
+    </form>
 {% endblock %}
 
-{% block body %}
-<div class="inscription-page"
-     x-data="completionForm({ manquants: {{ manquants|json_encode }} })">
-
-    {# — Header — #}
-    <header class="inscription-header">
-        <div class="inscription-header-top">
-            <span class="inscription-header-club">Foyer de Soudron</span>
-        </div>
-    </header>
-
-    {# — Flash — #}
-    {% for message in app.flashes('error') %}
-        <div class="inscription-flash-error">{{ message }}</div>
-    {% endfor %}
-
-    <main class="inscription-main">
-        <div class="inscription-container">
-
-            <form method="post"
-                  action="{{ path('public_inscription_completer_submit', {uuid: licencie.uuid}) }}"
-                  @submit="submitting = true">
-                <input type="hidden" name="_token" value="{{ csrf_token('inscription_completer') }}">
-                <input type="hidden" name="attestation_signature_data" :value="signatureDataAttestation">
-
-                <div class="inscription-card">
-                    <h2 class="inscription-step-title">Dernières autorisations</h2>
-                    <p class="inscription-attestation-intro">
-                        {% if isJeune %}
-                            Le dossier de <strong>{{ licencie.prenom }}</strong> est presque complet. Merci de répondre aux quelques questions ci-dessous — cela prend moins d'une minute.
-                        {% else %}
-                            Votre dossier est presque complet. Merci de répondre aux quelques questions ci-dessous — cela prend moins d'une minute.
-                        {% endif %}
-                    </p>
-
-                    <div class="inscription-fields">
-
-                        {% if 'photo' in manquants %}
-                            <div class="inscription-question-block">
-                                <span class="inscription-question-label">Droit à l'image *</span>
-                                <span class="inscription-question-hint">Autorisation de diffuser des photos/vidéos du licencié sur les supports du club.</span>
-                                <div class="inscription-radio-group">
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="autorisation_photo" value="1" x-model="autorisationPhoto">
-                                        <span class="inscription-radio-label">Oui</span>
-                                    </label>
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="autorisation_photo" value="0" x-model="autorisationPhoto">
-                                        <span class="inscription-radio-label">Non</span>
-                                    </label>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        {% if 'accident' in manquants %}
-                            <div class="inscription-question-block">
-                                <span class="inscription-question-label">Autorisation en cas d'accident *</span>
-                                <span class="inscription-question-hint">J'autorise les dirigeants du club à prendre toutes les mesures nécessaires en cas d'accident survenu dans le cadre de la pratique du football.</span>
-                                <div class="inscription-radio-group">
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="autorisation_accident" value="1" x-model="autorisationAccident">
-                                        <span class="inscription-radio-label">Oui</span>
-                                    </label>
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="autorisation_accident" value="0" x-model="autorisationAccident">
-                                        <span class="inscription-radio-label">Non</span>
-                                    </label>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        {% if 'transport_dirigeants' in manquants %}
-                            <div class="inscription-question-block">
-                                <span class="inscription-question-label">Transport par les dirigeants *</span>
-                                <span class="inscription-question-hint">Autorisation que votre enfant soit transporté par les dirigeants du club lors des déplacements.</span>
-                                <div class="inscription-radio-group">
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="autorisation_transport_dirigeants" value="1" x-model="autorisationTransportDirigeants">
-                                        <span class="inscription-radio-label">Oui</span>
-                                    </label>
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="autorisation_transport_dirigeants" value="0" x-model="autorisationTransportDirigeants">
-                                        <span class="inscription-radio-label">Non</span>
-                                    </label>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        {% if 'transport_parents' in manquants %}
-                            <div class="inscription-question-block">
-                                <span class="inscription-question-label">Transport par d'autres parents *</span>
-                                <span class="inscription-question-hint">Autorisation que votre enfant soit transporté par d'autres parents lors des déplacements.</span>
-                                <div class="inscription-radio-group">
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="autorisation_transport_parents" value="1" x-model="autorisationTransportParents">
-                                        <span class="inscription-radio-label">Oui</span>
-                                    </label>
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="autorisation_transport_parents" value="0" x-model="autorisationTransportParents">
-                                        <span class="inscription-radio-label">Non</span>
-                                    </label>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        {% if 'volontaire' in manquants %}
-                            <div class="inscription-question-block">
-                                <span class="inscription-question-label">Volontaire pour le transport *</span>
-                                <span class="inscription-question-hint">Acceptez-vous de transporter occasionnellement d'autres enfants lors des déplacements du club ?</span>
-                                <div class="inscription-radio-group">
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="volontaire_transport" value="1" x-model="volontaireTransport">
-                                        <span class="inscription-radio-label">Oui</span>
-                                    </label>
-                                    <label class="inscription-radio-option">
-                                        <input type="radio" name="volontaire_transport" value="0" x-model="volontaireTransport">
-                                        <span class="inscription-radio-label">Non</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {# — Attestation de transport, affichée seulement si volontaire — #}
-                            <div x-show="showAttestation" x-cloak class="inscription-fields">
-                                <hr class="inscription-question-divider">
-                                <p class="inscription-attestation-intro">Ces informations sont nécessaires pour assurer la sécurité des enfants transportés. Elles ne seront pas conservées en base de données — seul le document signé sera archivé.</p>
-
-                                <div class="inscription-field">
-                                    <label class="inscription-label">Nom *</label>
-                                    <input type="text" name="attestation_nom_conducteur" x-model="nomConducteur"
-                                           class="inscription-input" placeholder="NOM" autocomplete="family-name">
-                                </div>
-
-                                <div class="inscription-field">
-                                    <label class="inscription-label">Prénom *</label>
-                                    <input type="text" name="attestation_prenom_conducteur" x-model="prenomConducteur"
-                                           class="inscription-input" placeholder="Prénom" autocomplete="given-name">
-                                </div>
-
-                                <div class="inscription-field">
-                                    <label class="inscription-label">Numéro de permis de conduire *</label>
-                                    <input type="text" name="attestation_num_permis" x-model="numPermis"
-                                           class="inscription-input" placeholder="Ex : 01AA00000" autocomplete="off">
-                                </div>
-
-                                <div class="inscription-field">
-                                    <label class="inscription-label">Nom et adresse de l'assurance *</label>
-                                    <textarea name="attestation_assurance" x-model="assuranceNomAdresse"
-                                              class="inscription-textarea" rows="3"
-                                              placeholder="Ex : Macif — 12 rue de la Paix, 75001 Paris"></textarea>
-                                </div>
-
-                                <label class="inscription-checkbox-row">
-                                    <input type="checkbox" name="attestation_vehicule_neuf" value="1" x-model="vehiculeNeuf">
-                                    <span class="inscription-checkbox-text">Véhicule neuf, sans contrôle technique à ce jour</span>
-                                </label>
-
-                                <div class="inscription-field" x-show="!vehiculeNeuf">
-                                    <label class="inscription-label">Date du dernier contrôle technique *</label>
-                                    <input type="date" name="attestation_date_ct" x-model="dateCT"
-                                           class="inscription-input" :class="dateCTFuture ? 'inscription-input-error' : ''"
-                                           max="{{ 'now'|date('Y-m-d') }}">
-                                    <p x-show="dateCTFuture" class="inscription-field-error">
-                                        La date du contrôle technique ne peut pas être dans le futur.
-                                    </p>
-                                </div>
-
-                                <label class="inscription-checkbox-row">
-                                    <input type="checkbox" name="attestation_engagement" value="1" x-model="engagementAttestation">
-                                    <span class="inscription-checkbox-text">Je m'engage à prévenir le club en cas de changement de situation (retrait de permis, résiliation d'assurance, défaut de contrôle technique).</span>
-                                </label>
-
-                                <div>
-                                    <p class="inscription-signature-label">Signature *</p>
-                                    <p class="inscription-signature-hint">Signez dans le cadre ci-dessous avec votre doigt ou votre souris.</p>
-                                    <div class="inscription-signature-wrap">
-                                        <canvas class="inscription-signature-canvas" x-ref="signatureCanvasAttestation"></canvas>
-                                        <div class="inscription-signature-bar">
-                                            <button type="button" @click="clearAttestationSignature" class="inscription-signature-clear">
-                                                Effacer
-                                            </button>
-                                            <span class="inscription-signature-saved" x-show="signatureDataAttestation !== ''">
-                                                ✓ Signature enregistrée
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                    </div>
-
-                    <div class="inscription-nav">
-                        <button type="submit" :disabled="!canSubmit || submitting" class="inscription-btn-submit">
-                            Enregistrer ✓
-                        </button>
-                    </div>
-                </div>
-
-            </form>
-
-        </div>
-    </main>
-
-    {% include 'components/footer.html.twig' %}
-
-    {# — Overlay de chargement pendant la soumission — #}
-    <div class="inscription-overlay" x-show="submitting" x-cloak>
-        <div class="inscription-overlay-box">
-            <div class="inscription-overlay-spinner"></div>
-            <p class="inscription-overlay-title">Enregistrement…</p>
-            <p class="inscription-overlay-text">Merci de patienter quelques secondes, ne fermez pas cette page.</p>
-        </div>
-    </div>
-
-</div>
+{% block hors_flux %}
+    {% include 'components/_overlay_chargement.html.twig' with { visible: 'submitting', titre: "Enregistrement…" } only %}
 {% endblock %}

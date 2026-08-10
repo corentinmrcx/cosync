@@ -8,7 +8,6 @@ use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Enum\LicenceStatus;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Uid\Uuid;
 

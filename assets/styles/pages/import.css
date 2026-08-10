@@ -4,7 +4,6 @@
     align-items: flex-start;
     justify-content: center;
     padding: 1rem;
-    background-color: var(--color-bg-subtle);
 }
 
 @media (min-width: 640px) {
@@ -15,7 +14,7 @@
     width: 100%;
     max-width: 540px;
     background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-xl);
     padding: 2rem;
     box-shadow: var(--shadow-card);
@@ -90,10 +89,6 @@
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
-}
-
-.import-submit:hover {
-    background: var(--color-primary-dark);
 }
 
 /* — Guide collapsible — */
@@ -312,7 +307,6 @@
     justify-content: flex-end;
 }
 
-.import-btn-primary,
 .import-btn-secondary {
     padding: 0.625rem 1.25rem;
     border-radius: var(--radius-md);
@@ -320,18 +314,6 @@
     font-weight: 700;
     text-decoration: none;
     transition: background 0.15s;
-}
-
-.import-btn-primary {
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-}
-
-.import-btn-primary:hover {
-    background: var(--color-primary-dark);
-}
-
-.import-btn-secondary {
     background: var(--color-bg-subtle);
     color: var(--color-text-base);
     border: 1px solid var(--color-border);

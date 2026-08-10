@@ -40,7 +40,7 @@ final class DataSanitizer
             if (!$this->isUpperToken($token)) {
                 break;
             }
-            $nomCount++;
+            ++$nomCount;
         }
 
         // Repli si aucun token majuscule en tête, ou si tout est en majuscules (prénom introuvable) :
@@ -50,7 +50,7 @@ final class DataSanitizer
         }
 
         return [
-            'nom'    => mb_strtoupper(implode(' ', array_slice($tokens, 0, $nomCount)), 'UTF-8'),
+            'nom' => mb_strtoupper(implode(' ', array_slice($tokens, 0, $nomCount)), 'UTF-8'),
             'prenom' => mb_convert_case(implode(' ', array_slice($tokens, $nomCount)), MB_CASE_TITLE, 'UTF-8'),
         ];
     }
@@ -71,7 +71,7 @@ final class DataSanitizer
     public function sanitizeSeparateNomPrenom(string $nom, string $prenom): array
     {
         return [
-            'nom'    => mb_strtoupper(trim($nom), 'UTF-8'),
+            'nom' => mb_strtoupper(trim($nom), 'UTF-8'),
             'prenom' => mb_convert_case(trim($prenom), MB_CASE_TITLE, 'UTF-8'),
         ];
     }
@@ -108,6 +108,7 @@ final class DataSanitizer
         if ($raw === null || trim($raw) === '') {
             return null;
         }
+
         return mb_strtolower(trim($raw), 'UTF-8');
     }
 

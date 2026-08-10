@@ -48,30 +48,84 @@ class Commande
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
-        $this->lignes    = new ArrayCollection();
+        $this->lignes = new ArrayCollection();
     }
 
-    public function getId(): int { return $this->id; }
+    public function getId(): int
+    {
+        return $this->id;
+    }
 
-    public function getSeason(): Season { return $this->season; }
-    public function setSeason(Season $season): static { $this->season = $season; return $this; }
+    public function getSeason(): Season
+    {
+        return $this->season;
+    }
 
-    public function getFournisseur(): ?Fournisseur { return $this->fournisseur; }
-    public function setFournisseur(?Fournisseur $fournisseur): static { $this->fournisseur = $fournisseur; return $this; }
+    public function setSeason(Season $season): static
+    {
+        $this->season = $season;
 
-    public function getStatut(): CommandeStatut { return $this->statut; }
-    public function setStatut(CommandeStatut $statut): static { $this->statut = $statut; return $this; }
+        return $this;
+    }
 
-    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+    public function getFournisseur(): ?Fournisseur
+    {
+        return $this->fournisseur;
+    }
 
-    public function getDateCommande(): ?\DateTimeImmutable { return $this->dateCommande; }
-    public function setDateCommande(?\DateTimeImmutable $dateCommande): static { $this->dateCommande = $dateCommande; return $this; }
+    public function setFournisseur(?Fournisseur $fournisseur): static
+    {
+        $this->fournisseur = $fournisseur;
 
-    public function getNote(): ?string { return $this->note; }
-    public function setNote(?string $note): static { $this->note = $note; return $this; }
+        return $this;
+    }
+
+    public function getStatut(): CommandeStatut
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(CommandeStatut $statut): static
+    {
+        $this->statut = $statut;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function getDateCommande(): ?\DateTimeImmutable
+    {
+        return $this->dateCommande;
+    }
+
+    public function setDateCommande(?\DateTimeImmutable $dateCommande): static
+    {
+        $this->dateCommande = $dateCommande;
+
+        return $this;
+    }
+
+    public function getNote(): ?string
+    {
+        return $this->note;
+    }
+
+    public function setNote(?string $note): static
+    {
+        $this->note = $note;
+
+        return $this;
+    }
 
     /** @return Collection<int, CommandeLigne> */
-    public function getLignes(): Collection { return $this->lignes; }
+    public function getLignes(): Collection
+    {
+        return $this->lignes;
+    }
 
     public function addLigne(CommandeLigne $ligne): static
     {
@@ -79,6 +133,7 @@ class Commande
             $this->lignes->add($ligne);
             $ligne->setCommande($this);
         }
+
         return $this;
     }
 
@@ -93,6 +148,7 @@ class Commande
         foreach ($this->lignes as $ligne) {
             $total += $ligne->getQuantite();
         }
+
         return $total;
     }
 
@@ -103,6 +159,7 @@ class Commande
         foreach ($this->lignes as $ligne) {
             $total += $ligne->getQuantite() * (float) ($ligne->getPrixUnitaire() ?? 0.0);
         }
+
         return $total;
     }
 }

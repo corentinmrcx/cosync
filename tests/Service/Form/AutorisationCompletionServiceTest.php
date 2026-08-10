@@ -7,11 +7,11 @@ use App\Entity\Category;
 use App\Entity\DossierClub;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Enum\AutorisationManquante;
 use App\Enum\LicenceStatus;
-use App\Service\Form\AutorisationCompletionService;
+use App\Service\Inscription\AutorisationCompletionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Uid\Uuid;
 
 /**
  * Complétion a posteriori des autorisations : conteneur réel + base réelle
@@ -29,38 +29,38 @@ final class AutorisationCompletionServiceTest extends KernelTestCase
         $this->service = self::getContainer()->get(AutorisationCompletionService::class);
     }
 
-    public function testMissingKeysVideSiFormulaireNonComplete(): void
+    public function testAutorisationsManquantesVideSiFormulaireNonComplete(): void
     {
         $licencie = $this->makeLicencie('U11', formCompleted: false);
 
-        self::assertSame([], $this->service->missingKeys($licencie));
+        self::assertSame([], AutorisationManquante::valeurs($this->service->manquantes($licencie)));
         self::assertFalse($this->service->hasMissing($licencie));
     }
 
-    public function testMissingKeysSeniorNeContientQuePhoto(): void
+    public function testAutorisationsManquantesSeniorNeContientQuePhoto(): void
     {
         // Un sénior n'a pas d'autorisations de transport applicables.
         $licencie = $this->makeLicencie('SENIOR', formCompleted: true);
 
-        self::assertSame(['photo'], $this->service->missingKeys($licencie));
+        self::assertSame(['photo'], AutorisationManquante::valeurs($this->service->manquantes($licencie)));
         self::assertTrue($this->service->hasMissing($licencie));
     }
 
-    public function testMissingKeysJeuneListeToutesLesAutorisationsNulles(): void
+    public function testAutorisationsManquantesJeuneListeToutesLesAutorisationsNulles(): void
     {
         $licencie = $this->makeLicencie('U11', formCompleted: true);
 
         self::assertSame(
             ['photo', 'accident', 'transport_dirigeants', 'transport_parents', 'volontaire'],
-            $this->service->missingKeys($licencie),
+            AutorisationManquante::valeurs($this->service->manquantes($licencie)),
         );
     }
 
-    public function testMissingKeysVideQuandToutEstRenseigne(): void
+    public function testAutorisationsManquantesVideQuandToutEstRenseigne(): void
     {
         $licencie = $this->makeLicencie('U11', formCompleted: true, fill: true);
 
-        self::assertSame([], $this->service->missingKeys($licencie));
+        self::assertSame([], AutorisationManquante::valeurs($this->service->manquantes($licencie)));
         self::assertFalse($this->service->hasMissing($licencie));
     }
 
@@ -83,7 +83,7 @@ final class AutorisationCompletionServiceTest extends KernelTestCase
         $reloaded = $this->refetch($licencie);
         self::assertTrue($reloaded->getDossierClub()->getAutorisationPhoto());
         self::assertFalse($reloaded->isFormTokenValid(), 'Le lien de complétion doit être à usage unique.');
-        self::assertSame([], $this->service->missingKeys($reloaded));
+        self::assertSame([], AutorisationManquante::valeurs($this->service->manquantes($reloaded)));
     }
 
     public function testApplyNeTouchePasAuxAutorisationsNonFournies(): void
@@ -107,7 +107,7 @@ final class AutorisationCompletionServiceTest extends KernelTestCase
         self::assertNull($reloaded->getDossierClub()->getAutorisationPhoto());
         self::assertSame(
             ['photo', 'accident', 'transport_dirigeants', 'transport_parents'],
-            $this->service->missingKeys($reloaded),
+            AutorisationManquante::valeurs($this->service->manquantes($reloaded)),
         );
     }
 

@@ -1,0 +1,33 @@
+{# Liste déroulante stylée.
+
+   modele  : expression Alpine à lire et écrire (ex. « tailleHaut »)
+   nom     : name du champ caché soumis avec le formulaire
+   groupes : [{ label, options: [...] }] — label facultatif
+#}
+<div x-data="selectListe()" @click.outside="open = false" class="cselect">
+    <button x-ref="trigger" type="button" @click="toggle()"
+            :class="{'cselect-trigger-open': open}" class="cselect-trigger">
+        <span x-text="{{ modele }} || '— Choisir —'" :class="{'cselect-placeholder': !{{ modele }}}"></span>
+        <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}"
+             width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"/>
+        </svg>
+    </button>
+
+    <ul x-show="open" x-cloak class="cselect-dropdown"
+        :style="`top:${top}px;left:${left}px;width:${width}px`">
+        {% for groupe in groupes %}
+            {% if groupe.label is defined and groupe.label %}
+                <li class="cselect-optgroup-label">{{ groupe.label }}</li>
+            {% endif %}
+            {% for option in groupe.options %}
+                <li @mousedown.prevent="{{ modele }} = '{{ option }}'; open = false"
+                    :class="{'cselect-option-active': {{ modele }} === '{{ option }}'}"
+                    class="cselect-option">{{ option }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+
+    <input type="hidden" name="{{ nom }}" :value="{{ modele }}">
+</div>

@@ -1,0 +1,81 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Dotations{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Dotations' }
+] } %}
+
+<div class="section-home-page">
+
+    <div class="section-home-header">
+        <div>
+            <h1 class="section-home-title">Dotations</h1>
+        </div>
+    </div>
+
+    {# — Tuiles de synthèse — #}
+    <div class="stat-grid">
+        <div class="stat-card {{ aCommanderCount > 0 ? 'stat-card-warning' }}">
+            <span class="stat-card-icon">{{ ui.icon('cart', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ aCommanderCount }}</span>
+                <span class="stat-card-label">À commander</span>
+            </span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-icon">{{ ui.icon('truck', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ commandesEnAttente }}</span>
+                <span class="stat-card-label">Commande{{ commandesEnAttente > 1 ? 's' : '' }} en attente</span>
+            </span>
+        </div>
+    </div>
+
+    {# — Accès rapides — #}
+    <div class="section-home-section">
+        <div class="section-home-section-header">
+            <h2 class="section-home-section-title">Accès rapides</h2>
+        </div>
+        <div class="quicklink-grid">
+            <a href="{{ path('admin_dotations_suivi') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('clipboard-list', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Suivi des dotations</span>
+                    <span class="quicklink-text">Ce que chaque joueur doit recevoir et ce qui a été remis</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_dotations_modeles') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('layers', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Modèles de dotation</span>
+                    <span class="quicklink-text">Configurer les articles attribués par équipe ou catégorie</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_commandes_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('cart', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Commandes</span>
+                    <span class="quicklink-text">À commander, bons par fournisseur, réceptions</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_stock_dashboard') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('box', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Stock du club</span>
+                    <span class="quicklink-text">L'inventaire est commun à toutes les saisons — les réceptions l'alimentent, les remises le consomment</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

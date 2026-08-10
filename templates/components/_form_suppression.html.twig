@@ -1,0 +1,9 @@
+{# Formulaire de suppression avec confirmation.
+   action / jeton (id du jeton CSRF) requis ; message et libelle facultatifs. #}
+<form method="post" action="{{ action }}" class="form-inline"
+      onsubmit="return confirm('{{ message|default('Confirmer la suppression ?')|e('js') }}')">
+    <input type="hidden" name="_token" value="{{ csrf_token(jeton) }}">
+    <button type="submit" class="btn btn-danger{{ taille|default('sm') ? ' btn-' ~ taille|default('sm') : '' }}">
+        {{ libelle|default('Supprimer') }}
+    </button>
+</form>

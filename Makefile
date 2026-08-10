@@ -2,7 +2,9 @@ COMPOSE      = docker compose
 COMPOSE_PROD = docker compose -f docker-compose.prod.yml
 
 .PHONY: up down build bash db-migrate db-reset assets watch cache-clear logs setup-dirs \
-        prod-up prod-down prod-build prod-deploy prod-migrate prod-bash prod-db prod-logs \
+        test test-setup \
+        lint lint-php lint-css lint-js fix stan check \
+        prod-up prod-down prod-build prod-deploy prod-migrate prod-migrate-dry prod-bash prod-db prod-logs \
         prod-backup prod-backup-list prod-restore prod-init
 
 # ── Développement ────────────────────────────────────────────────────────────
@@ -46,6 +48,42 @@ setup-dirs:
 	$(COMPOSE) exec --user root php mkdir -p /var/www/html/var/locks
 	$(COMPOSE) exec --user root php chown www-data:www-data /var/www/html/var/locks
 
+# ── Tests ────────────────────────────────────────────────────────────────────
+# La base de test est distincte (suffixe _test) et doit être migrée, pas créée
+# par schema:update : les tests tournent donc sur le même schéma que la prod.
+
+test-setup:
+	$(COMPOSE) exec php php bin/console doctrine:database:create --env=test --if-not-exists
+	$(COMPOSE) exec php php bin/console doctrine:migrations:migrate --env=test --no-interaction
+
+test:
+	$(COMPOSE) exec php vendor/bin/phpunit
+
+# ── Qualité ──────────────────────────────────────────────────────────────────
+# Ces contrôles sont ceux que le CI rejoue sur chaque push : les faire passer en
+# local évite un aller-retour. `make check` = tout ce que la CI vérifie.
+
+stan:
+	$(COMPOSE) exec -T php php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress
+
+lint-php:
+	$(COMPOSE) exec -T php vendor/bin/php-cs-fixer fix --dry-run --diff --show-progress=none
+
+lint-css:
+	npm run lint:css
+
+lint-js:
+	npm run lint:js
+
+lint: lint-php lint-css lint-js
+
+fix:
+	$(COMPOSE) exec -T php vendor/bin/php-cs-fixer fix --show-progress=none
+	npm run fix:css
+	npm run fix:js
+
+check: test stan lint
+
 # ── Production (VPS) ─────────────────────────────────────────────────────────
 
 prod-init: prod-build prod-up prod-migrate prod-backup
@@ -54,10 +92,12 @@ prod-init: prod-build prod-up prod-migrate prod-backup
 	@echo "  CoSync — Initialisation prod terminée"
 	@echo "========================================"
 	@echo ""
-	@echo "Dernière étape : activer la sauvegarde automatique nightly."
-	@echo "Lance 'crontab -e' et ajoute cette ligne :"
+	@echo "La sauvegarde nightly (02h30) est planifiée dans le conteneur cosync_cron,"
+	@echo "avec copie sur le Drive du club. Aucune crontab à configurer sur le VPS."
+	@echo "Vérifie avec :  docker logs cosync_cron"
 	@echo ""
-	@echo "  0 2 * * * cd $$(pwd) && make prod-backup >> $(BACKUP_DIR)/backup.log 2>&1"
+	@echo "Fais une répétition de restauration avant l'ouverture aux licenciés :"
+	@echo "  make prod-backup-list  puis  make prod-restore FILE=backup_....sql.gz"
 	@echo ""
 
 prod-build:
@@ -69,11 +109,18 @@ prod-up:
 prod-down:
 	$(COMPOSE_PROD) down
 
-prod-deploy: prod-build prod-up prod-migrate
+# Le dump précède la migration : la prod contient des données irremplaçables et
+# PostgreSQL annule une migration qui plante, mais pas une migration qui « réussit »
+# en perdant des données (cf. CLAUDE.md §13).
+prod-deploy: prod-build prod-up prod-backup prod-migrate
 	@echo "Déploiement terminé."
 
 prod-migrate:
 	$(COMPOSE_PROD) exec php php bin/console doctrine:migrations:migrate --no-interaction
+
+# Affiche le SQL sans l'appliquer — à lire avant tout déploiement de migration
+prod-migrate-dry:
+	$(COMPOSE_PROD) exec php php bin/console doctrine:migrations:migrate --no-interaction --dry-run
 
 prod-bash:
 	$(COMPOSE_PROD) exec php sh
@@ -85,23 +132,22 @@ prod-logs:
 	$(COMPOSE_PROD) logs -f
 
 # ── Sauvegardes BDD ──────────────────────────────────────────────────────────
-# Cron nightly sur le VPS (crontab -e) :
-#   0 2 * * * cd /chemin/vers/CoSync && make prod-backup >> ~/backups/cosync/backup.log 2>&1
-
-BACKUP_DIR = $(HOME)/backups/cosync
+# Automatique : app:db:backup tourne toutes les nuits à 02h30 dans le conteneur
+# cosync_cron (dump local dans le volume cosync_backups + copie sur le Drive du club).
+# Les cibles ci-dessous sont là pour les dumps manuels et la restauration.
 
 prod-backup:
-	mkdir -p $(BACKUP_DIR)
-	$(COMPOSE_PROD) exec -T database sh -c 'pg_dump -U $$POSTGRES_USER $$POSTGRES_DB' \
-		| gzip > $(BACKUP_DIR)/backup_$(shell date +%Y%m%d_%H%M%S).sql.gz
-	find $(BACKUP_DIR) -name "backup_*.sql.gz" -mtime +30 -delete
-	@echo "[backup] Sauvegarde créée dans $(BACKUP_DIR)/"
+	$(COMPOSE_PROD) exec -T php php bin/console app:db:backup
 
 prod-backup-list:
-	@ls -lh $(BACKUP_DIR)/backup_*.sql.gz 2>/dev/null || echo "Aucune sauvegarde trouvée dans $(BACKUP_DIR)/"
+	@$(COMPOSE_PROD) exec -T php sh -c 'ls -lh var/backups/backup_*.sql.gz 2>/dev/null' \
+		|| echo "Aucune sauvegarde locale. Les copies off-site sont sur le Drive, dossier Sauvegardes/."
 
+# FILE = nom du fichier tel que listé par prod-backup-list (sans chemin)
 prod-restore:
-	@test -n "$(FILE)" || (echo "Usage : make prod-restore FILE=~/backups/cosync/backup_YYYYMMDD_HHMMSS.sql.gz" && exit 1)
-	@echo "Restauration depuis $(FILE)..."
-	gunzip -c $(FILE) | $(COMPOSE_PROD) exec -T database sh -c 'psql -U $$POSTGRES_USER $$POSTGRES_DB'
+	@test -n "$(FILE)" || (echo "Usage : make prod-restore FILE=backup_YYYYMMDD_HHMMSS.sql.gz" && exit 1)
+	@echo "⚠️  Cette opération ÉCRASE les données actuelles de la base de production."
+	@printf "Taper 'oui' pour confirmer : " && read reponse && [ "$$reponse" = "oui" ]
+	$(COMPOSE_PROD) exec -T php sh -c 'gunzip -c var/backups/$(FILE)' \
+		| $(COMPOSE_PROD) exec -T database sh -c 'psql -U $$POSTGRES_USER $$POSTGRES_DB'
 	@echo "Restauration terminée."

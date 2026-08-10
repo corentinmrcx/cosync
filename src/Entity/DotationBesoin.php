@@ -51,6 +51,10 @@ class DotationBesoin
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $groupeChoix = null;
 
+    /** Texte à floquer, figé à la résolution. Null si l'article n'est pas personnalisé. */
+    #[ORM\Column(length: 60, nullable: true)]
+    private ?string $personnalisation = null;
+
     /** Mouvement de sortie créé lors de la remise. */
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -64,39 +68,147 @@ class DotationBesoin
         $this->createdAt = new \DateTimeImmutable();
     }
 
-    public function getId(): int { return $this->id; }
+    public function getId(): int
+    {
+        return $this->id;
+    }
 
-    public function getSeason(): Season { return $this->season; }
-    public function setSeason(Season $season): static { $this->season = $season; return $this; }
+    public function getSeason(): Season
+    {
+        return $this->season;
+    }
 
-    public function getLicencie(): ?Licencie { return $this->licencie; }
-    public function setLicencie(?Licencie $licencie): static { $this->licencie = $licencie; return $this; }
+    public function setSeason(Season $season): static
+    {
+        $this->season = $season;
 
-    public function getDirigeant(): ?Dirigeant { return $this->dirigeant; }
-    public function setDirigeant(?Dirigeant $dirigeant): static { $this->dirigeant = $dirigeant; return $this; }
+        return $this;
+    }
 
-    public function getStockItem(): StockItem { return $this->stockItem; }
-    public function setStockItem(StockItem $stockItem): static { $this->stockItem = $stockItem; return $this; }
+    public function getLicencie(): ?Licencie
+    {
+        return $this->licencie;
+    }
 
-    public function getQuantite(): int { return $this->quantite; }
-    public function setQuantite(int $quantite): static { $this->quantite = $quantite; return $this; }
+    public function setLicencie(?Licencie $licencie): static
+    {
+        $this->licencie = $licencie;
 
-    public function getTaille(): ?string { return $this->taille; }
-    public function setTaille(?string $taille): static { $this->taille = $taille; return $this; }
+        return $this;
+    }
 
-    public function isTailleManuelle(): bool { return $this->tailleManuelle; }
-    public function setTailleManuelle(bool $tailleManuelle): static { $this->tailleManuelle = $tailleManuelle; return $this; }
+    public function getDirigeant(): ?Dirigeant
+    {
+        return $this->dirigeant;
+    }
 
-    public function getStatut(): DotationBesoinStatut { return $this->statut; }
-    public function setStatut(DotationBesoinStatut $statut): static { $this->statut = $statut; return $this; }
+    public function setDirigeant(?Dirigeant $dirigeant): static
+    {
+        $this->dirigeant = $dirigeant;
 
-    public function getGroupeChoix(): ?string { return $this->groupeChoix; }
-    public function setGroupeChoix(?string $groupeChoix): static { $this->groupeChoix = $groupeChoix; return $this; }
+        return $this;
+    }
 
-    public function getMouvementSortie(): ?StockMovement { return $this->mouvementSortie; }
-    public function setMouvementSortie(?StockMovement $mouvementSortie): static { $this->mouvementSortie = $mouvementSortie; return $this; }
+    public function getStockItem(): StockItem
+    {
+        return $this->stockItem;
+    }
 
-    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+    public function setStockItem(StockItem $stockItem): static
+    {
+        $this->stockItem = $stockItem;
+
+        return $this;
+    }
+
+    public function getQuantite(): int
+    {
+        return $this->quantite;
+    }
+
+    public function setQuantite(int $quantite): static
+    {
+        $this->quantite = $quantite;
+
+        return $this;
+    }
+
+    public function getTaille(): ?string
+    {
+        return $this->taille;
+    }
+
+    public function setTaille(?string $taille): static
+    {
+        $this->taille = $taille;
+
+        return $this;
+    }
+
+    public function isTailleManuelle(): bool
+    {
+        return $this->tailleManuelle;
+    }
+
+    public function setTailleManuelle(bool $tailleManuelle): static
+    {
+        $this->tailleManuelle = $tailleManuelle;
+
+        return $this;
+    }
+
+    public function getStatut(): DotationBesoinStatut
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(DotationBesoinStatut $statut): static
+    {
+        $this->statut = $statut;
+
+        return $this;
+    }
+
+    public function getGroupeChoix(): ?string
+    {
+        return $this->groupeChoix;
+    }
+
+    public function setGroupeChoix(?string $groupeChoix): static
+    {
+        $this->groupeChoix = $groupeChoix;
+
+        return $this;
+    }
+
+    public function getPersonnalisation(): ?string
+    {
+        return $this->personnalisation;
+    }
+
+    public function setPersonnalisation(?string $personnalisation): static
+    {
+        $this->personnalisation = $personnalisation;
+
+        return $this;
+    }
+
+    public function getMouvementSortie(): ?StockMovement
+    {
+        return $this->mouvementSortie;
+    }
+
+    public function setMouvementSortie(?StockMovement $mouvementSortie): static
+    {
+        $this->mouvementSortie = $mouvementSortie;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
 
     /* — Helpers d'affichage (dérivés de la personne) — */
 

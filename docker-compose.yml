@@ -62,8 +62,11 @@ services:
       - .:/var/www/html
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
     environment:
-      APP_ENV: prod
+      # dev, comme le conteneur php : le code monté est celui de dev, tourner en
+      # APP_ENV=prod faisait écrire le cron dans var/cache/prod avec la config prod.
+      APP_ENV: dev
       DATABASE_URL: postgresql://${POSTGRES_USER:-cosync}:${POSTGRES_PASSWORD:-cosync}@database:5432/${POSTGRES_DB:-cosync}?serverVersion=16&charset=utf8
+      MAILER_DSN: smtp://mailpit:1025
     entrypoint: ["/bin/sh", "/var/www/html/docker/php/cron-entrypoint.sh"]
     depends_on:
       database:

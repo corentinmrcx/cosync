@@ -4,7 +4,7 @@ namespace App\Tests\Service\Stock;
 
 use App\Entity\Licencie;
 use App\Enum\StockItemVetementType;
-use App\Service\Stock\DotationResolver;
+use App\Service\Dotation\DotationResolver;
 
 final class DotationResolverTest extends StockIntegrationTestCase
 {
@@ -16,8 +16,8 @@ final class DotationResolverTest extends StockIntegrationTestCase
     public function testResolutionParCategorieEtTailleDepuisLeDossier(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $item   = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $modele = $this->makeModele($season, 'Sénior');
         $this->addLigne($modele, $item, 1);
         $this->affecterCategorie($season, $modele, $cat);
@@ -36,7 +36,7 @@ final class DotationResolverTest extends StockIntegrationTestCase
     public function testAffectationIndividuelleEcraseLaCategorie(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
+        $cat = $this->makeCategory('SENIOR');
 
         $itemCat = $this->makeItem('Maillot', StockItemVetementType::HAUT);
         $modeleCat = $this->makeModele($season, 'Standard');
@@ -61,9 +61,9 @@ final class DotationResolverTest extends StockIntegrationTestCase
     public function testGroupeDeChoixSansChoixPrendLaPremiereOption(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
-        $sweat  = $this->makeItem('Sweat', StockItemVetementType::HAUT);
+        $cat = $this->makeCategory('SENIOR');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $sweat = $this->makeItem('Sweat', StockItemVetementType::HAUT);
 
         $modele = $this->makeModele($season, 'Au choix');
         $this->addLigne($modele, $veste, 1, 'haut-au-choix');
@@ -80,10 +80,53 @@ final class DotationResolverTest extends StockIntegrationTestCase
         self::assertSame('Veste', $lignes[0]['stockItem']->getNom(), 'Sans choix stocké → première option.');
     }
 
+    public function testModeleInactifNeDotePersonne(): void
+    {
+        $season = $this->makeSeason();
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
+
+        $modele = $this->makeModele($season, 'Kit en préparation');
+        $modele->setActif(false);
+        $this->addLigne($modele, $item, 1);
+        $this->affecterCategorie($season, $modele, $cat);
+
+        $licencie = $this->makeLicencie($season, $cat, null, 'L');
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+
+        self::assertNull($this->resolver()->resolveModele($licencie), 'Un kit désactivé ne s\'applique pas.');
+        self::assertSame([], $this->resolver()->resolveDotation($licencie));
+    }
+
+    public function testAPrioriteEgaleLaDerniereAffectationGagne(): void
+    {
+        $season = $this->makeSeason();
+        $cat = $this->makeCategory('SENIOR');
+
+        $premier = $this->makeModele($season, 'Premier');
+        $this->addLigne($premier, $this->makeItem('Veste', StockItemVetementType::HAUT), 1);
+        $this->affecterCategorie($season, $premier, $cat);
+
+        $second = $this->makeModele($season, 'Second');
+        $this->addLigne($second, $this->makeItem('Sweat', StockItemVetementType::HAUT), 1);
+        $this->affecterCategorie($season, $second, $cat);
+
+        $licencie = $this->makeLicencie($season, $cat, null, 'L');
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+
+        self::assertSame(
+            'Second',
+            $this->resolver()->resolveModele($licencie)?->getNom(),
+            'Deux affectations de même priorité : la plus récente gagne, de façon reproductible.',
+        );
+    }
+
     public function testSansAffectationAucuneDotation(): void
     {
         $season = $this->makeSeason();
-        $cat    = $this->makeCategory('SENIOR');
+        $cat = $this->makeCategory('SENIOR');
         $licencie = $this->makeLicencie($season, $cat, null, 'L');
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);

@@ -1,3 +1,11 @@
+
+@import './components/button.css';
+@import './components/checklist.css';
+@import './components/card.css';
+@import './components/data-table.css';
+@import './components/modal.css';
+@import './components/form-field.css';
+@import './components/empty-state.css';
 @import './components/navbar.css';
 @import './components/footer.css';
 @import './components/hub-card.css';
@@ -8,16 +16,21 @@
 @import './components/loader.css';
 @import './components/custom-select.css';
 @import './components/stock-ui.css';
+@import './components/section-home.css';
+@import './components/liste-triable.css';
 @import './pages/login.css';
 @import './pages/dashboard.css';
 @import './pages/import.css';
+@import './pages/effectif.css';
+@import './pages/saison.css';
 @import './pages/licencies.css';
 @import './pages/licencie-show.css';
 @import './pages/licencie-edit.css';
 @import './pages/seasons.css';
 @import './pages/users.css';
 @import './pages/inscription.css';
-@import './pages/reglement-edit.css';
+@import './pages/document-edit.css';
+@import './pages/documents.css';
 @import './pages/stock-home.css';
 @import './pages/stock-dotations.css';
 @import './pages/stock-commandes.css';
@@ -28,6 +41,8 @@
 @import './pages/categories.css';
 @import './pages/documentation.css';
 @import './pages/error.css';
+@import './pages/legal.css';
+@import './pages/cles.css';
 
 :root {
     /* — Identité club — */
@@ -36,7 +51,7 @@
     --color-primary-light: #ffe5e5;
 
     /* — Textes — */
-    --color-text-base:     #1E1E1E;
+    --color-text-base:     #1f1f1f;
     --color-text-body:     #374151;
     --color-text-muted:    #6b7280;
     --color-text-disabled: #9ca3af;
@@ -62,29 +77,42 @@
     --color-status-validated-bg: #f0fdf4;
 
     /* — Feedback — */
-    --color-success:    #22c55e;
-    --color-success-bg: #f0fdf4;
-    --color-warning:    #f59e0b;
-    --color-warning-bg: #fffbeb;
-    --color-danger:     #ef4444;
-    --color-danger-bg:  #fef2f2;
-    --color-info:       #3b82f6;
-    --color-info-bg:    #eff6ff;
+    --color-success:      #22c55e;
+    --color-success-bg:   #f0fdf4;
+    --color-success-dark: #16a34a;
+    --color-success-text: #166534;
+    --color-warning:      #f59e0b;
+    --color-warning-bg:   #fffbeb;
+    --color-warning-text: #92400e;
+    --color-danger:       #ef4444;
+    --color-danger-bg:    #fef2f2;
+    --color-danger-dark:  #dc2626;
+    --color-danger-hover: #fecaca;
+    --color-info:         #3b82f6;
+    --color-info-bg:      #eff6ff;
+
+    /* — Interactions — */
+    --color-row-hover: #fff8f8;
 
     /* — Typographie — */
     --font-sans:      'Montserrat', system-ui, -apple-system, sans-serif;
+    --font-size-2xs:  0.6875rem;
     --font-size-xs:   0.75rem;
     --font-size-sm:   0.875rem;
     --font-size-base: 1rem;
     --font-size-lg:   1.125rem;
     --font-size-xl:   1.25rem;
     --font-size-2xl:  1.5rem;
+    --font-size-3xl:  2.5rem;
+    --font-size-4xl:  3rem;
+    --font-size-5xl:  3.5rem;
 
     /* — Espacements — */
-    --radius-sm: 0.25rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
-    --radius-xl: 1rem;
+    --radius-sm:   0.25rem;
+    --radius-md:   0.5rem;
+    --radius-lg:   0.75rem;
+    --radius-xl:   1rem;
+    --radius-pill: 999px;
 
     /* — Ombres — */
     --shadow-card:  0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);

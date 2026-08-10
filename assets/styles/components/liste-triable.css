@@ -1,0 +1,59 @@
+/* ── Liste réordonnable au glisser-déposer ────────────────────────────────────
+   Posée par-dessus une liste existante (.dot-list…) : n'ajoute que la poignée,
+   l'état de déplacement et l'aide. La mise en page reste celle de la liste hôte.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.triable-aide {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0 0 0.25rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.triable-liste {
+    /* Le déplacement ne doit pas sélectionner le texte des lignes survolées. */
+    user-select: none;
+}
+
+.triable-ligne {
+    background: var(--color-bg-page);
+}
+
+/* La ligne reprend l'espace laissé libre par la poignée. */
+.triable-ligne .dot-list-main {
+    flex: 1;
+}
+
+.triable-poignee {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    padding: 0.25rem;
+    margin-left: -0.25rem;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-disabled);
+    cursor: grab;
+    /* Indispensable au tactile : sans cela, le doigt fait défiler la page
+       au lieu de déplacer la ligne. */
+    touch-action: none;
+}
+
+.triable-poignee:hover {
+    color: var(--color-text-body);
+    background: var(--color-bg-muted);
+}
+
+.triable-ligne.is-dragging {
+    cursor: grabbing;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-modal);
+    opacity: 0.9;
+}
+
+.triable-ligne.is-dragging .triable-poignee {
+    cursor: grabbing;
+    color: var(--color-primary);
+}

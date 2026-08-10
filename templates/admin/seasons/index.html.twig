@@ -1,0 +1,43 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Saisons{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Saisons' }
+] } %}
+
+<div class="dashboard">
+
+    <div class="dashboard-hub">
+
+        {% for season in seasons %}
+            {# Entrer dans une saison change la saison de travail : d'où le POST. #}
+            {% include 'components/hub-card.html.twig' with {
+                icon: 'calendar',
+                label: season.label,
+                badge: current and current.id == season.id ? 'En cours' : null,
+                current: current and current.id == season.id,
+                form_action: path('admin_seasons_switch', {id: season.id}),
+                form_fields: {
+                    _token: csrf_token('season_switch_' ~ season.id),
+                    returnTo: path('admin_saison_dashboard'),
+                },
+            } only %}
+        {% endfor %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'plus',
+            label: 'Nouvelle saison',
+            route: 'admin_seasons_new'
+        } only %}
+
+    </div>
+
+    {% if seasons is not empty %}
+        <a href="{{ path('admin_seasons_list') }}" class="dashboard-season-link">Gérer les saisons →</a>
+    {% endif %}
+
+</div>
+{% endblock %}

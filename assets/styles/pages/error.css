@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: column;
     min-height: 100svh;
-    background: var(--color-bg-subtle);
 }
 
 .error-main {
@@ -22,14 +21,15 @@
     max-width: 26rem;
     padding: 2.5rem 1.75rem;
     background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
+    /* Page blanche : bordure et ombre renforcées, seul contour restant de la carte. */
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 4px 20px rgb(0 0 0 / 0.10);
     text-align: center;
 }
 
 .error-code {
-    font-size: 3.5rem;
+    font-size: var(--font-size-5xl);
     font-weight: 900;
     line-height: 1;
     color: var(--color-primary);
@@ -49,19 +49,3 @@
     margin: 0;
 }
 
-.error-btn {
-    display: inline-block;
-    margin-top: 1.25rem;
-    padding: 0.75rem 1.5rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    text-decoration: none;
-    border-radius: var(--radius-md);
-    transition: background 0.15s ease;
-}
-
-.error-btn:hover {
-    background: var(--color-primary-dark);
-}

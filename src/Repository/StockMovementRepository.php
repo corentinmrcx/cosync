@@ -2,8 +2,11 @@
 
 namespace App\Repository;
 
+use App\Entity\Dirigeant;
+use App\Entity\Licencie;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
+use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -83,45 +86,45 @@ class StockMovementRepository extends ServiceEntityRepository
         return $this->findOneBy(['sumupTransactionId' => $txId]);
     }
 
-    public function hasDotation(\App\Entity\StockItem $item, \App\Entity\Licencie $licencie): bool
+    public function hasDotation(StockItem $item, Licencie $licencie): bool
     {
         return $this->count([
-            'item'     => $item,
+            'item' => $item,
             'licencie' => $licencie,
-            'source'   => \App\Enum\StockMovementSource::DOTATION,
+            'source' => StockMovementSource::DOTATION,
         ]) > 0;
     }
 
     /** @return StockMovement[] */
-    public function findDotationsByDirigeant(\App\Entity\Dirigeant $dirigeant): array
+    public function findDotationsByDirigeant(Dirigeant $dirigeant): array
     {
         return $this->createQueryBuilder('m')
             ->join('m.item', 'i')
             ->where('m.dirigeant = :dirigeant')
             ->andWhere('m.source = :source')
             ->setParameter('dirigeant', $dirigeant)
-            ->setParameter('source', \App\Enum\StockMovementSource::DOTATION)
+            ->setParameter('source', StockMovementSource::DOTATION)
             ->orderBy('m.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
     /** @return StockMovement[] */
-    public function findDotationsByLicencie(\App\Entity\Licencie $licencie): array
+    public function findDotationsByLicencie(Licencie $licencie): array
     {
         return $this->createQueryBuilder('m')
             ->join('m.item', 'i')
             ->where('m.licencie = :licencie')
             ->andWhere('m.source = :source')
             ->setParameter('licencie', $licencie)
-            ->setParameter('source', \App\Enum\StockMovementSource::DOTATION)
+            ->setParameter('source', StockMovementSource::DOTATION)
             ->orderBy('m.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
     /**
-     * @param array{item_id?: int, type?: string, source?: string, date_from?: string, date_to?: string} $filters
+     * @param array{search?: string, item_id?: string, type?: string, source?: string, date_from?: string, date_to?: string} $filters
      * @return array{movements: StockMovement[], total: int}
      */
     public function findWithFilters(array $filters, int $page, int $perPage): array
@@ -130,6 +133,12 @@ class StockMovementRepository extends ServiceEntityRepository
             ->join('m.item', 'i')
             ->orderBy('m.createdAt', 'DESC');
 
+        if (!empty($filters['search'])) {
+            // Le nom de l'article et la note du mouvement : les deux seuls textes libres
+            // sur lesquels l'admin cherche (« où est passée la commande de chasubles ? »).
+            $qb->andWhere('LOWER(i.nom) LIKE :recherche OR LOWER(m.note) LIKE :recherche')
+               ->setParameter('recherche', '%' . mb_strtolower(trim((string) $filters['search'])) . '%');
+        }
         if (!empty($filters['item_id'])) {
             $qb->andWhere('i.id = :itemId')->setParameter('itemId', $filters['item_id']);
         }

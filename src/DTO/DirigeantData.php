@@ -2,9 +2,9 @@
 
 namespace App\DTO;
 
-use App\Entity\DirigeantRole;
 use App\Entity\Licencie;
 use App\Entity\Team;
+use App\Enum\DirigeantRole;
 use Symfony\Component\Validator\Constraints as Assert;
 
 final class DirigeantData
@@ -21,7 +21,9 @@ final class DirigeantData
     )]
     public ?string $telephone = null;
     public ?\DateTimeImmutable $dateNaissance = null;
-    public ?DirigeantRole $role = null;
+    /** Nullable pour que le form puisse porter une valeur hors enum et la rejeter proprement. */
+    #[Assert\NotNull(message: 'Le rôle est requis.')]
+    public ?DirigeantRole $role = DirigeantRole::DIRIGEANT;
     public ?string $tailleHaut = null;
     public ?string $tailleBas = null;
     public ?string $pointure = null;

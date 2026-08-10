@@ -5,7 +5,9 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Licenciés', route: 'admin_licencies_list' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs', route: 'admin_licencies_list' },
     { label: licencie.nomPrenom, route: 'admin_licencies_show', params: { uuid: licencie.uuid } },
     { label: 'Modifier' }
 ] } %}
@@ -21,10 +23,22 @@
         {# — Équipe — #}
         <p class="licencie-edit-section">Équipe</p>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.team) }}
             {{ form_widget(form.team) }}
             {{ form_errors(form.team) }}
+        </div>
+
+        <hr class="season-form-divider">
+
+        {# — Licence — #}
+        <p class="licencie-edit-section">Licence</p>
+
+        <div class="field">
+            {{ form_label(form.natureLicence) }}
+            {{ form_widget(form.natureLicence) }}
+            {{ form_errors(form.natureLicence) }}
+            {{ form_help(form.natureLicence) }}
         </div>
 
         <hr class="season-form-divider">
@@ -36,25 +50,28 @@
             <p class="licencie-edit-note">Le licencié n'a pas encore complété son formulaire d'inscription.</p>
         {% endif %}
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.tailleHaut) }}
             {{ form_widget(form.tailleHaut) }}
             {{ form_errors(form.tailleHaut) }}
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.tailleBas) }}
             {{ form_widget(form.tailleBas) }}
             {{ form_errors(form.tailleBas) }}
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.pointure) }}
             {{ form_widget(form.pointure) }}
             {{ form_errors(form.pointure) }}
         </div>
 
-        <button type="submit" class="season-form-submit">Enregistrer</button>
+        <div class="season-form-actions">
+            <a href="{{ path('admin_licencies_show', { uuid: licencie.uuid }) }}" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+        </div>
 
     {{ form_end(form) }}
 

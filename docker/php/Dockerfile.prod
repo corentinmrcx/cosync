@@ -26,7 +26,11 @@ RUN apk add --no-cache \
     freetype-dev \
     icu-dev \
     oniguruma-dev \
-    libxml2-dev
+    libxml2-dev \
+    # pg_dump pour app:db:backup — version alignée sur postgres:16-alpine
+    postgresql16-client \
+    # abandon de privilèges dans les entrypoints (crond et cache:warmup tournent en root)
+    su-exec
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \

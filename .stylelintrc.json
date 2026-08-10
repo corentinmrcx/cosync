@@ -1,0 +1,42 @@
+{
+    "extends": "stylelint-config-standard",
+    "rules": {
+        "selector-class-pattern": [
+            "^[a-z][a-z0-9]*(-[a-z0-9]+)*(_[a-z0-9]+)?$",
+            {
+                "message": "Classe CSS : minuscules et tirets simples, préfixée par la page ou le composant. Pas de BEM __ ni --. L'underscore final est réservé aux classes composées depuis une valeur d'enum."
+            }
+        ],
+        "color-no-hex": [
+            true,
+            {
+                "message": "Couleur en dur interdite : utiliser une variable définie dans app.css."
+            }
+        ],
+        "declaration-property-value-allowed-list": {
+            "border-radius": ["/var\\(/", "50%", "0"],
+            "font-size": ["/var\\(/", "inherit"]
+        },
+        "alpha-value-notation": null,
+        "color-function-notation": null,
+        "color-hex-length": null,
+        "comment-empty-line-before": null,
+        "custom-property-pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+        "declaration-block-no-redundant-longhand-properties": null,
+        "declaration-block-single-line-max-declarations": null,
+        "import-notation": null,
+        "media-feature-range-notation": null,
+        "no-descending-specificity": null,
+        "shorthand-property-no-redundant-values": null,
+        "value-keyword-case": null
+    },
+    "overrides": [
+        {
+            "files": ["assets/styles/app.css"],
+            "rules": {
+                "color-no-hex": null,
+                "declaration-property-value-allowed-list": null
+            }
+        }
+    ]
+}

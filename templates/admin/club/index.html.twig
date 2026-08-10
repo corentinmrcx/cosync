@@ -1,0 +1,36 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Le club{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club' }
+] } %}
+
+<div class="dashboard">
+
+    <div class="dashboard-hub">
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'bank',
+            label: 'Coordonnées bancaires',
+            route: 'admin_club_rib'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'tag',
+            label: 'Catégories FFF',
+            route: 'admin_categories_index'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'users',
+            label: 'Utilisateurs',
+            route: 'admin_users_list'
+        } only %}
+
+    </div>
+
+</div>
+{% endblock %}

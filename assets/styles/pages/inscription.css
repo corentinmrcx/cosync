@@ -4,7 +4,6 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    background: var(--color-bg-subtle);
     overflow: hidden;
 }
 
@@ -54,7 +53,7 @@
 .inscription-progress-segment {
     flex: 1;
     height: 4px;
-    border-radius: 99px;
+    border-radius: var(--radius-pill);
     background: rgba(255, 255, 255, 0.3);
     transition: background 0.3s;
 }
@@ -64,14 +63,32 @@
 }
 
 /* — Flash — */
-.inscription-flash-error {
+.inscription-flash {
     margin: 1rem 1rem 0;
     padding: 0.75rem 1rem;
-    background: var(--color-danger-bg);
-    color: var(--color-danger);
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
     font-weight: 500;
+}
+
+.inscription-flash-error {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.inscription-flash-success {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.inscription-flash-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.inscription-flash-info {
+    background: var(--color-info-bg);
+    color: var(--color-info);
 }
 
 /* — Contenu principal — */
@@ -96,9 +113,12 @@
 /* — Carte d'étape — */
 .inscription-card {
     background: var(--color-bg-page);
+    /* Page blanche : la carte n'avait qu'une ombre pour se détacher du gris. Sans ce gris,
+       il lui faut une bordure, sinon l'étape du formulaire flotte sans contour visible. */
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-xl);
     padding: 1.5rem;
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 4px 20px rgb(0 0 0 / 0.10);
 }
 
 /* — Étape 1 : Bienvenue — */
@@ -116,6 +136,24 @@
     margin-bottom: 0.625rem;
 }
 
+/* — Information RGPD au point de collecte — */
+.inscription-rgpd-note {
+    margin: 1rem 0 1rem;
+    padding: 0.75rem 0.875rem;
+    background: var(--color-info-bg);
+    border-left: 3px solid var(--color-info);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    line-height: 1.6;
+    color: var(--color-text-body);
+}
+
+.inscription-rgpd-note-link {
+    color: var(--color-info);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
 /* — Titres d'étapes — */
 .inscription-step-title {
     font-size: var(--font-size-lg);
@@ -130,37 +168,6 @@
     flex-direction: column;
     gap: 1rem;
 }
-
-.inscription-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-}
-
-.inscription-label {
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    color: var(--color-text-body);
-}
-
-.inscription-select {
-    padding: 0.75rem 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-base);
-    background: var(--color-bg-page);
-    outline: none;
-    transition: border-color 0.15s;
-    width: 100%;
-    cursor: pointer;
-}
-
-.inscription-select:focus {
-    border-color: var(--color-primary);
-}
-
 
 /* — Questions Oui/Non — */
 .inscription-question-block {
@@ -224,6 +231,97 @@
     border-top: 1px solid var(--color-border);
     margin: 0.25rem 0;
 }
+
+/* — Titre de section à l'intérieur d'une étape (tailles ↔ dotation) — */
+.inscription-section-title {
+    margin: 0;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.inscription-section-hint {
+    margin: -0.35rem 0 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* — Personnalisation (flocage) — */
+
+/* Le champ découle de l'option cochée juste au-dessus : le liseré rouge fait le lien,
+   là où un pavé gris flottant donnait l'impression d'une question de plus. */
+.inscription-flocage-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border-left: 3px solid var(--color-primary);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    background: var(--color-primary-light);
+}
+
+.inscription-flocage-count {
+    align-self: flex-end;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.inscription-flocage-recap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-md);
+    background: var(--color-warning-bg);
+}
+
+.inscription-flocage-recap-title {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-base);
+}
+
+.inscription-flocage-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Deux mots en capitales ne se distinguent pas : chaque aperçu dit sur quoi il sera imprimé. */
+.inscription-flocage-article {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+/* Le texte tel qu'il sera imprimé : c'est ce que le licencié doit relire, pas un champ de plus. */
+.inscription-flocage-preview {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-page);
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--color-text-base);
+    overflow-wrap: break-word;
+}
+
+.inscription-flocage-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    cursor: pointer;
+}
+
+.inscription-flocage-check input { margin-top: 0.15rem; }
 
 /* — Règlement — */
 .inscription-reglement {
@@ -441,7 +539,59 @@
     margin-top: 0.25rem;
 }
 
+/* Mode « Autre » : la précision se saisit dans le bloc d'info du mode sélectionné. */
+.inscription-payment-info .field + p {
+    margin-top: 0.75rem;
+}
+
 /* Toggle multi-paiement */
+/* — Paiement en ligne HelloAsso — */
+.inscription-cb-block {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.inscription-cb-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-success);
+    text-align: center;
+}
+
+.inscription-cb-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-align: center;
+    line-height: 1.4;
+}
+
+.inscription-payment-separator {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.inscription-payment-separator::before,
+.inscription-payment-separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+}
+
 .inscription-multi-toggle {
     display: flex;
     align-items: center;
@@ -525,60 +675,9 @@
     margin-top: 1rem;
 }
 
-.inscription-btn-start,
-.inscription-btn-next,
-.inscription-btn-submit {
-    flex: 1;
-    padding: 0.875rem;
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    color: var(--color-text-inverse);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.inscription-btn-start {
-    width: 100%;
-}
-
-.inscription-btn-start:hover,
-.inscription-btn-next:hover:not(:disabled),
-.inscription-btn-submit:hover:not(:disabled) {
-    background: var(--color-primary-dark);
-}
-
-.inscription-btn-next:disabled,
-.inscription-btn-submit:disabled {
-    background: var(--color-border);
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
-}
-
-.inscription-btn-prev {
-    flex: 1;
-    padding: 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-page);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 600;
-    color: var(--color-text-body);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.inscription-btn-prev:hover {
-    background: var(--color-bg-subtle);
-}
-
 /* — Page de confirmation — */
 .inscription-confirm-icon {
-    font-size: 3rem;
+    font-size: var(--font-size-4xl);
     text-align: center;
     margin-bottom: 1rem;
 }
@@ -636,7 +735,7 @@
 
 /* — Page expirée — */
 .inscription-expired-icon {
-    font-size: 2.5rem;
+    font-size: var(--font-size-3xl);
     text-align: center;
     margin-bottom: 1rem;
 }
@@ -718,23 +817,6 @@
     margin: 0 0 1.25rem;
 }
 
-.inscription-input {
-    padding: 0.75rem 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-base);
-    background: var(--color-bg-page);
-    outline: none;
-    transition: border-color 0.15s;
-    width: 100%;
-}
-
-.inscription-input:focus {
-    border-color: var(--color-primary);
-}
-
 .inscription-input-error {
     border-color: var(--color-danger);
 }
@@ -746,21 +828,49 @@
     margin-top: 0.25rem;
 }
 
-.inscription-textarea {
-    padding: 0.75rem 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-base);
+/* — Attestation de remise de clés — */
+/* Le signataire doit voir le document, pas une case à cocher : le bloc reprend
+   mot pour mot ce que contiendra le PDF signé. */
+.attestation-cle-document {
+    margin-bottom: 1.25rem;
+    padding: 1.1rem 1.25rem;
     background: var(--color-bg-page);
-    outline: none;
-    transition: border-color 0.15s;
-    width: 100%;
-    resize: vertical;
-    min-height: 5rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
 }
 
-.inscription-textarea:focus {
-    border-color: var(--color-primary);
+.attestation-cle-document-titre {
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+}
+
+.attestation-cle-statement {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    background: var(--color-bg-subtle);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    line-height: 1.7;
+    color: var(--color-text-body);
+}
+
+.attestation-cle-engagement {
+    margin-bottom: 1rem;
+    font-size: var(--font-size-sm);
+    line-height: 1.65;
+    color: var(--color-text-body);
+}
+
+.inscription-step-intro {
+    margin: 0 0 1.25rem;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    color: var(--color-text-muted);
 }

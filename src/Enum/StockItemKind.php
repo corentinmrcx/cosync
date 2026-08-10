@@ -5,13 +5,13 @@ namespace App\Enum;
 enum StockItemKind: string
 {
     case EQUIPEMENT = 'equipement';
-    case EPICERIE   = 'epicerie';
+    case EPICERIE = 'epicerie';
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::EQUIPEMENT => 'Équipement sportif',
-            self::EPICERIE   => 'Épicerie / Boisson',
+            self::EPICERIE => 'Épicerie / Boisson',
         };
     }
 }

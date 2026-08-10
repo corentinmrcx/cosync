@@ -1,0 +1,54 @@
+{# ──────────────────────────────────────────────────────────────────────────
+   Étape « Lecture d'un document + signature » — partagée entre le formulaire
+   licencié et le formulaire dirigeant, et répétée autant de fois qu'il y a de
+   documents à signer.
+   Paramètres attendus :
+     - doc      : le DocumentSignable (titre, libelle, contenuHtml, id)
+     - index    : rang du document dans la liste (0, 1, 2…) — suffixe les x-ref
+     - stepShow : expression Alpine du x-show (ex : 'step === 5')
+   Variables Alpine fournies par le mixin documentSignatures() :
+     docs[index].scrolled / .hasRead / .signatureData,
+     onDocScroll, clearDocSignature
+   Références x-ref : documentEl{{ index }}, signatureCanvas{{ index }}
+─────────────────────────────────────────────────────────────────────────── #}
+<div x-show="{{ stepShow }}" class="inscription-card">
+    <h2 class="inscription-step-title">{{ doc.titre }}</h2>
+
+    <input type="hidden" name="signature_data[{{ doc.id }}]" :value="docs[{{ index }}].signatureData">
+
+    <div class="inscription-reglement"
+         x-ref="documentEl{{ index }}"
+         @scroll="onDocScroll({{ index }}, $event)">
+        {% if doc.contenuHtml %}
+            {{ doc.contenuHtml|raw }}
+        {% else %}
+            <p class="inscription-reglement-empty">Ce document n'a pas encore été rédigé pour cette saison. Contactez le club.</p>
+        {% endif %}
+    </div>
+
+    <p class="inscription-reglement-scroll-hint" x-show="!docs[{{ index }}].scrolled">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        Faites défiler le document jusqu'en bas pour continuer.
+    </p>
+
+    <label class="inscription-checkbox-row" :class="{ 'inscription-checkbox-disabled': !docs[{{ index }}].scrolled }">
+        <input type="checkbox" x-model="docs[{{ index }}].hasRead" :disabled="!docs[{{ index }}].scrolled">
+        <span class="inscription-checkbox-text">J'ai lu et j'accepte {{ doc.libelle }}.</span>
+    </label>
+
+    <div x-show="docs[{{ index }}].hasRead">
+        <p class="inscription-signature-label">Signature *</p>
+        <p class="inscription-signature-hint">Signez dans le cadre ci-dessous avec votre doigt ou votre souris.</p>
+        <div class="inscription-signature-wrap">
+            <canvas class="inscription-signature-canvas" x-ref="signatureCanvas{{ index }}"></canvas>
+            <div class="inscription-signature-bar">
+                <button type="button" @click="clearDocSignature({{ index }})" class="inscription-signature-clear">
+                    Effacer
+                </button>
+                <span class="inscription-signature-saved" x-show="docs[{{ index }}].signatureData !== ''">
+                    ✓ Signature enregistrée
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

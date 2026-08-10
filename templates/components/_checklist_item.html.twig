@@ -1,0 +1,22 @@
+{# Une ligne de checklist sur une fiche.
+
+   etat   : accorde | refuse | attente | fait
+   label  : intitulé de la ligne
+   detail : texte à droite (date, précision) ; sinon un badge d'état est affiché
+#}
+{% import 'components/_icon.html.twig' as ui %}
+{% set icones = {
+    accorde: 'check',
+    fait:    'check',
+    refuse:  'x-circle',
+    attente: 'clock',
+} %}
+<li class="checklist-item checklist-item-{{ etat }}">
+    <span class="checklist-icone">{{ ui.icon(icones[etat]|default('clock'), 18) }}</span>
+    <span class="checklist-label">{{ label }}</span>
+    {% if detail is defined and detail %}
+        <span class="checklist-detail">{{ detail }}</span>
+    {% elseif etat == 'attente' %}
+        <span class="checklist-badge">En attente</span>
+    {% endif %}
+</li>

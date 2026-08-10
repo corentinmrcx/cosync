@@ -1,0 +1,81 @@
+/* ── Modale ───────────────────────────────────────────────────────────────────
+   Le projet en portait trois implémentations complètes — paiement, mouvement de
+   stock, clés du club house — avec trois voiles écrits de trois façons différentes
+   et trois mécaniques de fermeture. Une seule ici.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.modal-voile {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgb(0 0 0 / 0.45);
+}
+
+.modal {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 420px;
+    background: var(--color-bg-page);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-modal);
+    overflow: hidden;
+}
+
+.modal-large { max-width: 640px; }
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modal-titre {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.modal-fermer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xl);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.modal-fermer:hover {
+    background: var(--color-bg-muted);
+    color: var(--color-text-body);
+}
+
+.modal-corps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--color-border);
+}

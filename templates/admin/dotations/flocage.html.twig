@@ -1,0 +1,66 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Liste de flocage{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Dotations', route: 'admin_dotations_dashboard' },
+    { label: 'Suivi', route: 'admin_dotations_suivi' },
+    { label: 'Flocage' }
+] } %}
+
+<div class="dot-page">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Liste de flocage</h1>
+        </div>
+        <div class="dot-header-actions">
+            <a href="{{ path('admin_dotations_suivi') }}" class="btn btn-primary">Suivi des dotations</a>
+        </div>
+    </div>
+
+    <div class="dot-card">
+        {% if besoins is empty %}
+            <p class="dot-empty">Aucun article à floquer pour cette saison.</p>
+        {% else %}
+            <div class="dot-card-header">
+                <h2 class="dot-card-title">À floquer</h2>
+                <span class="dot-card-count">{{ besoins|length }}</span>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Personne</th>
+                        <th>Équipe</th>
+                        <th>Article</th>
+                        <th>Taille</th>
+                        <th>Texte à floquer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for besoin in besoins %}
+                        <tr>
+                            <td><span class="dot-item-nom">{{ besoin.nomPrenom }}</span></td>
+                            <td>{{ besoin.teamName ?? '—' }}</td>
+                            <td>{{ besoin.stockItem.nom }}</td>
+                            <td>
+                                {% if besoin.taille %}
+                                    <span class="dot-item-taille">{{ besoin.taille }}</span>
+                                {% else %}
+                                    <span class="dot-item-taille-missing">à renseigner</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="dot-flocage-print">{{ besoin.personnalisation }}</span></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
