@@ -124,7 +124,7 @@ class StockMovementRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param array{item_id?: string, type?: string, source?: string, date_from?: string, date_to?: string} $filters
+     * @param array{search?: string, item_id?: string, type?: string, source?: string, date_from?: string, date_to?: string} $filters
      * @return array{movements: StockMovement[], total: int}
      */
     public function findWithFilters(array $filters, int $page, int $perPage): array
@@ -133,6 +133,12 @@ class StockMovementRepository extends ServiceEntityRepository
             ->join('m.item', 'i')
             ->orderBy('m.createdAt', 'DESC');
 
+        if (!empty($filters['search'])) {
+            // Le nom de l'article et la note du mouvement : les deux seuls textes libres
+            // sur lesquels l'admin cherche (« où est passée la commande de chasubles ? »).
+            $qb->andWhere('LOWER(i.nom) LIKE :recherche OR LOWER(m.note) LIKE :recherche')
+               ->setParameter('recherche', '%' . mb_strtolower(trim((string) $filters['search'])) . '%');
+        }
         if (!empty($filters['item_id'])) {
             $qb->andWhere('i.id = :itemId')->setParameter('itemId', $filters['item_id']);
         }

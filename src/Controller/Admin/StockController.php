@@ -231,6 +231,7 @@ class StockController extends AbstractController
     {
         $page = max(1, (int) $request->query->get('page', 1));
         $filters = array_filter([
+            'search' => trim((string) $request->query->get('search', '')),
             'item_id' => $request->query->get('item_id'),
             'type' => $request->query->get('type'),
             'source' => $request->query->get('source'),

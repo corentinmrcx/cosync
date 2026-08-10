@@ -17,9 +17,10 @@
     </div>
 
     {% include 'components/list-toolbar.html.twig' with {
-        showSearch: false,
+        search: filters.search ?? '',
+        searchPlaceholder: 'Rechercher un article ou une note…',
         formId: 'mouvements',
-        activeCount: filters|length,
+        activeCount: filters|filter((valeur, cle) => cle != 'search')|length,
         resetUrl: path('admin_stock_mouvements_list'),
         filterGroups: [
             {

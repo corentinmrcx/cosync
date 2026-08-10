@@ -95,6 +95,44 @@ final class StockEcransTest extends WebTestCase
         self::assertStringStartsWith('%PDF', (string) $client->getResponse()->getContent());
     }
 
+    /** Les filtres de l'historique passent par la barre dépliante partagée avec Licenciés. */
+    public function testLHistoriqueUtiliseLaBarreDeFiltresPartagee(): void
+    {
+        $client = $this->loginAdmin();
+        $item = $this->makeItem('Maillot');
+        $this->entree($item, 4, 'L');
+
+        $crawler = $client->request('GET', '/admin/stock/mouvements?type=entree');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('.list-tb-filters'));
+        self::assertCount(1, $crawler->filter('.list-tb-search-input'), 'La recherche est à côté du bouton Filtres.');
+        self::assertCount(2, $crawler->filter('.list-tb-dropdown input[type="date"]'), 'Les bornes de dates sont dans le dépliant.');
+        self::assertStringContainsString('1', $crawler->filter('.list-tb-filters-count')->text());
+    }
+
+    /**
+     * La recherche porte sur le nom de l'article et la note du mouvement, et ne compte pas
+     * dans la pastille « Filtres » : elle a son propre champ.
+     */
+    public function testLaRechercheDeLHistoriquePorteSurLArticleEtLaNote(): void
+    {
+        $client = $this->loginAdmin();
+        $this->entree($this->makeItem('Chasuble'), 10, null);
+        $this->entree($this->makeItem('Ballon'), 5, null);
+
+        $crawler = $client->request('GET', '/admin/stock/mouvements?search=chasu');
+
+        self::assertResponseIsSuccessful();
+
+        // Sur les lignes du tableau, pas sur la page : le sélecteur d'articles du dépliant
+        // liste tout le catalogue, « Ballon » y figure quoi qu'il arrive.
+        $articles = $crawler->filter('tbody .stock-mouvements-item-nom')->each(static fn ($n) => trim($n->text()));
+        self::assertSame(['Chasuble'], $articles);
+
+        self::assertCount(0, $crawler->filter('.list-tb-filters-count'), 'La recherche seule ne remplit pas la pastille.');
+    }
+
     private function makeItem(string $nom, ?int $seuil = null): StockItem
     {
         $category = (new StockCategory())->setName('Équipement')->setPosition(1);
