@@ -37,25 +37,82 @@ class CommandeLigne
     #[ORM\Column(nullable: true)]
     private ?float $prixUnitaire = null;
 
-    public function getId(): int { return $this->id; }
+    public function getId(): int
+    {
+        return $this->id;
+    }
 
-    public function getCommande(): Commande { return $this->commande; }
-    public function setCommande(Commande $commande): static { $this->commande = $commande; return $this; }
+    public function getCommande(): Commande
+    {
+        return $this->commande;
+    }
 
-    public function getStockItem(): StockItem { return $this->stockItem; }
-    public function setStockItem(StockItem $stockItem): static { $this->stockItem = $stockItem; return $this; }
+    public function setCommande(Commande $commande): static
+    {
+        $this->commande = $commande;
 
-    public function getTaille(): ?string { return $this->taille; }
-    public function setTaille(?string $taille): static { $this->taille = $taille; return $this; }
+        return $this;
+    }
 
-    public function getQuantite(): int { return $this->quantite; }
-    public function setQuantite(int $quantite): static { $this->quantite = $quantite; return $this; }
+    public function getStockItem(): StockItem
+    {
+        return $this->stockItem;
+    }
 
-    public function getQuantiteRecue(): int { return $this->quantiteRecue; }
-    public function setQuantiteRecue(int $quantiteRecue): static { $this->quantiteRecue = $quantiteRecue; return $this; }
+    public function setStockItem(StockItem $stockItem): static
+    {
+        $this->stockItem = $stockItem;
 
-    public function getPrixUnitaire(): ?float { return $this->prixUnitaire; }
-    public function setPrixUnitaire(?float $prixUnitaire): static { $this->prixUnitaire = $prixUnitaire; return $this; }
+        return $this;
+    }
+
+    public function getTaille(): ?string
+    {
+        return $this->taille;
+    }
+
+    public function setTaille(?string $taille): static
+    {
+        $this->taille = $taille;
+
+        return $this;
+    }
+
+    public function getQuantite(): int
+    {
+        return $this->quantite;
+    }
+
+    public function setQuantite(int $quantite): static
+    {
+        $this->quantite = $quantite;
+
+        return $this;
+    }
+
+    public function getQuantiteRecue(): int
+    {
+        return $this->quantiteRecue;
+    }
+
+    public function setQuantiteRecue(int $quantiteRecue): static
+    {
+        $this->quantiteRecue = $quantiteRecue;
+
+        return $this;
+    }
+
+    public function getPrixUnitaire(): ?float
+    {
+        return $this->prixUnitaire;
+    }
+
+    public function setPrixUnitaire(?float $prixUnitaire): static
+    {
+        $this->prixUnitaire = $prixUnitaire;
+
+        return $this;
+    }
 
     public function getRestant(): int
     {

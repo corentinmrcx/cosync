@@ -5,7 +5,9 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Licenciés', route: 'admin_licencies_list' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs', route: 'admin_licencies_list' },
     { label: 'Nouveau licencié' }
 ] } %}
 
@@ -21,44 +23,51 @@
         <p class="licencie-edit-section">Identité</p>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.nom) }}
-                {{ form_widget(form.nom, { attr: { class: 'season-form-input' } }) }}
+                {{ form_widget(form.nom) }}
                 {{ form_errors(form.nom) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.prenom) }}
-                {{ form_widget(form.prenom, { attr: { class: 'season-form-input' } }) }}
+                {{ form_widget(form.prenom) }}
                 {{ form_errors(form.prenom) }}
             </div>
         </div>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.dateNaissance) }}
-                {{ form_widget(form.dateNaissance, { attr: { class: 'season-form-input' } }) }}
+                {{ form_widget(form.dateNaissance) }}
                 {{ form_errors(form.dateNaissance) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.category) }}
-                {{ form_widget(form.category, { attr: { class: 'season-form-input' } }) }}
+                {{ form_widget(form.category) }}
                 {{ form_errors(form.category) }}
             </div>
         </div>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.team) }}
-                {{ form_widget(form.team, { attr: { class: 'season-form-input' } }) }}
+                {{ form_widget(form.team) }}
                 {{ form_errors(form.team) }}
             </div>
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.numLicence) }}
-            {{ form_widget(form.numLicence, { attr: { class: 'season-form-input' } }) }}
+            {{ form_widget(form.numLicence) }}
             {{ form_errors(form.numLicence) }}
             <p class="licencie-new-hint">Facultatif si l'export FootClubs est indisponible. Sera mis à jour automatiquement lors du prochain import.</p>
+        </div>
+
+        <div class="field">
+            {{ form_label(form.natureLicence) }}
+            {{ form_widget(form.natureLicence) }}
+            {{ form_errors(form.natureLicence) }}
+            {{ form_help(form.natureLicence) }}
         </div>
 
         <hr class="season-form-divider">
@@ -66,33 +75,33 @@
         <p class="licencie-edit-section">Contact</p>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.email) }}
-                {{ form_widget(form.email, { attr: { class: 'season-form-input' } }) }}
+                {{ form_widget(form.email) }}
                 {{ form_errors(form.email) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.telephone) }}
-                {{ form_widget(form.telephone, { attr: { class: 'season-form-input' } }) }}
+                {{ form_widget(form.telephone) }}
                 {{ form_errors(form.telephone) }}
             </div>
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.voieRue) }}
-            {{ form_widget(form.voieRue, { attr: { class: 'season-form-input' } }) }}
+            {{ form_widget(form.voieRue) }}
             {{ form_errors(form.voieRue) }}
         </div>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.codePostal) }}
-                {{ form_widget(form.codePostal, { attr: { class: 'season-form-input' } }) }}
+                {{ form_widget(form.codePostal) }}
                 {{ form_errors(form.codePostal) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.ville) }}
-                {{ form_widget(form.ville, { attr: { class: 'season-form-input' } }) }}
+                {{ form_widget(form.ville) }}
                 {{ form_errors(form.ville) }}
             </div>
         </div>
@@ -106,8 +115,8 @@
         </div>
 
         <div class="season-form-actions">
-            <a href="{{ path('admin_licencies_list') }}" class="season-form-cancel">Annuler</a>
-            <button type="submit" class="season-form-submit">Ajouter le licencié</button>
+            <a href="{{ path('admin_licencies_list') }}" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg">Ajouter le licencié</button>
         </div>
 
     {{ form_end(form) }}

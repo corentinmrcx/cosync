@@ -11,7 +11,7 @@ enum LicenceStatus: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::IMPORTED => 'Importé',
             self::LINK_SENT => 'Lien envoyé',
             self::FORM_COMPLETED => 'Formulaire complété',

@@ -4,6 +4,7 @@ namespace App\DTO;
 
 use App\Entity\Category;
 use App\Entity\Team;
+use App\Enum\NatureLicence;
 use Symfony\Component\Validator\Constraints as Assert;
 
 final class LicencieCreateData
@@ -27,4 +28,7 @@ final class LicencieCreateData
     public ?string $codePostal = null;
     public ?string $ville = null;
     public ?string $numLicence = null;
+
+    /** Un licencié saisi à la main est presque toujours une première licence au club. */
+    public ?NatureLicence $natureLicence = NatureLicence::NOUVELLE_DEMANDE;
 }

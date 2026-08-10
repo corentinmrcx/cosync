@@ -2,78 +2,73 @@
 
 {% block title %}Inscription confirmée – Foyer de Soudron{% endblock %}
 
-{% block body %}
-<div class="inscription-page">
+{% block entete_extra %}
+    {% include 'components/_progression.html.twig' with { total: 5 } only %}
+{% endblock %}
 
-    <header class="inscription-header">
-        <div class="inscription-header-top">
-            <span class="inscription-header-club">Foyer de Soudron</span>
-        </div>
-        <div class="inscription-progress">
-            {% for i in 1..5 %}
-                <div class="inscription-progress-segment inscription-progress-segment-done"></div>
-            {% endfor %}
-        </div>
-    </header>
+{% block contenu %}
+    <div class="inscription-card">
+        <div class="inscription-confirm-icon">✅</div>
+        {% if licencie.category.isJeune %}
+            <h1 class="inscription-confirm-title">Merci !</h1>
+            <p class="inscription-confirm-text">Le formulaire d'inscription de <strong>{{ licencie.prenom }}</strong> a bien été enregistré.</p>
+        {% else %}
+            <h1 class="inscription-confirm-title">Merci {{ licencie.prenom }} !</h1>
+            <p class="inscription-confirm-text">Votre formulaire d'inscription a bien été enregistré.</p>
+        {% endif %}
 
-    <main class="inscription-main">
-        <div class="inscription-container">
-
-            <div class="inscription-card">
-                <div class="inscription-confirm-icon">✅</div>
-                {% if licencie.category.isJeune %}
-                    <h1 class="inscription-confirm-title">Merci !</h1>
-                    <p class="inscription-confirm-text">Le formulaire d'inscription de <strong>{{ licencie.prenom }}</strong> a bien été enregistré.</p>
-                {% else %}
-                    <h1 class="inscription-confirm-title">Merci {{ licencie.prenom }} !</h1>
-                    <p class="inscription-confirm-text">Votre formulaire d'inscription a bien été enregistré.</p>
-                {% endif %}
-
-                {% set intentions = dossier.paymentIntentions %}
-                {% if intentions is not empty %}
-                    <p class="inscription-recap-title">Récapitulatif du paiement</p>
-                    <div>
-                        <div class="inscription-recap-row">
-                            <span class="inscription-recap-key">Montant</span>
-                            <span class="inscription-recap-val">{{ montant }} €</span>
-                        </div>
-                        <div class="inscription-recap-row">
-                            <span class="inscription-recap-key">Mode{{ intentions|length > 1 ? 's choisis' : ' choisi' }}</span>
-                            <span class="inscription-recap-val">{{ intentions|map(m => m.label())|join(', ') }}</span>
-                        </div>
-                    </div>
-
-                    {% set intentionValues = intentions|map(m => m.value) %}
-                    {% if 'virement' in intentionValues %}
-                        <div class="inscription-payment-info" style="margin-top: 1rem;">
-                            <p><strong>Coordonnées bancaires du club</strong></p>
-                            <p>IBAN : <strong>FR76 1020 6000 2020 1001 5900 056</strong></p>
-                            <p>BIC : <strong>AGRIFRPP802</strong></p>
-                            <p>Libellé : <strong>COTISATION {{ licencie.nom }} {{ licencie.prenom }} {{ licencie.season.label }}</strong></p>
-                        </div>
-                    {% endif %}
-                    {% if intentionValues|filter(v => v in ['cheque', 'especes', 'pass_sport', 'caf', 'ancv']) is not empty %}
-                        <div class="inscription-payment-info" style="margin-top: 1rem;">
-                            À remettre à un dirigeant du club ou lors d'une permanence.
-                        </div>
-                    {% endif %}
-                    {% if 'cb_online' in intentionValues %}
-                        <div class="inscription-payment-info" style="margin-top: 1rem;">
-                            Le lien de paiement SumUp vous sera transmis par le club.
-                        </div>
-                    {% endif %}
-                {% endif %}
-
-                <p class="inscription-confirm-note">
-                    Votre inscription sera définitivement validée dès réception du paiement.<br>
-                    Pour toute question, contactez le club directement.
-                </p>
+        {% set intentions = dossier.paymentIntentions %}
+        {% if intentions is not empty %}
+            <p class="inscription-recap-title">Récapitulatif du paiement</p>
+            <div>
+                <div class="inscription-recap-row">
+                    <span class="inscription-recap-key">Montant</span>
+                    <span class="inscription-recap-val">{{ montant }} €</span>
+                </div>
+                <div class="inscription-recap-row">
+                    <span class="inscription-recap-key">Mode{{ intentions|length > 1 ? 's choisis' : ' choisi' }}</span>
+                    <span class="inscription-recap-val">
+                        {{- intentions|map(m => m.label())|join(', ') }}
+                        {%- if dossier.paymentAutrePrecision %} ({{ dossier.paymentAutrePrecision }}){% endif -%}
+                    </span>
+                </div>
             </div>
 
-        </div>
-    </main>
+            {% set intentionValues = intentions|map(m => m.value) %}
+            {% if 'virement' in intentionValues and club_rib.accepteVirement %}
+                <div class="inscription-payment-info" style="margin-top: 1rem;">
+                    {% include 'components/_coordonnees_bancaires.html.twig' with {
+                        libelle: libelleVirement,
+                    } only %}
+                </div>
+            {% endif %}
+            {# `caf` et `ancv` ne sont plus proposés, mais restent lus pour les dossiers déjà enregistrés. #}
+            {% if intentionValues|filter(v => v in ['cheque', 'especes', 'pass_sport', 'autre', 'caf', 'ancv']) is not empty %}
+                <div class="inscription-payment-info" style="margin-top: 1rem;">
+                    À remettre à un dirigeant du club ou lors d'une permanence.
+                </div>
+            {% endif %}
+        {% endif %}
 
-    {% include 'components/footer.html.twig' %}
+        {% if paiementRecu %}
+            <p class="inscription-cb-note" style="margin-top: 1rem;">Paiement reçu ✓</p>
+        {% else %}
+            <div class="inscription-cb-block" style="margin-top: 1.25rem;">
+                <form method="post" action="{{ path('public_helloasso_checkout', { uuid: licencie.uuid }) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('paiement_helloasso') }}">
+                    <button type="submit" class="btn btn-success btn-block">
+                        Payer — {{ montant }} €
+                    </button>
+                </form>
+                <p class="inscription-cb-note">
+                    Paiement 100 % sécurisé via HelloAsso
+                </p>
+            </div>
+        {% endif %}
 
-</div>
+        <p class="inscription-confirm-note">
+            Votre inscription sera définitivement validée dès réception du paiement.<br>
+            Pour toute question, contactez le club directement.
+        </p>
+    </div>
 {% endblock %}

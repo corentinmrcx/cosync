@@ -29,17 +29,56 @@ class Fournisseur
     #[ORM\Column]
     private bool $actif = true;
 
-    public function getId(): int { return $this->id; }
+    public function getId(): int
+    {
+        return $this->id;
+    }
 
-    public function getNom(): string { return $this->nom; }
-    public function setNom(string $nom): static { $this->nom = $nom; return $this; }
+    public function getNom(): string
+    {
+        return $this->nom;
+    }
 
-    public function getContact(): ?string { return $this->contact; }
-    public function setContact(?string $contact): static { $this->contact = $contact; return $this; }
+    public function setNom(string $nom): static
+    {
+        $this->nom = $nom;
 
-    public function getEmail(): ?string { return $this->email; }
-    public function setEmail(?string $email): static { $this->email = $email; return $this; }
+        return $this;
+    }
 
-    public function isActif(): bool { return $this->actif; }
-    public function setActif(bool $actif): static { $this->actif = $actif; return $this; }
+    public function getContact(): ?string
+    {
+        return $this->contact;
+    }
+
+    public function setContact(?string $contact): static
+    {
+        $this->contact = $contact;
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    public function isActif(): bool
+    {
+        return $this->actif;
+    }
+
+    public function setActif(bool $actif): static
+    {
+        $this->actif = $actif;
+
+        return $this;
+    }
 }

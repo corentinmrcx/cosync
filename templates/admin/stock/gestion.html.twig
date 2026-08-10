@@ -1,4 +1,5 @@
 {% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
 
 {% block title %}CoSync — Gestion du stock{% endblock %}
 
@@ -9,16 +10,19 @@
     { label: 'Gestion' }
 ] } %}
 
-<div class="stock-dashboard-page" x-data="stockMovementModal()">
+<div class="stock-dashboard-page" x-data="stockMouvementModal({
+        urlMouvement: '{{ path('admin_stock_items_movement', {id: '__ID__'}) }}',
+        ordreTailles: {{ tailles_toutes()|json_encode }},
+     })">
 
     <div class="stock-dashboard-header">
         <h1 class="stock-dashboard-title">Gestion du stock</h1>
         <div class="stock-dashboard-actions">
-            <a href="{{ showArchived ? path('admin_stock_gestion') : path('admin_stock_gestion', {archivés: 1}) }}" class="stock-dashboard-btn-secondary{% if showArchived %} stock-btn-archived-active{% endif %}">
+            <a href="{{ showArchived ? path('admin_stock_gestion') : path('admin_stock_gestion', {archivés: 1}) }}" class="btn btn-secondary{% if showArchived %} stock-btn-archived-active{% endif %}">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
                 {{ showArchived ? 'Masquer les archivés' : 'Voir les archivés' }}
             </a>
-            <a href="{{ path('admin_stock_items_new') }}" class="stock-dashboard-btn-primary">
+            <a href="{{ path('admin_stock_items_new') }}" class="btn btn-primary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nouvel article
             </a>
@@ -27,8 +31,7 @@
 
     {% if summary is empty %}
         <div class="stock-dashboard-empty">
-            <p>Aucun article de stock pour cette saison.</p>
-            <a href="{{ path('admin_stock_items_new') }}" class="stock-dashboard-btn-primary">Créer un article</a>
+            <p>Aucun article.</p>
         </div>
     {% endif %}
 
@@ -43,8 +46,8 @@
                 <span class="stock-dashboard-section-count">{{ section.items|length }} article{{ section.items|length > 1 ? 's' : '' }}</span>
             </div>
 
-            <div class="stock-dashboard-table-wrapper">
-                <table class="stock-dashboard-table resp-table">
+            <div class="table-wrapper">
+                <table class="table resp-table">
                     <thead>
                         <tr>
                             <th class="stock-col-nom">Article</th>
@@ -60,7 +63,7 @@
                                     <div class="stock-nom-wrap{% if row.hasTailles %} stock-nom-clickable{% endif %}"{% if row.hasTailles %} @click="open = !open" title="Voir le détail par taille"{% endif %}>
                                         {% if row.hasTailles %}
                                             <span class="stock-row-toggle" :class="{ 'is-open': open }">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                                                {{ ui.icon('chevron-right', 14) }}
                                             </span>
                                         {% endif %}
                                         <div class="stock-nom-texts">
@@ -77,34 +80,37 @@
                                     </div>
                                 </td>
                                 <td class="stock-col-stock">
-                                    <span class="stock-badge stock-badge-{{ row.status }}">
+                                    <span class="stock-badge stock-badge-{{ row.niveau.value }}">
                                         {{ row.stock }}
-                                        {% if row.stock <= 0 %}Rupture{% elseif row.status == 'warning' %}Stock bas{% endif %}
+                                        {{ row.niveau.label }}
                                     </span>
                                 </td>
                                 <td class="stock-col-seuil">
                                     {{ row.item.alertSeuil ?? '—' }}
                                 </td>
                                 <td class="stock-col-actions">
-                                    {% if row.item.actif %}
-                                        <button
-                                            type="button"
-                                            class="stock-action-mouvement"
-                                            @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
-                                        >
-                                            + / − Mouvement
-                                        </button>
-                                        <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="stock-action-edit">Modifier</a>
-                                        <form method="post" action="{{ path('admin_stock_items_delete', {id: row.item.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cet article ?')">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_item_' ~ row.item.id) }}">
-                                            <button type="submit" class="stock-action-delete">Supprimer</button>
-                                        </form>
-                                    {% else %}
-                                        <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}" style="display:inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">
-                                            <button type="submit" class="stock-action-restore">Désarchiver</button>
-                                        </form>
-                                    {% endif %}
+                                    <div class="table-actions-cellule">
+                                        {% if row.item.actif %}
+                                            <button
+                                                type="button"
+                                                class="btn btn-primary btn-sm"
+                                                @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
+                                            >
+                                                + / − Mouvement
+                                            </button>
+                                            <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
+                                            {% include 'components/_form_suppression.html.twig' with {
+                                                action: path('admin_stock_items_delete', {id: row.item.id}),
+                                                jeton: 'delete_stock_item_' ~ row.item.id,
+                                                message: 'Supprimer cet article ?',
+                                            } only %}
+                                        {% else %}
+                                            <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">
+                                                <button type="submit" class="btn btn-secondary btn-sm">Désarchiver</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% if row.hasTailles %}
@@ -134,18 +140,18 @@
     {% endfor %}
 
     {# Modale mouvement #}
-    <div class="stock-modal-backdrop" x-show="modalOpen" x-transition.opacity style="display:none">
-        <div class="stock-modal" @click.outside="closeModal()">
-            <div class="stock-modal-header">
-                <h3 class="stock-modal-title" x-text="'Mouvement — ' + itemNom"></h3>
-                <button type="button" class="stock-modal-close" @click="closeModal()">✕</button>
+    <div class="modal-voile" x-show="modalOpen" x-transition.opacity style="display:none">
+        <div class="modal" @click.outside="closeModal()">
+            <div class="modal-header">
+                <h3 class="modal-titre" x-text="'Mouvement — ' + itemNom"></h3>
+                <button type="button" class="modal-fermer" @click="closeModal()">✕</button>
             </div>
 
-            <form :action="formAction" method="post" class="stock-modal-form">
+            <form :action="formAction" method="post" class="modal-corps">
                 <input type="hidden" name="_token" :value="csrfToken">
 
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label">Action</label>
+                <div class="field">
+                    <label class="field-label">Action</label>
                     <div class="stock-modal-actions-grid">
                         <label class="stock-modal-radio" :class="{ active: action === 'entree' }">
                             <input type="radio" name="action" value="entree" x-model="action"> Entrée (réassort)
@@ -162,9 +168,9 @@
                     </div>
                 </div>
 
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label">Quantité</label>
-                    <input type="number" name="quantite" min="1" x-model="quantite" class="stock-modal-input" required>
+                <div class="field">
+                    <label class="field-label">Quantité</label>
+                    <input type="number" name="quantite" min="1" x-model="quantite" class="field-input" required>
                     <span class="stock-modal-hint" x-text="'Stock total : ' + stockActuel"></span>
                     <div class="stock-modal-stocklist" x-show="taillesEntries.length">
                         <span class="stock-modal-stocklist-label">En stock par taille</span>
@@ -179,9 +185,9 @@
                     </div>
                 </div>
 
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label">Taille <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(optionnel)</span></label>
-                    <select name="taille" x-model="taille" class="stock-modal-select">
+                <div class="field">
+                    <label class="field-label">Taille <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(optionnel)</span></label>
+                    <select name="taille" x-model="taille" class="field-input">
                         <option value="">— Sans taille —</option>
                         {% for t in taillesConnues %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
                     </select>
@@ -191,9 +197,9 @@
                           x-text="'Disponible en ' + taille + ' : ' + dispoTaille"></span>
                 </div>
 
-                <div class="stock-modal-field" x-show="action === 'dotation'" x-transition>
-                    <label class="stock-modal-label">Licencié <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(paiement confirmé uniquement)</span></label>
-                    <select name="licencie_uuid" class="stock-modal-select">
+                <div class="field" x-show="action === 'dotation'" x-transition>
+                    <label class="field-label">Licencié <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(paiement confirmé uniquement)</span></label>
+                    <select name="licencie_uuid" class="field-input">
                         <option value="">— Sélectionner un licencié —</option>
                         {% if licenciesValides is empty %}
                             <option disabled>Aucun licencié avec paiement confirmé</option>
@@ -205,17 +211,17 @@
                     </select>
                 </div>
 
-                <div class="stock-modal-field" x-show="action === 'rebut' || action === 'sortie' || action === 'dotation'" x-transition>
-                    <label class="stock-modal-label">
+                <div class="field" x-show="action === 'rebut' || action === 'sortie' || action === 'dotation'" x-transition>
+                    <label class="field-label">
                         Note / justification
                         <span x-show="action === 'rebut'" style="color: var(--color-danger)">*</span>
                     </label>
-                    <textarea name="note" class="stock-modal-textarea" :required="action === 'rebut'" rows="2" placeholder="Raison, contexte…"></textarea>
+                    <textarea name="note" class="field-input" :required="action === 'rebut'" rows="2" placeholder="Raison, contexte…"></textarea>
                 </div>
 
-                <div class="stock-modal-footer">
-                    <button type="button" class="stock-modal-cancel" @click="closeModal()">Annuler</button>
-                    <button type="submit" class="stock-modal-submit" :disabled="!action || quantite < 1">Enregistrer</button>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" @click="closeModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary" :disabled="!action || quantite < 1">Enregistrer</button>
                 </div>
             </form>
         </div>
@@ -223,53 +229,6 @@
 
 </div>
 
-<script>
-function stockMovementModal() {
-    return {
-        modalOpen: false,
-        itemId: null,
-        itemNom: '',
-        stockActuel: 0,
-        taillesStock: {},
-        action: 'entree',
-        quantite: 1,
-        taille: '',
-        get formAction() {
-            return `/admin/stock/items/${this.itemId}/mouvement`;
-        },
-        get csrfToken() {
-            return document.getElementById('csrf-' + this.itemId)?.value ?? '';
-        },
-        get taillesEntries() {
-            const order = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL',
-                           '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'];
-            const rank = (t) => {
-                const i = order.indexOf(t);
-                return i === -1 ? order.length : i;
-            };
-            return Object.entries(this.taillesStock)
-                .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b));
-        },
-        get dispoTaille() {
-            return this.taillesStock[this.taille] ?? 0;
-        },
-        openModal(id, nom, stock) {
-            this.itemId    = id;
-            this.itemNom   = nom;
-            this.stockActuel = stock;
-            const raw = document.getElementById('tailles-' + id)?.value;
-            this.taillesStock = raw ? JSON.parse(raw) : {};
-            this.action    = 'entree';
-            this.quantite  = 1;
-            this.taille    = '';
-            this.modalOpen = true;
-        },
-        closeModal() {
-            this.modalOpen = false;
-        },
-    };
-}
-</script>
 
 {# Tokens CSRF + stock par taille (JSON) cachés pour chaque item, lus par la modale #}
 {% for section in summary %}

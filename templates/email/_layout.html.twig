@@ -1,0 +1,104 @@
+{# Palette des mails. Les clients de messagerie ignorent les variables CSS : les couleurs
+   doivent être écrites en dur dans les attributs style. Définies ici une seule fois, elles
+   sont visibles depuis les blocs des templates enfants. #}
+{% set c = {
+    primaire:     '#ff3131',
+    primaireHover:'#e02020',
+    fondPage:     '#ebedf0',
+    fondCarte:    '#ffffff',
+    fondSombre:   '#1f1f1f',
+    texteFort:    '#1f1f1f',
+    texteCourant: '#374151',
+    texteDiscret: '#9aa1aa',
+    texteInverse: '#ffffff',
+    texteFooter:  '#5b6068',
+    succesBg:     '#f0fdf4',
+    succes:       '#16a34a',
+} %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block sujet %}{{ club_nom }}{% endblock %}</title>
+    <style>
+        body { margin: 0; padding: 0; background: {{ c.fondPage }}; -webkit-font-smoothing: antialiased; }
+        a { text-decoration: none; }
+        .btn-cta:hover { background: {{ c.primaireHover }} !important; }
+        @media (max-width: 620px) {
+            .container { width: 100% !important; }
+            .px { padding-left: 28px !important; padding-right: 28px !important; }
+            .h1 { font-size: 25px !important; }
+        }
+    </style>
+</head>
+<body>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: {{ c.fondPage }}; font-family: Arial, sans-serif;">
+    <tr>
+        <td align="center" style="padding: 40px 16px;">
+
+            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0"
+                   style="width: 600px; max-width: 600px; background: {{ c.fondCarte }}; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.08);">
+
+                {# — Bandeau rouge — #}
+                <tr>
+                    <td style="background: {{ c.primaire }}; padding: 30px 40px;" class="px">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="vertical-align: middle;">
+                                    <span style="color: {{ c.texteInverse }}; font-size: 22px; font-weight: 900; letter-spacing: 2px;">CoSync</span>
+                                </td>
+                                <td align="right" style="vertical-align: middle;">
+                                    <img src="{{ absolute_url(asset('images/logo/logo.png')) }}"
+                                         alt="{{ club_nom }}"
+                                         width="48" height="48"
+                                         style="display: block; width: 48px; height: 48px; object-fit: contain;">
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                {% block corps %}{% endblock %}
+
+                {# — Pied de page sombre — #}
+                <tr>
+                    <td style="background: {{ c.fondSombre }}; padding: 28px 40px;" class="px">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td>
+                                    <p style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: {{ c.texteInverse }};">{{ club_nom }}</p>
+                                    <p style="margin: 0; font-size: 13px; line-height: 1.6; color: {{ c.texteDiscret }};">
+                                        Stade municipal · 51320 Soudron
+                                    </p>
+                                </td>
+                                <td align="right" style="vertical-align: bottom;">
+                                    <p style="margin: 0; font-size: 11px; color: {{ c.texteFooter }};">Propulsé par <a href="https://codepp.fr/" style="color: {{ c.primaire }}; font-weight: 700; text-decoration: none;">Codepp</a></p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+            </table>
+
+            {# — Sous-pied de page — #}
+            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="width: 600px; max-width: 600px;">
+                <tr>
+                    <td align="center" style="padding: 20px 40px;">
+                        <p style="margin: 0; font-size: 12px; line-height: 1.6; color: {{ c.texteDiscret }};">
+                            {% block mention_legale %}Vous recevez cet email car vous êtes licencié(e) au {{ club_nom }}.{% endblock %}<br>
+                            Pour toute question, contactez le club directement.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

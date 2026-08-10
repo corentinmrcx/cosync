@@ -1,0 +1,342 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Clés{% endblock %}
+
+{# Le badge dit l'état de l'engagement de la saison affichée, pas celui du registre. #}
+{% set classesAttestation = {
+    'signee': 'cles-badge-signee',
+    'a_renouveler': 'cles-badge-renouveler',
+    'lien_envoye': 'cles-badge-attente',
+    'non_signee': 'cles-badge-manquante',
+} %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Clés' }
+] } %}
+
+<div class="cles-page" x-data="{ modaleOuverte: false, modaleExterieur: false, personne: '', typeMouvement: 'remise' }">
+
+    <div class="cles-header">
+        <div>
+            <h1 class="cles-title">Clés du local</h1>
+        </div>
+        <div class="cles-actions">
+            <a href="{{ path('admin_cles_attestation_edit') }}" class="btn btn-secondary">
+                {{ ui.icon('edit') }}
+                Texte de l'attestation
+            </a>
+            <a href="{{ path('admin_cles_attestation_recap') }}" class="btn btn-secondary">
+                {{ ui.icon('download') }}
+                Récapitulatif PDF
+            </a>
+        </div>
+    </div>
+
+    {# — Tuiles de synthèse — #}
+    <div class="stat-grid">
+        <div class="stat-card stat-card-primary">
+            <span class="stat-card-icon">{{ ui.icon('key', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.clesEnCirculation }}</span>
+                <span class="stat-card-label">Clé{{ stats.clesEnCirculation > 1 ? 's' : '' }} en circulation</span>
+            </span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-icon">{{ ui.icon('clipboard-list', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.nbDetenteurs }}</span>
+                <span class="stat-card-label">Détenteur{{ stats.nbDetenteurs > 1 ? 's' : '' }}</span>
+            </span>
+        </div>
+        <div class="stat-card {{ stats.nbHorsEffectif > 0 ? 'stat-card-warning' }}">
+            <span class="stat-card-icon">{{ ui.icon('alert-triangle', 20) }}</span>
+            <span class="stat-card-body">
+                <span class="stat-card-value">{{ stats.nbHorsEffectif }}</span>
+                <span class="stat-card-label">Hors effectif {{ season.label }}</span>
+            </span>
+        </div>
+    </div>
+
+    {# — Campagne de signature : le seul bloc qui dépende de la saison — #}
+    <div class="cles-campagne {{ nbEnAttente > 0 ? 'cles-campagne-alerte' }}">
+        <div class="cles-campagne-body">
+            <span class="cles-campagne-title">Attestations — saison {{ season.label }}</span>
+            {% if nbEnAttente > 0 %}
+                <span class="cles-campagne-text">
+                    {{ nbEnAttente }} détenteur{{ nbEnAttente > 1 ? 's' : '' }}
+                    n'{{ nbEnAttente > 1 ? 'ont' : 'a' }} pas d'engagement à jour pour cette saison.
+                    L'attestation se resigne chaque année.
+                </span>
+            {% else %}
+                <span class="cles-campagne-text">
+                    Les {{ stats.nbAttestationsSignees }} détenteur{{ stats.nbAttestationsSignees > 1 ? 's ont' : ' a' }}
+                    signé pour cette saison.
+                </span>
+            {% endif %}
+        </div>
+        {% if nbEnAttente > 0 %}
+            <form method="post" action="{{ path('admin_cles_campagne') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('cle_campagne_' ~ season.id) }}">
+                <button type="submit" class="btn btn-primary">
+                    {{ ui.icon('send', 14) }}
+                    Demander les signatures de la saison
+                </button>
+            </form>
+        {% endif %}
+    </div>
+
+    {# — Recherche, filtres, actions — #}
+    {% embed 'components/list-toolbar.html.twig' with {
+        search: search,
+        searchPlaceholder: 'Rechercher une personne…',
+        filterGroups: filterGroups,
+        activeCount: activeFilterCount,
+        resetUrl: path('admin_cles_index', {statut: '', search: ''}),
+        formId: 'cles'
+    } %}
+        {% block actions %}
+            {# L'import de macro du template parent ne traverse pas l'embed : SVG inline. #}
+            <button type="button" class="btn btn-secondary" @click="modaleExterieur = true">
+                Personne extérieure
+            </button>
+            <button type="button" class="btn btn-primary" @click="modaleOuverte = true; personne = ''; typeMouvement = 'remise'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Remettre une clé
+            </button>
+        {% endblock %}
+    {% endembed %}
+
+    {# — Détenteurs — #}
+    {% if lignes is empty %}
+        <p class="cles-empty">Aucune personne ne correspond à cette recherche.</p>
+    {% else %}
+        <div class="table-wrapper">
+            <table class="table resp-table">
+                <thead>
+                    <tr>
+                        <th>Personne</th>
+                        <th>Qualité</th>
+                        <th>Clés</th>
+                        <th>Détenteur depuis</th>
+                        <th>Attestation {{ season.label }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in lignes %}
+                        {% set detenteur = ligne.detenteur() %}
+                        {% set etat = ligne.etatAttestation() %}
+                        <tr>
+                            <td data-label="Personne">
+                                <span class="cles-nom">{{ detenteur.nomPrenom }}</span>
+                                {% if detenteur.email %}
+                                    <span class="cles-meta">{{ detenteur.email }}</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Qualité">
+                                {% if ligne.dirigeantSaison %}
+                                    {{ ligne.dirigeantSaison.role.label() }}
+                                {% elseif detenteur.qualite %}
+                                    {{ detenteur.qualite }}
+                                {% else %}
+                                    <span class="cles-meta">—</span>
+                                {% endif %}
+                                {% if ligne.horsEffectif() %}
+                                    <span class="cles-badge-hors-effectif" title="Détient des clés sans figurer à l'effectif de la saison">
+                                        Hors effectif
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Clés">
+                                {% if ligne.estDetenteur() %}
+                                    <span class="cles-count">{{ ligne.detention.solde }}</span>
+                                {% else %}
+                                    <span class="cles-meta">Aucune</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Détenteur depuis">
+                                {{ ligne.detention.detenteurDepuis ? ligne.detention.detenteurDepuis|date('d/m/Y') : '—' }}
+                            </td>
+                            <td data-label="Attestation">
+                                {% if ligne.estDetenteur() %}
+                                    <span class="{{ classesAttestation[etat.value] }}">
+                                        {{ etat.label() }}{% if etat.value == 'signee' %} le {{ ligne.signedAt()|date('d/m/Y') }}{% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="cles-meta">Sans objet</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Actions" class="cles-row-actions">
+                                {% if ligne.attendSignature() and detenteur.email %}
+                                    <form method="post" action="{{ path('admin_cles_demander_signature', {id: detenteur.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('cle_demander_signature_' ~ detenteur.id) }}">
+                                        <button type="submit" class="btn btn-secondary btn-sm">
+                                            {{ ui.icon('send', 14) }}
+                                            {{ etat.value == 'lien_envoye' ? 'Renvoyer le lien' : 'Envoyer le lien' }}
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        @click="modaleOuverte = true; personne = 'detenteur:{{ detenteur.id }}'; typeMouvement = 'remise'">
+                                    Mouvement
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {# — Derniers mouvements : les restitutions et les pertes n'apparaissent nulle part ailleurs — #}
+    {% if recents is not empty %}
+        <div class="cles-section">
+            <div class="cles-section-header">
+                <h2 class="cles-section-title">Derniers mouvements</h2>
+            </div>
+            <div class="table-wrapper">
+                <table class="table resp-table">
+                    <thead>
+                        <tr>
+                            <th>Personne</th>
+                            <th>Mouvement</th>
+                            <th>Quantité</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mouvement in recents %}
+                            <tr>
+                                <td data-label="Personne">{{ mouvement.detenteur.nomPrenom }}</td>
+                                <td data-label="Mouvement"><span class="cles-badge-{{ mouvement.type.value }}">{{ mouvement.type.label }}</span></td>
+                                <td data-label="Quantité">{{ mouvement.quantite }}</td>
+                                <td data-label="Date">{{ mouvement.dateMouvement|date('d/m/Y') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {# — Modale de saisie d'un mouvement — #}
+    <div class="cles-modal" x-show="modaleOuverte" x-cloak @click.self="modaleOuverte = false">
+        <div class="modal">
+            <h2 class="modal-titre">Enregistrer un mouvement de clé</h2>
+            <p class="cles-modal-hint">
+                L'historique n'est jamais modifié : une erreur se corrige par un mouvement inverse.
+            </p>
+
+            <form method="post" action="{{ path('admin_cles_mouvement') }}" class="cles-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('cle_mouvement') }}">
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-personne">Personne</label>
+                    <select name="personne" id="cle-personne" class="field-input" x-model="personne" required>
+                        <option value="">— Sélectionner —</option>
+                        {% if candidats.detenteurs is not empty %}
+                            <optgroup label="Au registre des clés">
+                                {% for candidat in candidats.detenteurs %}
+                                    <option value="{{ candidat.reference }}">{{ candidat.label }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endif %}
+                        {% if candidats.dirigeants is not empty %}
+                            <optgroup label="Dirigeants de la saison {{ season.label }}">
+                                {% for candidat in candidats.dirigeants %}
+                                    <option value="{{ candidat.reference }}">{{ candidat.label }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-type">Type de mouvement</label>
+                    <select name="type" id="cle-type" class="field-input" x-model="typeMouvement" required>
+                        <option value="remise">Remise</option>
+                        <option value="restitution">Restitution</option>
+                        <option value="perte">Perte</option>
+                    </select>
+                </div>
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-quantite">Nombre de clés</label>
+                    <input type="number" name="quantite" id="cle-quantite" class="field-input" value="1" min="1" required>
+                </div>
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-date">Date</label>
+                    <input type="date" name="date_mouvement" id="cle-date" class="field-input"
+                           value="{{ 'now'|date('Y-m-d') }}" required>
+                </div>
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-note">Note (facultatif)</label>
+                    <input type="text" name="note" id="cle-note" class="field-input"
+                           placeholder="Ex. : clé du portail arrière">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" @click="modaleOuverte = false">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# — Modale d'ajout d'une personne extérieure à l'effectif — #}
+    <div class="cles-modal" x-show="modaleExterieur" x-cloak @click.self="modaleExterieur = false">
+        <div class="modal">
+            <h2 class="modal-titre">Ajouter une personne extérieure</h2>
+            <p class="cles-modal-hint">
+                Pour quelqu'un qui ne figure pas à l'effectif : mairie, entreprise d'entretien,
+                association qui utilise le local. Un dirigeant, lui, s'ajoute directement depuis
+                le formulaire de remise.
+            </p>
+
+            <form method="post" action="{{ path('admin_cles_detenteur_exterieur') }}" class="cles-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('cle_detenteur_exterieur') }}">
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-ext-nom">Nom</label>
+                    <input type="text" name="nom" id="cle-ext-nom" class="field-input" required>
+                </div>
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-ext-prenom">Prénom</label>
+                    <input type="text" name="prenom" id="cle-ext-prenom" class="field-input" required>
+                </div>
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-ext-qualite">Qualité (facultatif)</label>
+                    <input type="text" name="qualite" id="cle-ext-qualite" class="field-input"
+                           placeholder="Ex. : Mairie de Soudron">
+                </div>
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-ext-email">Email (facultatif)</label>
+                    <input type="email" name="email" id="cle-ext-email" class="field-input"
+                           placeholder="Sans adresse, l'attestation se signe sur place">
+                </div>
+
+                <div class="cles-form-row">
+                    <label class="field-label" for="cle-ext-telephone">Téléphone (facultatif)</label>
+                    <input type="tel" name="telephone" id="cle-ext-telephone" class="field-input">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" @click="modaleExterieur = false">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

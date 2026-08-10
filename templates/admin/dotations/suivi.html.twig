@@ -1,0 +1,157 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Suivi des dotations{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Dotations', route: 'admin_dotations_dashboard' },
+    { label: 'Modèles', route: 'admin_dotations_modeles' },
+    { label: 'Suivi' }
+] } %}
+
+<div class="dot-page">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Suivi des dotations</h1>
+            <p class="dot-subtitle">Ce que chaque personne doit recevoir et ce qui a déjà été remis.</p>
+        </div>
+        <div class="dot-header-actions">
+            <a href="{{ path('admin_dotations_flocage') }}" class="btn btn-secondary">Liste de flocage</a>
+            <form method="post" action="{{ path('admin_dotations_recalculer') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('dotation_recalculer') }}">
+                <button type="submit" class="btn btn-secondary">↻ Recalculer les besoins</button>
+            </form>
+        </div>
+    </div>
+
+    {% if groupes is empty %}
+        <div class="dot-card">
+            <p class="dot-empty">
+                Aucun besoin. Configurez des modèles + affectations, validez des licenciés (paiement confirmé)
+                ou complétez des dossiers dirigeants, puis cliquez sur « Recalculer les besoins ».
+            </p>
+        </div>
+    {% endif %}
+
+    {% for groupe in groupes %}
+        <div class="dot-card" x-data="{ open: false }"
+             x-init="if (sessionStorage.getItem('dotOpenGroup') === '{{ loop.index }}') { open = true; sessionStorage.removeItem('dotOpenGroup'); }"
+             @submit.capture="sessionStorage.setItem('dotOpenGroup', '{{ loop.index }}')">
+            <button type="button" class="dot-card-header dot-card-toggle" @click="open = !open"
+                    :aria-expanded="open" aria-label="Déplier / replier l'équipe">
+                <svg class="dot-card-chevron" :class="{ 'dot-card-chevron-open': open }"
+                     width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                <h2 class="dot-card-title">{{ groupe.nom }}</h2>
+                {% if groupe.restants > 0 %}
+                    <span class="dot-card-count dot-card-count-todo">{{ groupe.restants }} à remettre</span>
+                {% else %}
+                    <span class="dot-card-count dot-card-count-done">Tout remis</span>
+                {% endif %}
+                <span class="dot-card-count">{{ groupe.total }}</span>
+            </button>
+
+            <div class="table-wrapper" x-show="open" x-collapse x-cloak>
+                <table class="table resp-table">
+                    <thead>
+                        <tr>
+                            <th>Personne</th>
+                            <th>Article</th>
+                            <th>Taille</th>
+                            <th>Qté</th>
+                            <th>Statut</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for besoin in groupe.besoins %}
+                            <tr>
+                                <td>
+                                    <span class="dot-person-name">{{ besoin.nomPrenom }}</span>
+                                    <span class="dot-person-role">{{ besoin.roleLabel }}</span>
+                                </td>
+                                <td>
+                                    {% include 'admin/dotations/_option_cell.html.twig' with {
+                                        besoin: besoin,
+                                        options: optionsParBesoin[besoin.id] ?? [],
+                                    } only %}
+                                    {% include 'admin/dotations/_flocage_cell.html.twig' with { besoin: besoin } only %}
+                                </td>
+                                <td>
+                                    {% set options = besoin.stockItem.typeVetement and besoin.stockItem.typeVetement.value == 'chaussures' ? pointures : taillesConnues %}
+                                    {% set estDonne = besoin.statut.value == 'donne' %}
+                                    <div x-data="{ editing: false }" class="dot-taille-edit">
+                                        <div x-show="!editing" class="dot-taille-display">
+                                            {% if besoin.taille %}
+                                                <span class="dot-item-taille">{{ besoin.taille }}</span>
+                                            {% elseif estDonne %}
+                                                <span class="dot-taille-none">—</span>
+                                            {% elseif besoin.stockItem.typeVetement %}
+                                                <span class="dot-item-taille-missing">à renseigner</span>
+                                            {% elseif besoin.stockItem.kind and besoin.stockItem.kind.value == 'equipement' %}
+                                                <a href="{{ path('admin_stock_items_edit', {id: besoin.stockItem.id}) }}"
+                                                   class="dot-taille-config"
+                                                   title="Définir le type de vêtement de l'article pour récupérer automatiquement la taille du licencié">type à définir ↗</a>
+                                            {% else %}
+                                                <span class="dot-taille-none">—</span>
+                                            {% endif %}
+                                            <button type="button" class="dot-taille-pen" @click="editing = true"
+                                                    title="{{ estDonne ? 'Corriger la taille remise (ajuste le stock)' : 'Modifier la taille' }}" aria-label="Modifier la taille">
+                                                {{ ui.icon('edit', 14) }}
+                                            </button>
+                                        </div>
+                                        <form x-show="editing" x-cloak method="post"
+                                              action="{{ path('admin_dotations_besoin_taille', {id: besoin.id}) }}"
+                                              class="dot-taille-form">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_taille_' ~ besoin.id) }}">
+                                            <select name="taille" class="field-input field-input-compact"
+                                                    x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
+                                                <option value="">— Aucune —</option>
+                                                {% if besoin.taille and besoin.taille not in options %}
+                                                    <option value="{{ besoin.taille }}" selected>{{ besoin.taille }}</option>
+                                                {% endif %}
+                                                {% for t in options %}
+                                                    <option value="{{ t }}"{{ besoin.taille == t ? ' selected' }}>{{ t }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
+                                            <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
+                                        </form>
+                                    </div>
+                                </td>
+                                <td>{{ besoin.quantite }}</td>
+                                <td>
+                                    {% if besoin.statut.value == 'donne' %}
+                                        <span class="dot-badge dot-badge-done">{{ besoin.statut.label }}</span>
+                                    {% else %}
+                                        <span class="dot-badge dot-badge-todo">{{ besoin.statut.label }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="dot-table-action">
+                                    {% if besoin.statut.value == 'donne' %}
+                                        <form method="post" action="{{ path('admin_dotations_besoin_annuler', {id: besoin.id}) }}" style="display:inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_annuler_' ~ besoin.id) }}">
+                                            <button type="submit" class="btn btn-danger btn-sm">Annuler</button>
+                                        </form>
+                                    {% else %}
+                                        <form method="post" action="{{ path('admin_dotations_besoin_remise', {id: besoin.id}) }}" style="display:inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_remise_' ~ besoin.id) }}">
+                                            <button type="submit" class="btn btn-primary btn-sm">Marquer remis</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

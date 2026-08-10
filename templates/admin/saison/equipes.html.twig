@@ -1,0 +1,118 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Équipes{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Équipes' }
+] } %}
+
+{% set ms_opts = categories|map(c => {value: c.id, label: c.code}) %}
+
+<div class="season-form-page">
+
+    <div class="season-form-card config-teams-card" x-data="{ editingTeam: null, addingTeam: {{ newTeamForm.vars.submitted ? 'true' : 'false' }} }">
+
+        <h1 class="season-form-header">Équipes de la saison</h1>
+        <p class="config-teams-intro">
+            Associez des catégories FFF à chaque équipe pour filtrer les listes et activer
+            l'assignation automatique à l'import. Les montants se règlent dans
+            <a href="{{ path('admin_cotisations_index') }}">Cotisations</a>.
+        </p>
+        <hr class="season-form-divider">
+
+        {% if teams is empty %}
+            <p class="season-form-empty">Aucune équipe configurée.</p>
+        {% else %}
+            <ul class="config-teams-list">
+                {% for team in teams %}
+                    <li class="config-teams-item">
+
+                        {# — Vue normale — #}
+                        <div class="config-teams-row" x-show="editingTeam !== {{ team.id }}">
+                            <div class="config-teams-info">
+                                <span class="config-teams-name">{{ team.name }}</span>
+                            </div>
+                            <div class="config-teams-btns">
+                                <button type="button" class="btn btn-secondary btn-sm" @click="editingTeam = {{ team.id }}">Modifier</button>
+                                {% include 'components/_form_suppression.html.twig' with {
+                                    action: path('admin_equipes_delete', {id: team.id}),
+                                    jeton: 'delete_team_' ~ team.id,
+                                    message: 'Supprimer cette équipe ?',
+                                } only %}
+                            </div>
+                        </div>
+
+                        {# — Formulaire d'édition — #}
+                        <form method="post" action="{{ path('admin_equipes_edit', {id: team.id}) }}"
+                              class="config-teams-edit-form"
+                              x-show="editingTeam === {{ team.id }}"
+                              style="display:none">
+                            <input type="hidden" name="_token" value="{{ csrf_token('edit_team_' ~ team.id) }}">
+                            <div class="field" style="margin:0">
+                                <label class="field-label" style="font-size:var(--font-size-xs)">Nom</label>
+                                <input type="text" name="team[name]" value="{{ team.name }}" class="field-input" required>
+                            </div>
+                            <div class="field" style="margin:0">
+                                <label class="field-label" style="font-size:var(--font-size-xs)">Catégories FFF</label>
+                                {% include 'components/multi-select.html.twig' with {
+                                    ms_name: 'team[categories][]',
+                                    ms_options: ms_opts,
+                                    ms_selected: team.categories|map(c => c.id),
+                                    ms_placeholder: '— Aucune (ex : Loisirs) —'
+                                } %}
+                            </div>
+                            <div class="config-teams-edit-actions">
+                                <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                                <button type="button" class="btn btn-ghost btn-sm" @click="editingTeam = null">Annuler</button>
+                            </div>
+                        </form>
+
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <hr class="season-form-divider">
+
+        <button type="button" class="btn btn-primary" x-show="!addingTeam" @click="addingTeam = true">
+            {{ ui.icon('plus') }}
+            Ajouter une équipe
+        </button>
+
+        <div class="config-teams-add-block" x-show="addingTeam" x-cloak>
+            <p class="season-form-header" style="font-size:var(--font-size-sm);font-weight:700;color:var(--color-text-body)">Ajouter une équipe</p>
+
+            {{ form_start(newTeamForm, {attr: {class: 'config-teams-add-form'}}) }}
+                <div class="field">
+                    {{ form_label(newTeamForm.name) }}
+                    {{ form_widget(newTeamForm.name) }}
+                    {{ form_errors(newTeamForm.name) }}
+                </div>
+                <div class="field">
+                    {{ form_label(newTeamForm.categories) }}
+                    {# Widget Symfony rendu caché — les coches sont gérées par le composant Alpine ci-dessous #}
+                    <div style="display:none">{{ form_widget(newTeamForm.categories) }}</div>
+                    {% include 'components/multi-select.html.twig' with {
+                        ms_name: 'team_setup[categories][]',
+                        ms_options: ms_opts,
+                        ms_selected: [],
+                        ms_placeholder: '— Aucune (ex : Loisirs) —'
+                    } %}
+                    <p class="config-teams-hint" style="margin-top:0.375rem">Assignation automatique à l'import. Laissez vide si non applicable.</p>
+                    {{ form_errors(newTeamForm.categories) }}
+                </div>
+                <div class="config-teams-edit-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">Ajouter l'équipe</button>
+                    <button type="button" class="btn btn-ghost" @click="addingTeam = false">Annuler</button>
+                </div>
+            {{ form_end(newTeamForm) }}
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

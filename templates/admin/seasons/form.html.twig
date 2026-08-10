@@ -5,7 +5,7 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Configuration', route: 'admin_config_index' },
+    { label: 'Saisons', route: 'admin_seasons_index' },
     { label: title }
 ] } %}
 
@@ -17,21 +17,37 @@
 
         <hr class="season-form-divider">
 
-        <div class="season-form-field" x-data="{ year: {{ form.startYear.vars.value }} }">
+        <div class="field" x-data="{ year: {{ form.startYear.vars.value }} }">
             {{ form_label(form.startYear) }}
             {{ form_widget(form.startYear, { attr: { 'x-model.number': 'year' } }) }}
             {{ form_errors(form.startYear) }}
             <p class="season-form-preview" x-text="'Saison ' + year + '–' + (year + 1)"></p>
         </div>
 
-        <div class="season-form-field">
-            {{ form_label(form.cotisationDefaut) }}
-            {{ form_widget(form.cotisationDefaut) }}
-            {{ form_help(form.cotisationDefaut) }}
-            {{ form_errors(form.cotisationDefaut) }}
-        </div>
+        {# Le montant n'est demandé qu'à la création : ensuite il appartient à l'écran
+           Cotisations, seul propriétaire des montants de la saison. #}
+        {% if form.cotisationDefaut is defined %}
+            <div class="field">
+                {{ form_label(form.cotisationDefaut) }}
+                {{ form_widget(form.cotisationDefaut) }}
+                {{ form_help(form.cotisationDefaut) }}
+                {{ form_errors(form.cotisationDefaut) }}
+            </div>
+        {% else %}
+            {# L'écran Cotisations porte toujours sur la saison de travail : n'y renvoyer que
+               si c'est bien celle qu'on modifie. #}
+            {% set courante = season and navbar_current_season and season.id == navbar_current_season.id %}
+            <p class="field-hint">
+                La cotisation par défaut se règle avec les montants des équipes, dans l'écran
+                {% if courante %}
+                    <a href="{{ path('admin_cotisations_index') }}">Cotisations</a>.
+                {% else %}
+                    Cotisations de cette saison, une fois que vous y travaillez.
+                {% endif %}
+            </p>
+        {% endif %}
 
-        <button type="submit" class="season-form-submit">Enregistrer</button>
+        <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
 
     {{ form_end(form) }}
 

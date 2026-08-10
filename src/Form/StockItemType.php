@@ -16,6 +16,7 @@ use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\PositiveOrZero;
 
+/** @extends AbstractType<StockItem> */
 class StockItemType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -23,56 +24,56 @@ class StockItemType extends AbstractType
         $builder
             // — Identification —
             ->add('nom', TextType::class, [
-                'label'       => 'Nom de l\'article',
+                'label' => 'Nom de l\'article',
                 'constraints' => [new NotBlank(), new Length(max: 150)],
-                'attr'        => ['placeholder' => 'ex: Maillot domicile, Coca-Cola 33cl'],
+                'attr' => ['placeholder' => 'ex: Maillot domicile, Coca-Cola 33cl'],
             ])
             // marque, taille, couleur sont gérés via le composant text-combobox dans le template
 
             // — Catégorisation —
             ->add('category', EntityType::class, [
-                'label'        => 'Catégorie',
-                'class'        => StockCategory::class,
+                'label' => 'Catégorie',
+                'class' => StockCategory::class,
                 'choice_label' => 'name',
-                'placeholder'  => '— Sans catégorie —',
-                'required'     => false,
+                'placeholder' => '— Sans catégorie —',
+                'required' => false,
             ])
             ->add('fournisseur', EntityType::class, [
-                'label'        => 'Fournisseur',
-                'class'        => Fournisseur::class,
+                'label' => 'Fournisseur',
+                'class' => Fournisseur::class,
                 'choice_label' => 'nom',
-                'placeholder'  => '— Sans fournisseur —',
-                'required'     => false,
-                'help'         => 'Regroupe les bons de commande par fournisseur.',
+                'placeholder' => '— Sans fournisseur —',
+                'required' => false,
+                'help' => 'Regroupe les bons de commande par fournisseur.',
             ])
             // kind, typeVetement, marque, taille, couleur gérés manuellement (conditionnels sur kind)
 
             // — Stock & budget —
             ->add('alertSeuil', IntegerType::class, [
-                'label'       => 'Seuil d\'alerte',
-                'required'    => false,
+                'label' => 'Seuil d\'alerte',
+                'required' => false,
                 'constraints' => [new PositiveOrZero()],
-                'attr'        => ['placeholder' => 'ex: 5'],
-                'help'        => 'Alerte orange quand le stock atteint ce seuil.',
+                'attr' => ['placeholder' => 'ex: 5'],
+                'help' => 'Alerte orange quand le stock atteint ce seuil.',
             ])
             ->add('prixAchat', NumberType::class, [
-                'label'    => 'Prix d\'achat unitaire (€)',
+                'label' => 'Prix d\'achat unitaire (€)',
                 'required' => false,
-                'scale'    => 2,
-                'attr'     => ['placeholder' => 'ex: 12.50'],
-                'help'     => 'Pour le suivi budgétaire. Non affiché aux licenciés.',
+                'scale' => 2,
+                'attr' => ['placeholder' => 'ex: 12.50'],
+                'help' => 'Pour le suivi budgétaire. Non affiché aux licenciés.',
             ])
 
             // — Référence —
             ->add('refCatalogue', TextType::class, [
-                'label'    => 'Référence catalogue',
+                'label' => 'Référence catalogue',
                 'required' => false,
-                'attr'     => ['placeholder' => 'ex: NK-2025-001'],
+                'attr' => ['placeholder' => 'ex: NK-2025-001'],
             ])
             ->add('lienAchat', TextType::class, [
-                'label'    => 'Lien de l\'article',
+                'label' => 'Lien de l\'article',
                 'required' => false,
-                'attr'     => ['placeholder' => 'https://… (fiche catalogue du fournisseur)'],
+                'attr' => ['placeholder' => 'https://… (fiche catalogue du fournisseur)'],
             ]);
     }
 

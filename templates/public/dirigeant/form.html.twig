@@ -2,326 +2,233 @@
 
 {% block title %}Dossier dirigeant — Foyer de Soudron{% endblock %}
 
-{% block head %}
-    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js" defer></script>
+{% block page_attributs %} x-data="dirigeantForm({{ config|json_encode }})"{% endblock %}
+
+{% block entete_droite %}
+    <span class="inscription-header-step" x-text="`Étape ${displayStep} sur ${totalSteps}`"></span>
 {% endblock %}
 
-{% block body %}
-<div class="inscription-page"
-     x-data="dirigeantForm({
-         needTaille: {{ needTaille ? 'true' : 'false' }},
-         needPhoto: {{ needPhoto ? 'true' : 'false' }},
-         needTransport: {{ needTransport ? 'true' : 'false' }},
-         needReglement: {{ needReglement ? 'true' : 'false' }}
-     })">
+{% block entete_extra %}
+    <div class="inscription-progress">
+        <template x-for="i in totalSteps" :key="i">
+            <div class="inscription-progress-segment"
+                 :class="displayStep >= i ? 'inscription-progress-segment-done' : ''"></div>
+        </template>
+    </div>
+{% endblock %}
 
+{% block contenu %}
     {# — Header — #}
-    <header class="inscription-header">
-        <div class="inscription-header-top">
-            <span class="inscription-header-club">Foyer de Soudron</span>
-            <span class="inscription-header-step" x-text="`Étape ${displayStep} sur ${totalSteps}`"></span>
+
+    <form method="post" action="{{ path('public_dirigeant_submit', {uuid: dirigeant.uuid}) }}"
+          @submit="submitting = true">
+        <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_submit') }}">
+        <input type="hidden" name="attestation_signature_data" :value="signatureDataAttestation">
+
+        {# ── Étape 1 : Bienvenue ── #}
+        <div x-show="step === 1" class="inscription-card">
+            <h1 class="inscription-welcome-name">Bonjour {{ dirigeant.prenom }} 👋</h1>
+            <p class="inscription-welcome-text">
+                En tant que <strong>{{ dirigeant.role.label() }}</strong> au <strong>Foyer de Soudron</strong>
+                pour la saison <strong>{{ dirigeant.season.label }}</strong>, merci de compléter votre dossier dirigeant.
+            </p>
+            <p class="inscription-welcome-text">
+                Il vous prendra moins de deux minutes.
+            </p>
+            {% include 'public/_rgpd_note.html.twig' %}
+            <button type="button" @click="next" class="btn btn-primary btn-block">
+                Commencer →
+            </button>
         </div>
-        <div class="inscription-progress">
-            <template x-for="i in totalSteps" :key="i">
-                <div class="inscription-progress-segment"
-                     :class="displayStep >= i ? 'inscription-progress-segment-done' : ''"></div>
+
+        {% if config.needTaille %}
+        {# ── Étape 2 : Équipement ── #}
+        <div x-show="step === 2" class="inscription-card">
+            <h2 class="inscription-step-title">Tailles d'équipement</h2>
+            <div class="inscription-fields">
+
+                <div class="field">
+                    <label class="field-label">Taille haut *</label>
+                    {% include 'components/_select_liste.html.twig' with {
+                        modele: 'tailleHaut',
+                        nom: 'taille_haut',
+                        groupes: [{ label: 'Tailles enfants', options: tailles_enfant() }, { label: 'Tailles adultes', options: tailles_adulte() }],
+                    } only %}
+                </div>
+
+                <div class="field">
+                    <label class="field-label">Taille bas *</label>
+                    {% include 'components/_select_liste.html.twig' with {
+                        modele: 'tailleBas',
+                        nom: 'taille_bas',
+                        groupes: [{ label: 'Tailles enfants', options: tailles_enfant() }, { label: 'Tailles adultes', options: tailles_adulte() }],
+                    } only %}
+                </div>
+
+                <div class="field">
+                    <label class="field-label">Pointure *</label>
+                    {% include 'components/_select_liste.html.twig' with {
+                        modele: 'pointure',
+                        nom: 'pointure',
+                        groupes: [{ options: pointures() }],
+                    } only %}
+                </div>
+
+            </div>
+        </div>
+        {% endif %}
+
+        {% if config.needPhoto or config.needTransport %}
+        {# ── Étape 3 : Autorisations ── #}
+        <div x-show="step === 3" class="inscription-card">
+            <h2 class="inscription-step-title">Autorisations</h2>
+            <div class="inscription-fields">
+
+                {% if config.needPhoto %}
+                <div class="inscription-question-block">
+                    <span class="inscription-question-label">Droit à l'image *</span>
+                    <span class="inscription-question-hint">Autorisation de diffuser des photos/vidéos vous concernant sur les supports du club.</span>
+                    <div class="inscription-radio-group">
+                        <label class="inscription-radio-option">
+                            <input type="radio" name="autorisation_photo" value="1" x-model="autorisationPhoto">
+                            <span class="inscription-radio-label">Oui</span>
+                        </label>
+                        <label class="inscription-radio-option">
+                            <input type="radio" name="autorisation_photo" value="0" x-model="autorisationPhoto">
+                            <span class="inscription-radio-label">Non</span>
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if config.needTransport %}
+                {% if config.needPhoto %}<hr class="inscription-question-divider">{% endif %}
+                <div class="inscription-question-block">
+                    <span class="inscription-question-label">Transport des licenciés *</span>
+                    <span class="inscription-question-hint">Acceptez-vous de transporter des licenciés du club lors des déplacements ?</span>
+                    <div class="inscription-radio-group">
+                        <label class="inscription-radio-option">
+                            <input type="radio" name="volontaire_transport" value="1" x-model="volontaireTransport">
+                            <span class="inscription-radio-label">Oui</span>
+                        </label>
+                        <label class="inscription-radio-option">
+                            <input type="radio" name="volontaire_transport" value="0" x-model="volontaireTransport">
+                            <span class="inscription-radio-label">Non</span>
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endif %}
+
+        {% if config.needTransport %}
+        {# ── Étape 4 : Attestation transport (uniquement si volontaire) ── #}
+        <div x-show="step === 4" class="inscription-card">
+            <h2 class="inscription-step-title">Attestation de transport</h2>
+            <p class="inscription-attestation-intro">Merci de votre engagement ! Ces informations sont nécessaires pour assurer la sécurité des licenciés transportés. Elles ne seront pas conservées en base de données — seul le document signé sera archivé.</p>
+
+            <div class="inscription-fields">
+
+                <div class="field">
+                    <label class="field-label">Nom *</label>
+                    <input type="text" name="attestation_nom_conducteur" x-model="nomConducteur"
+                           class="field-input" placeholder="NOM" autocomplete="family-name">
+                </div>
+
+                <div class="field">
+                    <label class="field-label">Prénom *</label>
+                    <input type="text" name="attestation_prenom_conducteur" x-model="prenomConducteur"
+                           class="field-input" placeholder="Prénom" autocomplete="given-name">
+                </div>
+
+                <div class="field">
+                    <label class="field-label">Numéro de permis de conduire *</label>
+                    <input type="text" name="attestation_num_permis" x-model="numPermis"
+                           class="field-input" placeholder="Ex : 01AA00000" autocomplete="off">
+                </div>
+
+                <div class="field">
+                    <label class="field-label">Nom et adresse de l'assurance *</label>
+                    <textarea name="attestation_assurance" x-model="assuranceNomAdresse"
+                              class="field-input" rows="3"
+                              placeholder="Ex : Macif — 12 rue de la Paix, 75001 Paris"></textarea>
+                </div>
+
+                <label class="inscription-checkbox-row">
+                    <input type="checkbox" name="attestation_vehicule_neuf" value="1" x-model="vehiculeNeuf">
+                    <span class="inscription-checkbox-text">Véhicule neuf, sans contrôle technique à ce jour</span>
+                </label>
+
+                <div class="field" x-show="!vehiculeNeuf">
+                    <label class="field-label">Date du dernier contrôle technique *</label>
+                    <input type="date" name="attestation_date_ct" x-model="dateCT"
+                           class="field-input" :class="dateCTFuture ? 'inscription-input-error' : ''"
+                           max="{{ 'now'|date('Y-m-d') }}">
+                    <p x-show="dateCTFuture" class="inscription-field-error">
+                        La date du contrôle technique ne peut pas être dans le futur.
+                    </p>
+                </div>
+
+                <label class="inscription-checkbox-row">
+                    <input type="checkbox" name="attestation_engagement" value="1" x-model="engagementAttestation">
+                    <span class="inscription-checkbox-text">Je m'engage à prévenir le club en cas de changement de situation (retrait de permis, résiliation d'assurance, défaut de contrôle technique).</span>
+                </label>
+
+                <div>
+                    <p class="inscription-signature-label">Signature *</p>
+                    <p class="inscription-signature-hint">Signez dans le cadre ci-dessous avec votre doigt ou votre souris.</p>
+                    <div class="inscription-signature-wrap">
+                        <canvas class="inscription-signature-canvas" x-ref="signatureCanvasAttestation"></canvas>
+                        <div class="inscription-signature-bar">
+                            <button type="button" @click="clearAttestationSignature" class="inscription-signature-clear">
+                                Effacer
+                            </button>
+                            <span class="inscription-signature-saved" x-show="signatureDataAttestation !== ''">
+                                ✓ Signature enregistrée
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Étapes 5+ : un document à lire et signer par étape ── #}
+        {% for doc in documents %}
+            {% include 'public/_document_signature_step.html.twig' with {
+                doc: doc,
+                index: loop.index0,
+                stepShow: 'step === ' ~ (5 + loop.index0)
+            } only %}
+        {% endfor %}
+
+        {# ── Navigation ── #}
+        <div class="inscription-nav">
+            <template x-if="step > 1">
+                <button type="button" @click="prev" class="btn btn-ghost">
+                    ← Précédent
+                </button>
+            </template>
+
+            <template x-if="step > 1 && displayStep < totalSteps">
+                <button type="button" @click="next" :disabled="!canGoNext" class="btn btn-primary btn-block">
+                    Suivant →
+                </button>
+            </template>
+
+            <template x-if="displayStep === totalSteps">
+                <button type="submit" :disabled="!canGoNext || submitting" class="btn btn-primary btn-block">
+                    Valider ✓
+                </button>
             </template>
         </div>
-    </header>
 
-    {# — Flash — #}
-    {% for message in app.flashes('error') %}
-        <div class="inscription-flash-error">{{ message }}</div>
-    {% endfor %}
+    </form>
+{% endblock %}
 
-    <main class="inscription-main">
-        <div class="inscription-container">
-
-            <form method="post" action="{{ path('public_dirigeant_submit', {uuid: dirigeant.uuid}) }}"
-                  @submit="submitting = true">
-                <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_submit') }}">
-                <input type="hidden" name="attestation_signature_data" :value="signatureDataAttestation">
-                <input type="hidden" name="signature_data" :value="signatureData">
-
-                {# ── Étape 1 : Bienvenue ── #}
-                <div x-show="step === 1" class="inscription-card">
-                    <h1 class="inscription-welcome-name">Bonjour {{ dirigeant.prenom }} 👋</h1>
-                    <p class="inscription-welcome-text">
-                        {% if dirigeant.role %}
-                            En tant que <strong>{{ dirigeant.role }}</strong> au <strong>Foyer de Soudron</strong>
-                        {% else %}
-                            En tant que dirigeant(e) au <strong>Foyer de Soudron</strong>
-                        {% endif %}
-                        pour la saison <strong>{{ dirigeant.season.label }}</strong>, merci de compléter votre dossier dirigeant.
-                    </p>
-                    <p class="inscription-welcome-text">
-                        Il vous prendra moins de deux minutes.
-                    </p>
-                    <button type="button" @click="next" class="inscription-btn-start">
-                        Commencer →
-                    </button>
-                </div>
-
-                {% if needTaille %}
-                {# ── Étape 2 : Équipement ── #}
-                <div x-show="step === 2" class="inscription-card">
-                    <h2 class="inscription-step-title">Tailles d'équipement</h2>
-                    <div class="inscription-fields">
-
-                        <div class="inscription-field">
-                            <label class="inscription-label">Taille haut *</label>
-                            <div x-data="{
-                                open: false, top: 0, left: 0, width: 0,
-                                toggle() {
-                                    if (!this.open) {
-                                        const r = this.$refs.trigger.getBoundingClientRect();
-                                        this.top = (window.innerHeight - r.bottom < 230) ? r.top - 230 - 4 : r.bottom + 4;
-                                        this.left = r.left; this.width = r.width;
-                                    }
-                                    this.open = !this.open;
-                                }
-                            }" @click.outside="open = false" class="cselect">
-                                <button x-ref="trigger" type="button" @click="toggle()" :class="{'cselect-trigger-open': open}" class="cselect-trigger">
-                                    <span x-text="tailleHaut || '— Choisir —'" :class="{'cselect-placeholder': !tailleHaut}"></span>
-                                    <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </button>
-                                <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
-                                    <li class="cselect-optgroup-label">Tailles enfants</li>
-                                    {% for t in ['6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'] %}
-                                        <li @mousedown.prevent="tailleHaut = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleHaut === '{{ t }}'}" class="cselect-option">{{ t }}</li>
-                                    {% endfor %}
-                                    <li class="cselect-optgroup-label">Tailles adultes</li>
-                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'] %}
-                                        <li @mousedown.prevent="tailleHaut = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleHaut === '{{ t }}'}" class="cselect-option">{{ t }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <input type="hidden" name="taille_haut" :value="tailleHaut">
-                            </div>
-                        </div>
-
-                        <div class="inscription-field">
-                            <label class="inscription-label">Taille bas *</label>
-                            <div x-data="{
-                                open: false, top: 0, left: 0, width: 0,
-                                toggle() {
-                                    if (!this.open) {
-                                        const r = this.$refs.trigger.getBoundingClientRect();
-                                        this.top = (window.innerHeight - r.bottom < 230) ? r.top - 230 - 4 : r.bottom + 4;
-                                        this.left = r.left; this.width = r.width;
-                                    }
-                                    this.open = !this.open;
-                                }
-                            }" @click.outside="open = false" class="cselect">
-                                <button x-ref="trigger" type="button" @click="toggle()" :class="{'cselect-trigger-open': open}" class="cselect-trigger">
-                                    <span x-text="tailleBas || '— Choisir —'" :class="{'cselect-placeholder': !tailleBas}"></span>
-                                    <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </button>
-                                <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
-                                    <li class="cselect-optgroup-label">Tailles enfants</li>
-                                    {% for t in ['6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'] %}
-                                        <li @mousedown.prevent="tailleBas = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleBas === '{{ t }}'}" class="cselect-option">{{ t }}</li>
-                                    {% endfor %}
-                                    <li class="cselect-optgroup-label">Tailles adultes</li>
-                                    {% for t in ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'] %}
-                                        <li @mousedown.prevent="tailleBas = '{{ t }}'; open = false" :class="{'cselect-option-active': tailleBas === '{{ t }}'}" class="cselect-option">{{ t }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <input type="hidden" name="taille_bas" :value="tailleBas">
-                            </div>
-                        </div>
-
-                        <div class="inscription-field">
-                            <label class="inscription-label">Pointure *</label>
-                            <div x-data="{
-                                open: false, top: 0, left: 0, width: 0,
-                                toggle() {
-                                    if (!this.open) {
-                                        const r = this.$refs.trigger.getBoundingClientRect();
-                                        this.top = (window.innerHeight - r.bottom < 230) ? r.top - 230 - 4 : r.bottom + 4;
-                                        this.left = r.left; this.width = r.width;
-                                    }
-                                    this.open = !this.open;
-                                }
-                            }" @click.outside="open = false" class="cselect">
-                                <button x-ref="trigger" type="button" @click="toggle()" :class="{'cselect-trigger-open': open}" class="cselect-trigger">
-                                    <span x-text="pointure || '— Choisir —'" :class="{'cselect-placeholder': !pointure}"></span>
-                                    <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </button>
-                                <ul x-show="open" x-cloak class="cselect-dropdown" :style="`top:${top}px;left:${left}px;width:${width}px`">
-                                    {% for p in range(24, 50) %}
-                                        <li @mousedown.prevent="pointure = '{{ p }}'; open = false" :class="{'cselect-option-active': pointure === '{{ p }}'}" class="cselect-option">{{ p }}</li>
-                                    {% endfor %}
-                                </ul>
-                                <input type="hidden" name="pointure" :value="pointure">
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if needPhoto or needTransport %}
-                {# ── Étape 3 : Autorisations ── #}
-                <div x-show="step === 3" class="inscription-card">
-                    <h2 class="inscription-step-title">Autorisations</h2>
-                    <div class="inscription-fields">
-
-                        {% if needPhoto %}
-                        <div class="inscription-question-block">
-                            <span class="inscription-question-label">Droit à l'image *</span>
-                            <span class="inscription-question-hint">Autorisation de diffuser des photos/vidéos vous concernant sur les supports du club.</span>
-                            <div class="inscription-radio-group">
-                                <label class="inscription-radio-option">
-                                    <input type="radio" name="autorisation_photo" value="1" x-model="autorisationPhoto">
-                                    <span class="inscription-radio-label">Oui</span>
-                                </label>
-                                <label class="inscription-radio-option">
-                                    <input type="radio" name="autorisation_photo" value="0" x-model="autorisationPhoto">
-                                    <span class="inscription-radio-label">Non</span>
-                                </label>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if needTransport %}
-                        {% if needPhoto %}<hr class="inscription-question-divider">{% endif %}
-                        <div class="inscription-question-block">
-                            <span class="inscription-question-label">Transport des licenciés *</span>
-                            <span class="inscription-question-hint">Acceptez-vous de transporter des licenciés du club lors des déplacements ?</span>
-                            <div class="inscription-radio-group">
-                                <label class="inscription-radio-option">
-                                    <input type="radio" name="volontaire_transport" value="1" x-model="volontaireTransport">
-                                    <span class="inscription-radio-label">Oui</span>
-                                </label>
-                                <label class="inscription-radio-option">
-                                    <input type="radio" name="volontaire_transport" value="0" x-model="volontaireTransport">
-                                    <span class="inscription-radio-label">Non</span>
-                                </label>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if needTransport %}
-                {# ── Étape 4 : Attestation transport (uniquement si volontaire) ── #}
-                <div x-show="step === 4" class="inscription-card">
-                    <h2 class="inscription-step-title">Attestation de transport</h2>
-                    <p class="inscription-attestation-intro">Merci de votre engagement ! Ces informations sont nécessaires pour assurer la sécurité des licenciés transportés. Elles ne seront pas conservées en base de données — seul le document signé sera archivé.</p>
-
-                    <div class="inscription-fields">
-
-                        <div class="inscription-field">
-                            <label class="inscription-label">Nom *</label>
-                            <input type="text" name="attestation_nom_conducteur" x-model="nomConducteur"
-                                   class="inscription-input" placeholder="NOM" autocomplete="family-name">
-                        </div>
-
-                        <div class="inscription-field">
-                            <label class="inscription-label">Prénom *</label>
-                            <input type="text" name="attestation_prenom_conducteur" x-model="prenomConducteur"
-                                   class="inscription-input" placeholder="Prénom" autocomplete="given-name">
-                        </div>
-
-                        <div class="inscription-field">
-                            <label class="inscription-label">Numéro de permis de conduire *</label>
-                            <input type="text" name="attestation_num_permis" x-model="numPermis"
-                                   class="inscription-input" placeholder="Ex : 01AA00000" autocomplete="off">
-                        </div>
-
-                        <div class="inscription-field">
-                            <label class="inscription-label">Nom et adresse de l'assurance *</label>
-                            <textarea name="attestation_assurance" x-model="assuranceNomAdresse"
-                                      class="inscription-textarea" rows="3"
-                                      placeholder="Ex : Macif — 12 rue de la Paix, 75001 Paris"></textarea>
-                        </div>
-
-                        <label class="inscription-checkbox-row">
-                            <input type="checkbox" name="attestation_vehicule_neuf" value="1" x-model="vehiculeNeuf">
-                            <span class="inscription-checkbox-text">Véhicule neuf, sans contrôle technique à ce jour</span>
-                        </label>
-
-                        <div class="inscription-field" x-show="!vehiculeNeuf">
-                            <label class="inscription-label">Date du dernier contrôle technique *</label>
-                            <input type="date" name="attestation_date_ct" x-model="dateCT"
-                                   class="inscription-input" :class="dateCTFuture ? 'inscription-input-error' : ''"
-                                   max="{{ 'now'|date('Y-m-d') }}">
-                            <p x-show="dateCTFuture" class="inscription-field-error">
-                                La date du contrôle technique ne peut pas être dans le futur.
-                            </p>
-                        </div>
-
-                        <label class="inscription-checkbox-row">
-                            <input type="checkbox" name="attestation_engagement" value="1" x-model="engagementAttestation">
-                            <span class="inscription-checkbox-text">Je m'engage à prévenir le club en cas de changement de situation (retrait de permis, résiliation d'assurance, défaut de contrôle technique).</span>
-                        </label>
-
-                        <div>
-                            <p class="inscription-signature-label">Signature *</p>
-                            <p class="inscription-signature-hint">Signez dans le cadre ci-dessous avec votre doigt ou votre souris.</p>
-                            <div class="inscription-signature-wrap">
-                                <canvas class="inscription-signature-canvas" x-ref="signatureCanvasAttestation"></canvas>
-                                <div class="inscription-signature-bar">
-                                    <button type="button" @click="clearAttestationSignature" class="inscription-signature-clear">
-                                        Effacer
-                                    </button>
-                                    <span class="inscription-signature-saved" x-show="signatureDataAttestation !== ''">
-                                        ✓ Signature enregistrée
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if needReglement %}
-                {# ── Étape 5 : Règlement + Signature ── #}
-                {% include 'public/_reglement_signature_step.html.twig' with {
-                    season: dirigeant.season,
-                    stepShow: 'step === 5'
-                } %}
-                {% endif %}
-
-                {# ── Navigation ── #}
-                <div class="inscription-nav">
-                    <template x-if="step > 1">
-                        <button type="button" @click="prev" class="inscription-btn-prev">
-                            ← Précédent
-                        </button>
-                    </template>
-
-                    <template x-if="step > 1 && displayStep < totalSteps">
-                        <button type="button" @click="next" :disabled="!canGoNext" class="inscription-btn-next">
-                            Suivant →
-                        </button>
-                    </template>
-
-                    <template x-if="displayStep === totalSteps">
-                        <button type="submit" :disabled="!canGoNext || submitting" class="inscription-btn-submit">
-                            Valider ✓
-                        </button>
-                    </template>
-                </div>
-
-            </form>
-
-        </div>
-    </main>
-
-    {% include 'components/footer.html.twig' %}
-
-    {# — Overlay de chargement pendant la soumission finale — #}
-    <div class="inscription-overlay" x-show="submitting" x-cloak>
-        <div class="inscription-overlay-box">
-            <div class="inscription-overlay-spinner"></div>
-            <p class="inscription-overlay-title">Validation de votre dossier…</p>
-            <p class="inscription-overlay-text">Merci de patienter quelques secondes, ne fermez pas cette page.</p>
-        </div>
-    </div>
-
-</div>
+{% block hors_flux %}
+    {% include 'components/_overlay_chargement.html.twig' with { visible: 'submitting', titre: "Validation de votre dossier…" } only %}
 {% endblock %}

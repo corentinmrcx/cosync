@@ -3,7 +3,10 @@
 namespace App\Tests\Controller\Public;
 
 use App\Entity\Dirigeant;
+use App\Entity\DocumentSignable;
+use App\Entity\DocumentSignature;
 use App\Entity\Season;
+use App\Tests\Support\DocumentFixtures;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Uid\Uuid;
@@ -15,7 +18,7 @@ use Symfony\Component\Uid\Uuid;
  */
 final class DirigeantFormControllerTest extends WebTestCase
 {
-    private const SIGNATURE = 'data:image/png;base64,iVBORw0KGgo=';
+    private const SIGNATURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
     public function testCompletionPartielleSurDossierAuTransportDejaRenseigne(): void
     {
@@ -31,10 +34,10 @@ final class DirigeantFormControllerTest extends WebTestCase
         $token = $crawler->filter('input[name="_token"]')->attr('value');
 
         $client->request('POST', '/dirigeant/' . $uuid, [
-            '_token'      => $token,
+            '_token' => $token,
             'taille_haut' => 'L',
-            'taille_bas'  => 'M',
-            'pointure'    => '42',
+            'taille_bas' => 'M',
+            'pointure' => '42',
         ]);
 
         // Ne doit PAS repartir sur le formulaire avec l'erreur « Formulaire incomplet ».
@@ -49,7 +52,7 @@ final class DirigeantFormControllerTest extends WebTestCase
         self::assertFalse($dirigeant->isFormTokenValid(), 'Le lien doit être consommé.');
     }
 
-    public function testSignatureReglementManquanteRenvoieSurLeFormulaire(): void
+    public function testSignatureManquanteRenvoieSurLeFormulaire(): void
     {
         $client = static::createClient();
         $uuid = $this->createDirigeant(withTaille: true, reglementDejaSigne: false);
@@ -57,17 +60,82 @@ final class DirigeantFormControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/dirigeant/' . $uuid);
         $token = $crawler->filter('input[name="_token"]')->attr('value');
 
-        // Règlement requis mais aucune signature → rejet avant toute génération de PDF.
+        // Document requis mais aucune signature → rejet avant toute génération de PDF.
         $client->request('POST', '/dirigeant/' . $uuid, [
             '_token' => $token,
         ]);
 
         self::assertResponseRedirects('/dirigeant/' . $uuid);
+        self::assertSame(0, $this->countSignatures());
+    }
+
+    public function testUneSignatureInvalideEstRejetee(): void
+    {
+        $client = static::createClient();
+        $uuid = $this->createDirigeant(withTaille: true, reglementDejaSigne: false);
+
+        $crawler = $client->request('GET', '/dirigeant/' . $uuid);
+        $token = $crawler->filter('input[name="_token"]')->attr('value');
+        $document = $this->documentId();
+
+        $client->request('POST', '/dirigeant/' . $uuid, [
+            '_token' => $token,
+            'signature_data' => [$document => 'pas-une-image'],
+        ]);
+
+        self::assertResponseRedirects('/dirigeant/' . $uuid);
+        self::assertSame(0, $this->countSignatures());
+    }
+
+    public function testUnIdDeDocumentNonAttenduNeCreeAucuneSignature(): void
+    {
+        $client = static::createClient();
+        $uuid = $this->createDirigeant(withTaille: true, reglementDejaSigne: false);
+
+        $crawler = $client->request('GET', '/dirigeant/' . $uuid);
+        $token = $crawler->filter('input[name="_token"]')->attr('value');
+        $document = $this->documentId();
+
+        // Le client ajoute un id fantaisiste : il doit être ignoré, et seul le
+        // document réellement attendu est enregistré.
+        $client->request('POST', '/dirigeant/' . $uuid, [
+            '_token' => $token,
+            'signature_data' => [
+                $document => self::SIGNATURE,
+                999999 => self::SIGNATURE,
+            ],
+        ]);
+
+        self::assertResponseRedirects('/dirigeant/' . $uuid . '/confirmation');
+        self::assertSame(1, $this->countSignatures());
+    }
+
+    private function countSignatures(): int
+    {
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+
+        return (int) $em->createQueryBuilder()
+            ->select('COUNT(s.id)')
+            ->from(DocumentSignature::class, 's')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function documentId(): int
+    {
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+
+        return (int) $em->createQueryBuilder()
+            ->select('d.id')
+            ->from(DocumentSignable::class, 'd')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     private function createDirigeant(bool $withTaille, bool $reglementDejaSigne): string
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
+        $fixtures = new DocumentFixtures($em);
 
         $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
 
@@ -82,15 +150,18 @@ final class DirigeantFormControllerTest extends WebTestCase
         if ($withTaille) {
             $dirigeant->setTailleHaut('L')->setTailleBas('M')->setPointure('42');
         }
-        if ($reglementDejaSigne) {
-            // Chemin Drive (pas un chemin local) → considéré comme déjà archivé.
-            $dirigeant->setReglementSignePath('drive-file-id')
-                ->setReglementSignedAt(new \DateTimeImmutable());
-        }
+
+        $document = $fixtures->documentDirigeant($season);
 
         $em->persist($season);
         $em->persist($dirigeant);
         $em->flush();
+
+        if ($reglementDejaSigne) {
+            // Chemin Drive (pas un chemin local) → considéré comme déjà archivé.
+            $fixtures->signerParDirigeant($document, $dirigeant, 'drive-file-id');
+            $em->flush();
+        }
 
         $uuid = (string) $dirigeant->getUuid();
         $em->clear();

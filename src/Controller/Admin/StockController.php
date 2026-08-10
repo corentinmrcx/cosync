@@ -3,107 +3,89 @@
 namespace App\Controller\Admin;
 
 use App\DTO\ManualMovementData;
-use App\Entity\Fournisseur;
-use App\Entity\StockCategory;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
+use App\Entity\User;
+use App\Enum\StockActionManuelle;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
-use App\Form\StockCategoryType;
 use App\Form\StockItemType;
-use App\Repository\CommandeRepository;
-use App\Repository\FournisseurRepository;
 use App\Repository\LicencieRepository;
-use App\Repository\StockCategoryRepository;
 use App\Repository\StockItemRepository;
 use App\Repository\StockMovementRepository;
+use App\Security\CsrfGuard;
 use App\Service\Pdf\InventairePdfService;
-use App\Service\SeasonContext;
-use App\Service\Stock\AchatService;
-use App\Service\Stock\StockService;
-use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\Referentiel\Tailles;
+use App\Service\Saison\SeasonContext;
+use App\Service\Stock\StockItemFormContext;
+use App\Service\Stock\StockItemService;
+use App\Service\Stock\StockMovementService;
+use App\Service\Stock\StockReportService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
+/**
+ * Le stock physique appartient au club, pas à une saison : ni StockItem ni StockMovement ne
+ * portent de season_id. Aucune action ici n'exige donc de saison courante — seule la remise
+ * d'une dotation a besoin de la liste des licenciés, qui est, elle, saisonnière.
+ */
 #[Route('/admin/stock', name: 'admin_stock_')]
 class StockController extends AbstractController
 {
     private const PER_PAGE = 25;
 
-    private const TAILLES_EQUIPEMENT = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '6 ans', '8 ans', '10 ans', '12 ans', '14 ans', '16 ans'];
-    private const CONTENANCES_EPICERIE = ['25cl', '33cl', '50cl', '75cl', '1L', '1,5L', '2L'];
-
     public function __construct(
-        private readonly StockService $stockService,
+        private readonly CsrfGuard $csrf,
+        private readonly StockMovementService $mouvements,
+        private readonly StockReportService $rapports,
+        private readonly StockItemService $itemService,
+        private readonly StockItemFormContext $itemFormContext,
+        private readonly InventairePdfService $pdfService,
         private readonly StockItemRepository $itemRepository,
         private readonly StockMovementRepository $movementRepository,
-        private readonly StockCategoryRepository $categoryRepository,
-        private readonly FournisseurRepository $fournisseurRepository,
         private readonly LicencieRepository $licencieRepository,
-        private readonly AchatService $achatService,
-        private readonly CommandeRepository $commandeRepository,
         private readonly SeasonContext $seasonContext,
-        private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route('', name: 'dashboard', methods: ['GET'])]
     public function dashboard(): Response
     {
-        $season             = $this->seasonContext->getCurrentSeason();
-        $aCommanderCount    = 0;
-        $commandesEnAttente = 0;
-
-        if ($season !== null) {
-            foreach ($this->achatService->computeACommander($season) as $groupe) {
-                foreach ($groupe['lignes'] as $ligne) {
-                    $aCommanderCount += $ligne['aCommander'];
-                }
-            }
-            foreach ($this->commandeRepository->findBySeason($season) as $commande) {
-                if ($commande->getStatut()->isEnAttente()) {
-                    $commandesEnAttente++;
-                }
-            }
-        }
-
         return $this->render('admin/stock/dashboard.html.twig', [
-            'data'               => $this->stockService->getDashboardData(),
-            'season'             => $season,
-            'aCommanderCount'    => $aCommanderCount,
-            'commandesEnAttente' => $commandesEnAttente,
+            'data' => $this->rapports->getDashboardData(),
         ]);
     }
 
     #[Route('/gestion', name: 'gestion', methods: ['GET'])]
     public function gestion(Request $request): Response
     {
-        $season          = $this->seasonContext->getCurrentSeason();
-        $showArchived    = $request->query->getBoolean('archivés', false);
+        $showArchived = $request->query->getBoolean('archivés', false);
+        // Saison facultative : sans elle le stock reste consultable, seule la remise
+        // d'une dotation est privée de destinataires.
+        $season = $this->seasonContext->getCurrentSeason();
 
         return $this->render('admin/stock/gestion.html.twig', [
-            'summary'          => $this->stockService->getStockSummary($showArchived),
-            'showArchived'     => $showArchived,
-            'season'           => $season,
+            'summary' => $this->rapports->getStockSummary($showArchived),
+            'showArchived' => $showArchived,
             'licenciesValides' => $season !== null ? $this->licencieRepository->findValidatedBySeason($season) : [],
-            'taillesConnues'   => self::TAILLES_EQUIPEMENT,
-            'types'            => StockMovementType::cases(),
-            'sources'          => StockMovementSource::cases(),
+            'taillesConnues' => Tailles::toutes(),
+            'types' => StockMovementType::cases(),
+            'sources' => StockMovementSource::cases(),
         ]);
     }
 
     #[Route('/inventaire.pdf', name: 'inventaire_pdf', methods: ['GET'])]
-    public function inventairePdf(InventairePdfService $pdfService): Response
+    public function inventairePdf(): Response
     {
-        $season = $this->seasonContext->getCurrentSeason();
-        $pdf    = $pdfService->generate($this->stockService->getInventaireData(), $season?->getLabel());
+        // Pas de label de saison : l'inventaire est un état du club à une date, pas d'une saison.
+        $pdf = $this->pdfService->generate($this->rapports->getInventaireData(), null);
 
         return new Response($pdf, Response::HTTP_OK, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => sprintf('attachment; filename="inventaire_%s.pdf"', (new \DateTimeImmutable())->format('Y-m-d')),
         ]);
     }
@@ -117,13 +99,13 @@ class StockController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $this->applyEditableFields($item, $request);
-            $this->em->persist($item);
-            $this->em->flush();
+            $this->itemService->creer($item);
             $this->addFlash('success', sprintf('Article "%s" créé.', $item->getNom()));
+
             return $this->redirectToRoute('admin_stock_gestion');
         }
 
-        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext(null));
+        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext->build(null));
     }
 
     #[Route('/items/{id}/modifier', name: 'items_edit', methods: ['GET', 'POST'])]
@@ -134,39 +116,19 @@ class StockController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $this->applyEditableFields($item, $request);
-            $this->em->flush();
+            $this->itemService->enregistrer($item);
             $this->addFlash('success', sprintf('Article "%s" mis à jour.', $item->getNom()));
+
             return $this->redirectToRoute('admin_stock_gestion');
         }
 
-        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext($item));
-    }
-
-    /** @return array<string, mixed> */
-    private function itemFormContext(?StockItem $item): array
-    {
-        return [
-            'item'          => $item,
-            'title'         => $item ? 'Modifier ' . $item->getNom() : 'Nouvel article',
-            'kinds'         => StockItemKind::cases(),
-            'vetementTypes' => StockItemVetementType::cases(),
-            'marques'       => $this->itemRepository->findDistinctMarques(),
-            'taillesEquip'  => array_values(array_unique(array_merge(
-                $this->itemRepository->findDistinctTaillesByKind(StockItemKind::EQUIPEMENT),
-                self::TAILLES_EQUIPEMENT,
-            ))),
-            'contenances'   => array_values(array_unique(array_merge(
-                $this->itemRepository->findDistinctTaillesByKind(StockItemKind::EPICERIE),
-                self::CONTENANCES_EPICERIE,
-            ))),
-            'couleurs'      => $this->itemRepository->findDistinctCouleurs(),
-        ];
+        return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext->build($item));
     }
 
     /** Lit les champs conditionnels du formulaire article et délègue l'application au service. */
     private function applyEditableFields(StockItem $item, Request $request): void
     {
-        $this->stockService->applyEditableFields(
+        $this->itemService->applyEditableFields(
             $item,
             StockItemKind::tryFrom((string) $request->request->get('kind', '')),
             trim((string) $request->request->get('marque', '')) ?: null,
@@ -177,15 +139,20 @@ class StockController extends AbstractController
     }
 
     #[Route('/items/{id}/mouvement', name: 'items_movement', methods: ['POST'])]
-    public function itemMovement(StockItem $item, Request $request): Response
+    public function itemMovement(StockItem $item, Request $request, #[CurrentUser] ?User $user): Response
     {
-        if (!$this->isCsrfTokenValid('stock_movement_' . $item->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
+        $this->csrf->valider('stock_movement_' . $item->getId(), $request);
+
+        $action = StockActionManuelle::tryFrom((string) $request->request->get('action', ''));
+
+        if ($action === null) {
+            $this->addFlash('error', 'Action invalide.');
+
             return $this->redirectToRoute('admin_stock_gestion');
         }
 
         $data = new ManualMovementData(
-            action: (string) $request->request->get('action', ''),
+            action: $action,
             quantite: (int) $request->request->get('quantite', 0),
             taille: trim((string) $request->request->get('taille', '')) ?: null,
             note: trim((string) $request->request->get('note', '')) ?: null,
@@ -193,7 +160,7 @@ class StockController extends AbstractController
         );
 
         try {
-            $movement = $this->stockService->recordManualMovement($item, $data, $this->getUser());
+            $movement = $this->mouvements->recordManualMovement($item, $data, $user);
             $this->addFlash('success', sprintf(
                 '%s de %d "%s" enregistrée%s.',
                 $movement->getType()->label(),
@@ -211,13 +178,10 @@ class StockController extends AbstractController
     #[Route('/mouvements/{id}/supprimer', name: 'mouvements_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function mouvementDelete(StockMovement $movement, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('delete_stock_movement_' . $movement->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_mouvements_list');
-        }
+        $this->csrf->valider('delete_stock_movement_' . $movement->getId(), $request);
 
         try {
-            $this->stockService->deleteManualMovement($movement);
+            $this->mouvements->deleteManualMovement($movement);
             $this->addFlash('success', 'Mouvement supprimé, stock recalculé.');
         } catch (\InvalidArgumentException $e) {
             $this->addFlash('error', $e->getMessage());
@@ -229,33 +193,24 @@ class StockController extends AbstractController
     #[Route('/items/{id}/supprimer', name: 'items_delete', methods: ['POST'])]
     public function itemDelete(StockItem $item, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('delete_stock_item_' . $item->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_gestion');
-        }
+        $this->csrf->valider('delete_stock_item_' . $item->getId(), $request);
 
         $nom = $item->getNom();
 
-        if ($this->movementRepository->count(['item' => $item]) > 0) {
-            $item->setActif(false);
-            $this->em->flush();
-            $this->addFlash('info', sprintf(
-                '"%s" archivé — il disparaît des listes, mais l\'historique des mouvements est conservé.',
-                $nom,
-            ));
+        try {
+            $archive = $this->itemService->supprimerOuArchiver($item);
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+
             return $this->redirectToRoute('admin_stock_gestion');
         }
 
-        try {
-            $this->em->remove($item);
-            $this->em->flush();
-            $this->addFlash('success', sprintf('Article "%s" supprimé.', $nom));
-        } catch (ForeignKeyConstraintViolationException) {
-            $this->addFlash('error', sprintf(
-                'Impossible de supprimer "%s" : il est référencé par une dotation ou une commande.',
-                $nom,
-            ));
-        }
+        $this->addFlash(
+            $archive ? 'info' : 'success',
+            $archive
+                ? sprintf('"%s" archivé — il disparaît des listes, mais l\'historique des mouvements est conservé.', $nom)
+                : sprintf('Article "%s" supprimé.', $nom),
+        );
 
         return $this->redirectToRoute('admin_stock_gestion');
     }
@@ -263,13 +218,9 @@ class StockController extends AbstractController
     #[Route('/items/{id}/restaurer', name: 'items_restore', methods: ['POST'])]
     public function itemRestore(StockItem $item, Request $request): Response
     {
-        if (!$this->isCsrfTokenValid('restore_stock_item_' . $item->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_gestion', ['archivés' => '1']);
-        }
+        $this->csrf->valider('restore_stock_item_' . $item->getId(), $request);
 
-        $item->setActif(true);
-        $this->em->flush();
+        $this->itemService->restaurer($item);
         $this->addFlash('success', sprintf('Article "%s" restauré dans le catalogue actif.', $item->getNom()));
 
         return $this->redirectToRoute('admin_stock_gestion', ['archivés' => '1']);
@@ -278,164 +229,29 @@ class StockController extends AbstractController
     #[Route('/mouvements', name: 'mouvements_list', methods: ['GET'])]
     public function mouvementsList(Request $request): Response
     {
-        $page    = max(1, (int) $request->query->get('page', 1));
+        $page = max(1, (int) $request->query->get('page', 1));
         $filters = array_filter([
-            'item_id'   => $request->query->get('item_id'),
-            'type'      => $request->query->get('type'),
-            'source'    => $request->query->get('source'),
+            'search' => trim((string) $request->query->get('search', '')),
+            'item_id' => $request->query->get('item_id'),
+            'type' => $request->query->get('type'),
+            'source' => $request->query->get('source'),
             'date_from' => $request->query->get('date_from'),
-            'date_to'   => $request->query->get('date_to'),
+            'date_to' => $request->query->get('date_to'),
         ]);
 
         ['movements' => $movements, 'total' => $total] = $this->movementRepository
             ->findWithFilters($filters, $page, self::PER_PAGE);
 
         return $this->render('admin/stock/mouvements/list.html.twig', [
-            'movements'  => $movements,
-            'total'      => $total,
-            'page'       => $page,
-            'perPage'    => self::PER_PAGE,
-            'pages'      => (int) ceil($total / self::PER_PAGE),
-            'filters'    => $filters,
-            'items'      => $this->itemRepository->findAllOrdered(),
-            'types'      => StockMovementType::cases(),
-            'sources'    => StockMovementSource::cases(),
-            'season'     => $this->seasonContext->getCurrentSeason(),
+            'movements' => $movements,
+            'total' => $total,
+            'page' => $page,
+            'perPage' => self::PER_PAGE,
+            'pages' => (int) ceil($total / self::PER_PAGE),
+            'filters' => $filters,
+            'items' => $this->itemRepository->findAllOrdered(),
+            'types' => StockMovementType::cases(),
+            'sources' => StockMovementSource::cases(),
         ]);
     }
-
-    #[Route('/categories', name: 'categories_list', methods: ['GET'])]
-    public function categoriesList(): Response
-    {
-        $newCategoryForm = $this->createForm(StockCategoryType::class, new StockCategory(), [
-            'action' => $this->generateUrl('admin_stock_categories_new'),
-        ]);
-
-        return $this->render('admin/stock/categories/list.html.twig', [
-            'categories'      => $this->categoryRepository->findAllOrderedByPosition(),
-            'newCategoryForm' => $newCategoryForm,
-        ]);
-    }
-
-    #[Route('/categories/nouveau', name: 'categories_new', methods: ['POST'])]
-    public function categoryNew(Request $request): Response
-    {
-        $category = new StockCategory();
-        $form     = $this->createForm(StockCategoryType::class, $category);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $this->em->persist($category);
-            $this->em->flush();
-            $this->addFlash('success', sprintf('Catégorie "%s" créée.', $category->getName()));
-        } else {
-            $this->addFlash('error', 'Données invalides.');
-        }
-
-        return $this->redirectToRoute('admin_stock_categories_list');
-    }
-
-    #[Route('/categories/{id}/modifier', name: 'categories_edit', methods: ['POST'])]
-    public function categoryEdit(StockCategory $category, Request $request): Response
-    {
-        $form = $this->createForm(StockCategoryType::class, $category);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $this->em->flush();
-            $this->addFlash('success', sprintf('Catégorie "%s" mise à jour.', $category->getName()));
-        } else {
-            $this->addFlash('error', 'Données invalides.');
-        }
-
-        return $this->redirectToRoute('admin_stock_categories_list');
-    }
-
-    #[Route('/categories/{id}/supprimer', name: 'categories_delete', methods: ['POST'])]
-    public function categoryDelete(StockCategory $category, Request $request): Response
-    {
-        if (!$this->isCsrfTokenValid('delete_category_' . $category->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_categories_list');
-        }
-
-        $name = $category->getName();
-        $this->em->remove($category);
-        $this->em->flush();
-        $this->addFlash('success', sprintf('Catégorie "%s" supprimée.', $name));
-
-        return $this->redirectToRoute('admin_stock_categories_list');
-    }
-
-    #[Route('/fournisseurs', name: 'fournisseurs_list', methods: ['GET'])]
-    public function fournisseursList(): Response
-    {
-        return $this->render('admin/stock/fournisseurs/list.html.twig', [
-            'fournisseurs' => $this->fournisseurRepository->findAllOrdered(),
-        ]);
-    }
-
-    #[Route('/fournisseurs/nouveau', name: 'fournisseurs_new', methods: ['POST'])]
-    public function fournisseurNew(Request $request): Response
-    {
-        if (!$this->isCsrfTokenValid('fournisseur_new', $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_fournisseurs_list');
-        }
-
-        $nom = trim((string) $request->request->get('nom', ''));
-        if ($nom === '') {
-            $this->addFlash('error', 'Le nom du fournisseur est obligatoire.');
-            return $this->redirectToRoute('admin_stock_fournisseurs_list');
-        }
-
-        $fournisseur = (new Fournisseur())
-            ->setNom($nom)
-            ->setContact(trim((string) $request->request->get('contact', '')) ?: null)
-            ->setEmail(trim((string) $request->request->get('email', '')) ?: null);
-        $this->em->persist($fournisseur);
-        $this->em->flush();
-        $this->addFlash('success', sprintf('Fournisseur "%s" créé.', $nom));
-
-        return $this->redirectToRoute('admin_stock_fournisseurs_list');
-    }
-
-    #[Route('/fournisseurs/{id}/modifier', name: 'fournisseurs_edit', methods: ['POST'])]
-    public function fournisseurEdit(Fournisseur $fournisseur, Request $request): Response
-    {
-        if (!$this->isCsrfTokenValid('fournisseur_edit_' . $fournisseur->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_fournisseurs_list');
-        }
-
-        $nom = trim((string) $request->request->get('nom', ''));
-        if ($nom !== '') {
-            $fournisseur->setNom($nom);
-        }
-        $fournisseur
-            ->setContact(trim((string) $request->request->get('contact', '')) ?: null)
-            ->setEmail(trim((string) $request->request->get('email', '')) ?: null)
-            ->setActif($request->request->get('actif') === '1');
-        $this->em->flush();
-        $this->addFlash('success', 'Fournisseur mis à jour.');
-
-        return $this->redirectToRoute('admin_stock_fournisseurs_list');
-    }
-
-    #[Route('/fournisseurs/{id}/supprimer', name: 'fournisseurs_delete', methods: ['POST'])]
-    public function fournisseurDelete(Fournisseur $fournisseur, Request $request): Response
-    {
-        if (!$this->isCsrfTokenValid('fournisseur_delete_' . $fournisseur->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_stock_fournisseurs_list');
-        }
-
-        $nom = $fournisseur->getNom();
-        $this->em->remove($fournisseur);
-        $this->em->flush();
-        $this->addFlash('success', sprintf('Fournisseur "%s" supprimé.', $nom));
-
-        return $this->redirectToRoute('admin_stock_fournisseurs_list');
-    }
-
 }

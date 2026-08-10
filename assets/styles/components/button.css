@@ -1,0 +1,93 @@
+/* ── Boutons ──────────────────────────────────────────────────────────────────
+   Tous les boutons de l'application. Une page ne redéfinit jamais un bouton :
+   elle choisit une variante et, au besoin, une taille.
+
+   Variantes : primary (action principale), success (action incitative — paiement),
+   secondary (action neutre), ghost (action discrète), danger (action destructrice).
+   Tailles   : par défaut, -sm (dans un tableau), -lg (soumission), -block (pleine largeur).
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn:disabled,
+.btn.btn-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* — Variantes — */
+
+.btn-primary {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-dark); }
+
+.btn-success {
+    background: var(--color-success);
+    color: var(--color-text-inverse);
+}
+
+.btn-success:hover:not(:disabled) { background: var(--color-success-dark); }
+
+.btn-secondary {
+    background: var(--color-bg-page);
+    color: var(--color-text-body);
+    border-color: var(--color-border-strong);
+}
+
+.btn-secondary:hover:not(:disabled) { background: var(--color-bg-muted); }
+
+.btn-ghost {
+    background: transparent;
+    color: var(--color-text-muted);
+}
+
+.btn-ghost:hover:not(:disabled) {
+    background: var(--color-bg-muted);
+    color: var(--color-text-body);
+}
+
+.btn-danger {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    border-color: var(--color-danger-bg);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: var(--color-danger-hover);
+    border-color: var(--color-danger-hover);
+}
+
+/* — Tailles — */
+
+.btn-sm {
+    padding: 0.35rem 0.75rem;
+    font-size: var(--font-size-xs);
+    gap: 0.3rem;
+}
+
+.btn-lg { padding: 0.625rem 1.25rem; }
+
+.btn-block {
+    width: 100%;
+    padding: 0.875rem;
+    font-size: var(--font-size-base);
+}

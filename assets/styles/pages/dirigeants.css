@@ -3,27 +3,8 @@
     display: flex;
     flex-direction: column;
     padding: 1.5rem;
-    background-color: var(--color-bg-subtle);
     gap: 1.25rem;
 }
-
-/* — Bouton ajout — */
-.dirigeants-add-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    text-decoration: none;
-    border-radius: var(--radius-md);
-    transition: background 0.15s;
-}
-
-.dirigeants-add-btn:hover { background: var(--color-primary-dark); }
-
 /* — Vide — */
 .dirigeants-empty {
     text-align: center;
@@ -35,30 +16,10 @@
 /* — Table — */
 .dirigeants-table-wrap {
     background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-xl);
     overflow: hidden;
     box-shadow: var(--shadow-card);
-}
-
-.dirigeants-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: var(--font-size-sm);
-}
-
-.dirigeants-table thead tr {
-    border-bottom: 2.5px solid var(--color-primary);
-}
-
-.dirigeants-table th {
-    text-align: left;
-    padding: 0.75rem 1rem;
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-text-base);
 }
 
 .dirigeants-row {
@@ -68,12 +29,7 @@
 }
 
 .dirigeants-row:last-child { border-bottom: none; }
-.dirigeants-row:hover { background: #fff8f8; }
-
-.dirigeants-table td {
-    padding: 0.875rem 1rem;
-    color: var(--color-text-body);
-}
+.dirigeants-row:hover { background: var(--color-row-hover); }
 
 .dirigeants-td-name {
     font-weight: 600;
@@ -148,7 +104,7 @@
     font-weight: 500;
 }
 
-.dirigeant-sync-banner strong { color: #166534; }
+.dirigeant-sync-banner strong { color: var(--color-success-text); }
 
 /* — Lien formulaire — */
 .dirigeant-show-link-status {
@@ -180,23 +136,6 @@
     background: var(--color-bg-muted);
     color: var(--color-text-muted);
 }
-
-.dirigeant-show-send-link-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.dirigeant-show-send-link-btn:hover { background: var(--color-primary-dark); }
 
 .dirigeant-show-link-no-email {
     margin-top: 0.75rem;

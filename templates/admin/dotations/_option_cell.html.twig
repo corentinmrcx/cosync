@@ -1,0 +1,36 @@
+{% import 'components/_icon.html.twig' as ui %}
+{# Article d'un besoin, et correction de l'option retenue quand il vient d'un groupe de choix.
+
+   Même geste que la taille : la valeur, un crayon, et le sélecteur seulement au clic — un
+   select toujours ouvert alourdirait chaque ligne du tableau.
+
+   `besoin` = App\Entity\DotationBesoin, `options` = StockItem[] proposés à cette personne. #}
+{% if options|length > 1 and besoin.statut.value != 'donne' %}
+    <div x-data="{ editing: false }" class="dot-option-edit">
+        <div x-show="!editing" class="dot-option-display">
+            <span class="dot-item-nom">{{ besoin.stockItem.nom }}</span>
+            <button type="button" class="dot-option-pen" @click="editing = true"
+                    title="Changer l'article choisi" aria-label="Changer l'article choisi">
+                {{ ui.icon('edit', 14) }}
+            </button>
+        </div>
+
+        <form x-show="editing" x-cloak method="post"
+              action="{{ path('admin_dotations_besoin_option', {id: besoin.id}) }}"
+              class="dot-option-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_option_' ~ besoin.id) }}">
+            <select name="stock_item_id" class="field-input field-input-compact"
+                    x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
+                {% for option in options %}
+                    <option value="{{ option.id }}"{{ option.id == besoin.stockItem.id ? ' selected' }}>
+                        {{ option.nom }}{% if option.couleur %} · {{ option.couleur }}{% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="dot-option-ok" title="Valider">✓</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
+        </form>
+    </div>
+{% else %}
+    <span class="dot-item-nom">{{ besoin.stockItem.nom }}</span>
+{% endif %}

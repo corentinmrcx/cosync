@@ -2,11 +2,14 @@
 
 use Symfony\Component\Dotenv\Dotenv;
 
-require dirname(__DIR__).'/vendor/autoload.php';
+require dirname(__DIR__) . '/vendor/autoload.php';
 
-if (method_exists(Dotenv::class, 'bootEnv')) {
-    (new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
-}
+// PHPUnit applique la section <php> de la configuration après ce bootstrap : sans cette ligne,
+// le kernel démarrerait dans l'environnement de .env (dev) et la configuration when@test
+// (framework.test, base _test, DAMA) ne serait jamais chargée.
+$_SERVER['APP_ENV'] = $_ENV['APP_ENV'] = 'test';
+
+(new Dotenv())->bootEnv(dirname(__DIR__) . '/.env');
 
 if ($_SERVER['APP_DEBUG']) {
     umask(0000);

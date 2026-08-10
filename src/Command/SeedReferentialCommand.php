@@ -64,6 +64,7 @@ class SeedReferentialCommand extends Command
         $this->em->flush();
 
         $io->success('Catégories FFF initialisées.');
+
         return Command::SUCCESS;
     }
 
@@ -85,5 +86,4 @@ class SeedReferentialCommand extends Command
             $io->writeln(sprintf('  Catégorie ajoutée : %s', $data['code']));
         }
     }
-
 }

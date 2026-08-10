@@ -1,0 +1,38 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Coordonnées bancaires{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Coordonnées bancaires' }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+
+        <h1 class="season-form-header">Coordonnées bancaires</h1>
+        <p class="config-teams-intro">
+            Affichées au licencié qui règle par virement, dans le formulaire, sur la page de
+            confirmation et dans le mail de confirmation. Elles appartiennent au club : elles
+            restent valables d'une saison à l'autre.
+        </p>
+        <hr class="season-form-divider">
+
+        {% for champ in [form.iban, form.bic, form.titulaireCompte] %}
+            <div class="field">
+                {{ form_label(champ) }}
+                {{ form_widget(champ) }}
+                {{ form_help(champ) }}
+                {{ form_errors(champ) }}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

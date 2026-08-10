@@ -1,0 +1,68 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Relancer « {{ document.titre }} »{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Documents à signer', route: 'admin_documents_list' },
+    { label: 'Relancer' }
+] } %}
+
+<div class="documents-page">
+    <div class="documents-card">
+
+        <div class="documents-header-text">
+            <h1 class="documents-title">Relancer « {{ document.titre }} »</h1>
+            <p class="documents-intro">
+                Un dirigeant dont le dossier était déjà complet n'a plus de lien valide : ajouter un document
+                ne le prévient pas. Cet envoi régénère leur lien pour 30 jours et leur renvoie par email.
+                Ils ne referont que ce qui manque.
+            </p>
+        </div>
+
+        <hr class="documents-divider">
+
+        {% if enAttente is empty %}
+            <p class="documents-empty">Personne n'est en attente : tous les dirigeants concernés ont signé.</p>
+            <div class="documents-relance-actions">
+                <a href="{{ path('admin_documents_list') }}" class="btn btn-secondary">Retour</a>
+            </div>
+        {% else %}
+            {% set sansEmail = enAttente|filter(d => d.email is null)|length %}
+
+            <p class="documents-intro">
+                <strong>{{ enAttente|length }}</strong> dirigeant{{ enAttente|length > 1 ? 's' : '' }} n'{{ enAttente|length > 1 ? 'ont' : 'a' }} pas encore signé ce document
+                {%- if sansEmail > 0 %}, dont <strong>{{ sansEmail }}</strong> sans adresse email — {{ sansEmail > 1 ? 'ils devront être prévenus' : 'il devra être prévenu' }} autrement{% endif %}.
+            </p>
+
+            <ul class="documents-relance-list">
+                {% for d in enAttente %}
+                    <li class="documents-relance-item">
+                        <span>{{ d.nomPrenom }} — {{ d.role.label() }}</span>
+                        {% if d.email %}
+                            <span>{{ d.email }}</span>
+                        {% else %}
+                            <span class="documents-relance-sans-email">Pas d'email</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <hr class="documents-divider">
+
+            <form method="post" action="{{ path('admin_documents_relancer', {id: document.id}) }}"
+                  id="relance-form" class="documents-relance-actions">
+                <input type="hidden" name="_token" value="{{ csrf_token('document_relancer_' ~ document.id) }}">
+                <a href="{{ path('admin_documents_list') }}" class="btn btn-ghost">Annuler</a>
+                <button type="submit" class="btn btn-primary">
+                    Envoyer {{ enAttente|length - sansEmail }} lien{{ (enAttente|length - sansEmail) > 1 ? 's' : '' }}
+                </button>
+            </form>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

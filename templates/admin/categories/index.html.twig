@@ -5,6 +5,7 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
     { label: 'Catégories FFF' }
 ] } %}
 
@@ -18,8 +19,8 @@
         {% if categories is empty %}
             <p class="season-form-empty">Aucune catégorie. Lancez <code>php bin/console app:seed-referential</code> pour initialiser le référentiel.</p>
         {% else %}
-            <div class="cat-table-wrap">
-                <table class="cat-table">
+            <div class="table-wrapper">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Code</th>
@@ -39,13 +40,13 @@
                             <td class="cat-cell-center {{ nb > 0 ? 'cat-count-active' : 'cat-count-zero' }}">{{ nb }}</td>
                             <td class="cat-cell-action">
                                 {% if nb > 0 %}
-                                    <span class="cat-btn-delete cat-btn-delete-disabled" title="{{ nb }} licencié(s) — suppression impossible">Supprimer</span>
+                                    <span class="btn btn-danger btn-sm cat-btn-delete-disabled" title="{{ nb }} licencié(s) — suppression impossible">Supprimer</span>
                                 {% else %}
-                                    <form method="post" action="{{ path('admin_categories_delete', {id: category.id}) }}"
-                                          onsubmit="return confirm('Supprimer la catégorie {{ category.code }} ?')">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_category_' ~ category.id) }}">
-                                        <button type="submit" class="cat-btn-delete">Supprimer</button>
-                                    </form>
+                                    {% include 'components/_form_suppression.html.twig' with {
+                                        action: path('admin_categories_delete', {id: category.id}),
+                                        jeton: 'delete_category_' ~ category.id,
+                                        message: 'Supprimer la catégorie {{ category.code }} ?',
+                                    } only %}
                                 {% endif %}
                             </td>
                         </tr>
@@ -61,12 +62,12 @@
 
         {{ form_start(form, {attr: {class: 'cat-add-form'}}) }}
             <div class="cat-add-row">
-                <div class="season-form-field">
+                <div class="field">
                     {{ form_label(form.code) }}
                     {{ form_widget(form.code) }}
                     {{ form_errors(form.code) }}
                 </div>
-                <div class="season-form-field cat-add-label-field">
+                <div class="field cat-add-label-field">
                     {{ form_label(form.label) }}
                     {{ form_widget(form.label) }}
                     {{ form_errors(form.label) }}
@@ -76,7 +77,7 @@
                 {{ form_widget(form.isEcoleFoot) }}
                 {{ form_label(form.isEcoleFoot) }}
             </div>
-            <button type="submit" class="season-form-submit">Ajouter</button>
+            <button type="submit" class="btn btn-primary btn-lg">Ajouter</button>
         {{ form_end(form) }}
 
     </div>

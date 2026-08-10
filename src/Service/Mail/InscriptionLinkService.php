@@ -19,7 +19,7 @@ final class InscriptionLinkService
             throw new \LogicException('Impossible d\'envoyer le lien : aucune adresse email pour ce licencié.');
         }
 
-        $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
+        $licencie->setFormTokenExpiresAt(LienPublic::expiration());
         $this->em->flush();
 
         $this->mailerService->sendInscriptionLink($licencie);
@@ -43,7 +43,7 @@ final class InscriptionLinkService
             throw new \LogicException('Impossible d\'envoyer le lien : aucune adresse email pour ce licencié.');
         }
 
-        $licencie->setFormTokenExpiresAt(new \DateTimeImmutable('+30 days'));
+        $licencie->setFormTokenExpiresAt(LienPublic::expiration());
         $this->em->flush();
 
         $this->mailerService->sendCompletionLink($licencie);

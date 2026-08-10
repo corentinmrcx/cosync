@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\NatureLicence;
 use App\Repository\LicencieRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
@@ -67,6 +68,14 @@ class Licencie
     #[ORM\Column(options: ['default' => false])]
     private bool $createdManually = false;
 
+    /** Nature FootClubs de la licence — null tant qu'aucune source ne l'a renseignée. */
+    #[ORM\Column(length: 30, nullable: true, enumType: NatureLicence::class)]
+    private ?NatureLicence $natureLicence = null;
+
+    /** Vrai si la nature a été fixée à la main par l'admin → l'import ne l'écrase plus. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $natureManuelle = false;
+
     #[ORM\Column]
     private \DateTimeImmutable $importedAt;
 
@@ -92,6 +101,7 @@ class Licencie
     public function setNumLicence(?string $numLicence): static
     {
         $this->numLicence = $numLicence;
+
         return $this;
     }
 
@@ -103,6 +113,7 @@ class Licencie
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
+
         return $this;
     }
 
@@ -114,6 +125,7 @@ class Licencie
     public function setPrenom(string $prenom): static
     {
         $this->prenom = $prenom;
+
         return $this;
     }
 
@@ -130,6 +142,7 @@ class Licencie
     public function setDateNaissance(\DateTimeImmutable $dateNaissance): static
     {
         $this->dateNaissance = $dateNaissance;
+
         return $this;
     }
 
@@ -141,6 +154,7 @@ class Licencie
     public function setEmail(?string $email): static
     {
         $this->email = $email;
+
         return $this;
     }
 
@@ -152,6 +166,7 @@ class Licencie
     public function setTelephone(?string $telephone): static
     {
         $this->telephone = $telephone;
+
         return $this;
     }
 
@@ -163,6 +178,7 @@ class Licencie
     public function setVoieRue(?string $voieRue): static
     {
         $this->voieRue = $voieRue;
+
         return $this;
     }
 
@@ -174,6 +190,7 @@ class Licencie
     public function setCodePostal(?string $codePostal): static
     {
         $this->codePostal = $codePostal;
+
         return $this;
     }
 
@@ -185,6 +202,7 @@ class Licencie
     public function setVille(?string $ville): static
     {
         $this->ville = $ville;
+
         return $this;
     }
 
@@ -196,6 +214,7 @@ class Licencie
     public function setCategory(Category $category): static
     {
         $this->category = $category;
+
         return $this;
     }
 
@@ -207,6 +226,7 @@ class Licencie
     public function setTeam(?Team $team): static
     {
         $this->team = $team;
+
         return $this;
     }
 
@@ -218,6 +238,7 @@ class Licencie
     public function setSeason(Season $season): static
     {
         $this->season = $season;
+
         return $this;
     }
 
@@ -229,6 +250,7 @@ class Licencie
     public function setFormTokenExpiresAt(?\DateTimeImmutable $formTokenExpiresAt): static
     {
         $this->formTokenExpiresAt = $formTokenExpiresAt;
+
         return $this;
     }
 
@@ -246,6 +268,7 @@ class Licencie
     public function setLinkSentAt(?\DateTimeImmutable $linkSentAt): static
     {
         $this->linkSentAt = $linkSentAt;
+
         return $this;
     }
 
@@ -257,7 +280,41 @@ class Licencie
     public function setCreatedManually(bool $createdManually): static
     {
         $this->createdManually = $createdManually;
+
         return $this;
+    }
+
+    public function getNatureLicence(): ?NatureLicence
+    {
+        return $this->natureLicence;
+    }
+
+    public function setNatureLicence(?NatureLicence $natureLicence): static
+    {
+        $this->natureLicence = $natureLicence;
+
+        return $this;
+    }
+
+    public function isNatureManuelle(): bool
+    {
+        return $this->natureManuelle;
+    }
+
+    public function setNatureManuelle(bool $natureManuelle): static
+    {
+        $this->natureManuelle = $natureManuelle;
+
+        return $this;
+    }
+
+    /**
+     * Nouveau licencié au club ? Null si la nature n'est pas renseignée : l'inconnu
+     * doit rester distinct du renouvellement (il conditionne les options de dotation).
+     */
+    public function estNouveau(): ?bool
+    {
+        return $this->natureLicence?->estNouveau();
     }
 
     public function getImportedAt(): \DateTimeImmutable

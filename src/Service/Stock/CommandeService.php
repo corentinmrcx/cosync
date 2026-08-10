@@ -16,7 +16,7 @@ final class CommandeService
 {
     public function __construct(
         private readonly AchatService $achatService,
-        private readonly StockService $stockService,
+        private readonly StockMovementService $stockService,
         private readonly CommandeRepository $commandeRepository,
         private readonly EntityManagerInterface $em,
     ) {}
@@ -60,6 +60,30 @@ final class CommandeService
         $this->em->flush();
 
         return $created;
+    }
+
+    /** @throws \DomainException si la commande n'est plus un brouillon */
+    public function supprimerBrouillon(Commande $commande): void
+    {
+        // Une commande passée a généré des mouvements de stock : la supprimer les orphelinerait.
+        if ($commande->getStatut() !== CommandeStatut::BROUILLON) {
+            throw new \DomainException('Seul un brouillon peut être supprimé.');
+        }
+
+        $this->em->remove($commande);
+        $this->em->flush();
+    }
+
+    public function compterEnAttente(Season $season): int
+    {
+        $total = 0;
+        foreach ($this->commandeRepository->findBySeason($season) as $commande) {
+            if ($commande->getStatut()->isEnAttente()) {
+                ++$total;
+            }
+        }
+
+        return $total;
     }
 
     public function marquerCommandee(Commande $commande, \DateTimeImmutable $date): void
@@ -120,10 +144,10 @@ final class CommandeService
     private function recomputeStatut(Commande $commande): void
     {
         $restant = 0;
-        $recu    = 0;
+        $recu = 0;
         foreach ($commande->getLignes() as $ligne) {
             $restant += $ligne->getRestant();
-            $recu    += $ligne->getQuantiteRecue();
+            $recu += $ligne->getQuantiteRecue();
         }
 
         if ($restant === 0) {

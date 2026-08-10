@@ -2,108 +2,59 @@
 
 namespace App\Service\Pdf;
 
-use App\Entity\Dirigeant;
-use App\Entity\Licencie;
-use App\Entity\Season;
-use Dompdf\Dompdf;
-use Dompdf\Options;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Twig\Environment;
+use App\Entity\DocumentSignable;
 
 final class PdfGeneratorService
 {
     public function __construct(
-        private readonly Environment $twig,
-        #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
+        private readonly PdfRenderer $renderer,
+        private readonly AssetEncoder $assets,
+        private readonly PdfStorage $storage,
     ) {}
 
     /**
-     * Génère le PDF règlement signé d'un licencié et le sauvegarde dans var/pdfs/.
-     * Retourne le chemin absolu du fichier généré.
+     * Le nom de fichier combine l'identifiant du signataire et le code du document :
+     * une personne qui signe plusieurs documents (le règlement dirigeants et une charte,
+     * par exemple) ne peut pas en écraser un avec l'autre.
      */
-    public function generateReglementSigne(Licencie $licencie, string $signatureDataUrl): string
-    {
-        return $this->renderReglementToFile(
-            $licencie->getPrenom(),
-            $licencie->getNom(),
-            $licencie->getSeason(),
-            $signatureDataUrl,
-            (string) $licencie->getUuid(),
+    public function generateSignedDocument(
+        DocumentSignable $document,
+        string $prenom,
+        string $nom,
+        string $fileKey,
+        string $signatureDataUrl,
+    ): string {
+        return $this->storage->ecrire(
+            $fileKey . '_' . $document->getCode() . '.pdf',
+            $this->rendre($document, $prenom, $nom, $signatureDataUrl),
         );
     }
 
-    /**
-     * Génère le PDF règlement signé d'un dirigeant et le sauvegarde dans var/pdfs/.
-     * Retourne le chemin absolu du fichier généré.
-     */
-    public function generateReglementSigneDirigeant(Dirigeant $dirigeant, string $signatureDataUrl): string
+    /** Rendu d'aperçu pour l'administration : contenu binaire, jamais écrit sur disque. */
+    public function generatePreview(DocumentSignable $document): string
     {
-        return $this->renderReglementToFile(
-            $dirigeant->getPrenom(),
-            $dirigeant->getNom(),
-            $dirigeant->getSeason(),
-            $signatureDataUrl,
-            (string) $dirigeant->getUuid(),
-        );
+        return $this->rendre($document, 'Prénom', 'NOM', '', previewMode: true);
     }
 
-    public function generatePreview(Season $season): string
-    {
-        $html = $this->twig->render('pdf/reglement_signe.html.twig', [
-            'prenom'           => 'Prénom',
-            'nom'              => 'NOM',
-            'season'           => $season,
-            'signatureDataUrl' => '',
-            'signedAt'         => new \DateTimeImmutable(),
-            'logoDataUrl'      => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
-            'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
-            'previewMode'      => true,
-        ]);
-
-        return $this->renderPdf($html);
-    }
-
-    /** Rend le règlement signé en PDF et l'écrit dans var/pdfs/. Retourne le chemin absolu. */
-    private function renderReglementToFile(string $prenom, string $nom, Season $season, string $signatureDataUrl, string $fileKey): string
-    {
-        $html = $this->twig->render('pdf/reglement_signe.html.twig', [
-            'prenom'           => $prenom,
-            'nom'              => $nom,
-            'season'           => $season,
+    private function rendre(
+        DocumentSignable $document,
+        string $prenom,
+        string $nom,
+        string $signatureDataUrl,
+        bool $previewMode = false,
+    ): string {
+        return $this->renderer->render('pdf/document_signe.html.twig', [
+            'prenom' => $prenom,
+            'nom' => $nom,
+            'season' => $document->getSeason(),
+            'documentTitle' => $document->getTitre(),
+            'documentLabel' => $document->getLibelle(),
+            'reglementHtml' => $document->getContenuHtml(),
             'signatureDataUrl' => $signatureDataUrl,
-            'signedAt'         => new \DateTimeImmutable(),
-            'logoDataUrl'      => $this->encodeImage($this->projectDir . '/public/images/logo/logo.png'),
-            'foyerLogoDataUrl' => $this->encodeImage($this->projectDir . '/public/images/logo/foyerDeSoudron.png'),
+            'signedAt' => new \DateTimeImmutable(),
+            'logoDataUrl' => $this->assets->logoClub(),
+            'foyerLogoDataUrl' => $this->assets->logoFoyer(),
+            'previewMode' => $previewMode,
         ]);
-
-        $dir = $this->projectDir . '/var/pdfs';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        $path = $dir . '/' . $fileKey . '_reglement.pdf';
-        file_put_contents($path, $this->renderPdf($html));
-
-        return $path;
-    }
-
-    private function renderPdf(string $html): string
-    {
-        $options = new Options();
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('isRemoteEnabled', false);
-        $options->set('defaultFont', 'Arial');
-
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        return $dompdf->output();
-    }
-
-    private function encodeImage(string $path): string
-    {
-        return 'data:image/png;base64,' . base64_encode(file_get_contents($path));
     }
 }

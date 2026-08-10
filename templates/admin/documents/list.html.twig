@@ -1,0 +1,105 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Documents à signer{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Documents à signer' }
+] } %}
+
+<div class="documents-page">
+    <div class="documents-card">
+
+        <div class="documents-header">
+            <div class="documents-header-text">
+                <h1 class="documents-title">Documents à signer</h1>
+                <p class="documents-intro">
+                    Règlements intérieurs, chartes d'engagement… Chaque document est lu et signé dans le
+                    formulaire public, puis archivé sur Drive. Ajouter un document le rend immédiatement
+                    exigible : les dossiers concernés redeviennent incomplets.
+                </p>
+            </div>
+            <a href="{{ path('admin_documents_new') }}" class="btn btn-primary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nouveau document
+            </a>
+        </div>
+
+        <hr class="documents-divider">
+
+        {% if documents is empty %}
+            <p class="documents-empty">Aucun document pour cette saison.</p>
+        {% else %}
+            <ul class="documents-list">
+                {% for doc in documents %}
+                    <li class="documents-item {{ doc.actif ? '' : 'documents-item-inactif' }}">
+
+                        <div class="documents-item-info">
+                            <span class="documents-item-name">{{ doc.titre }}</span>
+                            <span class="documents-item-meta">
+                                <span class="documents-badge documents-badge-cible">{{ doc.cible.label }}</span>
+
+                                {% if doc.cible.value == 'dirigeant' %}
+                                    {% if doc.viseTousLesDirigeants %}
+                                        <span>Tous les dirigeants</span>
+                                    {% else %}
+                                        <span>{{ doc.ciblesLabel }}</span>
+                                    {% endif %}
+                                {% endif %}
+
+                                <span>·</span>
+                                <span>{{ stats[doc.id].signes }} signature{{ stats[doc.id].signes > 1 ? 's' : '' }}</span>
+
+                                {% if stats[doc.id].enAttente > 0 %}
+                                    <span class="documents-badge documents-badge-attente">
+                                        {{ stats[doc.id].enAttente }} en attente
+                                    </span>
+                                {% elseif stats[doc.id].signes > 0 %}
+                                    {# Sans personne concernée restante, mais seulement si quelqu'un a signé :
+                                       une saison vide ne doit pas s'annoncer comme entièrement signée. #}
+                                    <span class="documents-badge documents-badge-ok">Tout le monde a signé</span>
+                                {% endif %}
+
+                                {% if not doc.actif %}
+                                    <span class="documents-badge documents-badge-inactif">Désactivé</span>
+                                {% endif %}
+
+                                {% if doc.contenuHtml is null %}
+                                    <span class="documents-badge documents-badge-attente">Texte à rédiger</span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="documents-item-actions">
+                            <a href="{{ path('admin_documents_edit', {id: doc.id}) }}" class="btn btn-secondary">Modifier</a>
+                            <a href="{{ path('admin_documents_apercu', {id: doc.id}) }}" target="_blank" class="btn btn-secondary">Aperçu PDF</a>
+
+                            {% if doc.cible.value == 'dirigeant' and doc.actif and stats[doc.id].enAttente > 0 %}
+                                <a href="{{ path('admin_documents_relancer', {id: doc.id}) }}" class="btn btn-secondary">Relancer</a>
+                            {% endif %}
+
+                            <form method="post" action="{{ path('admin_documents_toggle', {id: doc.id}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('document_toggle_' ~ doc.id) }}">
+                                <button type="submit" class="btn btn-secondary">{{ doc.actif ? 'Désactiver' : 'Réactiver' }}</button>
+                            </form>
+
+                            {% if stats[doc.id].signes == 0 %}
+                                <form method="post" action="{{ path('admin_documents_delete', {id: doc.id}) }}"
+                                      onsubmit="return confirm('Supprimer définitivement ce document ?')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('document_delete_' ~ doc.id) }}">
+                                    <button type="submit" class="btn btn-secondary documents-btn-danger">Supprimer</button>
+                                </form>
+                            {% endif %}
+                        </div>
+
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

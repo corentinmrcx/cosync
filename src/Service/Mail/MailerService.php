@@ -2,172 +2,135 @@
 
 namespace App\Service\Mail;
 
+use App\Entity\AttestationCle;
+use App\Entity\Detenteur;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
-use App\Service\BetaModeService;
-use Symfony\Bridge\Twig\Mime\TemplatedEmail;
-use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\Mailer\MailerInterface;
+use App\Service\Payment\CotisationResolver;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
+/**
+ * Les mails que le club envoie. Chaque méthode décrit un message ; l'expéditeur, la
+ * redirection en mode bêta et l'envoi lui-même sont dans ClubMailer.
+ */
 final class MailerService
 {
     public function __construct(
-        private readonly MailerInterface $mailer,
+        private readonly ClubMailer $clubMailer,
         private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly BetaModeService $betaModeService,
-        private readonly Security $security,
+        private readonly CotisationResolver $cotisationResolver,
+        private readonly PiecesJointesFilter $piecesJointes,
     ) {}
-
-    private function resolveRecipient(Address $real): Address
-    {
-        if ($this->betaModeService->isActive()) {
-            $user = $this->security->getUser();
-            if ($user !== null) {
-                return new Address($user->getUserIdentifier());
-            }
-            // Pas d'utilisateur authentifié (console, async) : fallback sur DIAG_EMAIL
-            // pour ne jamais laisser partir un mail vers un vrai licencié en beta.
-            $diagEmail = $this->betaModeService->getRedirectEmail();
-            if ($diagEmail !== '') {
-                return new Address($diagEmail);
-            }
-            throw new \RuntimeException('Beta mode actif mais aucun destinataire de secours (DIAG_EMAIL non configuré).');
-        }
-        return $real;
-    }
-
-    private function resolveSubject(string $subject, string $realEmail): string
-    {
-        if ($this->betaModeService->isActive()) {
-            return "[BETA → {$realEmail}] {$subject}";
-        }
-        return $subject;
-    }
-
-    public function sendTestEmail(string $to): void
-    {
-        $email = (new TemplatedEmail())
-            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
-            ->to($to)
-            ->subject('Test d\'envoi — Foyer de Soudron')
-            ->htmlTemplate('email/test.html.twig');
-
-        $this->mailer->send($email);
-    }
 
     public function sendInscriptionLink(Licencie $licencie): void
     {
-        $url = $this->urlGenerator->generate(
-            'public_inscription_show',
-            ['uuid' => $licencie->getUuid()],
-            UrlGeneratorInterface::ABSOLUTE_URL,
-        );
-
-        $realEmail = $licencie->getEmail();
-        $subject   = 'Finalisez votre dossier — Foyer de Soudron, saison ' . $licencie->getSeason()->getLabel();
-
-        $email = (new TemplatedEmail())
-            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
-            ->to($this->resolveRecipient(new Address($realEmail, $licencie->getNomPrenom())))
-            ->subject($this->resolveSubject($subject, $realEmail))
-            ->htmlTemplate('email/inscription_link.html.twig')
-            ->context([
+        $this->clubMailer->envoyer(
+            $this->adresseDe($licencie),
+            'Finalisez votre dossier',
+            'email/inscription_link.html.twig',
+            [
                 'licencie' => $licencie,
-                'url'      => $url,
-            ]);
-
-        $this->mailer->send($email);
+                'url' => $this->lienPublic('public_inscription_show', $licencie->getUuid()),
+            ],
+        );
     }
 
     public function sendCompletionLink(Licencie $licencie): void
     {
-        $url = $this->urlGenerator->generate(
-            'public_inscription_completer',
-            ['uuid' => $licencie->getUuid()],
-            UrlGeneratorInterface::ABSOLUTE_URL,
-        );
-
-        $realEmail = $licencie->getEmail();
-        $subject   = 'Une précision à apporter à votre dossier — Foyer de Soudron, saison ' . $licencie->getSeason()->getLabel();
-
-        $email = (new TemplatedEmail())
-            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
-            ->to($this->resolveRecipient(new Address($realEmail, $licencie->getNomPrenom())))
-            ->subject($this->resolveSubject($subject, $realEmail))
-            ->htmlTemplate('email/completion_link.html.twig')
-            ->context([
+        $this->clubMailer->envoyer(
+            $this->adresseDe($licencie),
+            'Une précision à apporter à votre dossier',
+            'email/completion_link.html.twig',
+            [
                 'licencie' => $licencie,
-                'url'      => $url,
-            ]);
-
-        $this->mailer->send($email);
-    }
-
-    public function sendDirigeantLink(Dirigeant $dirigeant): void
-    {
-        $url = $this->urlGenerator->generate(
-            'public_dirigeant_show',
-            ['uuid' => $dirigeant->getUuid()],
-            UrlGeneratorInterface::ABSOLUTE_URL,
+                'url' => $this->lienPublic('public_inscription_completer', $licencie->getUuid()),
+            ],
         );
-
-        $realEmail = $dirigeant->getEmail();
-        $subject   = 'Finalisez votre dossier dirigeant — Foyer de Soudron, saison ' . $dirigeant->getSeason()->getLabel();
-
-        $email = (new TemplatedEmail())
-            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
-            ->to($this->resolveRecipient(new Address($realEmail, $dirigeant->getNomPrenom())))
-            ->subject($this->resolveSubject($subject, $realEmail))
-            ->htmlTemplate('email/dirigeant_link.html.twig')
-            ->context([
-                'dirigeant' => $dirigeant,
-                'url'       => $url,
-            ]);
-
-        $this->mailer->send($email);
     }
 
-    public function sendValidationTest(string $to, bool $isJeune): void
+    /**
+     * Accusé de réception du formulaire, avec les instructions de paiement correspondant
+     * au(x) mode(s) déclaré(s) et les documents signés en pièces jointes.
+     *
+     * C'est la seule trace écrite que le licencié reçoit tant qu'il n'a pas payé : le mail
+     * de validation, lui, n'arrive qu'après encaissement — donc jamais pour qui ne règle pas.
+     *
+     * @param array<string, string> $pdfsJoints chemin local absolu => nom de fichier lisible
+     */
+    public function sendInscriptionConfirmation(Licencie $licencie, int $montant, array $pdfsJoints = []): void
     {
-        $subject = $isJeune
-            ? 'Licence de Thomas validée — Foyer de Soudron, saison 2025-2026'
-            : 'Votre licence est validée — Foyer de Soudron, saison 2025-2026';
+        if ($licencie->getEmail() === null) {
+            return;
+        }
 
-        $email = (new TemplatedEmail())
-            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
-            ->to($to)
-            ->subject($subject)
-            ->htmlTemplate('email/validation.html.twig')
-            ->context([
-                'licencie' => [
-                    'prenom'   => $isJeune ? 'Thomas' : 'Kévin',
-                    'nom'      => $isJeune ? 'DUPONT' : 'MARTIN',
-                    'season'   => ['label' => '2025-2026'],
-                    'category' => ['isJeune' => $isJeune],
-                ],
-            ]);
+        $retenus = $this->piecesJointes->retenir($pdfsJoints);
 
-        $this->mailer->send($email);
+        $this->clubMailer->envoyer(
+            $this->adresseDe($licencie),
+            'Inscription bien reçue',
+            'email/inscription_confirmation.html.twig',
+            [
+                'licencie' => $licencie,
+                'montant' => $montant,
+                'intentions' => $licencie->getDossierClub()?->getPaymentIntentions() ?? [],
+                'precisionAutre' => $licencie->getDossierClub()?->getPaymentAutrePrecision(),
+                'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
+                'url' => $this->lienPublic('public_inscription_confirmation', $licencie->getUuid()),
+                'documentsJoints' => count($retenus),
+            ],
+            $retenus,
+        );
     }
 
     public function sendValidation(Licencie $licencie): void
     {
-        $realEmail = $licencie->getEmail();
-        $subject   = $licencie->getCategory()->isJeune()
-            ? 'Licence de ' . $licencie->getPrenom() . ' validée — Foyer de Soudron, saison ' . $licencie->getSeason()->getLabel()
-            : 'Votre licence est validée — Foyer de Soudron, saison ' . $licencie->getSeason()->getLabel();
+        $this->clubMailer->envoyer(
+            $this->adresseDe($licencie),
+            $licencie->getCategory()->isJeune()
+                ? 'Licence de ' . $licencie->getPrenom() . ' validée'
+                : 'Votre licence est validée',
+            'email/validation.html.twig',
+            ['licencie' => $licencie],
+        );
+    }
 
-        $email = (new TemplatedEmail())
-            ->from(new Address('soudron.fr@marne.lgef.fr', 'Foyer de Soudron'))
-            ->to($this->resolveRecipient(new Address($realEmail, $licencie->getNomPrenom())))
-            ->subject($this->resolveSubject($subject, $realEmail))
-            ->htmlTemplate('email/validation.html.twig')
-            ->context([
-                'licencie' => $licencie,
-            ]);
+    public function sendDirigeantLink(Dirigeant $dirigeant): void
+    {
+        $this->clubMailer->envoyer(
+            $this->adresseDe($dirigeant),
+            'Finalisez votre dossier dirigeant',
+            'email/dirigeant_link.html.twig',
+            [
+                'dirigeant' => $dirigeant,
+                'url' => $this->lienPublic('public_dirigeant_show', $dirigeant->getUuid()),
+            ],
+        );
+    }
 
-        $this->mailer->send($email);
+    public function sendAttestationCleLink(AttestationCle $attestation): void
+    {
+        $detenteur = $attestation->getDetenteur();
+
+        $this->clubMailer->envoyer(
+            $this->adresseDe($detenteur),
+            'Attestation de remise de clés à signer',
+            'email/attestation_cle_link.html.twig',
+            [
+                'detenteur' => $detenteur,
+                'season' => $attestation->getSeason(),
+                'url' => $this->lienPublic('public_attestation_cle_show', $attestation->getUuid()),
+            ],
+        );
+    }
+
+    private function adresseDe(Licencie|Dirigeant|Detenteur $personne): Address
+    {
+        return new Address((string) $personne->getEmail(), $personne->getNomPrenom());
+    }
+
+    private function lienPublic(string $route, \Symfony\Component\Uid\Uuid $uuid): string
+    {
+        return $this->urlGenerator->generate($route, ['uuid' => $uuid], UrlGeneratorInterface::ABSOLUTE_URL);
     }
 }

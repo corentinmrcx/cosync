@@ -1,0 +1,9 @@
+{# Voile plein écran affiché pendant une soumission : `titre` dit ce qui est en cours,
+   `visible` est l'expression Alpine qui le déclenche. #}
+<div class="inscription-overlay" x-show="{{ visible }}" x-cloak>
+    <div class="inscription-overlay-box">
+        <div class="inscription-overlay-spinner"></div>
+        <p class="inscription-overlay-title">{{ titre }}</p>
+        <p class="inscription-overlay-text">Merci de patienter quelques secondes, ne fermez pas cette page.</p>
+    </div>
+</div>

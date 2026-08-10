@@ -14,7 +14,11 @@ final class AchatServiceTest extends StockIntegrationTestCase
         return $this->service(AchatService::class);
     }
 
-    /** @return array{0: ?array, 1: int} la première ligne trouvée pour (nom, taille) + nb total de lignes */
+    /**
+     * @param array<int|string, array{lignes: array<int, array<string, mixed>>}> $groupes
+     *
+     * @return array<string, mixed>|null la première ligne trouvée pour (nom, taille)
+     */
     private function findLigne(array $groupes, string $nom, ?string $taille): ?array
     {
         foreach ($groupes as $groupe) {
@@ -24,14 +28,15 @@ final class AchatServiceTest extends StockIntegrationTestCase
                 }
             }
         }
+
         return null;
     }
 
     public function testEquationBesoinsMoinsStockMoinsEnAttente(): void
     {
         $season = $this->makeSeason();
-        $f      = $this->makeFournisseur('Sport2000');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
+        $f = $this->makeFournisseur('Sport2000');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
 
         $this->makeBesoin($season, $veste, 'L', 10);                 // besoin 10
         $this->makeMovement($veste, 3, StockMovementType::ENTREE, 'L'); // stock 3
@@ -50,7 +55,7 @@ final class AchatServiceTest extends StockIntegrationTestCase
     public function testStockSepareParTaille(): void
     {
         $season = $this->makeSeason();
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
 
         $this->makeBesoin($season, $veste, 'L', 5);
         $this->makeBesoin($season, $veste, 'M', 3);
@@ -68,10 +73,10 @@ final class AchatServiceTest extends StockIntegrationTestCase
     public function testRegroupementParFournisseur(): void
     {
         $season = $this->makeSeason();
-        $fa     = $this->makeFournisseur('Fournisseur A');
-        $fb     = $this->makeFournisseur('Fournisseur B');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT, $fa);
-        $short  = $this->makeItem('Short', StockItemVetementType::BAS, $fb);
+        $fa = $this->makeFournisseur('Fournisseur A');
+        $fb = $this->makeFournisseur('Fournisseur B');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT, $fa);
+        $short = $this->makeItem('Short', StockItemVetementType::BAS, $fb);
 
         $this->makeBesoin($season, $veste, 'L', 4);
         $this->makeBesoin($season, $short, 'M', 6);
@@ -88,7 +93,7 @@ final class AchatServiceTest extends StockIntegrationTestCase
     public function testBesoinsDonnesEtCouvertsIgnores(): void
     {
         $season = $this->makeSeason();
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
 
         $this->makeBesoin($season, $veste, 'L', 2, DotationBesoinStatut::DONNE); // déjà donné
         $this->makeBesoin($season, $veste, 'M', 2);                              // mais couvert par le stock

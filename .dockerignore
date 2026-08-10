@@ -1,10 +1,19 @@
 .git
+.github
+# .env est volontairement CONSERVÉ : Symfony Dotenv::bootEnv() en a besoin pour booter.
+# Ses valeurs par défaut (APP_ENV=dev, secret factice) sont neutralisées par le
+# garde-fou en tête de docker/php/entrypoint.prod.sh.
 .env.local
 .env.dev
 .env.prod
 node_modules
+tests
+docs
 var/cache
 var/log
 var/sessions
+var/pdfs
+var/backups
+var/signatures
 docker-compose.yml
 docker-compose.prod.yml

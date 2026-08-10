@@ -1,0 +1,32 @@
+{% extends 'pdf/_layout.html.twig' %}
+
+{% block titre %}{{ documentTitle }}{% endblock %}
+{% block sous_titre %}{{ club_nom }} — Saison {{ season.label }}{% endblock %}
+
+{% block entete %}
+    {% if previewMode|default(false) %}{% include 'pdf/_bandeau_apercu.html.twig' %}{% endif %}
+    {{ parent() }}
+{% endblock %}
+
+{% block corps %}
+    <div class="content">
+        {{ reglementHtml ? reglementHtml|raw : '<p>Ce document n\'a pas encore été rédigé pour cette saison.</p>' }}
+    </div>
+
+    <div class="footer">
+        <p class="footer-approval">
+            Le présent règlement est approuvé par le Conseil d'Administration du {{ club_nom }} et entre en application immédiatement.
+        </p>
+        <p class="footer-date">Soudron, le {{ signedAt|date('d/m/Y') }}</p>
+        <p class="footer-statement">
+            {# L'article fait partie du libellé du document : « le règlement… », « la charte… ». #}
+            Je soussigné·e <span class="highlight">{{ prenom }} {{ nom }}</span>, reconnais avoir lu et accepté {{ documentLabel }} pour la saison <span class="highlight">{{ season.label }}</span>.
+        </p>
+        <div class="sign-label">Signature :</div>
+        {% if previewMode|default(false) %}
+            <p style="font-size:11px;color:#888;font-style:italic;">(Emplacement de la signature)</p>
+        {% else %}
+            <img class="sign-img" src="{{ signatureDataUrl }}" alt="Signature">
+        {% endif %}
+    </div>
+{% endblock %}

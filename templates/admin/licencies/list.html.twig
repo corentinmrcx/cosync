@@ -1,11 +1,13 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}CoSync — Licenciés{% endblock %}
+{% block title %}CoSync — Joueurs{% endblock %}
 
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Licenciés' }
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs' }
 ] } %}
 
 <div class="licencies-page">
@@ -33,8 +35,8 @@
             <p>Aucun licencié trouvé.</p>
         </div>
     {% else %}
-        <div class="licencies-table-wrap">
-            <table class="licencies-table">
+        <div class="table-wrapper">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Nom / Prénom</th>

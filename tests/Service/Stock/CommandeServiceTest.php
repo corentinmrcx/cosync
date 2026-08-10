@@ -19,8 +19,8 @@ final class CommandeServiceTest extends StockIntegrationTestCase
     public function testGenererBonsCreeUnBrouillonParFournisseurAvecPrix(): void
     {
         $season = $this->makeSeason();
-        $f      = $this->makeFournisseur('Sport2000');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
+        $f = $this->makeFournisseur('Sport2000');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
         $veste->setPrixAchat(20.0);
         $this->makeBesoin($season, $veste, 'L', 4);
         $this->em->flush();
@@ -43,8 +43,8 @@ final class CommandeServiceTest extends StockIntegrationTestCase
     public function testGenererBonsDeuxFoisNeCreePasDeDoublon(): void
     {
         $season = $this->makeSeason();
-        $f      = $this->makeFournisseur('Sport2000');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
+        $f = $this->makeFournisseur('Sport2000');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
         $this->makeBesoin($season, $veste, 'L', 4);
         $this->em->flush();
 
@@ -61,8 +61,8 @@ final class CommandeServiceTest extends StockIntegrationTestCase
     public function testGenererBonsNeTouchePasUneCommandePassee(): void
     {
         $season = $this->makeSeason();
-        $f      = $this->makeFournisseur('Sport2000');
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
+        $f = $this->makeFournisseur('Sport2000');
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT, $f);
         // Une commande déjà passée couvre 2 sur un besoin de 5 → reste 3 à commander.
         $this->makeBesoin($season, $veste, 'L', 5);
         $this->makeCommandeEnAttente($season, $veste, 'L', 2, $f);
@@ -79,8 +79,8 @@ final class CommandeServiceTest extends StockIntegrationTestCase
     public function testReceptionPartiellePuisComplete(): void
     {
         $season = $this->makeSeason();
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
-        $ligne  = $this->makeCommandeEnAttente($season, $veste, 'L', 3); // commande COMMANDEE, 3 attendus
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $ligne = $this->makeCommandeEnAttente($season, $veste, 'L', 3); // commande COMMANDEE, 3 attendus
         $this->em->flush();
 
         $movRepo = $this->service(StockMovementRepository::class);
@@ -101,8 +101,8 @@ final class CommandeServiceTest extends StockIntegrationTestCase
     public function testReceptionBorneeAuRestant(): void
     {
         $season = $this->makeSeason();
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
-        $ligne  = $this->makeCommandeEnAttente($season, $veste, 'M', 2);
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $ligne = $this->makeCommandeEnAttente($season, $veste, 'M', 2);
         $this->em->flush();
 
         // On tente de recevoir 10 alors qu'il n'en reste que 2
@@ -116,8 +116,8 @@ final class CommandeServiceTest extends StockIntegrationTestCase
     public function testAnnulerReceptionRevientStockEtStatut(): void
     {
         $season = $this->makeSeason();
-        $veste  = $this->makeItem('Veste', StockItemVetementType::HAUT);
-        $ligne  = $this->makeCommandeEnAttente($season, $veste, 'L', 3);
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $ligne = $this->makeCommandeEnAttente($season, $veste, 'L', 3);
         $this->em->flush();
 
         $movRepo = $this->service(StockMovementRepository::class);
@@ -135,8 +135,8 @@ final class CommandeServiceTest extends StockIntegrationTestCase
 
     public function testMarquerCommandeePoseLaDate(): void
     {
-        $season   = $this->makeSeason();
-        $veste    = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $season = $this->makeSeason();
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
         $commande = (new Commande())->setSeason($season);
         $this->em->persist($commande);
         $this->em->flush();

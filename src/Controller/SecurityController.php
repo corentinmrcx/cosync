@@ -9,6 +9,10 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 class SecurityController extends AbstractController
 {
+    public function __construct(
+        private readonly AuthenticationUtils $authenticationUtils,
+    ) {}
+
     #[Route('/', name: 'home')]
     public function home(): Response
     {
@@ -16,15 +20,15 @@ class SecurityController extends AbstractController
     }
 
     #[Route('/login', name: 'security_login')]
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function login(): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('admin_dashboard');
         }
 
         return $this->render('security/login.html.twig', [
-            'error'         => $authenticationUtils->getLastAuthenticationError(),
-            'last_username' => $authenticationUtils->getLastUsername(),
+            'error' => $this->authenticationUtils->getLastAuthenticationError(),
+            'last_username' => $this->authenticationUtils->getLastUsername(),
         ]);
     }
 

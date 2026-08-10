@@ -59,44 +59,10 @@
     cursor: pointer;
 }
 
-.diag-input {
-    flex: 1;
-    padding: 0.625rem 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-base);
-    background: var(--color-bg-page);
-    outline: none;
-    transition: border-color 0.15s;
-    min-width: 0;
-}
-
-.diag-input:focus { border-color: var(--color-primary); }
-
-.diag-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.625rem 1.25rem;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 0.15s;
-    white-space: nowrap;
-}
-
-.diag-btn:hover { background: var(--color-primary-dark); }
-
 .diag-btn-success {
     background: var(--color-success);
 }
-.diag-btn-success:hover { background: #16a34a; }
+.diag-btn-success:hover { background: var(--color-success-dark); }
 
 .diag-btn-outline {
     background: transparent;
@@ -108,7 +74,7 @@
 .diag-btn-danger {
     background: var(--color-danger);
 }
-.diag-btn-danger:hover:not(:disabled) { background: #dc2626; }
+.diag-btn-danger:hover:not(:disabled) { background: var(--color-danger-dark); }
 
 .diag-btn-disabled,
 .diag-btn:disabled {
@@ -129,13 +95,13 @@
 .diag-banner-active {
     background: var(--color-warning-bg);
     border-color: var(--color-warning);
-    color: #92400e;
+    color: var(--color-warning-text);
 }
 
 .diag-banner-inactive {
     background: var(--color-success-bg);
     border-color: var(--color-success);
-    color: #166534;
+    color: var(--color-success-text);
 }
 
 .diag-banner-dot {

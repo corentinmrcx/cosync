@@ -6,7 +6,6 @@ use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Repository\StockMovementRepository;
 use Doctrine\ORM\Mapping as ORM;
-use App\Entity\Dirigeant;
 
 #[ORM\Entity(repositoryClass: StockMovementRepository::class)]
 class StockMovement
@@ -61,7 +60,7 @@ class StockMovement
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
-        $this->source    = StockMovementSource::MANUEL;
+        $this->source = StockMovementSource::MANUEL;
     }
 
     public function getId(): int
@@ -77,6 +76,7 @@ class StockMovement
     public function setItem(StockItem $item): static
     {
         $this->item = $item;
+
         return $this;
     }
 
@@ -88,6 +88,7 @@ class StockMovement
     public function setQuantite(int $quantite): static
     {
         $this->quantite = $quantite;
+
         return $this;
     }
 
@@ -99,6 +100,7 @@ class StockMovement
     public function setType(StockMovementType $type): static
     {
         $this->type = $type;
+
         return $this;
     }
 
@@ -110,6 +112,7 @@ class StockMovement
     public function setTaille(?string $taille): static
     {
         $this->taille = $taille;
+
         return $this;
     }
 
@@ -121,6 +124,7 @@ class StockMovement
     public function setLicencie(?Licencie $licencie): static
     {
         $this->licencie = $licencie;
+
         return $this;
     }
 
@@ -132,6 +136,7 @@ class StockMovement
     public function setDirigeant(?Dirigeant $dirigeant): static
     {
         $this->dirigeant = $dirigeant;
+
         return $this;
     }
 
@@ -143,6 +148,7 @@ class StockMovement
     public function setNote(?string $note): static
     {
         $this->note = $note;
+
         return $this;
     }
 
@@ -154,6 +160,7 @@ class StockMovement
     public function setSource(StockMovementSource $source): static
     {
         $this->source = $source;
+
         return $this;
     }
 
@@ -165,6 +172,7 @@ class StockMovement
     public function setSumupTransactionId(?string $sumupTransactionId): static
     {
         $this->sumupTransactionId = $sumupTransactionId;
+
         return $this;
     }
 
@@ -176,6 +184,7 @@ class StockMovement
     public function setCreatedBy(?User $createdBy): static
     {
         $this->createdBy = $createdBy;
+
         return $this;
     }
 

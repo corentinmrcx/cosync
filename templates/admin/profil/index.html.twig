@@ -16,7 +16,7 @@
 
         <hr class="season-form-divider">
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.email) }}
             {{ form_widget(form.email) }}
             {{ form_errors(form.email) }}
@@ -24,13 +24,13 @@
 
         <hr class="season-form-divider">
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.newPassword.first) }}
             {{ form_widget(form.newPassword.first) }}
             {{ form_errors(form.newPassword.first) }}
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.newPassword.second) }}
             {{ form_widget(form.newPassword.second) }}
             {{ form_errors(form.newPassword.second) }}
@@ -38,7 +38,7 @@
 
         {{ form_errors(form.newPassword) }}
 
-        <button type="submit" class="season-form-submit">Enregistrer</button>
+        <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
 
     {{ form_end(form) }}
 

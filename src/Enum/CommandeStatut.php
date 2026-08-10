@@ -4,18 +4,18 @@ namespace App\Enum;
 
 enum CommandeStatut: string
 {
-    case BROUILLON       = 'brouillon';
-    case COMMANDEE       = 'commandee';
+    case BROUILLON = 'brouillon';
+    case COMMANDEE = 'commandee';
     case RECUE_PARTIELLE = 'recue_partielle';
-    case RECUE           = 'recue';
+    case RECUE = 'recue';
 
     public function label(): string
     {
         return match ($this) {
-            self::BROUILLON       => 'Brouillon',
-            self::COMMANDEE       => 'Commandée',
+            self::BROUILLON => 'Brouillon',
+            self::COMMANDEE => 'Commandée',
             self::RECUE_PARTIELLE => 'Reçue partiellement',
-            self::RECUE           => 'Reçue',
+            self::RECUE => 'Reçue',
         };
     }
 

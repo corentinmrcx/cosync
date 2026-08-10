@@ -16,7 +16,10 @@ RUN apk add --no-cache \
     oniguruma-dev \
     libxml2-dev \
     nodejs \
-    npm
+    npm \
+    # parité avec l'image de prod : pg_dump (app:db:backup) et su-exec (entrypoints)
+    postgresql16-client \
+    su-exec
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
@@ -35,8 +38,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 
 # Répertoires Symfony writable par www-data
-RUN mkdir -p /var/www/html/var/signatures \
-    && mkdir -p /var/www/html/var/pdfs \
+RUN mkdir -p /var/www/html/var/pdfs /var/www/html/var/backups \
     && chown -R www-data:www-data /var/www/html/var
 
 EXPOSE 9000

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { font-family: Arial, sans-serif; }
+        body { margin: 0; color: #1f1f1f; font-size: 12px; }
+        .header { border-bottom: 2px solid #ff3131; padding-bottom: 12px; margin-bottom: 18px; }
+        .header table { width: 100%; }
+        .club { font-size: 20px; font-weight: bold; color: #ff3131; }
+        .meta { font-size: 11px; color: #555; }
+        h1 { font-size: 18px; margin: 0 0 4px; }
+        .infos { margin-bottom: 16px; font-size: 11px; color: #555; }
+        .intro { margin-bottom: 16px; font-size: 11px; line-height: 1.6; }
+        table.lignes { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        table.lignes th { background: #f3f4f6; text-align: left; padding: 6px 8px; font-size: 11px; border-bottom: 1px solid #d1d5db; }
+        table.lignes td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
+        .cles { text-align: center; width: 70px; font-weight: bold; }
+        .date { text-align: center; width: 100px; }
+        .signe { text-align: center; width: 90px; font-weight: bold; }
+        .oui { color: #22c55e; }
+        .non { color: #ef4444; }
+        .renouveler { color: #f59e0b; }
+        .vide { padding: 14px 8px; color: #9aa1aa; font-style: italic; }
+        .totaux { font-size: 11px; color: #555; margin-bottom: 20px; }
+        .footer { margin-top: 24px; font-size: 10px; color: #9aa1aa; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <table>
+            <tr>
+                <td style="vertical-align: middle;">
+                    <span class="club">Foyer de Soudron</span><br>
+                    <span class="meta">Stade municipal · 51320 Soudron</span>
+                </td>
+                <td style="text-align: right; vertical-align: middle;">
+                    {% if logoDataUrl %}<img src="{{ logoDataUrl }}" width="56" height="56" style="object-fit: contain;">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Détenteurs des clés du local</h1>
+    <div class="infos">
+        Saison {{ saisonLabel }} · Édité le {{ generatedAt|date('d/m/Y à H:i') }}
+    </div>
+
+    <table class="lignes">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th class="cles">Clés</th>
+                <th class="date">Signée le</th>
+                <th class="signe">Signée</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td>{{ row.nom }}</td>
+                    <td>{{ row.prenom }}</td>
+                    <td class="cles">{{ row.nbCles }}</td>
+                    <td class="date">{{ row.signedAt ? row.signedAt|date('d/m/Y') : '—' }}</td>
+                    <td class="signe {{ row.statutClass }}">{{ row.statutLabel }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="vide">Aucune clé n'est actuellement détenue pour cette saison.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if rows|length > 0 %}
+        <p class="totaux">
+            {{ rows|length }} détenteur{{ rows|length > 1 ? 's' }} ·
+            {% set totalCles = 0 %}{% for row in rows %}{% set totalCles = totalCles + row.nbCles %}{% endfor %}
+            {{ totalCles }} clé{{ totalCles > 1 ? 's' }} en circulation ·
+            {% set signees = rows|filter(r => r.isSigned and not r.aRenouveler)|length %}
+            {{ signees }} attestation{{ signees > 1 ? 's' }} signée{{ signees > 1 ? 's' }} et à jour
+        </p>
+    {% endif %}
+
+    <div class="footer">
+        Document généré automatiquement par CoSync — Foyer de Soudron.
+    </div>
+
+</body>
+</html>

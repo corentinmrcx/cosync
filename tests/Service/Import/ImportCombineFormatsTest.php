@@ -64,7 +64,7 @@ final class ImportCombineFormatsTest extends ImportIntegrationTestCase
         $season = $this->makeSeason();
         $this->em->flush();
         $seasonId = $season->getId();
-        $service  = $this->service(ImportService::class);
+        $service = $this->service(ImportService::class);
 
         $file1 = $this->makeXlsx(self::HEADERS_DEMAT, [
             ['DUPONT', 'Jean', '111111', 'Dirigeant / Président', 'Dirigeant', '01/01/1980', 'a@example.fr', '', '', '', ''],

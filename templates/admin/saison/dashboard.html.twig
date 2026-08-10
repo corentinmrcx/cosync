@@ -1,0 +1,93 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Saison {{ season.label }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Saison ' ~ season.label }
+] } %}
+
+<div class="saison-page">
+
+    <div class="saison-header">
+        <h1 class="saison-title">Saison {{ season.label }}</h1>
+    </div>
+
+    <div class="dashboard-hub">
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'users',
+            label: 'Effectif',
+            route: 'admin_effectif_index'
+        } %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'shirt',
+            label: 'Dotations',
+            route: 'admin_dotations_dashboard'
+        } %}
+
+    </div>
+
+    {# — Réglages de la saison — #}
+    <div class="saison-section">
+        <div class="saison-section-header">
+            <h2 class="saison-section-title">Réglages de la saison</h2>
+        </div>
+        <div class="quicklink-grid">
+            <a href="{{ path('admin_cotisations_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('euro', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Cotisations</span>
+                    <span class="quicklink-text">Montant par défaut et montant propre à chaque équipe</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_equipes_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('shield', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Équipes</span>
+                    <span class="quicklink-text">Équipes de la saison et catégories FFF qui leur sont associées</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_documents_list') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('file-text', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Documents à signer</span>
+                    <span class="quicklink-text">Règlements et chartes signés dans le formulaire public</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+        </div>
+    </div>
+
+    {# — Raccourcis hors saison : le stock physique et les clés se gèrent au niveau du club — #}
+    <div class="saison-section">
+        <div class="saison-section-header">
+            <h2 class="saison-section-title">Géré au niveau du club</h2>
+        </div>
+        <div class="quicklink-grid">
+            <a href="{{ path('admin_stock_dashboard') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('box', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Stock</span>
+                    <span class="quicklink-text">Inventaire, articles, fournisseurs — communs à toutes les saisons</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_cles_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('key', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Clés</span>
+                    <span class="quicklink-text">Registre des détenteurs — l'attestation, elle, se resigne chaque saison</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

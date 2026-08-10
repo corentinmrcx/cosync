@@ -5,6 +5,8 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
     { label: 'Import' }
 ] } %}
 
@@ -39,6 +41,8 @@
               enctype="multipart/form-data"
               x-data="{ filename: '' }">
 
+            <input type="hidden" name="_token" value="{{ csrf_token('import_xlsx') }}">
+
             <label class="import-dropzone" for="xlsx">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -58,7 +62,7 @@
                        @change="filename = $event.target.files[0]?.name || ''">
             </label>
 
-            <button type="submit" class="import-submit">
+            <button type="submit" class="btn btn-primary btn-block">
                 Lancer l'import
             </button>
 

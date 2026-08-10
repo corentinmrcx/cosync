@@ -1,0 +1,48 @@
+{# ── Thème de formulaire Symfony ───────────────────────────────────────────────
+   Les widgets rendus par form_widget() sortent sans classe : sans ce thème, ils
+   retombent sur le style natif du navigateur et ignorent components/form-field.css.
+   Ce thème pose le socle du design system sur chaque champ, une fois pour toutes,
+   plutôt que de répéter attr: { class: 'field-input' } dans chaque template.
+   ───────────────────────────────────────────────────────────────────────────── #}
+{% use 'form_div_layout.html.twig' %}
+
+{# Les champs cachés n'ont rien à afficher — pas de socle visuel. #}
+{% block form_widget_simple %}
+    {% if type|default('text') != 'hidden' %}
+        {% set attr = attr|merge({ class: (attr.class|default('') ~ ' field-input')|trim }) %}
+    {% endif %}
+    {{- parent() -}}
+{% endblock %}
+
+{% block textarea_widget %}
+    {% set attr = attr|merge({ class: (attr.class|default('') ~ ' field-input')|trim }) %}
+    {{- parent() -}}
+{% endblock %}
+
+{% block choice_widget_collapsed %}
+    {% set attr = attr|merge({ class: (attr.class|default('') ~ ' field-input')|trim }) %}
+    {{- parent() -}}
+{% endblock %}
+
+{# Case à cocher et bouton radio : le libellé se pose à côté du champ, pas au-dessus. #}
+{% block form_label %}
+    {% if 'checkbox' not in block_prefixes and 'radio' not in block_prefixes %}
+        {% set label_attr = label_attr|merge({ class: (label_attr.class|default('') ~ ' field-label')|trim }) %}
+    {% endif %}
+    {{- parent() -}}
+{% endblock %}
+
+{% block form_help %}
+    {% set help_attr = help_attr|merge({ class: (help_attr.class|default('') ~ ' field-hint')|trim }) %}
+    {{- parent() -}}
+{% endblock %}
+
+{% block form_errors %}
+    {%- if errors|length > 0 -%}
+        <ul class="field-erreur">
+            {%- for error in errors -%}
+                <li id="{{ id ~ '_error' ~ loop.index }}">{{ error.message }}</li>
+            {%- endfor -%}
+        </ul>
+    {%- endif -%}
+{% endblock %}

@@ -1,0 +1,112 @@
+<?php declare(strict_types=1);
+
+namespace App\Tests\Controller\Admin;
+
+use App\Entity\Category;
+use App\Entity\Dirigeant;
+use App\Entity\DossierClub;
+use App\Entity\Licencie;
+use App\Entity\Season;
+use App\Entity\User;
+use App\Enum\LicenceStatus;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+
+/** Hub Effectif : compteurs de population et accès rapides. */
+final class EffectifHubTest extends WebTestCase
+{
+    private ?Season $season = null;
+
+    public function testLesCompteursRefletentLesDossiersDeLaSaison(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+        $this->creerEffectif();
+
+        $crawler = $client->request('GET', '/admin/effectif');
+
+        self::assertResponseIsSuccessful();
+
+        $valeurs = $crawler->filter('.stat-card-value')->each(static fn ($n) => trim($n->text()));
+        self::assertCount(3, $valeurs, 'Trois tuiles : joueurs, dirigeants, en attente');
+        self::assertSame('3', $valeurs[0], '3 joueurs au total');
+        self::assertSame('2', $valeurs[1], '2 dirigeants');
+        self::assertSame(
+            '3',
+            $valeurs[2],
+            'Le joueur importé + celui qui doit encore payer + le dirigeant sans réponse ;'
+            . ' le joueur validé et le dirigeant qui a répondu sont exclus',
+        );
+    }
+
+    public function testLeHubProposeLesQuatreAccesRapides(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $crawler = $client->request('GET', '/admin/effectif');
+
+        self::assertResponseIsSuccessful();
+        $titres = $crawler->filter('.quicklink-title')->each(static fn ($n) => trim($n->text()));
+        self::assertSame(['Joueurs', 'Dirigeants', 'Import FootClubs', 'Documents à signer'], $titres);
+    }
+
+    /* ── Outils ── */
+
+    /** 3 joueurs (importé / formulaire complété / validé) + 2 dirigeants (un seul a répondu). */
+    private function creerEffectif(): void
+    {
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+
+        $category = (new Category())->setCode('SENIOR')->setLabel('Séniors')->setIsEcoleFoot(false);
+        $em->persist($category);
+
+        foreach ([
+            LicenceStatus::IMPORTED,
+            LicenceStatus::FORM_COMPLETED,
+            LicenceStatus::VALIDATED,
+        ] as $i => $status) {
+            $licencie = (new Licencie())
+                ->setNom('JOUEUR' . $i)
+                ->setPrenom('Test')
+                ->setDateNaissance(new \DateTimeImmutable('1990-01-01'))
+                ->setCategory($category)
+                ->setSeason($this->season);
+
+            $dossier = (new DossierClub())
+                ->setLicencie($licencie)
+                ->setStatus($status);
+
+            $em->persist($licencie);
+            $em->persist($dossier);
+        }
+
+        $enAttente = (new Dirigeant())
+            ->setNom('MARTIN')->setPrenom('Kevin')->setSeason($this->season);
+        $em->persist($enAttente);
+
+        $aRepondu = (new Dirigeant())
+            ->setNom('DURAND')->setPrenom('Sophie')->setSeason($this->season)
+            ->setFormCompletedAt(new \DateTimeImmutable());
+        $em->persist($aRepondu);
+
+        $em->flush();
+        $em->clear();
+    }
+
+    private function loginAdmin(KernelBrowser $client): void
+    {
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+
+        $this->season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
+        $user = (new User())->setEmail('admin-effectif@example.test')->setPassword('x');
+        $user->setSelectedSeason($this->season);
+
+        $em->persist($this->season);
+        $em->persist($user);
+        $em->flush();
+
+        $client->loginUser($user);
+    }
+}

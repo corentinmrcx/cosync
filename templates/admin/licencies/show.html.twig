@@ -1,11 +1,14 @@
 {% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
 
 {% block title %}CoSync — {{ licencie.nomPrenom }}{% endblock %}
 
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Licenciés', route: 'admin_licencies_list' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs', route: 'admin_licencies_list' },
     { label: licencie.nomPrenom }
 ] } %}
 
@@ -26,15 +29,16 @@
         addMontant: {{ remainingAmount|number_format(2, '.', '') }},
         addDate: '{{ 'now'|date('Y-m-d') }}',
         addReference: '',
-        addNote: ''
+        addNote: '',
+        modesAvecReference: {{ paymentModesAvecReference|json_encode }}
      }">
 
     {# — Modale gestion des paiements — #}
-    <div x-show="paymentsModal" class="licencie-modal-backdrop" @click.self="paymentsModal = false" x-cloak>
-        <div class="licencie-modal licencie-modal-wide">
-            <div class="licencie-modal-header">
-                <h2 class="licencie-modal-title">Gestion des paiements</h2>
-                <button type="button" @click="paymentsModal = false" class="licencie-modal-close">✕</button>
+    <div x-show="paymentsModal" class="modal-voile" @click.self="paymentsModal = false" x-cloak>
+        <div class="modal licencie-modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-titre">Gestion des paiements</h2>
+                <button type="button" @click="paymentsModal = false" class="modal-fermer">✕</button>
             </div>
 
             {# Bilan #}
@@ -73,7 +77,7 @@
                               onsubmit="return confirm('Supprimer ce paiement de {{ t.montant }} € ?')">
                             <input type="hidden" name="_token" value="{{ csrf_token('delete_payment_' ~ t.id) }}">
                             <button type="submit" class="licencie-payment-delete" title="Supprimer ce paiement" aria-label="Supprimer ce paiement">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                {{ ui.icon('trash', 15) }}
                             </button>
                         </form>
                     </div>
@@ -93,12 +97,12 @@
             <hr class="licencie-modal-divider">
 
             {# Formulaire ajout paiement #}
-            <form method="post" action="{{ path('admin_licencies_add_payment', {uuid: licencie.uuid}) }}" class="licencie-modal-form">
+            <form method="post" action="{{ path('admin_licencies_add_payment', {uuid: licencie.uuid}) }}" class="modal-corps">
                 <input type="hidden" name="_token" value="{{ csrf_token('add_payment_' ~ licencie.uuid) }}">
 
-                <div class="licencie-modal-field">
-                    <label class="licencie-modal-label">Mode de paiement *</label>
-                    <select name="mode" x-model="addMode" required class="licencie-modal-input">
+                <div class="field">
+                    <label class="field-label">Mode de paiement *</label>
+                    <select name="mode" x-model="addMode" required class="field-input">
                         {% for m in paymentModes %}
                             <option value="{{ m.value }}">{{ m.label() }}</option>
                         {% endfor %}
@@ -106,27 +110,32 @@
                 </div>
 
                 <div class="licencie-modal-row">
-                    <div class="licencie-modal-field">
-                        <label class="licencie-modal-label">Montant (€) *</label>
-                        <input type="number" name="montant" x-model="addMontant" step="0.01" min="0.01" required class="licencie-modal-input">
+                    <div class="field">
+                        <label class="field-label">Montant (€) *</label>
+                        <input type="number" name="montant" x-model="addMontant" step="0.01" min="0.01" required class="field-input">
                     </div>
-                    <div class="licencie-modal-field">
-                        <label class="licencie-modal-label">Date *</label>
-                        <input type="date" name="date_paiement" x-model="addDate" required class="licencie-modal-input">
+                    <div class="field">
+                        <label class="field-label">Date *</label>
+                        <input type="date" name="date_paiement" x-model="addDate" required class="field-input">
                     </div>
                 </div>
 
-                <div class="licencie-modal-field" x-show="['cheque', 'virement'].includes(addMode)">
-                    <label class="licencie-modal-label">Référence <span class="licencie-modal-hint">(n° chèque, référence virement)</span></label>
-                    <input type="text" name="reference" x-model="addReference" class="licencie-modal-input" placeholder="Ex : 1234567">
+                <div class="field" x-show="modesAvecReference.includes(addMode)">
+                    <label class="field-label">
+                        <span x-text="addMode === 'autre' ? 'Précisez' : 'Référence'"></span>
+                        <span class="licencie-modal-hint"
+                              x-text="addMode === 'autre' ? '(tickets MSA, coupon sport…)' : '(n° chèque, référence virement)'"></span>
+                    </label>
+                    <input type="text" name="reference" x-model="addReference" class="field-input"
+                           :placeholder="addMode === 'autre' ? 'Ex : tickets MSA' : 'Ex : 1234567'">
                 </div>
 
-                <div class="licencie-modal-field">
-                    <label class="licencie-modal-label">Remarque <span class="licencie-modal-optional">(facultatif)</span></label>
-                    <input type="text" name="note" x-model="addNote" class="licencie-modal-input" placeholder="Ex : 1er chèque sur 3">
+                <div class="field">
+                    <label class="field-label">Remarque <span class="licencie-modal-optional">(facultatif)</span></label>
+                    <input type="text" name="note" x-model="addNote" class="field-input" placeholder="Ex : 1er chèque sur 3">
                 </div>
 
-                <div class="licencie-modal-actions">
+                <div class="modal-actions">
                     {% if licencie.dossierClub and licencie.dossierClub.status.value != 'validated' %}
                     <button type="submit"
                             form="validate-manually-form-{{ licencie.uuid }}"
@@ -135,7 +144,7 @@
                         Valider quand même
                     </button>
                     {% endif %}
-                    <button type="submit" class="licencie-modal-submit">Ajouter le paiement</button>
+                    <button type="submit" class="btn btn-primary">Ajouter le paiement</button>
                 </div>
             </form>
         </div>
@@ -148,10 +157,14 @@
                 {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
             {% endif %}
             {% include 'components/_badge_dotation.html.twig' with { dotation: dotationStatut } only %}
+            {% include 'components/_badge_nature.html.twig' with {
+                nature: licencie.natureLicence,
+                manuelle: licencie.natureManuelle,
+            } only %}
         </div>
 
         <div class="licencie-show-header-actions">
-            <a href="{{ path('admin_licencies_edit', {uuid: licencie.uuid}) }}" class="licencie-show-edit-btn">
+            <a href="{{ path('admin_licencies_edit', {uuid: licencie.uuid}) }}" class="btn btn-secondary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -163,7 +176,7 @@
                 {% if licencie.email %}
                     <form method="post" action="{{ path('admin_licencies_send_link', {uuid: licencie.uuid}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('send_link_' ~ licencie.uuid) }}">
-                        <button type="submit" class="licencie-show-send-btn">
+                        <button type="submit" class="btn btn-primary">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13"/>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -179,7 +192,7 @@
             {% if autorisationsManquantes and licencie.email %}
                 <form method="post" action="{{ path('admin_licencies_send_completion', {uuid: licencie.uuid}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('send_completion_' ~ licencie.uuid) }}">
-                    <button type="submit" class="licencie-show-send-btn">
+                    <button type="submit" class="btn btn-primary">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="22" y1="2" x2="11" y2="13"/>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -226,6 +239,13 @@
                 <div class="licencie-show-dl-row">
                     <dt class="licencie-show-dt">Catégorie</dt>
                     <dd class="licencie-show-dd">{{ licencie.category.label }}</dd>
+                </div>
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Nature de licence</dt>
+                    <dd class="{{ licencie.natureLicence ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ licencie.natureLicence ? licencie.natureLicence.label : '—' }}
+                        {%- if licencie.natureManuelle %} <em>(corrigée manuellement)</em>{% endif -%}
+                    </dd>
                 </div>
                 <div class="licencie-show-dl-row">
                     <dt class="licencie-show-dt">Équipe</dt>
@@ -288,6 +308,7 @@
                         <dt class="licencie-show-dt">Intention paiement</dt>
                         <dd class="licencie-show-dd">
                             {{ d.paymentIntentions|map(m => m.label())|join(', ') }}
+                            {%- if d.paymentAutrePrecision %} ({{ d.paymentAutrePrecision }}){% endif %}
                         </dd>
                     </div>
                     {% endif %}
@@ -295,146 +316,79 @@
 
                 <hr class="licencie-show-divider">
 
+                {# L'ordre suit celui des étapes du formulaire public :
+                   autorisations, attestation de transport, documents, paiement. #}
                 <ul class="licencie-show-checklist">
 
-                    {# Règlement signé #}
-                    <li class="licencie-show-check-item">
-                        {% if d.isSigned %}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span class="licencie-show-check-label">Règlement signé</span>
-                            {% if d.signatureDate %}
-                                <span class="licencie-show-check-date">le {{ d.signatureDate|date('d/m/Y') }}</span>
-                            {% endif %}
-                        {% else %}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            <span class="licencie-show-check-label licencie-show-check-label-pending">Règlement signé</span>
-                            <span class="licencie-show-check-badge-pending">En attente</span>
-                        {% endif %}
-                    </li>
-
                     {# Droit à l'image #}
-                    <li class="licencie-show-check-item">
-                        {% if d.autorisationPhoto is null %}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            <span class="licencie-show-check-label licencie-show-check-label-pending">Droit à l'image</span>
-                            <span class="licencie-show-check-badge-pending">En attente</span>
-                        {% elseif d.autorisationPhoto %}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span class="licencie-show-check-label">Droit à l'image</span>
-                            <span class="licencie-show-check-badge-yes">Accordé</span>
-                        {% else %}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            <span class="licencie-show-check-label">Droit à l'image</span>
-                            <span class="licencie-show-check-badge-no">Refusé</span>
-                        {% endif %}
-                    </li>
+                    {% include 'components/_checklist_item.html.twig' with {
+                        etat: d.autorisationPhoto is null ? 'attente' : (d.autorisationPhoto ? 'accorde' : 'refuse'),
+                        label: "Droit à l'image",
+                        detail: d.autorisationPhoto is null ? null : (d.autorisationPhoto ? 'Accordé' : 'Refusé'),
+                    } only %}
 
                     {% if licencie.category.isJeune %}
                         {# Autorisation accident #}
-                        <li class="licencie-show-check-item">
-                            {% if d.autorisationAccident is null %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <span class="licencie-show-check-label licencie-show-check-label-pending">Autorisation accident</span>
-                                <span class="licencie-show-check-badge-pending">En attente</span>
-                            {% elseif d.autorisationAccident %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span class="licencie-show-check-label">Autorisation accident</span>
-                                <span class="licencie-show-check-badge-yes">Accordé</span>
-                            {% else %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                <span class="licencie-show-check-label">Autorisation accident</span>
-                                <span class="licencie-show-check-badge-no">Refusé</span>
-                            {% endif %}
-                        </li>
+                        {% include 'components/_checklist_item.html.twig' with {
+                            etat: d.autorisationAccident is null ? 'attente' : (d.autorisationAccident ? 'accorde' : 'refuse'),
+                            label: "Autorisation accident",
+                            detail: d.autorisationAccident is null ? null : (d.autorisationAccident ? 'Accordé' : 'Refusé'),
+                        } only %}
 
                         {# Transport dirigeants #}
-                        <li class="licencie-show-check-item">
-                            {% if d.autorisationTransportDirigeants is null %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <span class="licencie-show-check-label licencie-show-check-label-pending">Transport dirigeants</span>
-                                <span class="licencie-show-check-badge-pending">En attente</span>
-                            {% elseif d.autorisationTransportDirigeants %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span class="licencie-show-check-label">Transport dirigeants</span>
-                                <span class="licencie-show-check-badge-yes">Accordé</span>
-                            {% else %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                <span class="licencie-show-check-label">Transport dirigeants</span>
-                                <span class="licencie-show-check-badge-no">Refusé</span>
-                            {% endif %}
-                        </li>
+                        {% include 'components/_checklist_item.html.twig' with {
+                            etat: d.autorisationTransportDirigeants is null ? 'attente' : (d.autorisationTransportDirigeants ? 'accorde' : 'refuse'),
+                            label: "Transport dirigeants",
+                            detail: d.autorisationTransportDirigeants is null ? null : (d.autorisationTransportDirigeants ? 'Accordé' : 'Refusé'),
+                        } only %}
 
                         {# Transport parents #}
-                        <li class="licencie-show-check-item">
-                            {% if d.autorisationTransportParents is null %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <span class="licencie-show-check-label licencie-show-check-label-pending">Transport parents</span>
-                                <span class="licencie-show-check-badge-pending">En attente</span>
-                            {% elseif d.autorisationTransportParents %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span class="licencie-show-check-label">Transport parents</span>
-                                <span class="licencie-show-check-badge-yes">Accordé</span>
-                            {% else %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                <span class="licencie-show-check-label">Transport parents</span>
-                                <span class="licencie-show-check-badge-no">Refusé</span>
-                            {% endif %}
-                        </li>
+                        {% include 'components/_checklist_item.html.twig' with {
+                            etat: d.autorisationTransportParents is null ? 'attente' : (d.autorisationTransportParents ? 'accorde' : 'refuse'),
+                            label: "Transport parents",
+                            detail: d.autorisationTransportParents is null ? null : (d.autorisationTransportParents ? 'Accordé' : 'Refusé'),
+                        } only %}
 
                         {# Volontaire transport #}
-                        <li class="licencie-show-check-item">
-                            {% if d.volontaireTransport is null %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <span class="licencie-show-check-label licencie-show-check-label-pending">Volontaire transport</span>
-                                <span class="licencie-show-check-badge-pending">En attente</span>
-                            {% elseif d.volontaireTransport %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span class="licencie-show-check-label">Volontaire transport</span>
-                                <span class="licencie-show-check-badge-yes">Oui</span>
-                            {% else %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                <span class="licencie-show-check-label">Volontaire transport</span>
-                                <span class="licencie-show-check-badge-neutral">Non</span>
-                            {% endif %}
-                        </li>
+                        {% include 'components/_checklist_item.html.twig' with {
+                            etat: d.volontaireTransport is null ? 'attente' : (d.volontaireTransport ? 'accorde' : 'refuse'),
+                            label: "Volontaire transport",
+                            detail: d.volontaireTransport is null ? null : (d.volontaireTransport ? 'Accordé' : 'Refusé'),
+                        } only %}
 
                         {# Attestation transport — uniquement si le parent est volontaire #}
                         {% if d.volontaireTransport %}
-                        <li class="licencie-show-check-item licencie-show-check-item-sub">
-                            {% if d.attestationTransportDriveId is not null and not (d.attestationTransportDriveId starts with '/') %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span class="licencie-show-check-label">Attestation transport</span>
-                                <span class="licencie-show-check-badge-yes">Archivée sur Drive</span>
-                            {% else %}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <span class="licencie-show-check-label licencie-show-check-label-pending">Attestation transport</span>
-                                <span class="licencie-show-check-badge-pending">Upload en attente</span>
-                            {% endif %}
-                        </li>
+                        {% include 'components/_checklist_item.html.twig' with {
+                            etat: d.attestationTransportEstArchivee ? 'fait' : 'attente',
+                            label: 'Attestation transport',
+                            detail: d.attestationTransportEstArchivee ? 'Archivée sur Drive' : 'Upload en attente',
+                        } only %}
                         {% endif %}
                     {% endif %}
 
+                    {# Documents à signer — la liste suit ce que la saison demande #}
+                    {% for doc in documents %}
+                        {% set signature = signatures[doc.id] ?? null %}
+                        {% include 'components/_checklist_item.html.twig' with {
+                            etat: signature ? 'fait' : 'attente',
+                            label: doc.titre,
+                            detail: signature ? 'le ' ~ signature.signedAt|date('d/m/Y') : null,
+                        } only %}
+                    {% endfor %}
+
                     {# Paiement cotisation #}
-                    <li class="licencie-show-check-item">
-                        {% if d.status.value == 'validated' %}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span class="licencie-show-check-label">Paiement cotisation</span>
-                            <span class="licencie-show-check-date">{{ totalPaid|number_format(2, ',', ' ') }} € / {{ montant }} €</span>
-                        {% elseif transactions is not empty %}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            <span class="licencie-show-check-label licencie-show-check-label-pending">Paiement cotisation</span>
-                            <span class="licencie-show-check-date">{{ totalPaid|number_format(2, ',', ' ') }} € / {{ montant }} €</span>
-                        {% else %}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            <span class="licencie-show-check-label licencie-show-check-label-pending">Paiement cotisation</span>
-                            <span class="licencie-show-check-badge-pending">En attente</span>
-                        {% endif %}
-                    </li>
+                    {% include 'components/_checklist_item.html.twig' with {
+                        etat: d.estValidee ? 'fait' : 'attente',
+                        label: 'Paiement cotisation',
+                        detail: transactions is not empty or d.estValidee
+                            ? totalPaid|number_format(2, ',', ' ') ~ ' € / ' ~ montant ~ ' €'
+                            : null,
+                    } only %}
 
                 </ul>
 
                 {# Bouton gérer les paiements #}
-                {% if d.isSigned %}
+                {% if d.formCompletedAt %}
                     <button type="button" @click="paymentsModal = true" class="licencie-show-confirm-full">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
@@ -473,7 +427,7 @@
             </div>
 
             {% if transactions is not empty %}
-            <table class="licencie-show-dotations-table licencie-payments-table">
+            <table class="table licencie-payments-table">
                 <thead>
                     <tr>
                         <th>Mode</th>
@@ -505,7 +459,7 @@
         {% if dotations is not empty %}
         <div class="licencie-show-card licencie-show-card-full">
             <h2 class="licencie-show-card-title">Équipements attribués</h2>
-            <table class="licencie-show-dotations-table">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Article</th>

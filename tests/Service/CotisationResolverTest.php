@@ -6,7 +6,7 @@ use App\Entity\Category;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\Team;
-use App\Service\CotisationResolver;
+use App\Service\Payment\CotisationResolver;
 use PHPUnit\Framework\TestCase;
 
 final class CotisationResolverTest extends TestCase
@@ -26,7 +26,7 @@ final class CotisationResolverTest extends TestCase
     public function testCotisationDeLEquipePrimeSurLaSaison(): void
     {
         $season = (new Season())->setCotisationDefaut(85);
-        $team   = (new Team())->setName('Séniors 1')->setCotisation(120);
+        $team = (new Team())->setName('Séniors 1')->setCotisation(120);
 
         $montant = (new CotisationResolver())->resolve($this->makeLicencie($season, $team));
 
@@ -36,7 +36,7 @@ final class CotisationResolverTest extends TestCase
     public function testEquipeSansCotisationUtiliseLeDefautDeLaSaison(): void
     {
         $season = (new Season())->setCotisationDefaut(85);
-        $team   = (new Team())->setName('Loisirs'); // cotisation null
+        $team = (new Team())->setName('Loisirs'); // cotisation null
 
         $montant = (new CotisationResolver())->resolve($this->makeLicencie($season, $team));
 

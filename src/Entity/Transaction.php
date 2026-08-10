@@ -7,6 +7,7 @@ use App\Repository\TransactionRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TransactionRepository::class)]
+#[ORM\UniqueConstraint(name: 'uniq_transaction_external_payment', columns: ['external_payment_id'])]
 class Transaction
 {
     #[ORM\Id]
@@ -31,12 +32,22 @@ class Transaction
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $note = null;
 
+    /**
+     * Identifiant du paiement chez le prestataire en ligne (HelloAsso).
+     * Contrainte d'unicité : garantit qu'un encaissement notifié plusieurs fois
+     * (webhook rejoué, page de retour en parallèle) n'est enregistré qu'une seule fois.
+     * Null pour tous les paiements saisis manuellement — PostgreSQL autorise les NULL multiples.
+     */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $externalPaymentId = null;
+
     #[ORM\Column(type: 'date_immutable')]
     private \DateTimeImmutable $datePaiement;
 
+    /** Null pour les paiements encaissés automatiquement en ligne (HelloAsso) : aucun dirigeant ne les saisit */
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
-    private User $confirmedBy;
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $confirmedBy = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
@@ -55,6 +66,7 @@ class Transaction
     public function setLicencie(Licencie $licencie): static
     {
         $this->licencie = $licencie;
+
         return $this;
     }
 
@@ -66,6 +78,7 @@ class Transaction
     public function setMontant(string $montant): static
     {
         $this->montant = $montant;
+
         return $this;
     }
 
@@ -77,6 +90,7 @@ class Transaction
     public function setMode(PaymentMode $mode): static
     {
         $this->mode = $mode;
+
         return $this;
     }
 
@@ -88,6 +102,7 @@ class Transaction
     public function setReference(?string $reference): static
     {
         $this->reference = $reference;
+
         return $this;
     }
 
@@ -99,6 +114,19 @@ class Transaction
     public function setNote(?string $note): static
     {
         $this->note = $note;
+
+        return $this;
+    }
+
+    public function getExternalPaymentId(): ?string
+    {
+        return $this->externalPaymentId;
+    }
+
+    public function setExternalPaymentId(?string $externalPaymentId): static
+    {
+        $this->externalPaymentId = $externalPaymentId;
+
         return $this;
     }
 
@@ -110,17 +138,19 @@ class Transaction
     public function setDatePaiement(\DateTimeImmutable $datePaiement): static
     {
         $this->datePaiement = $datePaiement;
+
         return $this;
     }
 
-    public function getConfirmedBy(): User
+    public function getConfirmedBy(): ?User
     {
         return $this->confirmedBy;
     }
 
-    public function setConfirmedBy(User $confirmedBy): static
+    public function setConfirmedBy(?User $confirmedBy): static
     {
         $this->confirmedBy = $confirmedBy;
+
         return $this;
     }
 
@@ -132,6 +162,7 @@ class Transaction
     public function setSeason(Season $season): static
     {
         $this->season = $season;
+
         return $this;
     }
 }

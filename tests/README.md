@@ -22,6 +22,17 @@ php bin/phpunit                 # toute la suite
 php bin/phpunit tests/Service   # un dossier
 ```
 
+## Documents signables (`tests/Service/Document/`, `tests/Controller/*/Document*`)
+
+- **DocumentRequirementResolver** — ciblage par rôle, par personne désignée, union des deux,
+  document inactif, document d'une autre saison, disparition des manquants après signature.
+- **DirigeantDossierCompletion** — un document ajouté en cours de saison rend le dossier incomplet.
+- **Parcours publics** — chaque population ne voit que ses documents ; un id non attendu est ignoré.
+- **CRUD admin** — code dérivé du titre, indépendance des textes, aperçu PDF, relance groupée.
+
+`App\Tests\Support\DocumentFixtures` construit documents et signatures : presque tous ces
+scénarios commencent par là.
+
 ## Couverture actuelle (`tests/Service/Stock/`)
 
 - **DotationResolver** — résolution par priorité (individu > équipe > catégorie), taille déduite du dossier,

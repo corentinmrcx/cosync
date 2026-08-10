@@ -39,19 +39,52 @@ class DotationModele
         $this->lignes = new ArrayCollection();
     }
 
-    public function getId(): int { return $this->id; }
+    public function getId(): int
+    {
+        return $this->id;
+    }
 
-    public function getSeason(): Season { return $this->season; }
-    public function setSeason(Season $season): static { $this->season = $season; return $this; }
+    public function getSeason(): Season
+    {
+        return $this->season;
+    }
 
-    public function getNom(): string { return $this->nom; }
-    public function setNom(string $nom): static { $this->nom = $nom; return $this; }
+    public function setSeason(Season $season): static
+    {
+        $this->season = $season;
 
-    public function isActif(): bool { return $this->actif; }
-    public function setActif(bool $actif): static { $this->actif = $actif; return $this; }
+        return $this;
+    }
+
+    public function getNom(): string
+    {
+        return $this->nom;
+    }
+
+    public function setNom(string $nom): static
+    {
+        $this->nom = $nom;
+
+        return $this;
+    }
+
+    public function isActif(): bool
+    {
+        return $this->actif;
+    }
+
+    public function setActif(bool $actif): static
+    {
+        $this->actif = $actif;
+
+        return $this;
+    }
 
     /** @return Collection<int, DotationModeleLigne> */
-    public function getLignes(): Collection { return $this->lignes; }
+    public function getLignes(): Collection
+    {
+        return $this->lignes;
+    }
 
     public function addLigne(DotationModeleLigne $ligne): static
     {
@@ -59,12 +92,14 @@ class DotationModele
             $this->lignes->add($ligne);
             $ligne->setModele($this);
         }
+
         return $this;
     }
 
     public function removeLigne(DotationModeleLigne $ligne): static
     {
         $this->lignes->removeElement($ligne);
+
         return $this;
     }
 }

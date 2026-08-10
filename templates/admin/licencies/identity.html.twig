@@ -5,7 +5,9 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: 'Licenciés', route: 'admin_licencies_list' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs', route: 'admin_licencies_list' },
     { label: licencie.nomPrenom, route: 'admin_licencies_show', params: { uuid: licencie.uuid } },
     { label: 'Corriger l\'identité' }
 ] } %}
@@ -24,12 +26,12 @@
         <p class="licencie-edit-section">Identité</p>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.nom) }}
                 {{ form_widget(form.nom) }}
                 {{ form_errors(form.nom) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.prenom) }}
                 {{ form_widget(form.prenom) }}
                 {{ form_errors(form.prenom) }}
@@ -37,19 +39,19 @@
         </div>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.dateNaissance) }}
                 {{ form_widget(form.dateNaissance) }}
                 {{ form_errors(form.dateNaissance) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.category) }}
                 {{ form_widget(form.category) }}
                 {{ form_errors(form.category) }}
             </div>
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.numLicence) }}
             {{ form_widget(form.numLicence) }}
             {{ form_errors(form.numLicence) }}
@@ -61,31 +63,31 @@
         <p class="licencie-edit-section">Contact</p>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.email) }}
                 {{ form_widget(form.email) }}
                 {{ form_errors(form.email) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.telephone) }}
                 {{ form_widget(form.telephone) }}
                 {{ form_errors(form.telephone) }}
             </div>
         </div>
 
-        <div class="season-form-field">
+        <div class="field">
             {{ form_label(form.voieRue) }}
             {{ form_widget(form.voieRue) }}
             {{ form_errors(form.voieRue) }}
         </div>
 
         <div class="season-form-row">
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.codePostal) }}
                 {{ form_widget(form.codePostal) }}
                 {{ form_errors(form.codePostal) }}
             </div>
-            <div class="season-form-field">
+            <div class="field">
                 {{ form_label(form.ville) }}
                 {{ form_widget(form.ville) }}
                 {{ form_errors(form.ville) }}
@@ -93,8 +95,8 @@
         </div>
 
         <div class="season-form-actions">
-            <a href="{{ path('admin_licencies_show', { uuid: licencie.uuid }) }}" class="season-form-cancel">Annuler</a>
-            <button type="submit" class="season-form-submit">Enregistrer</button>
+            <a href="{{ path('admin_licencies_show', { uuid: licencie.uuid }) }}" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
         </div>
 
     {{ form_end(form) }}

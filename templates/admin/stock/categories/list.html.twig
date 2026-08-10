@@ -1,4 +1,5 @@
 {% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
 
 {% block title %}CoSync — Catégories de stock{% endblock %}
 
@@ -9,76 +10,82 @@
     { label: 'Catégories' }
 ] } %}
 
-<div class="stock-categories-page" x-data="{ editingId: null }">
+<div class="dot-page" x-data="{ editingId: null, adding: false }">
 
-    <div class="stock-categories-header">
-        <h1 class="stock-categories-title">Catégories de stock</h1>
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Catégories de stock</h1>
+            <p class="dot-subtitle">Les articles du catalogue sont regroupés par catégorie, dans l'ordre défini ici.</p>
+        </div>
+        <div class="dot-header-actions">
+            <button type="button" class="btn btn-primary" @click="adding = !adding">
+                <span x-text="adding ? 'Annuler' : '+ Nouvelle catégorie'"></span>
+            </button>
+        </div>
     </div>
 
-    <div class="stock-categories-layout">
+    <div class="dot-card" x-data="listeTriable">
 
-        {# Nouvelle catégorie #}
-        <div class="stock-categories-card">
-            <h2 class="stock-categories-card-title">Nouvelle catégorie</h2>
-            {{ form_start(newCategoryForm, {attr: {class: 'stock-categories-form'}}) }}
-                <div class="stock-categories-form-row">
-                    <div class="stock-categories-field" style="flex:3">
-                        {{ form_label(newCategoryForm.name) }}
-                        {{ form_widget(newCategoryForm.name, {attr: {class: 'stock-categories-input'}}) }}
-                        {{ form_errors(newCategoryForm.name) }}
-                    </div>
-                    <div class="stock-categories-field">
-                        {{ form_label(newCategoryForm.position) }}
-                        {{ form_widget(newCategoryForm.position, {attr: {class: 'stock-categories-input stock-categories-input-position'}}) }}
-                    </div>
-                </div>
-                <button type="submit" class="stock-categories-submit">Créer</button>
-            {{ form_end(newCategoryForm) }}
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">Liste</h2>
+            <span class="dot-card-count">{{ categories|length }}</span>
         </div>
 
-        {# Liste des catégories existantes #}
-        <div class="stock-categories-card">
-            <h2 class="stock-categories-card-title">Catégories existantes</h2>
-
-            {% if categories is empty %}
-                <p class="stock-categories-empty">Aucune catégorie configurée.</p>
-            {% else %}
-                <ul class="stock-categories-list">
-                    {% for category in categories %}
-                        <li class="stock-categories-item">
-
-                            <div class="stock-categories-item-view" x-show="editingId !== {{ category.id }}">
-                                <span class="stock-categories-item-name">{{ category.name }}</span>
-                                <span class="stock-categories-item-position">#{{ category.position }}</span>
-                                <div class="stock-categories-item-actions">
-                                    <button type="button" class="stock-categories-edit-btn" @click="editingId = {{ category.id }}">Modifier</button>
-                                    <form method="post" action="{{ path('admin_stock_categories_delete', {id: category.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cette catégorie ?')">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_category_' ~ category.id) }}">
-                                        <button type="submit" class="stock-categories-delete-btn">Supprimer</button>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <form
-                                method="post"
-                                action="{{ path('admin_stock_categories_edit', {id: category.id}) }}"
-                                class="stock-categories-edit-form"
-                                x-show="editingId === {{ category.id }}"
-                                style="display:none"
-                            >
-                                <input type="hidden" name="stock_category[_token]" value="{{ csrf_token('stock_category') }}">
-                                <input type="text" name="stock_category[name]" value="{{ category.name }}" class="stock-categories-input" required>
-                                <input type="number" name="stock_category[position]" value="{{ category.position }}" class="stock-categories-input stock-categories-input-position">
-                                <button type="submit" class="stock-categories-submit-sm">Sauvegarder</button>
-                                <button type="button" class="stock-categories-cancel-sm" @click="editingId = null">Annuler</button>
-                            </form>
-
-                        </li>
-                    {% endfor %}
-                </ul>
+        {% if categories is empty %}
+            <p class="dot-empty">Aucune catégorie.</p>
+        {% else %}
+            {% if categories|length > 1 %}
+                <p class="triable-aide">{{ ui.icon('grip', 14) }} Glissez une catégorie par sa poignée pour changer l'ordre d'affichage.</p>
             {% endif %}
-        </div>
 
+            <form method="post"
+                  action="{{ path('admin_stock_categories_reorder') }}"
+                  x-ref="formulaire"
+                  data-ordre-initial="{{ categories|map(c => c.id)|join(',') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('stock_categories_reorder') }}">
+                <span x-ref="ordre"></span>
+            </form>
+
+            <ul class="dot-list triable-liste"
+                x-ref="liste"
+                @pointermove.window="deplacer($event)"
+                @pointerup.window="terminer()"
+                @pointercancel.window="terminer()">
+                {% for category in categories %}
+                    <li class="dot-list-item triable-ligne" data-triable="{{ category.id }}">
+                        <span class="triable-poignee"
+                              title="Déplacer"
+                              @pointerdown="saisir($event)"
+                              aria-hidden="true">{{ ui.icon('grip', 16) }}</span>
+
+                        <div x-show="editingId !== {{ category.id }}" class="dot-list-main">
+                            <span class="dot-list-name">{{ category.name }}</span>
+                        </div>
+                        <div x-show="editingId !== {{ category.id }}" class="dot-list-actions">
+                            <button type="button" class="btn btn-secondary btn-sm" @click="editingId = {{ category.id }}">Modifier</button>
+                            {% include 'components/_form_suppression.html.twig' with {
+                                action: path('admin_stock_categories_delete', {id: category.id}),
+                                jeton: 'delete_category_' ~ category.id,
+                                message: 'Supprimer cette catégorie ?',
+                            } only %}
+                        </div>
+
+                        <form x-show="editingId === {{ category.id }}" x-cloak method="post" action="{{ path('admin_stock_categories_edit', {id: category.id}) }}" class="dot-affect-form">
+                            <input type="hidden" name="stock_category[_token]" value="{{ csrf_token('stock_category') }}">
+                            <input type="text" name="stock_category[name]" class="field-input" value="{{ category.name }}" required>
+                            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                            <button type="button" class="btn btn-ghost btn-sm" @click="editingId = null">Annuler</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {{ form_start(newCategoryForm, {attr: {class: 'dot-affect-form', 'x-show': 'adding', 'x-cloak': true}}) }}
+            {{ form_widget(newCategoryForm.name, {attr: {class: 'field-input', placeholder: 'Nom de la catégorie'}}) }}
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+        {{ form_end(newCategoryForm) }}
     </div>
+
 </div>
 {% endblock %}
