@@ -77,6 +77,31 @@ jobs:
       - name: Style de code
         run: vendor/bin/php-cs-fixer fix --dry-run --diff --show-progress=none
 
+  dependances-prod:
+    name: Dépendances — le code de prod tient sans les paquets de dev
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: ctype, iconv, pdo_pgsql, zip, intl, gd
+          coverage: none
+          tools: composer:v2
+
+      # Le job « php » installe le vendor complet : une classe tirée en transitif par
+      # une dépendance de dev y passe tous les contrôles. L'image de prod, elle,
+      # installe --no-dev. Ce job reproduit ce jeu de dépendances-là, le seul qui
+      # parte réellement en production.
+      - name: Installer les dépendances de production
+        run: composer install --no-dev --no-scripts --no-interaction --no-progress --classmap-authoritative
+
+      - name: Vérifier que rien ne manque à l'appel
+        run: php bin/check-prod-deps.php
+
   front:
     name: Front — CSS et JavaScript
     runs-on: ubuntu-latest
