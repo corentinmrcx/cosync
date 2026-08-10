@@ -93,8 +93,11 @@
 
                 {% for grp in dotationGroupes|default([]) %}
                     <div class="inscription-question-block">
-                        <span class="inscription-question-label">{{ grp.groupe }} *</span>
-                        <span class="inscription-question-hint">Choisissez l'article souhaité pour votre dotation.</span>
+                        {# Un seul choix : « Votre dotation » au-dessus suffit, répéter un intitulé
+                           n'ajoute rien. Plusieurs choix : il faut bien les distinguer. #}
+                        {% if dotationGroupes|length > 1 %}
+                            <span class="inscription-question-label">{{ grp.groupe }} *</span>
+                        {% endif %}
                         <div class="inscription-radio-group">
                             {% for opt in grp.options %}
                                 <label class="inscription-radio-option">

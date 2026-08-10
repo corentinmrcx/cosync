@@ -56,7 +56,7 @@ final class DotationModeleScreenTest extends WebTestCase
         $html = $crawler->html();
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('Question affichée au licencié', $html, 'L\'admin doit savoir que le nom du choix est public.');
+        self::assertStringContainsString('Nom du choix (usage interne)', $html, 'Le nom du choix est un repère interne, pas la question posée au licencié.');
         self::assertStringContainsString('Ce que recevra chaque profil', $html);
 
         // La veste étant réservée aux nouveaux, elle reste seule éligible pour eux : plus de

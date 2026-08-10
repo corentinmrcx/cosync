@@ -251,17 +251,17 @@
                     <button type="submit" form="choix-del-{{ loop.index }}" class="dot-choix-delete">Retirer ce choix</button>
                 </div>
 
-                {# Le nom du groupe est l'intitulé que lit le licencié : le dire, et permettre de le corriger. #}
+                {# Repère interne : sert de clé aux réponses déjà saisies, d'où le renommage encadré. #}
                 <form method="post" action="{{ path('admin_dotations_choix_rename', {id: modele.id}) }}" class="dot-choix-title">
                     <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_rename_' ~ modele.id) }}">
                     <input type="hidden" name="ancien" value="{{ nom }}">
                     <div class="field">
-                        <label class="field-label" for="nom-{{ loop.index }}">Question affichée au licencié</label>
+                        <label class="field-label" for="nom-{{ loop.index }}">Nom du choix (usage interne)</label>
                         <div class="dot-inline">
                             <input id="nom-{{ loop.index }}" type="text" name="nouveau" class="field-input" value="{{ nom }}" required>
                             <button type="submit" class="btn btn-ghost">Renommer</button>
                         </div>
-                        <p class="field-hint">Ce texte s'affiche tel quel dans le formulaire public. Les réponses déjà saisies suivent le renommage.</p>
+                        <p class="field-hint">Sert à repérer le choix ici et dans le suivi. Il n'apparaît au licencié que si le kit propose plusieurs choix, pour les distinguer. Les réponses déjà saisies suivent le renommage.</p>
                     </div>
                 </form>
 
@@ -317,8 +317,8 @@
 
             <div class="dot-row">
                 <div class="field">
-                    <label class="field-label" for="new-choix-nom">Question affichée au licencié</label>
-                    <input id="new-choix-nom" type="text" name="nom" class="field-input" placeholder="Ex : Votre dotation au choix" required>
+                    <label class="field-label" for="new-choix-nom">Nom du choix (usage interne)</label>
+                    <input id="new-choix-nom" type="text" name="nom" class="field-input" placeholder="Ex : Choix du haut" required>
                 </div>
                 <div class="field dot-field-narrow">
                     <label class="field-label" for="new-choix-qte">Quantité</label>
