@@ -15,6 +15,7 @@ import { sommaireActif } from './js/sommaire-actif.js';
 import { multiSelect } from './js/multi-select.js';
 import { dirigeantPrefill } from './js/dirigeant-prefill.js';
 import { selectListe } from './js/select-liste.js';
+import { listeTriable } from './js/liste-triable.js';
 
 Alpine.data('inscriptionForm', inscriptionForm);
 Alpine.data('completionForm', completionForm);
@@ -26,6 +27,7 @@ Alpine.data('confirmationPurge', confirmationPurge);
 Alpine.data('sommaireActif', sommaireActif);
 Alpine.data('multiSelect', multiSelect);
 Alpine.data('selectListe', selectListe);
+Alpine.data('listeTriable', listeTriable);
 
 Alpine.plugin(collapse);
 

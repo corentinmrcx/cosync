@@ -49,6 +49,19 @@ class StockCategoryController extends AbstractController
         return $this->redirectToRoute('admin_stock_categories_list');
     }
 
+    /** Nouvel ordre reçu du glisser-déposer : la liste complète des identifiants, de haut en bas. */
+    #[Route('/reordonner', name: 'reorder', methods: ['POST'])]
+    public function reorder(Request $request): Response
+    {
+        $this->csrf->valider('stock_categories_reorder', $request);
+
+        $ids = array_map('intval', (array) $request->request->all('ordre'));
+        $this->categoryService->reordonner($ids);
+        $this->addFlash('success', 'Ordre des catégories enregistré.');
+
+        return $this->redirectToRoute('admin_stock_categories_list');
+    }
+
     #[Route('/{id}/modifier', name: 'edit', methods: ['POST'])]
     public function edit(StockCategory $category, Request $request): Response
     {

@@ -9,6 +9,7 @@ use App\Entity\StockMovement;
 use App\Entity\User;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
+use App\Repository\StockCategoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -95,6 +96,29 @@ final class StockEcransTest extends WebTestCase
         self::assertStringStartsWith('%PDF', (string) $client->getResponse()->getContent());
     }
 
+    /**
+     * Les deux référentiels du stock partagent désormais la même mise en page que le reste de
+     * la section : liste en carte, bouton de création en haut à droite. Ils n'étaient rendus
+     * par aucun test — seule leur redirection vers /login l'était.
+     */
+    public function testLesReferentielsSuiventLaMemeMiseEnPage(): void
+    {
+        $client = $this->loginAdmin();
+        $this->makeItem('Chaussettes');
+
+        foreach ([
+            '/admin/stock/categories' => 'Nouvelle catégorie',
+            '/admin/stock/fournisseurs' => 'Nouveau fournisseur',
+        ] as $url => $libelleBouton) {
+            $crawler = $client->request('GET', $url);
+
+            self::assertResponseIsSuccessful($url);
+            self::assertCount(1, $crawler->filter('.dot-page'), $url . ' doit utiliser la mise en page commune.');
+            self::assertCount(1, $crawler->filter('.dot-header-actions .btn-primary'), $url . ' doit porter son bouton en haut à droite.');
+            self::assertStringContainsString($libelleBouton, $crawler->filter('.dot-header-actions')->html());
+        }
+    }
+
     /** Les filtres de l'historique passent par la barre dépliante partagée avec Licenciés. */
     public function testLHistoriqueUtiliseLaBarreDeFiltresPartagee(): void
     {
@@ -131,6 +155,93 @@ final class StockEcransTest extends WebTestCase
         self::assertSame(['Chasuble'], $articles);
 
         self::assertCount(0, $crawler->filter('.list-tb-filters-count'), 'La recherche seule ne remplit pas la pastille.');
+    }
+
+    /**
+     * L'ordre des catégories se règle au glisser-déposer : le formulaire de création n'a plus
+     * de champ « ordre », et une nouvelle catégorie se place d'office en fin de liste.
+     */
+    public function testUneNouvelleCategorieSePlaceEnFinDeListe(): void
+    {
+        $client = $this->loginAdmin();
+        $this->makeCategorie('Buvette', 0);
+        $this->makeCategorie('Textile', 1);
+
+        $crawler = $client->request('GET', '/admin/stock/categories');
+        self::assertCount(0, $crawler->filter('input[name="stock_category[position]"]'), 'Plus de champ ordre à la main.');
+
+        $formulaire = $crawler->filter('form[action="/admin/stock/categories/nouveau"]')->form();
+        $formulaire['stock_category[name]'] = 'Ballons';
+        $client->submit($formulaire);
+
+        self::assertResponseRedirects('/admin/stock/categories');
+        self::assertSame(['Buvette', 'Textile', 'Ballons'], $this->nomsDesCategories());
+    }
+
+    public function testLeGlisserDeposerEnregistreLeNouvelOrdre(): void
+    {
+        $client = $this->loginAdmin();
+        $buvette = $this->makeCategorie('Buvette', 0);
+        $textile = $this->makeCategorie('Textile', 1);
+        $ballons = $this->makeCategorie('Ballons', 2);
+
+        $client->request('POST', '/admin/stock/categories/reordonner', [
+            '_token' => $this->jetonReorder($client),
+            'ordre' => [$ballons->getId(), $buvette->getId(), $textile->getId()],
+        ]);
+
+        self::assertResponseRedirects('/admin/stock/categories');
+        self::assertSame(['Ballons', 'Buvette', 'Textile'], $this->nomsDesCategories());
+    }
+
+    /**
+     * Un onglet resté ouvert pendant qu'une catégorie était créée ailleurs renvoie une liste
+     * incomplète. Celle qu'il ignore doit être reléguée à la suite, jamais perdue de vue.
+     */
+    public function testUneCategorieAbsenteDeLOrdreRecuEstRelegueeALaSuite(): void
+    {
+        $client = $this->loginAdmin();
+        $buvette = $this->makeCategorie('Buvette', 0);
+        $textile = $this->makeCategorie('Textile', 1);
+        $this->makeCategorie('Ballons', 2);
+
+        $client->request('POST', '/admin/stock/categories/reordonner', [
+            '_token' => $this->jetonReorder($client),
+            'ordre' => [$textile->getId(), $buvette->getId()],
+        ]);
+
+        self::assertSame(['Textile', 'Buvette', 'Ballons'], $this->nomsDesCategories());
+    }
+
+    /** Jeton repris du formulaire réellement rendu : le gestionnaire CSRF le stocke en session. */
+    private function jetonReorder(KernelBrowser $client): string
+    {
+        $crawler = $client->request('GET', '/admin/stock/categories');
+        $champ = $crawler->filter('form[action="/admin/stock/categories/reordonner"] input[name="_token"]');
+
+        self::assertGreaterThan(0, $champ->count(), 'Formulaire de réordonnancement introuvable.');
+
+        return (string) $champ->first()->attr('value');
+    }
+
+    private function makeCategorie(string $nom, int $position): StockCategory
+    {
+        $category = (new StockCategory())->setName($nom)->setPosition($position);
+        $this->em->persist($category);
+        $this->em->flush();
+
+        return $category;
+    }
+
+    /** @return string[] */
+    private function nomsDesCategories(): array
+    {
+        $this->em->clear();
+
+        return array_map(
+            static fn (StockCategory $c) => $c->getName(),
+            self::getContainer()->get(StockCategoryRepository::class)->findAllOrderedByPosition(),
+        );
     }
 
     private function makeItem(string $nom, ?int $seuil = null): StockItem

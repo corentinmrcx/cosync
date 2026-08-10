@@ -4,7 +4,6 @@ namespace App\Form;
 
 use App\Entity\StockCategory;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -16,15 +15,13 @@ class StockCategoryType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        // Pas de champ « ordre » : la position est attribuée à la création puis réglée
+        // au glisser-déposer sur la liste.
         $builder
             ->add('name', TextType::class, [
                 'label' => 'Nom',
                 'constraints' => [new NotBlank(), new Length(max: 100)],
                 'attr' => ['placeholder' => 'ex: Buvette'],
-            ])
-            ->add('position', IntegerType::class, [
-                'label' => 'Ordre d\'affichage',
-                'attr' => ['placeholder' => '0'],
             ]);
     }
 
