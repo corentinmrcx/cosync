@@ -1,0 +1,91 @@
+/* — Page d'accueil d'une section (Stock, Dotations…) : header, tuiles, sections — */
+.section-home-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* — Header — */
+.section-home-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.section-home-title {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    color: var(--color-text-base);
+}
+
+.section-home-subtitle {
+    margin: 0.35rem 0 0;
+    max-width: 62ch;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.section-home-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* — Sections — */
+.section-home-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    padding: 1.25rem;
+}
+
+.section-home-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-home-section-title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.section-home-section-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.4rem;
+    border-radius: var(--radius-xl);
+    background: var(--color-bg-muted);
+    color: var(--color-text-body);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.section-home-empty {
+    margin: 0;
+    padding: 0.5rem 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+@media (max-width: 640px) {
+    .section-home-page {
+        padding: 1rem;
+    }
+}

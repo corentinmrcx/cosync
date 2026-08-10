@@ -17,7 +17,7 @@
 
         {% if not estDonne %}
             <form x-show="editing" x-cloak method="post"
-                  action="{{ path('admin_stock_dotations_besoin_personnalisation', {id: besoin.id}) }}"
+                  action="{{ path('admin_dotations_besoin_personnalisation', {id: besoin.id}) }}"
                   class="dot-taille-form">
                 <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_personnalisation_' ~ besoin.id) }}">
                 <input type="text" name="personnalisation" class="field-input field-input-compact" maxlength="60"

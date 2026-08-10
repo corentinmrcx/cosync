@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
-#[Route('/admin/stock/commandes', name: 'admin_stock_commandes_')]
+#[Route('/admin/commandes', name: 'admin_commandes_')]
 class CommandeController extends AbstractController
 {
     public function __construct(
@@ -32,7 +32,7 @@ class CommandeController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(#[CurrentSeason] Season $season): Response
     {
-        return $this->render('admin/stock/commandes/index.html.twig', [
+        return $this->render('admin/commandes/index.html.twig', [
             'season' => $season,
             'aCommander' => $this->achatService->computeACommander($season),
             'commandes' => $this->commandeRepository->findBySeason($season),
@@ -52,13 +52,13 @@ class CommandeController extends AbstractController
             $this->addFlash('success', sprintf('%d bon(s) de commande généré(s).', count($bons)));
         }
 
-        return $this->redirectToRoute('admin_stock_commandes_index');
+        return $this->redirectToRoute('admin_commandes_index');
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(Commande $commande): Response
     {
-        return $this->render('admin/stock/commandes/show.html.twig', [
+        return $this->render('admin/commandes/show.html.twig', [
             'commande' => $commande,
         ]);
     }
@@ -78,7 +78,7 @@ class CommandeController extends AbstractController
         $this->commandeService->marquerCommandee($commande, $date);
         $this->addFlash('success', 'Commande marquée comme commandée.');
 
-        return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $commande->getId()]);
+        return $this->redirectToRoute('admin_commandes_show', ['id' => $commande->getId()]);
     }
 
     #[Route('/lignes/{id}/recevoir', name: 'ligne_recevoir', methods: ['POST'], requirements: ['id' => '\d+'])]
@@ -90,7 +90,7 @@ class CommandeController extends AbstractController
         $this->commandeService->recevoirLigne($ligne, $qty, $user);
         $this->addFlash('success', 'Réception enregistrée.');
 
-        return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $ligne->getCommande()->getId()]);
+        return $this->redirectToRoute('admin_commandes_show', ['id' => $ligne->getCommande()->getId()]);
     }
 
     #[Route('/lignes/{id}/annuler-reception', name: 'ligne_annuler_reception', methods: ['POST'], requirements: ['id' => '\d+'])]
@@ -101,7 +101,7 @@ class CommandeController extends AbstractController
         $this->commandeService->annulerReception($ligne, $user);
         $this->addFlash('success', 'Réception annulée, stock recalculé.');
 
-        return $this->redirectToRoute('admin_stock_commandes_show', ['id' => $ligne->getCommande()->getId()]);
+        return $this->redirectToRoute('admin_commandes_show', ['id' => $ligne->getCommande()->getId()]);
     }
 
     #[Route('/{id}/pdf', name: 'pdf', methods: ['GET'], requirements: ['id' => '\d+'])]
@@ -127,6 +127,6 @@ class CommandeController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_stock_commandes_index');
+        return $this->redirectToRoute('admin_commandes_index');
     }
 }

@@ -61,10 +61,11 @@ final class AccesAdminTest extends WebTestCase
             '/admin/stock/mouvements',
             '/admin/stock/categories',
             '/admin/stock/fournisseurs',
-            '/admin/stock/commandes',
-            '/admin/stock/dotations',
-            '/admin/stock/dotations/suivi',
-            '/admin/stock/dotations/flocage',
+            '/admin/commandes',
+            '/admin/dotations',
+            '/admin/dotations/modeles',
+            '/admin/dotations/suivi',
+            '/admin/dotations/flocage',
             '/admin/stock/inventaire.pdf',
         ];
 

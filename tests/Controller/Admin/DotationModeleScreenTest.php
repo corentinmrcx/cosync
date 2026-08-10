@@ -52,7 +52,7 @@ final class DotationModeleScreenTest extends WebTestCase
         $this->loginAdmin($client);
         $modele = $this->makeKit();
 
-        $crawler = $client->request('GET', '/admin/stock/dotations/' . $modele->getId() . '/modifier');
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
         $html = $crawler->html();
 
         self::assertResponseIsSuccessful();
@@ -83,13 +83,13 @@ final class DotationModeleScreenTest extends WebTestCase
         $this->em->flush();
 
         // Sans cible, on ne peut rien exclure : les trois profils sont annoncés.
-        $html = $client->request('GET', '/admin/stock/dotations/' . $modele->getId() . '/modifier')->html();
+        $html = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier')->html();
         self::assertStringContainsString('Dirigeant', $html);
 
-        $crawler = $client->request('GET', '/admin/stock/dotations/' . $modele->getId() . '/modifier');
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
         $token = $crawler->filter('form[action$="/affectations"] input[name="_token"]')->attr('value');
 
-        $client->request('POST', '/admin/stock/dotations/affectations', [
+        $client->request('POST', '/admin/dotations/affectations', [
             '_token' => $token,
             'modele_id' => $modele->getId(),
             'cible_type' => 'team',
@@ -97,7 +97,7 @@ final class DotationModeleScreenTest extends WebTestCase
         ]);
 
         // On revient sur la page du kit, pas sur l'index.
-        self::assertResponseRedirects('/admin/stock/dotations/' . $modele->getId() . '/modifier');
+        self::assertResponseRedirects('/admin/dotations/' . $modele->getId() . '/modifier');
 
         $html = $client->followRedirect()->html();
         self::assertStringContainsString('Équipe — Séniors 1', $html);
@@ -117,10 +117,10 @@ final class DotationModeleScreenTest extends WebTestCase
 
         [$veste, $tshirt] = $modele->getLignes()->toArray();
 
-        $crawler = $client->request('GET', '/admin/stock/dotations/' . $modele->getId() . '/modifier');
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
         $token = $crawler->filter('form[action$="/choix/reglages"] input[name="_token"]')->attr('value');
 
-        $client->request('POST', '/admin/stock/dotations/' . $modele->getId() . '/choix/reglages', [
+        $client->request('POST', '/admin/dotations/' . $modele->getId() . '/choix/reglages', [
             '_token' => $token,
             'nom' => 'Votre dotation',
             'reglages' => [
@@ -156,10 +156,10 @@ final class DotationModeleScreenTest extends WebTestCase
 
         [$veste, $tshirt] = $modele->getLignes()->toArray();
 
-        $crawler = $client->request('GET', '/admin/stock/dotations/' . $modele->getId() . '/modifier');
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
         $token = $crawler->filter('form[action$="/choix/reglages"] input[name="_token"]')->attr('value');
 
-        $client->request('POST', '/admin/stock/dotations/' . $modele->getId() . '/choix/reglages', [
+        $client->request('POST', '/admin/dotations/' . $modele->getId() . '/choix/reglages', [
             '_token' => $token,
             'nom' => 'Votre dotation',
             'reglages' => [
@@ -199,10 +199,10 @@ final class DotationModeleScreenTest extends WebTestCase
         $this->em->persist($dossier);
         $this->em->flush();
 
-        $crawler = $client->request('GET', '/admin/stock/dotations/' . $modele->getId() . '/modifier');
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
         $token = $crawler->filter('form[action$="/choix/renommer"] input[name="_token"]')->attr('value');
 
-        $client->request('POST', '/admin/stock/dotations/' . $modele->getId() . '/choix/renommer', [
+        $client->request('POST', '/admin/dotations/' . $modele->getId() . '/choix/renommer', [
             '_token' => $token,
             'ancien' => 'Votre dotation',
             'nouveau' => 'Haut au choix',
@@ -232,10 +232,10 @@ final class DotationModeleScreenTest extends WebTestCase
         $this->addLigne($modele, $this->makeItem('Jogging'), 'Bas au choix', DotationEligibilite::TOUS);
         $this->em->flush();
 
-        $crawler = $client->request('GET', '/admin/stock/dotations/' . $modele->getId() . '/modifier');
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
         $token = $crawler->filter('form[action$="/choix/renommer"] input[name="_token"]')->attr('value');
 
-        $client->request('POST', '/admin/stock/dotations/' . $modele->getId() . '/choix/renommer', [
+        $client->request('POST', '/admin/dotations/' . $modele->getId() . '/choix/renommer', [
             '_token' => $token,
             'ancien' => 'Votre dotation',
             'nouveau' => 'Bas au choix',

@@ -24,9 +24,9 @@
         } %}
 
         {% include 'components/hub-card.html.twig' with {
-            icon: 'box',
-            label: 'Stock',
-            route: 'admin_stock_dashboard'
+            icon: 'shirt',
+            label: 'Dotations',
+            route: 'admin_dotations_dashboard'
         } %}
 
         {% include 'components/hub-card.html.twig' with {
@@ -64,6 +64,23 @@
                 <span class="quicklink-body">
                     <span class="quicklink-title">Documents à signer</span>
                     <span class="quicklink-text">Règlements et chartes signés dans le formulaire public</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+        </div>
+    </div>
+
+    {# — Raccourci hors saison : le stock physique se gère au niveau du club — #}
+    <div class="saison-section">
+        <div class="saison-section-header">
+            <h2 class="saison-section-title">Géré au niveau du club</h2>
+        </div>
+        <div class="quicklink-grid">
+            <a href="{{ path('admin_stock_dashboard') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('box', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Stock</span>
+                    <span class="quicklink-text">Inventaire, articles, fournisseurs — communs à toutes les saisons</span>
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>

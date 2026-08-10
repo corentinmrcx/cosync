@@ -7,8 +7,8 @@
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
     { label: navbar_saison_label, route: 'admin_saison_dashboard' },
-    { label: 'Stock', route: 'admin_stock_dashboard' },
-    { label: 'Dotations', route: 'admin_stock_dotations_index' },
+    { label: 'Dotations', route: 'admin_dotations_dashboard' },
+    { label: 'Modèles', route: 'admin_dotations_modeles' },
     { label: 'Suivi' }
 ] } %}
 
@@ -20,8 +20,8 @@
             <p class="dot-subtitle">Ce que chaque personne doit recevoir et ce qui a déjà été remis.</p>
         </div>
         <div class="dot-header-actions">
-            <a href="{{ path('admin_stock_dotations_flocage') }}" class="btn btn-secondary">Liste de flocage</a>
-            <form method="post" action="{{ path('admin_stock_dotations_recalculer') }}">
+            <a href="{{ path('admin_dotations_flocage') }}" class="btn btn-secondary">Liste de flocage</a>
+            <form method="post" action="{{ path('admin_dotations_recalculer') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('dotation_recalculer') }}">
                 <button type="submit" class="btn btn-secondary">↻ Recalculer les besoins</button>
             </form>
@@ -77,7 +77,7 @@
                                 </td>
                                 <td>
                                     <span class="dot-item-nom">{{ besoin.stockItem.nom }}</span>
-                                    {% include 'admin/stock/dotations/_flocage_cell.html.twig' with { besoin: besoin } only %}
+                                    {% include 'admin/dotations/_flocage_cell.html.twig' with { besoin: besoin } only %}
                                 </td>
                                 <td>
                                     {% set options = besoin.stockItem.typeVetement and besoin.stockItem.typeVetement.value == 'chaussures' ? pointures : taillesConnues %}
@@ -103,7 +103,7 @@
                                             </button>
                                         </div>
                                         <form x-show="editing" x-cloak method="post"
-                                              action="{{ path('admin_stock_dotations_besoin_taille', {id: besoin.id}) }}"
+                                              action="{{ path('admin_dotations_besoin_taille', {id: besoin.id}) }}"
                                               class="dot-taille-form">
                                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_taille_' ~ besoin.id) }}">
                                             <select name="taille" class="field-input field-input-compact"
@@ -131,12 +131,12 @@
                                 </td>
                                 <td class="dot-table-action">
                                     {% if besoin.statut.value == 'donne' %}
-                                        <form method="post" action="{{ path('admin_stock_dotations_besoin_annuler', {id: besoin.id}) }}" style="display:inline">
+                                        <form method="post" action="{{ path('admin_dotations_besoin_annuler', {id: besoin.id}) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_annuler_' ~ besoin.id) }}">
                                             <button type="submit" class="btn btn-danger btn-sm">Annuler</button>
                                         </form>
                                     {% else %}
-                                        <form method="post" action="{{ path('admin_stock_dotations_besoin_remise', {id: besoin.id}) }}" style="display:inline">
+                                        <form method="post" action="{{ path('admin_dotations_besoin_remise', {id: besoin.id}) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_remise_' ~ besoin.id) }}">
                                             <button type="submit" class="btn btn-primary btn-sm">Marquer remis</button>
                                         </form>

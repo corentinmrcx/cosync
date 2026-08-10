@@ -31,7 +31,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
-#[Route('/admin/stock/dotations', name: 'admin_stock_dotations_')]
+#[Route('/admin/dotations', name: 'admin_dotations_')]
 class DotationController extends AbstractController
 {
     public function __construct(
@@ -48,11 +48,11 @@ class DotationController extends AbstractController
         private readonly DotationGroupeReglagesFactory $reglagesFactory,
     ) {}
 
-    #[Route('', name: 'index', methods: ['GET'])]
+    #[Route('/modeles', name: 'modeles', methods: ['GET'])]
     public function index(#[CurrentSeason] Season $season): Response
     {
         // L'index ne fait que lister : contenu et destinataires d'un kit se règlent sur sa page.
-        return $this->render('admin/stock/dotations/index.html.twig', [
+        return $this->render('admin/dotations/modeles.html.twig', [
             'season' => $season,
             'modeles' => $this->modeleRepository->findBySeason($season),
             'affectations' => $this->affectationRepository->findBySeason($season),
@@ -69,12 +69,12 @@ class DotationController extends AbstractController
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return $this->redirectToRoute('admin_stock_dotations_index');
+            return $this->redirectToRoute('admin_dotations_modeles');
         }
 
         $this->addFlash('success', sprintf('Modèle « %s » créé. Ajoutez ses articles.', $modele->getNom()));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'])]
@@ -90,10 +90,10 @@ class DotationController extends AbstractController
             );
             $this->addFlash('success', 'Modèle mis à jour.');
 
-            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+            return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
         }
 
-        return $this->render('admin/stock/dotations/form.html.twig', $this->formContext->build($modele));
+        return $this->render('admin/dotations/form.html.twig', $this->formContext->build($modele));
     }
 
     #[Route('/{id}/choix/reglages', name: 'choix_reglages', methods: ['POST'])]
@@ -111,7 +111,7 @@ class DotationController extends AbstractController
 
         $this->addFlash('success', sprintf('Choix « %s » enregistré (%d option%s).', $groupe, $modifiees, $modifiees > 1 ? 's' : ''));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $groupe]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $groupe]);
     }
 
     #[Route('/{id}/choix/options', name: 'choix_option_add', methods: ['POST'])]
@@ -125,7 +125,7 @@ class DotationController extends AbstractController
         if ($item === null) {
             $this->addFlash('error', 'Article introuvable.');
 
-            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+            return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
         }
 
         try {
@@ -133,12 +133,12 @@ class DotationController extends AbstractController
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+            return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
         }
 
         $this->addFlash('success', sprintf('« %s » ajouté au choix « %s ».', $item->getNom(), $groupe));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $groupe]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $groupe]);
     }
 
     #[Route('/{id}/choix/renommer', name: 'choix_rename', methods: ['POST'])]
@@ -154,14 +154,14 @@ class DotationController extends AbstractController
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+            return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
         }
 
         $this->addFlash('success', $migres > 0
             ? sprintf('Choix renommé en « %s ». %d réponse%s déjà saisie%s ont suivi.', $nouveau, $migres, $migres > 1 ? 's' : '', $migres > 1 ? 's' : '')
             : sprintf('Choix renommé en « %s ».', $nouveau));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $nouveau]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $nouveau]);
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
@@ -172,7 +172,7 @@ class DotationController extends AbstractController
         $this->modeleService->supprimer($modele);
         $this->addFlash('success', 'Modèle supprimé.');
 
-        return $this->redirectToRoute('admin_stock_dotations_index');
+        return $this->redirectToRoute('admin_dotations_modeles');
     }
 
     #[Route('/{id}/lignes', name: 'ligne_add', methods: ['POST'])]
@@ -189,12 +189,12 @@ class DotationController extends AbstractController
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+            return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
         }
 
         $this->addFlash('success', sprintf('« %s » ajouté au modèle.', $ligne->getStockItem()->getNom()));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
     }
 
     #[Route('/{id}/choix', name: 'ligne_choix_add', methods: ['POST'])]
@@ -214,7 +214,7 @@ class DotationController extends AbstractController
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+            return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
         }
 
         $this->addFlash('success', sprintf(
@@ -223,7 +223,7 @@ class DotationController extends AbstractController
             $ajoutes,
         ));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $nom]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId(), '_fragment' => 'choix-' . $nom]);
     }
 
     #[Route('/{id}/choix/supprimer', name: 'choix_delete', methods: ['POST'])]
@@ -235,7 +235,7 @@ class DotationController extends AbstractController
         $this->modeleService->supprimerChoix($modele, $nom);
         $this->addFlash('success', sprintf('Choix « %s » retiré.', $nom));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modele->getId()]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
     }
 
     #[Route('/lignes/{id}/reglages', name: 'ligne_reglages', methods: ['POST'])]
@@ -254,7 +254,7 @@ class DotationController extends AbstractController
 
         $this->addFlash('success', sprintf('Réglages de « %s » enregistrés.', $ligne->getStockItem()->getNom()));
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $ligne->getModele()->getId()]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $ligne->getModele()->getId()]);
     }
 
     #[Route('/lignes/{id}/supprimer', name: 'ligne_delete', methods: ['POST'])]
@@ -268,12 +268,12 @@ class DotationController extends AbstractController
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
+            return $this->redirectToRoute('admin_dotations_edit', ['id' => $modeleId]);
         }
 
         $this->addFlash('success', 'Article retiré.');
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modeleId]);
     }
 
     #[Route('/affectations', name: 'affectation_new', methods: ['POST'])]
@@ -292,14 +292,14 @@ class DotationController extends AbstractController
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return $this->redirectToRoute('admin_stock_dotations_index');
+            return $this->redirectToRoute('admin_dotations_modeles');
         }
 
         $this->addFlash('success', sprintf('Ce kit est maintenant attribué à : %s.', $affectation->cibleLabel()));
 
         // Une affectation appartient toujours à un kit : on revient sur sa page, là où l'aperçu
         // se met à jour en conséquence.
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $affectation->getModele()->getId()]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $affectation->getModele()->getId()]);
     }
 
     #[Route('/affectations/{id}/supprimer', name: 'affectation_delete', methods: ['POST'])]
@@ -311,7 +311,7 @@ class DotationController extends AbstractController
         $this->affectationService->supprimer($affectation);
         $this->addFlash('success', 'Attribution retirée.');
 
-        return $this->redirectToRoute('admin_stock_dotations_edit', ['id' => $modeleId]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modeleId]);
     }
 
     #[Route('/suivi', name: 'suivi', methods: ['GET'])]
@@ -319,7 +319,7 @@ class DotationController extends AbstractController
     {
         $this->synchronizer->syncTaillesFromDossiers($season);
 
-        return $this->render('admin/stock/dotations/suivi.html.twig', [
+        return $this->render('admin/dotations/suivi.html.twig', [
             'season' => $season,
             'groupes' => $this->suivi->groupesDeSuivi($season),
             'taillesConnues' => Tailles::toutes(),
@@ -335,7 +335,7 @@ class DotationController extends AbstractController
         $count = $this->synchronizer->recomputeAll($season);
         $this->addFlash('success', sprintf('Besoins recalculés pour %d personne%s.', $count, $count > 1 ? 's' : ''));
 
-        return $this->redirectToRoute('admin_stock_dotations_suivi');
+        return $this->redirectToRoute('admin_dotations_suivi');
     }
 
     #[Route('/besoins/{id}/taille', name: 'besoin_taille', methods: ['POST'])]
@@ -346,7 +346,7 @@ class DotationController extends AbstractController
         $this->remiseService->changerTaille($besoin, (string) $request->request->get('taille', ''), $user);
         $this->addFlash('success', sprintf('Taille mise à jour pour %s.', $besoin->getNomPrenom()));
 
-        return $this->redirectToRoute('admin_stock_dotations_suivi');
+        return $this->redirectToRoute('admin_dotations_suivi');
     }
 
     #[Route('/besoins/{id}/personnalisation', name: 'besoin_personnalisation', methods: ['POST'])]
@@ -361,13 +361,13 @@ class DotationController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_stock_dotations_suivi');
+        return $this->redirectToRoute('admin_dotations_suivi');
     }
 
     #[Route('/flocage', name: 'flocage', methods: ['GET'])]
     public function flocage(#[CurrentSeason] Season $season): Response
     {
-        return $this->render('admin/stock/dotations/flocage.html.twig', [
+        return $this->render('admin/dotations/flocage.html.twig', [
             'season' => $season,
             'besoins' => $this->suivi->flocages($season),
         ]);
@@ -381,7 +381,7 @@ class DotationController extends AbstractController
         $this->remiseService->marquerRemis($besoin, $user);
         $this->addFlash('success', sprintf('Dotation remise à %s.', $besoin->getNomPrenom()));
 
-        return $this->redirectToRoute('admin_stock_dotations_suivi');
+        return $this->redirectToRoute('admin_dotations_suivi');
     }
 
     #[Route('/besoins/{id}/annuler', name: 'besoin_annuler', methods: ['POST'])]
@@ -392,6 +392,6 @@ class DotationController extends AbstractController
         $this->remiseService->annulerRemise($besoin);
         $this->addFlash('success', 'Remise annulée.');
 
-        return $this->redirectToRoute('admin_stock_dotations_suivi');
+        return $this->redirectToRoute('admin_dotations_suivi');
     }
 }

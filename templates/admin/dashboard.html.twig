@@ -24,6 +24,12 @@
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
+            icon: 'box',
+            label: 'Stock',
+            route: 'admin_stock_dashboard'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
             icon: 'gear',
             label: 'Le club',
             route: 'admin_club_index'

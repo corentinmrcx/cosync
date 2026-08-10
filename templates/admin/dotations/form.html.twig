@@ -30,8 +30,8 @@
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
     { label: navbar_saison_label, route: 'admin_saison_dashboard' },
-    { label: 'Stock', route: 'admin_stock_dashboard' },
-    { label: 'Dotations', route: 'admin_stock_dotations_index' },
+    { label: 'Dotations', route: 'admin_dotations_dashboard' },
+    { label: 'Modèles', route: 'admin_dotations_modeles' },
     { label: modele.nom }
 ] } %}
 
@@ -58,7 +58,7 @@
     {# — Réglages du kit — #}
     <div class="dot-card">
         <h2 class="dot-card-title">Le kit</h2>
-        <form method="post" action="{{ path('admin_stock_dotations_edit', {id: modele.id}) }}" class="dot-inline-form">
+        <form method="post" action="{{ path('admin_dotations_edit', {id: modele.id}) }}" class="dot-inline-form">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_edit_' ~ modele.id) }}">
             <input type="text" name="nom" class="field-input" value="{{ modele.nom }}" required>
             <label class="dot-check">
@@ -89,7 +89,7 @@
                         <div class="dot-list-main">
                             <span class="dot-list-name">{{ a.cibleLabel }}</span>
                         </div>
-                        <form method="post" action="{{ path('admin_stock_dotations_affectation_delete', {id: a.id}) }}" style="display:inline">
+                        <form method="post" action="{{ path('admin_dotations_affectation_delete', {id: a.id}) }}" style="display:inline">
                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_delete_' ~ a.id) }}">
                             <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
                         </form>
@@ -98,7 +98,7 @@
             </ul>
         {% endif %}
 
-        <form method="post" action="{{ path('admin_stock_dotations_affectation_new') }}" class="dot-add-row"
+        <form method="post" action="{{ path('admin_dotations_affectation_new') }}" class="dot-add-row"
               x-data="{ cible: 'team' }">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_new') }}">
             <input type="hidden" name="modele_id" value="{{ modele.id }}">
@@ -163,7 +163,7 @@
                             </div>
                         </div>
 
-                        <form method="post" action="{{ path('admin_stock_dotations_ligne_reglages', {id: ligne.id}) }}"
+                        <form method="post" action="{{ path('admin_dotations_ligne_reglages', {id: ligne.id}) }}"
                               class="dot-reglages" x-show="ouvert" x-cloak
                               x-data="{ perso: {{ ligne.personnalisationRequise ? 'true' : 'false' }} }">
                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_reglages_' ~ ligne.id) }}">
@@ -204,7 +204,7 @@
                         </form>
 
                         {# Hors du formulaire ci-dessus : HTML interdit les formulaires imbriqués. #}
-                        <form id="fixe-del-{{ ligne.id }}" method="post" action="{{ path('admin_stock_dotations_ligne_delete', {id: ligne.id}) }}">
+                        <form id="fixe-del-{{ ligne.id }}" method="post" action="{{ path('admin_dotations_ligne_delete', {id: ligne.id}) }}">
                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_delete_' ~ ligne.id) }}">
                         </form>
                     </li>
@@ -212,7 +212,7 @@
             </ul>
         {% endif %}
 
-        <form method="post" action="{{ path('admin_stock_dotations_ligne_add', {id: modele.id}) }}" class="dot-add-row">
+        <form method="post" action="{{ path('admin_dotations_ligne_add', {id: modele.id}) }}" class="dot-add-row">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_add_' ~ modele.id) }}">
             {{ ui.articleSelect(vetements, autres, 'stock_item_id', '— Ajouter un article —') }}
             <input type="number" name="quantite" class="field-input dot-text-qty" min="1" value="1" title="Quantité" aria-label="Quantité">
@@ -248,7 +248,7 @@
                 </div>
 
                 {# Le nom du groupe est l'intitulé que lit le licencié : le dire, et permettre de le corriger. #}
-                <form method="post" action="{{ path('admin_stock_dotations_choix_rename', {id: modele.id}) }}" class="dot-choix-title">
+                <form method="post" action="{{ path('admin_dotations_choix_rename', {id: modele.id}) }}" class="dot-choix-title">
                     <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_rename_' ~ modele.id) }}">
                     <input type="hidden" name="ancien" value="{{ nom }}">
                     <div class="field">
@@ -261,13 +261,13 @@
                     </div>
                 </form>
 
-                <form method="post" action="{{ path('admin_stock_dotations_choix_reglages', {id: modele.id}) }}" class="dot-choix-body">
+                <form method="post" action="{{ path('admin_dotations_choix_reglages', {id: modele.id}) }}" class="dot-choix-body">
                     <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_reglages_' ~ modele.id) }}">
                     <input type="hidden" name="nom" value="{{ nom }}">
                     <p class="dot-section-title">Options proposées</p>
                     <ul class="dot-opt-list">
                         {% for ligne in lignes %}
-                            {% include 'admin/stock/dotations/_option_reglages.html.twig' with {
+                            {% include 'admin/dotations/_option_reglages.html.twig' with {
                                 ligne: ligne,
                                 eligibilites: eligibilites,
                                 personnalisationMaxDefaut: personnalisationMaxDefaut,
@@ -281,7 +281,7 @@
                 </form>
 
                 {# Ajouter une 3e option sans détruire les réglages ni les réponses des 2 premières. #}
-                <form method="post" action="{{ path('admin_stock_dotations_choix_option_add', {id: modele.id}) }}" class="dot-choix-add">
+                <form method="post" action="{{ path('admin_dotations_choix_option_add', {id: modele.id}) }}" class="dot-choix-add">
                     <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_option_add_' ~ modele.id) }}">
                     <input type="hidden" name="nom" value="{{ nom }}">
                     <div class="dot-inline">
@@ -292,13 +292,13 @@
 
                 {# Hors du formulaire de réglages : HTML interdit les formulaires imbriqués.
                    Les boutons plus haut s'y rattachent par leur attribut `form`. #}
-                <form id="choix-del-{{ loop.index }}" method="post" action="{{ path('admin_stock_dotations_choix_delete', {id: modele.id}) }}"
+                <form id="choix-del-{{ loop.index }}" method="post" action="{{ path('admin_dotations_choix_delete', {id: modele.id}) }}"
                       onsubmit="return confirm('Retirer le choix « {{ nom }} » et ses {{ lignes|length }} options ?')">
                     <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_delete_' ~ modele.id) }}">
                     <input type="hidden" name="nom" value="{{ nom }}">
                 </form>
                 {% for ligne in lignes %}
-                    <form id="opt-del-{{ ligne.id }}" method="post" action="{{ path('admin_stock_dotations_ligne_delete', {id: ligne.id}) }}">
+                    <form id="opt-del-{{ ligne.id }}" method="post" action="{{ path('admin_dotations_ligne_delete', {id: ligne.id}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('dotation_ligne_delete_' ~ ligne.id) }}">
                     </form>
                 {% endfor %}
@@ -306,7 +306,7 @@
         {% endfor %}
 
         {# — Créer un choix : deux selects minimum, comme partout ailleurs dans l'admin — #}
-        <form method="post" action="{{ path('admin_stock_dotations_ligne_choix_add', {id: modele.id}) }}"
+        <form method="post" action="{{ path('admin_dotations_ligne_choix_add', {id: modele.id}) }}"
               class="dot-choix-new" x-data="{ options: ['', ''] }">
             <input type="hidden" name="_token" value="{{ csrf_token('dotation_choix_add_' ~ modele.id) }}">
             <p class="dot-section-title">Nouveau choix</p>
@@ -345,7 +345,7 @@
     <div class="dot-card">
         <h2 class="dot-card-title">Ce que recevra chaque profil</h2>
         <p class="dot-hint">Calculé à partir des réglages ci-dessus. C'est exactement ce que verra la personne concernée.</p>
-        {% include 'admin/stock/dotations/_apercu.html.twig' with { apercu: apercu } only %}
+        {% include 'admin/dotations/_apercu.html.twig' with { apercu: apercu } only %}
     </div>
 
 </div>

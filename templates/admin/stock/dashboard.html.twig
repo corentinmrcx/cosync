@@ -6,21 +6,14 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
     { label: 'Stock' }
 ] } %}
 
-<div class="stock-home-page">
+<div class="section-home-page">
 
-    <div class="stock-home-header">
+    <div class="section-home-header">
         <div>
-            <h1 class="stock-home-title">Stock</h1>
-        </div>
-        <div class="stock-home-actions">
-            <a href="{{ path('admin_stock_gestion') }}" class="btn btn-primary">
-                {{ ui.icon('list') }}
-                Gérer le stock
-            </a>
+            <h1 class="section-home-title">Stock</h1>
         </div>
     </div>
 
@@ -47,31 +40,17 @@
                 <span class="stat-card-label">En rupture</span>
             </span>
         </div>
-        <div class="stat-card {{ aCommanderCount > 0 ? 'stat-card-warning' }}">
-            <span class="stat-card-icon">{{ ui.icon('cart', 20) }}</span>
-            <span class="stat-card-body">
-                <span class="stat-card-value">{{ aCommanderCount }}</span>
-                <span class="stat-card-label">À commander</span>
-            </span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-card-icon">{{ ui.icon('truck', 20) }}</span>
-            <span class="stat-card-body">
-                <span class="stat-card-value">{{ commandesEnAttente }}</span>
-                <span class="stat-card-label">Commande{{ commandesEnAttente > 1 ? 's' : '' }} en attente</span>
-            </span>
-        </div>
     </div>
 
     {# — À réapprovisionner — #}
-    <div class="stock-home-section">
-        <div class="stock-home-section-header">
-            <h2 class="stock-home-section-title">À réapprovisionner</h2>
-            <span class="stock-home-section-count">{{ data.alertes|length }}</span>
+    <div class="section-home-section">
+        <div class="section-home-section-header">
+            <h2 class="section-home-section-title">À réapprovisionner</h2>
+            <span class="section-home-section-count">{{ data.alertes|length }}</span>
         </div>
 
         {% if data.alertes is empty %}
-            <p class="stock-home-empty">Aucun réapprovisionnement à prévoir</p>
+            <p class="section-home-empty">Aucun réapprovisionnement à prévoir</p>
         {% else %}
             <div class="table-wrapper">
                 <table class="table resp-table">
@@ -118,9 +97,9 @@
     </div>
 
     {# — Accès rapides — #}
-    <div class="stock-home-section">
-        <div class="stock-home-section-header">
-            <h2 class="stock-home-section-title">Accès rapides</h2>
+    <div class="section-home-section">
+        <div class="section-home-section-header">
+            <h2 class="section-home-section-title">Accès rapides</h2>
         </div>
         <div class="quicklink-grid">
             <a href="{{ path('admin_stock_gestion') }}" class="quicklink">
@@ -128,30 +107,6 @@
                 <span class="quicklink-body">
                     <span class="quicklink-title">Gérer le stock</span>
                     <span class="quicklink-text">Catalogue des articles, stock par taille, entrées et sorties</span>
-                </span>
-                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
-            </a>
-            <a href="{{ path('admin_stock_dotations_suivi') }}" class="quicklink">
-                <span class="quicklink-icon">{{ ui.icon('clipboard-list', 20) }}</span>
-                <span class="quicklink-body">
-                    <span class="quicklink-title">Suivi des dotations</span>
-                    <span class="quicklink-text">Ce que chaque joueur doit recevoir et ce qui a été remis</span>
-                </span>
-                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
-            </a>
-            <a href="{{ path('admin_stock_dotations_index') }}" class="quicklink">
-                <span class="quicklink-icon">{{ ui.icon('layers', 20) }}</span>
-                <span class="quicklink-body">
-                    <span class="quicklink-title">Modèles de dotation</span>
-                    <span class="quicklink-text">Configurer les articles attribués par équipe ou catégorie</span>
-                </span>
-                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
-            </a>
-            <a href="{{ path('admin_stock_commandes_index') }}" class="quicklink">
-                <span class="quicklink-icon">{{ ui.icon('cart', 20) }}</span>
-                <span class="quicklink-body">
-                    <span class="quicklink-title">Commandes</span>
-                    <span class="quicklink-text">À commander, bons par fournisseur, réceptions</span>
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>

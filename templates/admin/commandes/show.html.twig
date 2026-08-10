@@ -6,8 +6,8 @@
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
     { label: navbar_saison_label, route: 'admin_saison_dashboard' },
-    { label: 'Stock', route: 'admin_stock_dashboard' },
-    { label: 'Commandes', route: 'admin_stock_commandes_index' },
+    { label: 'Dotations', route: 'admin_dotations_dashboard' },
+    { label: 'Commandes', route: 'admin_commandes_index' },
     { label: 'CMD-' ~ commande.id }
 ] } %}
 
@@ -26,16 +26,16 @@
 
     <div class="dot-card">
         <div class="dot-header-actions">
-            <a href="{{ path('admin_stock_commandes_pdf', {id: commande.id}) }}" class="btn btn-secondary">⬇ Télécharger le PDF</a>
+            <a href="{{ path('admin_commandes_pdf', {id: commande.id}) }}" class="btn btn-secondary">⬇ Télécharger le PDF</a>
 
             {% if commande.statut.value == 'brouillon' %}
-                <form method="post" action="{{ path('admin_stock_commandes_commander', {id: commande.id}) }}" class="cmd-inline">
+                <form method="post" action="{{ path('admin_commandes_commander', {id: commande.id}) }}" class="cmd-inline">
                     <input type="hidden" name="_token" value="{{ csrf_token('commande_commander_' ~ commande.id) }}">
                     <input type="date" name="date_commande" class="field-input" value="{{ 'now'|date('Y-m-d') }}" max="{{ 'now'|date('Y-m-d') }}">
                     <button type="submit" class="btn btn-primary">Marquer commandée</button>
                 </form>
                 {% include 'components/_form_suppression.html.twig' with {
-                    action: path('admin_stock_commandes_delete', {id: commande.id}),
+                    action: path('admin_commandes_delete', {id: commande.id}),
                     jeton: 'commande_delete_' ~ commande.id,
                     message: 'Supprimer ce brouillon ?',
                     libelle: 'Supprimer le brouillon',
@@ -70,7 +70,7 @@
                                 <td class="dot-table-action">
                                     <div class="cmd-recept-actions">
                                         {% if ligne.restant > 0 %}
-                                            <form method="post" action="{{ path('admin_stock_commandes_ligne_recevoir', {id: ligne.id}) }}" class="cmd-inline">
+                                            <form method="post" action="{{ path('admin_commandes_ligne_recevoir', {id: ligne.id}) }}" class="cmd-inline">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('commande_ligne_recevoir_' ~ ligne.id) }}">
                                                 <input type="number" name="quantite" class="field-input dot-input-qty" min="1" max="{{ ligne.restant }}" value="{{ ligne.restant }}">
                                                 <button type="submit" class="btn btn-primary btn-sm">Recevoir</button>
@@ -79,7 +79,7 @@
                                             <span class="cmd-badge cmd-badge-recue">Complète</span>
                                         {% endif %}
                                         {% if ligne.quantiteRecue > 0 %}
-                                            <form method="post" action="{{ path('admin_stock_commandes_ligne_annuler_reception', {id: ligne.id}) }}"
+                                            <form method="post" action="{{ path('admin_commandes_ligne_annuler_reception', {id: ligne.id}) }}"
                                                   onsubmit="return confirm('Annuler la réception de cette ligne ? Le stock sera recalculé.')">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('commande_ligne_annuler_' ~ ligne.id) }}">
                                                 <button type="submit" class="cmd-annuler-recept" title="Annuler la réception">Annuler réception</button>

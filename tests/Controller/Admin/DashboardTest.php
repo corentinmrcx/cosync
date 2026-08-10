@@ -9,12 +9,12 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
- * Racine de l'administration : deux portes seulement — les saisons et le club — plus un
- * raccourci vers la saison de travail, qui est le trajet quotidien.
+ * Racine de l'administration : les portes de ce qui ne dépend d'aucune saison — les saisons,
+ * le stock physique et le club — plus un raccourci vers la saison de travail, le trajet quotidien.
  */
 final class DashboardTest extends WebTestCase
 {
-    public function testDeuxPortesEtUnRaccourciVersLaSaisonDeTravail(): void
+    public function testLesPortesHorsSaisonEtUnRaccourciVersLaSaisonDeTravail(): void
     {
         $client = static::createClient();
         $this->loginAdmin($client);
@@ -24,7 +24,7 @@ final class DashboardTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         $labels = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
-        self::assertSame(['Saisons', 'Le club'], $labels);
+        self::assertSame(['Saisons', 'Stock', 'Le club'], $labels);
 
         $raccourci = $crawler->filter('.dashboard-season-link');
         self::assertCount(1, $raccourci);

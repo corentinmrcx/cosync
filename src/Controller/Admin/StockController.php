@@ -2,9 +2,7 @@
 
 namespace App\Controller\Admin;
 
-use App\Attribute\CurrentSeason;
 use App\DTO\ManualMovementData;
-use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
 use App\Entity\User;
@@ -20,8 +18,7 @@ use App\Repository\StockMovementRepository;
 use App\Security\CsrfGuard;
 use App\Service\Pdf\InventairePdfService;
 use App\Service\Referentiel\Tailles;
-use App\Service\Stock\AchatService;
-use App\Service\Stock\CommandeService;
+use App\Service\Saison\SeasonContext;
 use App\Service\Stock\StockItemFormContext;
 use App\Service\Stock\StockItemService;
 use App\Service\Stock\StockMovementService;
@@ -32,6 +29,11 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
+/**
+ * Le stock physique appartient au club, pas à une saison : ni StockItem ni StockMovement ne
+ * portent de season_id. Aucune action ici n'exige donc de saison courante — seule la remise
+ * d'une dotation a besoin de la liste des licenciés, qui est, elle, saisonnière.
+ */
 #[Route('/admin/stock', name: 'admin_stock_')]
 class StockController extends AbstractController
 {
@@ -47,31 +49,29 @@ class StockController extends AbstractController
         private readonly StockItemRepository $itemRepository,
         private readonly StockMovementRepository $movementRepository,
         private readonly LicencieRepository $licencieRepository,
-        private readonly AchatService $achatService,
-        private readonly CommandeService $commandeService,
+        private readonly SeasonContext $seasonContext,
     ) {}
 
     #[Route('', name: 'dashboard', methods: ['GET'])]
-    public function dashboard(#[CurrentSeason] Season $season): Response
+    public function dashboard(): Response
     {
         return $this->render('admin/stock/dashboard.html.twig', [
             'data' => $this->rapports->getDashboardData(),
-            'season' => $season,
-            'aCommanderCount' => $this->achatService->compterACommander($season),
-            'commandesEnAttente' => $this->commandeService->compterEnAttente($season),
         ]);
     }
 
     #[Route('/gestion', name: 'gestion', methods: ['GET'])]
-    public function gestion(Request $request, #[CurrentSeason] Season $season): Response
+    public function gestion(Request $request): Response
     {
         $showArchived = $request->query->getBoolean('archivés', false);
+        // Saison facultative : sans elle le stock reste consultable, seule la remise
+        // d'une dotation est privée de destinataires.
+        $season = $this->seasonContext->getCurrentSeason();
 
         return $this->render('admin/stock/gestion.html.twig', [
             'summary' => $this->rapports->getStockSummary($showArchived),
             'showArchived' => $showArchived,
-            'season' => $season,
-            'licenciesValides' => $this->licencieRepository->findValidatedBySeason($season),
+            'licenciesValides' => $season !== null ? $this->licencieRepository->findValidatedBySeason($season) : [],
             'taillesConnues' => Tailles::toutes(),
             'types' => StockMovementType::cases(),
             'sources' => StockMovementSource::cases(),
@@ -79,9 +79,10 @@ class StockController extends AbstractController
     }
 
     #[Route('/inventaire.pdf', name: 'inventaire_pdf', methods: ['GET'])]
-    public function inventairePdf(#[CurrentSeason] Season $season): Response
+    public function inventairePdf(): Response
     {
-        $pdf = $this->pdfService->generate($this->rapports->getInventaireData(), $season->getLabel());
+        // Pas de label de saison : l'inventaire est un état du club à une date, pas d'une saison.
+        $pdf = $this->pdfService->generate($this->rapports->getInventaireData(), null);
 
         return new Response($pdf, Response::HTTP_OK, [
             'Content-Type' => 'application/pdf',
@@ -226,7 +227,7 @@ class StockController extends AbstractController
     }
 
     #[Route('/mouvements', name: 'mouvements_list', methods: ['GET'])]
-    public function mouvementsList(Request $request, #[CurrentSeason] Season $season): Response
+    public function mouvementsList(Request $request): Response
     {
         $page = max(1, (int) $request->query->get('page', 1));
         $filters = array_filter([
@@ -250,7 +251,6 @@ class StockController extends AbstractController
             'items' => $this->itemRepository->findAllOrdered(),
             'types' => StockMovementType::cases(),
             'sources' => StockMovementSource::cases(),
-            'season' => $season,
         ]);
     }
 }

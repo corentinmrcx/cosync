@@ -120,6 +120,37 @@ final class StockEcransTest extends WebTestCase
         $this->em->flush();
     }
 
+    /**
+     * Le stock physique ne porte aucun season_id : ses écrans doivent tenir debout même quand
+     * la base ne contient encore aucune saison. Tant qu'ils exigeaient #[CurrentSeason], ce
+     * cas les envoyait tous sur l'écran « aucune saison configurée ».
+     */
+    public function testLesEcransDeStockTiennentSansAucuneSaisonEnBase(): void
+    {
+        $this->makeItem('Ballon T5', seuil: 10);
+        $client = $this->loginAdminSansAucuneSaison();
+
+        foreach (['/admin/stock', '/admin/stock/gestion', '/admin/stock/mouvements'] as $url) {
+            $client->request('GET', $url);
+            self::assertResponseIsSuccessful(sprintf('%s ne dépend d\'aucune saison.', $url));
+        }
+    }
+
+    /**
+     * Le « à commander » se calcule à partir des besoins de dotation de la saison : il n'a
+     * rien à faire sur un écran commun à toutes les saisons.
+     */
+    public function testLeTableauDeBordStockNAfficheAucunCompteurDeSaison(): void
+    {
+        $client = $this->loginAdmin();
+
+        $html = $client->request('GET', '/admin/stock')->html();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringNotContainsString('À commander', $html);
+        self::assertStringNotContainsString('en attente', $html);
+    }
+
     private function loginAdmin(): KernelBrowser
     {
         $user = (new User())->setEmail('admin@example.test')->setRoles(['ROLE_ADMIN']);
@@ -127,6 +158,24 @@ final class StockEcransTest extends WebTestCase
         $user->setSelectedSeason($this->season);
 
         $this->em->persist($user);
+        $this->em->flush();
+
+        $this->client->loginUser($user);
+
+        return $this->client;
+    }
+
+    /**
+     * SeasonContext retombe sur la saison la plus récente : pour qu'il rende vraiment null,
+     * il ne doit rester aucune saison en base.
+     */
+    private function loginAdminSansAucuneSaison(): KernelBrowser
+    {
+        $user = (new User())->setEmail('admin-sans-saison@example.test')->setRoles(['ROLE_ADMIN']);
+        $user->setPassword('x');
+
+        $this->em->persist($user);
+        $this->em->remove($this->season);
         $this->em->flush();
 
         $this->client->loginUser($user);

@@ -1,87 +1,5 @@
-/* — Tableau de bord stock (synthèse) — */
-.stock-home-page {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    max-width: 1100px;
-    margin: 0 auto;
-    width: 100%;
-}
-
-/* — Header — */
-.stock-home-header {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: flex-start;
-    justify-content: space-between;
-}
-
-.stock-home-title {
-    margin: 0;
-    font-size: var(--font-size-2xl);
-    font-weight: 800;
-    color: var(--color-text-base);
-}
-
-.stock-home-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-/* — Sections — */
-.stock-home-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
-    padding: 1.25rem;
-}
-
-.stock-home-section-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.stock-home-section-title {
-    margin: 0;
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    color: var(--color-text-base);
-}
-
-.stock-home-section-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.5rem;
-    height: 1.5rem;
-    padding: 0 0.4rem;
-    border-radius: var(--radius-xl);
-    background: var(--color-bg-muted);
-    color: var(--color-text-body);
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-}
-
-.stock-home-empty {
-    margin: 0;
-    padding: 0.5rem 0;
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-}
-
-/* — Tableau des alertes — */
-.stock-home-table-wrapper {
-    overflow-x: auto;
-}
-
+/* — Tableau de bord stock : tableau « à réapprovisionner ».
+   La mise en page générale (header, sections) vient de components/section-home.css. — */
 .stock-home-item-nom {
     display: block;
     font-weight: 600;
@@ -107,10 +25,4 @@
 
 .stock-home-buy:hover {
     text-decoration: underline;
-}
-
-@media (max-width: 640px) {
-    .stock-home-page {
-        padding: 1rem;
-    }
 }
