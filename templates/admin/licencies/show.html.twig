@@ -309,17 +309,9 @@
 
                 <hr class="licencie-show-divider">
 
+                {# L'ordre suit celui des étapes du formulaire public :
+                   autorisations, attestation de transport, documents, paiement. #}
                 <ul class="licencie-show-checklist">
-
-                    {# Documents à signer — la liste suit ce que la saison demande #}
-                    {% for doc in documents %}
-                        {% set signature = signatures[doc.id] ?? null %}
-                        {% include 'components/_checklist_item.html.twig' with {
-                            etat: signature ? 'fait' : 'attente',
-                            label: doc.titre,
-                            detail: signature ? 'le ' ~ signature.signedAt|date('d/m/Y') : null,
-                        } only %}
-                    {% endfor %}
 
                     {# Droit à l'image #}
                     {% include 'components/_checklist_item.html.twig' with {
@@ -366,6 +358,16 @@
                         } only %}
                         {% endif %}
                     {% endif %}
+
+                    {# Documents à signer — la liste suit ce que la saison demande #}
+                    {% for doc in documents %}
+                        {% set signature = signatures[doc.id] ?? null %}
+                        {% include 'components/_checklist_item.html.twig' with {
+                            etat: signature ? 'fait' : 'attente',
+                            label: doc.titre,
+                            detail: signature ? 'le ' ~ signature.signedAt|date('d/m/Y') : null,
+                        } only %}
+                    {% endfor %}
 
                     {# Paiement cotisation #}
                     {% include 'components/_checklist_item.html.twig' with {
