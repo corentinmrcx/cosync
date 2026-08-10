@@ -339,7 +339,7 @@
             <input type="hidden" name="pay_online" value="0" x-ref="payOnlineFlag">
 
             <div class="inscription-cb-block" x-show="!multiPayment">
-                <button type="button" class="btn btn-primary btn-block" :disabled="submitting" @click="payByCard($el)">
+                <button type="button" class="btn btn-success btn-block" :disabled="submitting" @click="payByCard($el)">
                     Payer — <span x-text="montant + ' €'"></span>
                 </button>
                 <p class="inscription-cb-note">
@@ -442,5 +442,5 @@
 {% endblock %}
 
 {% block hors_flux %}
-    {% include 'components/_overlay_chargement.html.twig' with { visible: 'submitting', titre: "{% if demo|default(false) %}Enregistrement dans le Drive…{% else %}Validation de votre inscription…{% endif %}" } only %}
+    {% include 'components/_overlay_chargement.html.twig' with { visible: 'submitting', titre: demo|default(false) ? "Enregistrement dans le Drive…" : "Validation de votre inscription…" } only %}
 {% endblock %}
