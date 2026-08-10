@@ -5,17 +5,21 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
     { label: 'Stock', route: 'admin_stock_dashboard' },
     { label: 'Fournisseurs' }
 ] } %}
 
-<div class="dot-page" x-data="{ editingId: null }">
+<div class="dot-page" x-data="{ editingId: null, adding: false }">
 
     <div class="dot-header">
         <div>
             <h1 class="dot-title">Fournisseurs</h1>
             <p class="dot-subtitle">Les articles sont regroupés par fournisseur dans les bons de commande.</p>
+        </div>
+        <div class="dot-header-actions">
+            <button type="button" class="btn btn-primary" @click="adding = !adding">
+                <span x-text="adding ? 'Annuler' : '+ Nouveau fournisseur'"></span>
+            </button>
         </div>
     </div>
 
@@ -53,20 +57,20 @@
                             <input type="text" name="contact" class="field-input" value="{{ f.contact }}" placeholder="Contact">
                             <input type="email" name="email" class="field-input" value="{{ f.email }}" placeholder="Email">
                             <label class="dot-check"><input type="checkbox" name="actif" value="1" {{ f.actif ? 'checked' : '' }}> Actif</label>
-                            <button type="submit" class="btn btn-primary">Enregistrer</button>
-                            <button type="button" class="btn btn-danger btn-sm" @click="editingId = null">Annuler</button>
+                            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                            <button type="button" class="btn btn-ghost btn-sm" @click="editingId = null">Annuler</button>
                         </form>
                     </li>
                 {% endfor %}
             </ul>
         {% endif %}
 
-        <form method="post" action="{{ path('admin_stock_fournisseurs_new') }}" class="dot-affect-form">
+        <form x-show="adding" x-cloak method="post" action="{{ path('admin_stock_fournisseurs_new') }}" class="dot-affect-form">
             <input type="hidden" name="_token" value="{{ csrf_token('fournisseur_new') }}">
             <input type="text" name="nom" class="field-input" placeholder="Nom du fournisseur" required>
             <input type="text" name="contact" class="field-input" placeholder="Contact (option.)">
             <input type="email" name="email" class="field-input" placeholder="Email (option.)">
-            <button type="submit" class="btn btn-primary">+ Ajouter</button>
+            <button type="submit" class="btn btn-primary">Ajouter</button>
         </form>
     </div>
 

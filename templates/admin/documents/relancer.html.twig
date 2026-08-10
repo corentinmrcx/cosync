@@ -56,7 +56,7 @@
             <form method="post" action="{{ path('admin_documents_relancer', {id: document.id}) }}"
                   id="relance-form" class="documents-relance-actions">
                 <input type="hidden" name="_token" value="{{ csrf_token('document_relancer_' ~ document.id) }}">
-                <a href="{{ path('admin_documents_list') }}" class="btn btn-secondary">Annuler</a>
+                <a href="{{ path('admin_documents_list') }}" class="btn btn-ghost">Annuler</a>
                 <button type="submit" class="btn btn-primary">
                     Envoyer {{ enAttente|length - sansEmail }} lien{{ (enAttente|length - sansEmail) > 1 ? 's' : '' }}
                 </button>

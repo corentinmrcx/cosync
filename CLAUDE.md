@@ -529,6 +529,35 @@ Quand plusieurs templates partagent la même structure visuelle, extraire en com
 
 Un composant Twig n'a pas de logique métier. Il affiche ce qu'on lui passe.
 
+### 7.6 bis Boutons — le registre est porté par la variante, pas par le libellé
+
+Une variante de bouton dit **ce que l'action fait**, jamais l'importance qu'on lui prête.
+Se tromper de variante fait mentir l'interface : un « Annuler » en rouge annonce une
+destruction alors qu'il ne fait que refermer un formulaire.
+
+| Variante | Registre | Exemples |
+|---|---|---|
+| `btn-primary` | l'action attendue de l'écran, une seule par zone | Enregistrer, Créer l'article, Ajouter |
+| `btn-secondary` | une autre action, neutre et sans risque | Modifier, Voir les archivés |
+| `btn-ghost` | **fermer sans rien faire** | Annuler, ✕ d'un champ en édition |
+| `btn-danger` | **perte ou revirement de données** | Supprimer, Annuler une remise de dotation |
+
+Deux pièges vérifiés à la relecture :
+
+- « Annuler » n'est `btn-danger` que lorsqu'il **défait un état enregistré** (annuler une
+  remise de dotation régénère un mouvement de stock). Refermer un formulaire, c'est `btn-ghost`.
+- Les boutons d'une même rangée partagent leur taille. Un `btn-primary` pleine taille à côté
+  d'un `btn-sm` dans la même ligne de tableau est un défaut, pas une mise en avant.
+
+**Placement du pied de formulaire** : le couple Enregistrer / Annuler d'une **page de
+formulaire** est **centré** (`justify-content: center`). Seuls les pieds de **modale**
+restent alignés à droite — c'est la convention universelle du genre, et la modale n'est
+pas une page.
+
+**Annuler mène là où mène Enregistrer.** Si le contrôleur redirige vers `admin_stock_gestion`
+après enregistrement, le lien Annuler pointe sur `admin_stock_gestion`, pas sur un écran
+voisin : quitter un formulaire ne doit pas déplacer l'utilisateur.
+
 ### 7.7 Alpine.js — Séparation données/affichage
 
 ```html

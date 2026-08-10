@@ -6,7 +6,6 @@
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
-    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
     { label: 'Stock', route: 'admin_stock_dashboard' },
     { label: 'Gestion' }
 ] } %}
@@ -32,8 +31,7 @@
 
     {% if summary is empty %}
         <div class="stock-dashboard-empty">
-            <p>Aucun article de stock pour cette saison.</p>
-            <a href="{{ path('admin_stock_items_new') }}" class="btn btn-primary">Créer un article</a>
+            <p>Aucun article.</p>
         </div>
     {% endif %}
 
@@ -91,26 +89,28 @@
                                     {{ row.item.alertSeuil ?? '—' }}
                                 </td>
                                 <td class="stock-col-actions">
-                                    {% if row.item.actif %}
-                                        <button
-                                            type="button"
-                                            class="btn btn-primary btn-sm"
-                                            @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
-                                        >
-                                            + / − Mouvement
-                                        </button>
-                                        <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
-                                        {% include 'components/_form_suppression.html.twig' with {
-                                            action: path('admin_stock_items_delete', {id: row.item.id}),
-                                            jeton: 'delete_stock_item_' ~ row.item.id,
-                                            message: 'Supprimer cet article ?',
-                                        } only %}
-                                    {% else %}
-                                        <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}" style="display:inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">
-                                            <button type="submit" class="btn btn-secondary btn-sm">Désarchiver</button>
-                                        </form>
-                                    {% endif %}
+                                    <div class="table-actions-cellule">
+                                        {% if row.item.actif %}
+                                            <button
+                                                type="button"
+                                                class="btn btn-primary btn-sm"
+                                                @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
+                                            >
+                                                + / − Mouvement
+                                            </button>
+                                            <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
+                                            {% include 'components/_form_suppression.html.twig' with {
+                                                action: path('admin_stock_items_delete', {id: row.item.id}),
+                                                jeton: 'delete_stock_item_' ~ row.item.id,
+                                                message: 'Supprimer cet article ?',
+                                            } only %}
+                                        {% else %}
+                                            <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">
+                                                <button type="submit" class="btn btn-secondary btn-sm">Désarchiver</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% if row.hasTailles %}

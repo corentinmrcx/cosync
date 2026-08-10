@@ -4,7 +4,9 @@
   Paramètres attendus (via embed ... with {...}) :
     search (string)              — valeur courante de la recherche
     searchPlaceholder (string)   — placeholder de l'input search
-    filterGroups (array)         — [{name, label, allLabel, options: [{value, label}], current}]
+    showSearch (bool)            — false pour une liste filtrée sans recherche texte (défaut : true)
+    filterGroups (array)         — [{name, label, allLabel, options: [{value, label}], current, type}]
+                                   type vaut 'select' (défaut) ou 'date'
     activeCount (int)            — nombre de filtres actifs
     resetUrl (string)            — URL pour réinitialiser tous les filtres
     formId (string)              — préfixe unique pour les id des formulaires
@@ -15,31 +17,36 @@
 
 {% set activeCount = activeCount ?? 0 %}
 {% set formId = formId ?? 'list-toolbar' %}
+{% set showSearch = showSearch ?? true %}
 
 <div class="list-tb-filters">
 
     {# ── Barre de recherche ── #}
-    <form method="get" id="{{ formId }}-search" class="list-tb-form-search">
-        {% for group in filterGroups %}
-            <input type="hidden" name="{{ group.name }}" value="{{ group.current ?? '' }}">
-        {% endfor %}
-        <div class="list-tb-search-row">
-            <div class="list-tb-search-wrap">
-                <svg class="list-tb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input type="search"
-                       name="search"
-                       value="{{ search ?? '' }}"
-                       placeholder="{{ searchPlaceholder ?? 'Rechercher…' }}"
-                       class="list-tb-search-input">
+    {% if showSearch %}
+        <form method="get" id="{{ formId }}-search" class="list-tb-form-search">
+            {% for group in filterGroups %}
+                <input type="hidden" name="{{ group.name }}" value="{{ group.current ?? '' }}">
+            {% endfor %}
+            <div class="list-tb-search-row">
+                <div class="list-tb-search-wrap">
+                    <svg class="list-tb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="search"
+                           name="search"
+                           value="{{ search ?? '' }}"
+                           placeholder="{{ searchPlaceholder ?? 'Rechercher…' }}"
+                           class="list-tb-search-input">
+                </div>
             </div>
-        </div>
-    </form>
+        </form>
+    {% endif %}
 
     {# ── Toolbar : filtre + actions ── #}
     <form method="get" id="{{ formId }}-filters" class="list-tb-form-toolbar">
-        <input type="hidden" name="search" value="{{ search ?? '' }}">
+        {% if showSearch %}
+            <input type="hidden" name="search" value="{{ search ?? '' }}">
+        {% endif %}
         {% for group in filterGroups %}
             <input type="hidden" name="{{ group.name }}" value="{{ group.current ?? '' }}">
         {% endfor %}
@@ -72,15 +79,23 @@
                     {% for group in filterGroups %}
                         <div class="list-tb-filter-group">
                             <label class="list-tb-filter-label">{{ group.label }}</label>
-                            <select name="{{ group.name }}" class="list-tb-select" onchange="this.form.submit()">
-                                <option value="">{{ group.allLabel ?? 'Tous' }}</option>
-                                {% for option in group.options %}
-                                    <option value="{{ option.value }}"
-                                            {{ group.current is not null and option.value == group.current ? 'selected' : '' }}>
-                                        {{ option.label }}
-                                    </option>
-                                {% endfor %}
-                            </select>
+                            {% if group.type is defined and group.type == 'date' %}
+                                <input type="date"
+                                       name="{{ group.name }}"
+                                       value="{{ group.current ?? '' }}"
+                                       class="list-tb-select"
+                                       onchange="this.form.submit()">
+                            {% else %}
+                                <select name="{{ group.name }}" class="list-tb-select" onchange="this.form.submit()">
+                                    <option value="">{{ group.allLabel ?? 'Tous' }}</option>
+                                    {% for option in group.options %}
+                                        <option value="{{ option.value }}"
+                                                {{ group.current is not null and option.value == group.current ? 'selected' : '' }}>
+                                            {{ option.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
                         </div>
                     {% endfor %}
 

@@ -5,7 +5,6 @@
     align-items: flex-start;
     justify-content: center;
     padding: 1rem;
-    background: var(--color-bg-subtle);
 }
 
 @media (min-width: 640px) {
@@ -14,7 +13,7 @@
 
 .stock-items-card {
     background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-xl);
     padding: 2rem;
     box-shadow: var(--shadow-card);
@@ -47,16 +46,24 @@
 
 @media (min-width: 480px) {
     .stock-items-row { flex-direction: row; }
-    .stock-items-row .stock-items-field { flex: 1; }
+
+    /* Colonnes de largeur égale. `min-width: 0` est indispensable : sans lui, un champ
+       flex refuse de descendre sous la largeur intrinsèque de son contenu et déborde. */
+    .stock-items-row > .field {
+        flex: 1 1 0;
+        min-width: 0;
+    }
 }
 
-.stock-items-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
+/* Le champ occupe toute la largeur qui lui est donnée, seul ou en colonne. */
+.stock-items-form .field-input,
+.stock-items-form select,
+.stock-items-form input[type="text"],
+.stock-items-form input[type="number"],
+.stock-items-form input[type="url"] {
+    width: 100%;
 }
 
-.stock-items-field .help-text,
 .stock-items-help {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
@@ -65,7 +72,7 @@
 .stock-items-actions {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 0.75rem;
     padding-top: 0.5rem;
     border-top: 1px solid var(--color-border);
@@ -103,7 +110,6 @@
     display: flex;
     flex-direction: column;
     padding: 1rem;
-    background: var(--color-bg-subtle);
     gap: 1rem;
     width: 100%;
     box-sizing: border-box;
@@ -131,51 +137,15 @@
     color: var(--color-text-muted);
 }
 
-.stock-mouvements-hint {
-    margin: -0.5rem 0 0;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-}
-
-.stock-mouvements-filters {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-    background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: 0.875rem 1rem;
-}
-
-@media (min-width: 640px) {
-    .stock-mouvements-filters { flex-direction: row; flex-wrap: wrap; align-items: center; padding: 0.875rem 1.25rem; }
-}
-
-.stock-mouvements-filter-select,
-.stock-mouvements-filter-input {
-    width: 100%;
-    padding: 0.4rem 0.625rem;
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-body);
-    background: var(--color-bg-page);
-}
-
-.stock-mouvements-filter-reset {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-    text-decoration: underline;
-}
 
 .stock-mouvements-empty {
     padding: 2rem;
     text-align: center;
     color: var(--color-text-muted);
     background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
 }
 
 .stock-mouvements-date { color: var(--color-text-muted); white-space: nowrap; }
@@ -266,127 +236,3 @@
     border-color: var(--color-primary);
     font-weight: 700;
 }
-
-/* — Catégories — */
-.stock-categories-page {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-    background: var(--color-bg-subtle);
-    gap: 1rem;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-@media (min-width: 640px) {
-    .stock-categories-page { padding: 2rem 1.5rem; gap: 1.25rem; max-width: 900px; margin: 0 auto; }
-}
-
-.stock-categories-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.stock-categories-title {
-    font-size: var(--font-size-xl);
-    font-weight: 800;
-    color: var(--color-text-base);
-    margin: 0;
-}
-
-.stock-categories-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
-.stock-categories-card {
-    background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-card);
-}
-
-.stock-categories-card-title {
-    font-size: var(--font-size-base);
-    font-weight: 700;
-    color: var(--color-text-base);
-    margin: 0 0 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.stock-categories-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-}
-
-.stock-categories-form-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-@media (min-width: 480px) {
-    .stock-categories-form-row { flex-direction: row; align-items: flex-end; }
-}
-
-.stock-categories-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-    flex: 1;
-}
-
-.stock-categories-input-icon     { max-width: 70px; text-align: center; font-size: var(--font-size-xl); }
-.stock-categories-input-position { max-width: 80px; }
-
-.stock-categories-empty {
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-    text-align: center;
-    padding: 1.5rem 0;
-}
-
-.stock-categories-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.stock-categories-item {
-    background: var(--color-bg-subtle);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-}
-
-.stock-categories-item-view {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-}
-
-.stock-categories-item-icon { font-size: var(--font-size-xl); min-width: 1.5rem; text-align: center; }
-.stock-categories-item-name { flex: 1; font-weight: 600; color: var(--color-text-base); font-size: var(--font-size-sm); }
-.stock-categories-item-position { font-size: var(--font-size-xs); color: var(--color-text-muted); }
-
-.stock-categories-item-actions { display: flex; gap: 0.5rem; }
-
-.stock-categories-edit-form {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    background: var(--color-bg-page);
-    flex-wrap: wrap;
-}
-

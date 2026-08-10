@@ -7,7 +7,6 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    background: var(--color-bg-subtle);
     overflow: hidden;
 }
 
@@ -54,8 +53,9 @@
 .legal-toc {
     padding: 1rem 1.25rem;
     background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
 }
 
 .legal-toc-title {
@@ -91,9 +91,10 @@
 .legal-content {
     padding: 1.25rem 1.5rem;
     background: var(--color-bg-page);
-    border: 1px solid var(--color-border);
+    /* Page blanche : bordure renforcée, seul contour restant du bloc. */
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 4px 20px rgb(0 0 0 / 0.10);
 }
 
 .legal-intro {
