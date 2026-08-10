@@ -166,8 +166,12 @@ class DirigeantController extends AbstractController
     public function edit(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         Request $request,
-        #[CurrentSeason] Season $season,
     ): Response {
+        // Saison du dirigeant, pas celle de l'admin : une fiche s'ouvre par UUID sans
+        // passer par la liste filtrée, et proposer les équipes ou les licenciés d'une
+        // autre saison le rattacherait au mauvais exercice.
+        $season = $dirigeant->getSeason();
+
         $data = new DirigeantData();
         $data->nom = $dirigeant->getNom();
         $data->prenom = $dirigeant->getPrenom();

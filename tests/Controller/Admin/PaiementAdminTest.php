@@ -146,6 +146,27 @@ final class PaiementAdminTest extends WebTestCase
         self::assertCount(0, $this->transactionsDe($uuid));
     }
 
+    /**
+     * Chaque compte admin travaille dans la saison de son choix, et une fiche s'ouvre par
+     * UUID sans passer par la liste filtrée. Un dirigeant resté sur une saison passée doit
+     * malgré tout rattacher son encaissement à la saison du licencié : sinon le solde est
+     * calculé sur le mauvais exercice, la licence ne passe jamais en validée, et le
+     * paiement reste invisible sur la fiche — le club a l'argent, l'app dit le contraire.
+     */
+    public function testUnAdminSurUneAutreSaisonRattacheLePaiementACelleDuLicencie(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client, saisonSelectionnee: '2024-2025');
+        $uuid = $this->seedLicencie();
+
+        $this->payer($client, $uuid, '85');
+
+        $transaction = $this->transactionsDe($uuid)[0];
+
+        self::assertSame('2025-2026', $transaction->getSeason()->getLabel());
+        self::assertSame(LicenceStatus::VALIDATED, $this->reloadDossier($uuid)->getStatus());
+    }
+
     /* ── Suppression ── */
 
     public function testUnPaiementSaisiParErreurPeutEtreSupprime(): void
@@ -262,10 +283,17 @@ final class PaiementAdminTest extends WebTestCase
         return $em->find(Licencie::class, Uuid::fromString($uuid))->getDossierClub();
     }
 
-    private function loginAdmin(KernelBrowser $client): User
+    private function loginAdmin(KernelBrowser $client, ?string $saisonSelectionnee = null): User
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
         $user = (new User())->setEmail('admin-paiement@example.test')->setPassword('x');
+
+        if ($saisonSelectionnee !== null) {
+            $season = $em->getRepository(Season::class)->findOneBy(['label' => $saisonSelectionnee])
+                ?? (new Season())->setLabel($saisonSelectionnee)->setCotisationDefaut(self::COTISATION);
+            $em->persist($season);
+            $user->setSelectedSeason($season);
+        }
 
         $em->persist($user);
         $em->flush();

@@ -30,7 +30,6 @@ use App\Service\Licencie\LicencieService;
 use App\Service\Licencie\PaiementService;
 use App\Service\Mail\InscriptionLinkService;
 use App\Service\Payment\CotisationResolver;
-use App\Service\Saison\SeasonContext;
 use App\Service\Ui\ListFilterMemory;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -53,7 +52,6 @@ class LicencieController extends AbstractController
         private readonly LicencieService $licencieService,
         private readonly InscriptionLinkService $inscriptionLinkService,
         private readonly TransactionRepository $transactionRepo,
-        private readonly SeasonContext $seasonContext,
         private readonly CsrfGuard $csrf,
         private readonly PaiementService $paiementService,
         private readonly HistoriqueFicheService $historiqueService,
@@ -198,9 +196,13 @@ class LicencieController extends AbstractController
     public function show(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
     ): Response {
-        $season = $this->seasonContext->getCurrentSeason();
-        $transactions = $season ? $this->transactionRepo->findAllByLicencieAndSeason($licencie, $season) : [];
-        $totalPaid = $season ? $this->transactionRepo->sumByLicencieAndSeason($licencie, $season) : 0.0;
+        // La fiche se lit dans la saison du licencié, jamais dans celle sélectionnée par
+        // l'admin : chaque compte travaille dans la saison de son choix, et une fiche
+        // s'ouvre par UUID (favori, lien de mail) sans passer par la liste filtrée.
+        // Prendre la saison de l'admin masquerait les paiements du licencié.
+        $season = $licencie->getSeason();
+        $transactions = $this->transactionRepo->findAllByLicencieAndSeason($licencie, $season);
+        $totalPaid = $this->transactionRepo->sumByLicencieAndSeason($licencie, $season);
 
         $montant = $this->cotisationResolver->resolve($licencie);
         $remainingAmount = max(0, (float) $montant - $totalPaid);
@@ -228,12 +230,13 @@ class LicencieController extends AbstractController
     public function edit(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
-        #[CurrentSeason] Season $season,
     ): Response {
         $dossier = $licencie->getDossierClub();
 
         $form = $this->createForm(LicencieEditType::class, $licencie, [
-            'season' => $season,
+            // Saison du licencié : le sélecteur d'équipe ne doit proposer que les équipes
+            // de sa saison, pas celles de la saison sélectionnée par l'admin.
+            'season' => $licencie->getSeason(),
             'taille_haut' => $dossier?->getTailleHaut(),
             'taille_bas' => $dossier?->getTailleBas(),
             'pointure' => $dossier?->getPointure(),
@@ -269,13 +272,6 @@ class LicencieController extends AbstractController
     ): Response {
         $this->csrf->valider('add_payment_' . $licencie->getUuid(), $request);
 
-        $season = $this->seasonContext->getCurrentSeason();
-        if ($season === null) {
-            $this->addFlash('error', 'Aucune saison sélectionnée.');
-
-            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
-        }
-
         try {
             $paiement = PaiementManuelData::fromRequest($request);
         } catch (\DomainException $e) {
@@ -292,7 +288,10 @@ class LicencieController extends AbstractController
             $paiement->note,
             $paiement->datePaiement,
             $user,
-            $season,
+            // Saison du licencié, pas celle de l'admin : sinon un dirigeant resté sur une
+            // autre saison rattache l'encaissement au mauvais exercice, le solde n'est
+            // jamais atteint et la licence ne passe pas en VALIDATED.
+            $licencie->getSeason(),
         );
 
         $this->addFlash('success', 'Paiement de ' . $licencie->getNomPrenom() . ' enregistré.');
