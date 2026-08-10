@@ -102,6 +102,26 @@ jobs:
       - name: Vérifier que rien ne manque à l'appel
         run: php bin/check-prod-deps.php
 
+  csp:
+    name: CSP — la politique de prod couvre ce que les pages chargent
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      # Le CSP n'est posé qu'en production : une ressource externe ajoutée à un template
+      # ne rencontre aucune politique avant le déploiement. Deux pannes sont parties comme
+      # ça (police Montserrat, puis bouton de paiement HelloAsso). Ce contrôle confronte
+      # l'en-tête réel aux origines que les pages atteignent.
+      - name: Confronter le CSP aux origines externes du front
+        run: php bin/check-csp.php
+
   front:
     name: Front — CSS et JavaScript
     runs-on: ubuntu-latest
