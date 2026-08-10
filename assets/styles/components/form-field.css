@@ -25,11 +25,29 @@
     border-radius: var(--radius-md);
     font-family: var(--font-sans);
     font-size: var(--font-size-sm);
+    line-height: 1.5;
     color: var(--color-text-body);
     background: var(--color-bg-page);
     outline: none;
     transition: border-color 0.15s;
+    box-sizing: border-box;
 }
+
+/* Hauteur imposée aux contrôles d'une seule ligne. Laissés à leur hauteur
+   naturelle, ils ne tombent pas juste : à padding et police identiques, Chrome
+   rend un <input type=text> à 41px, un <select> et un <input type=date> à 43px.
+   Une ligne qui mêle les deux (Rôle + Équipe, Date de naissance + Catégorie)
+   part donc de travers de 2px. Le textarea garde sa hauteur libre : il grandit
+   avec son nombre de lignes. */
+select.field-input,
+input.field-input {
+    height: 2.75rem;
+}
+
+/* Un champ fichier garde la hauteur de son bouton natif, une liste à choix
+   multiples celle de ses options visibles. */
+input[type="file"].field-input,
+select[multiple].field-input { height: auto; }
 
 .field-input:focus {
     border-color: var(--color-primary);
@@ -41,10 +59,17 @@
     cursor: not-allowed;
 }
 
+/* Sélecteurs typés : sans ça, la hauteur imposée plus haut (elle aussi typée)
+   l'emporterait sur la version compacte, plus faible en spécificité. */
+select.field-input-compact,
+input.field-input-compact,
 .field-input-compact {
     padding: 0.4rem 0.625rem;
     font-size: var(--font-size-xs);
+    height: 2.125rem;
 }
+
+textarea.field-input-compact { height: auto; }
 
 /* Message sous le champ : ce qu'on attend, ou pourquoi c'est refusé. */
 .field-hint {
