@@ -14,6 +14,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\MailerAssertionsTrait;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -127,6 +128,24 @@ final class PaiementAdminTest extends WebTestCase
         ]);
 
         self::assertCount(0, $this->transactionsDe($uuid));
+    }
+
+    /**
+     * Le club n'encaisse plus les chèques CAF ni les chèques ANCV : ils ne doivent plus être
+     * proposés à la saisie. Les modes restent déclarés dans l'enum pour relire les paiements
+     * déjà enregistrés — c'est bien la liste offerte qui doit s'être resserrée.
+     */
+    public function testLaModaleNeProposeQueLesModesEncoreAcceptes(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+        $uuid = $this->seedLicencie();
+
+        $crawler = $client->request('GET', '/admin/effectif/joueurs/' . $uuid);
+        $modes = $crawler->filter('form[action$="/ajouter-paiement"] select[name="mode"] option')
+            ->each(fn (Crawler $option) => (string) $option->attr('value'));
+
+        self::assertSame(['cb_online', 'virement', 'cheque', 'especes', 'pass_sport', 'autre'], $modes);
     }
 
     public function testUnJetonCsrfInvalideRefuseLaSaisie(): void

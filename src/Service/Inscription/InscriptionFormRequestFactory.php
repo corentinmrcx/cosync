@@ -67,6 +67,7 @@ final class InscriptionFormRequestFactory
             volontaireTransport: $autorisations->volontaireTransport,
             documentSignatures: $signatures,
             paymentIntentions: $modes,
+            paymentAutrePrecision: $this->precisionAutre($request, $modes),
             attestationTransport: $attestation,
             dotationChoix: $dotation->choix,
             dotationPersonnalisation: $dotation->personnalisation,
@@ -97,6 +98,24 @@ final class InscriptionFormRequestFactory
         $mode = PaymentMode::tryFrom((string) $request->request->get('payment_intention', ''));
 
         return $mode === null ? null : [$mode];
+    }
+
+    /**
+     * Précision libre du mode « Autre ». Le formulaire la réclame côté client, mais une saisie
+     * vide n'est pas rejetée ici : mieux vaut un dossier à préciser de vive voix qu'une
+     * inscription refusée à la dernière étape.
+     *
+     * @param list<PaymentMode> $modes
+     */
+    private function precisionAutre(Request $request, array $modes): ?string
+    {
+        if (!in_array(PaymentMode::AUTRE, $modes, true)) {
+            return null;
+        }
+
+        $precision = trim((string) $request->request->get('payment_autre_precision', ''));
+
+        return $precision === '' ? null : mb_substr($precision, 0, 100);
     }
 
     /** Les quatre autorisations parentales sont obligatoires ensemble, ou pas du tout. */

@@ -537,6 +537,11 @@
     margin-top: 0.25rem;
 }
 
+/* Mode « Autre » : la précision se saisit dans le bloc d'info du mode sélectionné. */
+.inscription-payment-info .field + p {
+    margin-top: 0.75rem;
+}
+
 /* Toggle multi-paiement */
 /* — Paiement en ligne HelloAsso — */
 .inscription-cb-block {

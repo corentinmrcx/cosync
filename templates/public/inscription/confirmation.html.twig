@@ -27,7 +27,10 @@
                 </div>
                 <div class="inscription-recap-row">
                     <span class="inscription-recap-key">Mode{{ intentions|length > 1 ? 's choisis' : ' choisi' }}</span>
-                    <span class="inscription-recap-val">{{ intentions|map(m => m.label())|join(', ') }}</span>
+                    <span class="inscription-recap-val">
+                        {{- intentions|map(m => m.label())|join(', ') }}
+                        {%- if dossier.paymentAutrePrecision %} ({{ dossier.paymentAutrePrecision }}){% endif -%}
+                    </span>
                 </div>
             </div>
 
@@ -39,7 +42,8 @@
                     } only %}
                 </div>
             {% endif %}
-            {% if intentionValues|filter(v => v in ['cheque', 'especes', 'pass_sport', 'caf', 'ancv']) is not empty %}
+            {# `caf` et `ancv` ne sont plus proposés, mais restent lus pour les dossiers déjà enregistrés. #}
+            {% if intentionValues|filter(v => v in ['cheque', 'especes', 'pass_sport', 'autre', 'caf', 'ancv']) is not empty %}
                 <div class="inscription-payment-info" style="margin-top: 1rem;">
                     À remettre à un dirigeant du club ou lors d'une permanence.
                 </div>

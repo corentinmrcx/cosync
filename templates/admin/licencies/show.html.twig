@@ -29,7 +29,8 @@
         addMontant: {{ remainingAmount|number_format(2, '.', '') }},
         addDate: '{{ 'now'|date('Y-m-d') }}',
         addReference: '',
-        addNote: ''
+        addNote: '',
+        modesAvecReference: {{ paymentModesAvecReference|json_encode }}
      }">
 
     {# — Modale gestion des paiements — #}
@@ -119,9 +120,14 @@
                     </div>
                 </div>
 
-                <div class="field" x-show="['cheque', 'virement'].includes(addMode)">
-                    <label class="field-label">Référence <span class="licencie-modal-hint">(n° chèque, référence virement)</span></label>
-                    <input type="text" name="reference" x-model="addReference" class="field-input" placeholder="Ex : 1234567">
+                <div class="field" x-show="modesAvecReference.includes(addMode)">
+                    <label class="field-label">
+                        <span x-text="addMode === 'autre' ? 'Précisez' : 'Référence'"></span>
+                        <span class="licencie-modal-hint"
+                              x-text="addMode === 'autre' ? '(tickets MSA, coupon sport…)' : '(n° chèque, référence virement)'"></span>
+                    </label>
+                    <input type="text" name="reference" x-model="addReference" class="field-input"
+                           :placeholder="addMode === 'autre' ? 'Ex : tickets MSA' : 'Ex : 1234567'">
                 </div>
 
                 <div class="field">
@@ -302,6 +308,7 @@
                         <dt class="licencie-show-dt">Intention paiement</dt>
                         <dd class="licencie-show-dd">
                             {{ d.paymentIntentions|map(m => m.label())|join(', ') }}
+                            {%- if d.paymentAutrePrecision %} ({{ d.paymentAutrePrecision }}){% endif %}
                         </dd>
                     </div>
                     {% endif %}

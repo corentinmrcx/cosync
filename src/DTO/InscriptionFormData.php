@@ -23,6 +23,8 @@ final class InscriptionFormData
         public readonly array $documentSignatures,
         /** @var PaymentMode[] */
         public readonly array $paymentIntentions,
+        /** Nature du paiement quand « Autre » est retenu (tickets MSA, coupon sport…) */
+        public readonly ?string $paymentAutrePrecision = null,
         public readonly ?AttestationTransportData $attestationTransport = null,
         /** @var array<string, int> { groupeChoix: stockItemId } */
         public readonly array $dotationChoix = [],

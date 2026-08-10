@@ -72,6 +72,7 @@ final class MailerService
                 'licencie' => $licencie,
                 'montant' => $montant,
                 'intentions' => $licencie->getDossierClub()?->getPaymentIntentions() ?? [],
+                'precisionAutre' => $licencie->getDossierClub()?->getPaymentAutrePrecision(),
                 'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
                 'url' => $this->lienPublic('public_inscription_confirmation', $licencie->getUuid()),
                 'documentsJoints' => count($retenus),

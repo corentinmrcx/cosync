@@ -4,7 +4,8 @@
 
 {% block corps %}
     {% set intentionValues = intentions|map(m => m.value) %}
-    {% set aRemettreAuLocal = intentionValues|filter(v => v in ['cheque', 'especes', 'pass_sport', 'caf', 'ancv']) %}
+    {# `caf` et `ancv` ne sont plus proposés, mais restent lus pour les dossiers déjà enregistrés. #}
+    {% set aRemettreAuLocal = intentionValues|filter(v => v in ['cheque', 'especes', 'pass_sport', 'autre', 'caf', 'ancv']) %}
     {% set titulaire = club_rib.titulaireCompte|default(club_nom) %}
 
     {# — Hero — #}
@@ -77,6 +78,7 @@
                 <td style="padding: 20px 40px 0;" class="px">
                     <p style="margin: 0 0 10px; font-size: 15px; font-weight: 700; color: {{ c.texteFort }};">
                         {{ intentions|filter(m => m.value in aRemettreAuLocal)|map(m => m.label())|join(', ') }}
+                        {%- if 'autre' in aRemettreAuLocal and precisionAutre %} ({{ precisionAutre }}){% endif %}
                     </p>
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
                            style="background: #fffbeb; border-radius: 10px; border: 1px solid #fde68a;">

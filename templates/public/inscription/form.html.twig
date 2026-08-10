@@ -370,8 +370,7 @@
                 { value: 'cheque',     label: 'Chèque' },
                 { value: 'especes',    label: 'Espèces' },
                 { value: 'pass_sport', label: "Pass'Sport" },
-                { value: 'caf',        label: 'Chèque CAF' },
-                { value: 'ancv',       label: 'ANCV / Chèques Vacances' },
+                { value: 'autre',      label: 'Autre' },
             ]) %}
 
             {# Paiement unique → radios #}
@@ -411,8 +410,17 @@
                 <div x-show="isPaymentModeActive('especes')" class="inscription-payment-info">
                     Espèces à remettre à un dirigeant.
                 </div>
-                <div x-show="isPaymentModeActive('pass_sport') || isPaymentModeActive('caf') || isPaymentModeActive('ancv')" class="inscription-payment-info">
+                <div x-show="isPaymentModeActive('pass_sport')" class="inscription-payment-info">
                     Document à remettre en main propre à un dirigeant du club.
+                </div>
+                <div x-show="isPaymentModeActive('autre')" class="inscription-payment-info">
+                    <div class="field">
+                        <label class="field-label" for="payment-autre-precision">De quel moyen s'agit-il ? *</label>
+                        <input type="text" id="payment-autre-precision" name="payment_autre_precision"
+                               x-model="paymentAutrePrecision" maxlength="100" class="field-input"
+                               placeholder="Ex : tickets MSA, coupon sport, chèques vacances">
+                    </div>
+                    <p>À remettre en main propre à un dirigeant du club.</p>
                 </div>
             </div>
         </div>

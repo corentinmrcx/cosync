@@ -98,6 +98,37 @@ final class InscriptionParcoursCompletTest extends WebTestCase
         );
     }
 
+    /** Le mode « Autre » ne dit rien à lui seul : la précision saisie doit suivre le dossier. */
+    public function testLeModeAutreEnregistreLaPrecisionSaisie(): void
+    {
+        $client = static::createClient();
+        $uuid = $this->seedSenior();
+
+        $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid, [
+            'payment_intention' => 'autre',
+            'payment_autre_precision' => '  tickets MSA  ',
+        ]));
+
+        $dossier = $this->reloadDossier($uuid);
+
+        self::assertSame([PaymentMode::AUTRE], $dossier->getPaymentIntentions());
+        self::assertSame('tickets MSA', $dossier->getPaymentAutrePrecision());
+    }
+
+    /** La précision n'a de sens qu'avec « Autre » : ailleurs, elle est ignorée. */
+    public function testLaPrecisionEstIgnoreeSansLeModeAutre(): void
+    {
+        $client = static::createClient();
+        $uuid = $this->seedSenior();
+
+        $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid, [
+            'payment_intention' => 'cheque',
+            'payment_autre_precision' => 'tickets MSA',
+        ]));
+
+        self::assertNull($this->reloadDossier($uuid)->getPaymentAutrePrecision());
+    }
+
     /**
      * Le bouton « payer par carte » vaut choix du mode : aucun radio n'est coché côté client.
      * L'inscription doit être enregistrée AVANT la redirection, pour que le licencié ne

@@ -61,6 +61,9 @@ export function inscriptionForm({
         paymentMode: '',
         multiPayment: false,
         paymentModes: [],
+        // Nature du paiement quand « Autre » est retenu — sans elle, le club ne sait pas
+        // ce qu'il doit attendre (tickets MSA, coupon sport…).
+        paymentAutrePrecision: '',
 
         submitting: false,
 
@@ -169,6 +172,7 @@ export function inscriptionForm({
                 case 4: // attestation transport
                     return this.attestationValide;
                 case this.paymentStep:
+                    if (this.isPaymentModeActive('autre') && this.paymentAutrePrecision.trim() === '') return false;
                     return this.multiPayment ? this.paymentModes.length > 0 : this.paymentMode !== '';
                 default: // étapes documents
                     return this.docReady(this.currentDocumentIndex);

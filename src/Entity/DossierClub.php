@@ -61,6 +61,10 @@ class DossierClub
     #[ORM\Column(type: 'json')]
     private array $paymentIntentions = [];
 
+    /** Nature du paiement saisie librement quand le licencié a choisi « Autre » (tickets MSA…) */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $paymentAutrePrecision = null;
+
     /**
      * Choix de dotation faits au formulaire : { groupeChoix: stockItemId }. Null si aucun choix proposé.
      *
@@ -206,6 +210,18 @@ class DossierClub
     public function setPaymentIntentions(array $modes): static
     {
         $this->paymentIntentions = array_map(fn (PaymentMode $m) => $m->value, $modes);
+
+        return $this;
+    }
+
+    public function getPaymentAutrePrecision(): ?string
+    {
+        return $this->paymentAutrePrecision;
+    }
+
+    public function setPaymentAutrePrecision(?string $precision): static
+    {
+        $this->paymentAutrePrecision = $precision ?: null;
 
         return $this;
     }
