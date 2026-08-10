@@ -8,15 +8,18 @@ final class EffectifTableauDeBord
     public function __construct(
         public readonly int $nbJoueurs,
         public readonly int $nbDirigeants,
-        public readonly int $nbLiensNonEnvoyes,
-        public readonly int $nbFormulairesSansReponse,
-        public readonly int $nbPaiementsEnAttente,
-        public readonly int $nbSignaturesEnAttente,
+        public readonly int $nbJoueursEnAttente,
+        public readonly int $nbDirigeantsEnAttente,
     ) {}
 
-    /** Dossiers dont le formulaire n'est pas encore complété, quel qu'en soit le motif. */
-    public function nbFormulairesEnAttente(): int
+    /**
+     * Personnes dont le dossier n'est pas bouclé, tout motif confondu : lien pas encore
+     * envoyé, formulaire sans réponse, ou formulaire rempli mais cotisation non encaissée.
+     * L'unité est la personne, jamais l'étape — un même joueur ne compte qu'une fois,
+     * quel que soit le nombre de choses qu'il lui reste à faire.
+     */
+    public function nbEnAttenteValidation(): int
     {
-        return $this->nbLiensNonEnvoyes + $this->nbFormulairesSansReponse;
+        return $this->nbJoueursEnAttente + $this->nbDirigeantsEnAttente;
     }
 }

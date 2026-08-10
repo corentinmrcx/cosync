@@ -78,6 +78,18 @@ class DirigeantRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /** Dirigeants de la saison qui n'ont pas encore complété leur formulaire. */
+    public function countFormulairesEnAttente(Season $season): int
+    {
+        return (int) $this->createQueryBuilder('d')
+            ->select('COUNT(d.uuid)')
+            ->where('d.season = :season')
+            ->andWhere('d.formCompletedAt IS NULL')
+            ->setParameter('season', $season)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /** @return Dirigeant[] */
     public function findBySeasonWithFilters(
         Season $season,

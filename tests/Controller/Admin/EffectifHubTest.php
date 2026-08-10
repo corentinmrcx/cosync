@@ -29,10 +29,15 @@ final class EffectifHubTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         $valeurs = $crawler->filter('.stat-card-value')->each(static fn ($n) => trim($n->text()));
+        self::assertCount(3, $valeurs, 'Trois tuiles : joueurs, dirigeants, en attente');
         self::assertSame('3', $valeurs[0], '3 joueurs au total');
-        self::assertSame('1', $valeurs[1], '1 dirigeant');
-        self::assertSame('1', $valeurs[2], '1 formulaire en attente (lien jamais envoyé)');
-        self::assertSame('1', $valeurs[3], '1 paiement à encaisser');
+        self::assertSame('2', $valeurs[1], '2 dirigeants');
+        self::assertSame(
+            '3',
+            $valeurs[2],
+            'Le joueur importé + celui qui doit encore payer + le dirigeant sans réponse ;'
+            . ' le joueur validé et le dirigeant qui a répondu sont exclus',
+        );
     }
 
     public function testLeHubProposeLesQuatreAccesRapides(): void
@@ -49,7 +54,7 @@ final class EffectifHubTest extends WebTestCase
 
     /* ── Outils ── */
 
-    /** 3 joueurs (importé / formulaire complété / validé) + 1 dirigeant. */
+    /** 3 joueurs (importé / formulaire complété / validé) + 2 dirigeants (un seul a répondu). */
     private function creerEffectif(): void
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
@@ -77,9 +82,14 @@ final class EffectifHubTest extends WebTestCase
             $em->persist($dossier);
         }
 
-        $dirigeant = (new Dirigeant())
+        $enAttente = (new Dirigeant())
             ->setNom('MARTIN')->setPrenom('Kevin')->setSeason($this->season);
-        $em->persist($dirigeant);
+        $em->persist($enAttente);
+
+        $aRepondu = (new Dirigeant())
+            ->setNom('DURAND')->setPrenom('Sophie')->setSeason($this->season)
+            ->setFormCompletedAt(new \DateTimeImmutable());
+        $em->persist($aRepondu);
 
         $em->flush();
         $em->clear();

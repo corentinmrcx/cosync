@@ -35,25 +35,11 @@
                 <span class="stat-card-label">Dirigeant{{ data.nbDirigeants > 1 ? 's' : '' }}</span>
             </span>
         </div>
-        <div class="stat-card {{ data.nbFormulairesEnAttente > 0 ? 'stat-card-warning' }}">
+        <div class="stat-card {{ data.nbEnAttenteValidation > 0 ? 'stat-card-warning' }}">
             <span class="stat-card-icon">{{ ui.icon('clipboard-list', 20) }}</span>
             <span class="stat-card-body">
-                <span class="stat-card-value">{{ data.nbFormulairesEnAttente }}</span>
-                <span class="stat-card-label">Formulaire{{ data.nbFormulairesEnAttente > 1 ? 's' : '' }} en attente</span>
-            </span>
-        </div>
-        <div class="stat-card {{ data.nbPaiementsEnAttente > 0 ? 'stat-card-warning' }}">
-            <span class="stat-card-icon">{{ ui.icon('euro', 20) }}</span>
-            <span class="stat-card-body">
-                <span class="stat-card-value">{{ data.nbPaiementsEnAttente }}</span>
-                <span class="stat-card-label">Paiement{{ data.nbPaiementsEnAttente > 1 ? 's' : '' }} à encaisser</span>
-            </span>
-        </div>
-        <div class="stat-card {{ data.nbSignaturesEnAttente > 0 ? 'stat-card-warning' }}">
-            <span class="stat-card-icon">{{ ui.icon('file-text', 20) }}</span>
-            <span class="stat-card-body">
-                <span class="stat-card-value">{{ data.nbSignaturesEnAttente }}</span>
-                <span class="stat-card-label">Signature{{ data.nbSignaturesEnAttente > 1 ? 's' : '' }} en attente</span>
+                <span class="stat-card-value">{{ data.nbEnAttenteValidation }}</span>
+                <span class="stat-card-label">En attente de validation</span>
             </span>
         </div>
     </div>
