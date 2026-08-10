@@ -1,4 +1,5 @@
 {% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
 
 {% block title %}CoSync — Tableau de bord{% endblock %}
 
@@ -38,9 +39,12 @@
     </div>
 
     {% if navbar_current_season %}
-        <a href="{{ path('admin_saison_dashboard') }}" class="dashboard-season-link">
-            Reprendre la saison {{ navbar_current_season.label }} →
-        </a>
+        <div class="quicklink-grid dashboard-season">
+            <a href="{{ path('admin_saison_dashboard') }}" class="quicklink quicklink-wide dashboard-season-item">
+                <span class="quicklink-title">Reprendre la saison {{ navbar_current_season.label }}</span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+        </div>
     {% endif %}
 
     <a href="{{ path('admin_documentation') }}" class="dashboard-doc-fab" title="Documentation">
