@@ -5,7 +5,7 @@ namespace App\Controller\Admin;
 use App\Attribute\CurrentSeason;
 use App\Entity\Season;
 use App\Security\CsrfGuard;
-use App\Service\ClubHouse\AttestationCleRecapService;
+use App\Service\Cle\AttestationCleRecapService;
 use App\Service\Drive\PendingUploadQueue;
 use App\Service\Pdf\AttestationClePdfService;
 use App\Service\Pdf\AttestationCleRecapPdfService;
@@ -20,7 +20,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * Le texte est porté par la saison courante : le multi-saisons passe par le
  * sélecteur de saison de la navbar.
  */
-#[Route('/admin/club-house/attestation', name: 'admin_clubhouse_attestation_')]
+#[Route('/admin/cles/attestation', name: 'admin_cles_attestation_')]
 class AttestationCleController extends AbstractController
 {
     public function __construct(
@@ -41,10 +41,10 @@ class AttestationCleController extends AbstractController
             $this->seasonService->updateAttestationCleText($season, $request->request->get('attestation_cle_text') ?: null);
             $this->addFlash('success', 'Attestation enregistrée.');
 
-            return $this->redirectToRoute('admin_clubhouse_attestation_edit');
+            return $this->redirectToRoute('admin_cles_attestation_edit');
         }
 
-        return $this->render('admin/clubhouse/attestation.html.twig', [
+        return $this->render('admin/cles/attestation.html.twig', [
             'season' => $season,
         ]);
     }
@@ -80,6 +80,6 @@ class AttestationCleController extends AbstractController
         $this->queue->enqueueAttestationCleRecap($season->getId());
         $this->addFlash('success', 'Le récapitulatif sera régénéré sur Drive dans quelques secondes.');
 
-        return $this->redirectToRoute('admin_clubhouse_attestation_edit');
+        return $this->redirectToRoute('admin_cles_attestation_edit');
     }
 }

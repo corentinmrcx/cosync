@@ -5,7 +5,7 @@
 {% block page_attributs %} x-data="attestationCleForm()"{% endblock %}
 
 {% block entete_droite %}
-    <span class="inscription-header-step">Saison {{ dirigeant.season.label }}</span>
+    <span class="inscription-header-step">Saison {{ season.label }}</span>
 {% endblock %}
 
 {% block entete_extra %}
@@ -15,31 +15,47 @@
 {% block contenu %}
     {# — Header — #}
 
-    <form method="post" action="{{ path('public_attestation_cle_submit', {uuid: dirigeant.uuid}) }}"
+    <form method="post" action="{{ path('public_attestation_cle_submit', {uuid: attestation.uuid}) }}"
           @submit="submitting = true">
         <input type="hidden" name="_token" value="{{ csrf_token('attestation_cle_submit') }}">
         <input type="hidden" name="signature_data" :value="signatureData">
 
         <div class="inscription-card">
             <h1 class="inscription-step-title">Attestation de remise de clés</h1>
-
-            {# — Ce que la personne atteste, repris du registre — #}
-            <p class="attestation-cle-statement">
-                Je soussigné·e <strong>{{ dirigeant.prenom }} {{ dirigeant.nom }}</strong>,
-                reconnais avoir reçu <strong>{{ nbCles }} clé{{ nbCles > 1 ? 's' : '' }}</strong>
-                du club house du Foyer de Soudron{% if remiseLe %} le <strong>{{ remiseLe|date('d/m/Y') }}</strong>{% endif %}.
+            <p class="inscription-step-intro">
+                Voici le document que vous vous apprêtez à signer. Il sera archivé par le club
+                et peut être transmis à la mairie sur demande.
             </p>
 
-            {% if dirigeant.season.attestationCleText %}
-                <div class="attestation-cle-engagement">
-                    {{ dirigeant.season.attestationCleText|raw }}
-                </div>
-            {% endif %}
+            {# L'engagement rédigé par le club vient en premier : c'est ce qui se lit,
+               la formule reprise du registre venant le conclure juste au-dessus de la
+               signature. #}
+            <div class="attestation-cle-document">
+                <p class="attestation-cle-document-titre">
+                    Attestation de remise de clés — saison {{ season.label }}
+                </p>
+
+                {% if season.attestationCleText %}
+                    <div class="attestation-cle-engagement">
+                        {{ season.attestationCleText|raw }}
+                    </div>
+                {% endif %}
+
+                <p class="attestation-cle-statement">
+                    Je soussigné·e <strong>{{ detenteur.prenom }} {{ detenteur.nom }}</strong>,
+                    reconnais avoir reçu <strong>{{ nbCles }} clé{{ nbCles > 1 ? 's' : '' }}</strong>
+                    du local du Foyer de Soudron{% if remiseLe %} le <strong>{{ remiseLe|date('d/m/Y') }}</strong>{% endif %},
+                    pour la saison <strong>{{ season.label }}</strong>.
+                </p>
+            </div>
 
             <label class="inscription-checkbox-row">
                 <input type="checkbox" x-model="hasRead">
                 <span class="inscription-checkbox-text">
-                    J'atteste l'exactitude de ce qui précède et m'engage à respecter ces conditions.
+                    {# Sans engagement rédigé par le club, ne pas faire accepter des conditions invisibles. #}
+                    {{ season.attestationCleText
+                        ? "J'atteste l'exactitude de ce qui précède et m'engage à respecter ces conditions."
+                        : "J'atteste l'exactitude de ce qui précède." }}
                 </span>
             </label>
 

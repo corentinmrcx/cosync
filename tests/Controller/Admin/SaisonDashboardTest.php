@@ -29,17 +29,18 @@ final class SaisonDashboardTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         $sections = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
-        self::assertSame(['Effectif', 'Dotations', 'Club house'], $sections);
+        self::assertSame(['Effectif', 'Dotations'], $sections);
 
         $reglages = $crawler->filter('.quicklink-title')->each(static fn ($n) => trim($n->text()));
-        self::assertSame(['Cotisations', 'Équipes', 'Documents à signer', 'Stock'], $reglages);
+        self::assertSame(['Cotisations', 'Équipes', 'Documents à signer', 'Stock', 'Clés'], $reglages);
     }
 
     /**
-     * Le stock physique ne porte pas de saison : il se gère au niveau club. La saison n'en
-     * garde qu'un raccourci, explicitement rangé hors de ses propres réglages.
+     * Ni le stock physique ni le trousseau de clés ne portent de saison : ils se
+     * gèrent au niveau club. La saison n'en garde que des raccourcis, explicitement
+     * rangés hors de ses propres réglages.
      */
-    public function testLaSaisonNeGardeDuStockQuUnRaccourciVersLeNiveauClub(): void
+    public function testLaSaisonNeGardeDuStockEtDesClesQueDesRaccourcisVersLeNiveauClub(): void
     {
         $client = static::createClient();
         $this->loginAdmin($client);
@@ -48,9 +49,13 @@ final class SaisonDashboardTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
 
-        $raccourci = $crawler->filter('a.quicklink[href="/admin/stock"]');
-        self::assertCount(1, $raccourci, 'La saison doit garder un raccourci vers le stock du club.');
-        self::assertStringContainsString('toutes les saisons', $raccourci->text());
+        $stock = $crawler->filter('a.quicklink[href="/admin/stock"]');
+        self::assertCount(1, $stock, 'La saison doit garder un raccourci vers le stock du club.');
+        self::assertStringContainsString('toutes les saisons', $stock->text());
+
+        $cles = $crawler->filter('a.quicklink[href="/admin/cles"]');
+        self::assertCount(1, $cles, 'La saison doit garder un raccourci vers le registre des clés.');
+        self::assertStringContainsString('chaque saison', $cles->text(), 'Le raccourci rappelle que l\'attestation, elle, est annuelle.');
     }
 
     public function testLeFilDArianePartDuClubPuisDeLaSaison(): void

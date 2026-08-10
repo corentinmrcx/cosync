@@ -2,11 +2,11 @@
 
 namespace App\Service\Pdf;
 
-use App\Entity\Dirigeant;
+use App\Entity\AttestationCle;
 use App\Entity\Season;
 
 /**
- * Attestation individuelle de remise de clés du club house, signée par un détenteur.
+ * Attestation individuelle de remise de clés du local, signée par un détenteur.
  */
 final class AttestationClePdfService
 {
@@ -18,20 +18,23 @@ final class AttestationClePdfService
         private readonly PdfStorage $storage,
     ) {}
 
-    public function generateSignee(
-        Dirigeant $dirigeant,
-        string $signatureDataUrl,
-        int $nbCles,
-        ?\DateTimeImmutable $remiseLe = null,
-    ): string {
+    /**
+     * Le nombre de clés et la date de remise sont lus sur l'attestation, où ils ont
+     * été figés à la signature : régénérer le PDF ne doit jamais lui faire dire
+     * autre chose que ce qu'il disait le jour de la signature.
+     */
+    public function generateSignee(AttestationCle $attestation, string $signatureDataUrl): string
+    {
+        $detenteur = $attestation->getDetenteur();
+
         return $this->storage->ecrire(
-            $dirigeant->getUuid() . '_attestation_cle.pdf',
+            $attestation->getUuid() . '_attestation_cle.pdf',
             $this->renderer->render(self::TEMPLATE, $this->contexte(
-                $dirigeant->getPrenom(),
-                $dirigeant->getNom(),
-                $dirigeant->getSeason(),
-                $nbCles,
-                $remiseLe,
+                $detenteur->getPrenom(),
+                $detenteur->getNom(),
+                $attestation->getSeason(),
+                $attestation->getNbCles() ?? 0,
+                $attestation->getRemiseLe(),
                 $signatureDataUrl,
             )),
         );

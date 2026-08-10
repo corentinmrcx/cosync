@@ -19,13 +19,13 @@ final class PendingUploadQueueTest extends TestCase
         $queue->enqueueDocumentSignature(1);
         $queue->enqueueAttestation(2);
         $queue->enqueueDirigeantAttestation('uuid-dirigeant');
-        $queue->enqueueDirigeantAttestationCle('uuid-cle');
+        $queue->enqueueAttestationCle(7);
         $queue->enqueueAttestationCleRecap(3);
 
         self::assertSame([1], $queue->flushDocumentSignatures());
         self::assertSame([2], $queue->flushAttestations());
         self::assertSame(['uuid-dirigeant'], $queue->flushDirigeantAttestations());
-        self::assertSame(['uuid-cle'], $queue->flushDirigeantAttestationsCle());
+        self::assertSame([7], $queue->flushAttestationsCle());
         self::assertSame([3], $queue->flushAttestationCleRecaps());
     }
 

@@ -3,7 +3,7 @@
 namespace App\Service\Drive;
 
 use App\Entity\Season;
-use App\Service\ClubHouse\AttestationCleRecapService;
+use App\Service\Cle\AttestationCleRecapService;
 use App\Service\Pdf\AttestationCleRecapPdfService;
 use App\Service\Pdf\PdfStorage;
 

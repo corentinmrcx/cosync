@@ -2,6 +2,8 @@
 
 namespace App\Service\Mail;
 
+use App\Entity\AttestationCle;
+use App\Entity\Detenteur;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
 use App\Service\Payment\CotisationResolver;
@@ -106,20 +108,23 @@ final class MailerService
         );
     }
 
-    public function sendAttestationCleLink(Dirigeant $dirigeant): void
+    public function sendAttestationCleLink(AttestationCle $attestation): void
     {
+        $detenteur = $attestation->getDetenteur();
+
         $this->clubMailer->envoyer(
-            $this->adresseDe($dirigeant),
+            $this->adresseDe($detenteur),
             'Attestation de remise de clés à signer',
             'email/attestation_cle_link.html.twig',
             [
-                'dirigeant' => $dirigeant,
-                'url' => $this->lienPublic('public_attestation_cle_show', $dirigeant->getUuid()),
+                'detenteur' => $detenteur,
+                'season' => $attestation->getSeason(),
+                'url' => $this->lienPublic('public_attestation_cle_show', $attestation->getUuid()),
             ],
         );
     }
 
-    private function adresseDe(Licencie|Dirigeant $personne): Address
+    private function adresseDe(Licencie|Dirigeant|Detenteur $personne): Address
     {
         return new Address((string) $personne->getEmail(), $personne->getNomPrenom());
     }

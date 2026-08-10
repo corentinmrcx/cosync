@@ -28,7 +28,7 @@ class Season
      * bascule en production (voir la migration Version20260807233000).
      */
 
-    /** Texte de l'attestation de remise signée par les détenteurs de clés du club house */
+    /** Texte de l'attestation de remise signée par les détenteurs de clés du local */
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $attestationCleText = null;
 

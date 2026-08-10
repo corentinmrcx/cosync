@@ -7,9 +7,13 @@ use App\Repository\CleMouvementRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Mouvement de clés du club house. Table d'événements append-only : la détention
+ * Mouvement de clés du local. Table d'événements append-only : la détention
  * courante est dérivée de l'historique, jamais stockée. Une erreur de saisie se
  * corrige par un mouvement compensatoire, jamais par une suppression.
+ *
+ * Le mouvement ne connaît pas la saison : une clé remise en janvier est toujours
+ * dehors en septembre. La colonne season_id d'origine subsiste en base, dé-mappée,
+ * pour ne rien perdre de l'historique (migration Version20260810120200).
  */
 #[ORM\Entity(repositoryClass: CleMouvementRepository::class)]
 class CleMouvement
@@ -21,12 +25,8 @@ class CleMouvement
 
     /** Pas de onDelete : l'historique protège contre la suppression d'un détenteur */
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false, referencedColumnName: 'uuid')]
-    private Dirigeant $dirigeant;
-
-    #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
-    private Season $season;
+    private Detenteur $detenteur;
 
     #[ORM\Column(enumType: CleMouvementType::class)]
     private CleMouvementType $type;
@@ -59,26 +59,14 @@ class CleMouvement
         return $this->id;
     }
 
-    public function getDirigeant(): Dirigeant
+    public function getDetenteur(): Detenteur
     {
-        return $this->dirigeant;
+        return $this->detenteur;
     }
 
-    public function setDirigeant(Dirigeant $dirigeant): static
+    public function setDetenteur(Detenteur $detenteur): static
     {
-        $this->dirigeant = $dirigeant;
-
-        return $this;
-    }
-
-    public function getSeason(): Season
-    {
-        return $this->season;
-    }
-
-    public function setSeason(Season $season): static
-    {
-        $this->season = $season;
+        $this->detenteur = $detenteur;
 
         return $this;
     }

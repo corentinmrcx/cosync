@@ -2,11 +2,11 @@
 
 namespace App\Command;
 
-use App\Entity\Dirigeant;
+use App\Entity\AttestationCle;
 use App\Entity\DocumentSignature;
-use App\Repository\DirigeantRepository;
+use App\Repository\AttestationCleRepository;
 use App\Repository\DocumentSignatureRepository;
-use App\Service\Drive\DirigeantAttestationCleDriveSync;
+use App\Service\Drive\AttestationCleDriveSync;
 use App\Service\Drive\DocumentSignatureDriveSync;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -23,8 +23,8 @@ final class DriveRetryUploadCommand extends Command
     public function __construct(
         private readonly DocumentSignatureRepository $signatureRepository,
         private readonly DocumentSignatureDriveSync $documentDriveSync,
-        private readonly DirigeantRepository $dirigeantRepository,
-        private readonly DirigeantAttestationCleDriveSync $attestationCleDriveSync,
+        private readonly AttestationCleRepository $attestationCleRepository,
+        private readonly AttestationCleDriveSync $attestationCleDriveSync,
     ) {
         parent::__construct();
     }
@@ -57,10 +57,10 @@ final class DriveRetryUploadCommand extends Command
         $failures += $this->retrySection(
             $io,
             'attestation(s) de remise de clés',
-            $this->dirigeantRepository->findWithLocalAttestationCle(),
-            static fn (Dirigeant $d): string => $d->getNomPrenom(),
-            static fn (Dirigeant $d): ?string => $d->getAttestationCleSignePath(),
-            fn (Dirigeant $d): bool => $this->attestationCleDriveSync->sync($d),
+            $this->attestationCleRepository->findWithLocalPdf(),
+            static fn (AttestationCle $a): string => $a->getDetenteur()->getNomPrenom(),
+            static fn (AttestationCle $a): ?string => $a->getDrivePath(),
+            fn (AttestationCle $a): bool => $this->attestationCleDriveSync->sync($a),
         );
 
         return $failures === 0 ? Command::SUCCESS : Command::FAILURE;

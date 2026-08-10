@@ -2,7 +2,9 @@
 
 namespace App\Tests\Service\Stock;
 
+use App\Entity\AttestationCle;
 use App\Entity\CleMouvement;
+use App\Entity\Detenteur;
 use App\Entity\Dirigeant;
 use App\Entity\StockCategory;
 use App\Enum\CleMouvementType;
@@ -42,9 +44,12 @@ final class PurgeServiceTest extends StockIntegrationTestCase
         $this->makeMovement($item, 5, StockMovementType::ENTREE, 'L');
         $this->makeCommandeEnAttente($season, $item, 'L', 3, $four);
 
-        // Registre des clés du club house : référence dirigeant, season et user.
         $dirigeant = (new Dirigeant())->setNom('DUPONT')->setPrenom('Thomas')->setSeason($season);
         $this->em->persist($dirigeant);
+
+        // Registre des clés : le détenteur vit hors saison, l'attestation dans la saison.
+        $detenteur = (new Detenteur())->setNom('DUPONT')->setPrenom('Thomas');
+        $this->em->persist($detenteur);
 
         // Documents signables et signatures : ajoutés après l'écriture initiale de la purge,
         // ils référencent season, licencie et dirigeant — donc bloquent la purge s'ils sont oubliés.
@@ -56,11 +61,17 @@ final class PurgeServiceTest extends StockIntegrationTestCase
 
         $this->em->persist(
             (new CleMouvement())
-                ->setDirigeant($dirigeant)
-                ->setSeason($season)
+                ->setDetenteur($detenteur)
                 ->setType(CleMouvementType::REMISE)
                 ->setQuantite(1)
                 ->setDateMouvement(new \DateTimeImmutable('2026-01-10')),
+        );
+
+        $this->em->persist(
+            (new AttestationCle())
+                ->setDetenteur($detenteur)
+                ->setSeason($season)
+                ->setSignedAt(new \DateTimeImmutable('2026-01-11')),
         );
 
         $this->em->flush();
@@ -73,6 +84,7 @@ final class PurgeServiceTest extends StockIntegrationTestCase
         self::assertGreaterThan(0, $this->rowCount('dotation_besoin'), 'Le besoin doit exister avant purge.');
         self::assertGreaterThan(0, $this->rowCount('commande_ligne'), 'La ligne de commande doit exister avant purge.');
         self::assertGreaterThan(0, $this->rowCount('cle_mouvement'), 'Le mouvement de clé doit exister avant purge.');
+        self::assertGreaterThan(0, $this->rowCount('attestation_cle'), 'L\'attestation de clés doit exister avant purge.');
         self::assertGreaterThan(0, $this->rowCount('document_signature'), 'Les signatures doivent exister avant purge.');
         self::assertGreaterThan(0, $this->rowCount('document_signable_dirigeant'), 'La désignation nominative doit exister avant purge.');
 
@@ -82,9 +94,9 @@ final class PurgeServiceTest extends StockIntegrationTestCase
         // Toutes les tables de données sont vides.
         $videes = [
             'transaction', 'document_signature', 'document_signable_dirigeant', 'document_signable',
-            'cle_mouvement', 'commande_ligne', 'dotation_modele_ligne', 'dotation_affectation',
+            'attestation_cle', 'cle_mouvement', 'commande_ligne', 'dotation_modele_ligne', 'dotation_affectation',
             'dotation_besoin', 'stock_movement', 'commande', 'dotation_modele', 'dossier_club',
-            'licencie', 'dirigeant', 'stock_item', 'fournisseur', 'stock_category', 'team', 'season',
+            'licencie', 'dirigeant', 'detenteur', 'stock_item', 'fournisseur', 'stock_category', 'team', 'season',
         ];
         foreach ($videes as $table) {
             self::assertSame(0, $this->rowCount($table), sprintf('La table "%s" doit être vide après purge.', $table));

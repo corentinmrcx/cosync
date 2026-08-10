@@ -7,6 +7,8 @@ use App\Entity\Dirigeant;
 use App\Entity\Licencie;
 use App\Entity\Transaction;
 use App\Enum\PaymentMode;
+use App\Repository\AttestationCleRepository;
+use App\Service\Cle\DetenteurEffectifResolver;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Mail\LienPublic;
 
@@ -17,6 +19,8 @@ final class HistoriqueFicheService
 {
     public function __construct(
         private readonly DocumentRequirementResolver $documentResolver,
+        private readonly DetenteurEffectifResolver $effectifResolver,
+        private readonly AttestationCleRepository $attestationCleRepo,
     ) {}
 
     /**
@@ -89,12 +93,18 @@ final class HistoriqueFicheService
             );
         }
 
-        if ($dirigeant->getAttestationCleSignedAt() !== null) {
-            $evenements[] = new EvenementHistorique(
-                $dirigeant->getAttestationCleSignedAt(),
-                'Attestation de remise de clés signée',
-                $nomPrenom,
-            );
+        // Les attestations de clés suivent le détenteur, pas le dirigeant : la fiche
+        // affiche donc toutes celles de la personne, saison par saison.
+        $detenteur = $this->effectifResolver->detenteurDe($dirigeant);
+
+        if ($detenteur !== null) {
+            foreach ($this->attestationCleRepo->findSigneesDe($detenteur) as $attestation) {
+                $evenements[] = new EvenementHistorique(
+                    $attestation->getSignedAt(),
+                    sprintf('Attestation de remise de clés signée — saison %s', $attestation->getSeason()->getLabel()),
+                    $nomPrenom,
+                );
+            }
         }
 
         foreach ($this->documentResolver->signaturesParDocumentPourDirigeant($dirigeant) as $signature) {

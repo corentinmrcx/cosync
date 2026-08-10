@@ -65,17 +65,14 @@ class Dirigeant
      * dé-mappées, le temps de valider la bascule (migration Version20260807233000).
      */
 
-    /** Chemin local temporaire puis ID Drive de l'attestation de remise de clés signée */
-    #[ORM\Column(length: 500, nullable: true)]
-    private ?string $attestationCleSignePath = null;
-
-    /** Date de signature de l'attestation de remise de clés */
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $attestationCleSignedAt = null;
-
-    /** Expiration du lien public de signature de l'attestation — indépendant de formTokenExpiresAt */
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $attestationCleTokenExpiresAt = null;
+    /*
+     * L'attestation de remise de clés avait ici ses trois colonnes dédiées. Elle est
+     * désormais portée par AttestationCle, rattachée au détenteur — hors saison — et
+     * rejouée chaque année, ce qu'un champ sur un Dirigeant cloisonné par saison ne
+     * savait pas faire. Les colonnes attestation_cle_signe_path, attestation_cle_signed_at
+     * et attestation_cle_token_expires_at subsistent en base, dé-mappées, le temps de
+     * valider la bascule (migration Version20260810120200).
+     */
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -276,42 +273,6 @@ class Dirigeant
         return $this;
     }
 
-    public function getAttestationCleSignePath(): ?string
-    {
-        return $this->attestationCleSignePath;
-    }
-
-    public function setAttestationCleSignePath(?string $attestationCleSignePath): static
-    {
-        $this->attestationCleSignePath = $attestationCleSignePath;
-
-        return $this;
-    }
-
-    public function getAttestationCleSignedAt(): ?\DateTimeImmutable
-    {
-        return $this->attestationCleSignedAt;
-    }
-
-    public function setAttestationCleSignedAt(?\DateTimeImmutable $attestationCleSignedAt): static
-    {
-        $this->attestationCleSignedAt = $attestationCleSignedAt;
-
-        return $this;
-    }
-
-    public function getAttestationCleTokenExpiresAt(): ?\DateTimeImmutable
-    {
-        return $this->attestationCleTokenExpiresAt;
-    }
-
-    public function setAttestationCleTokenExpiresAt(?\DateTimeImmutable $attestationCleTokenExpiresAt): static
-    {
-        $this->attestationCleTokenExpiresAt = $attestationCleTokenExpiresAt;
-
-        return $this;
-    }
-
     public function getTeam(): ?Team
     {
         return $this->team;
@@ -396,22 +357,6 @@ class Dirigeant
     }
 
     /**
-     * L'attestation de remise de clés est-elle signée ?
-     * Volontairement hors de la complétude du dossier : elle ne concerne que les
-     * détenteurs de clés, pas le parcours dirigeant standard.
-     */
-    public function hasSignedAttestationCle(): bool
-    {
-        return $this->attestationCleSignePath !== null;
-    }
-
-    public function isAttestationCleTokenValid(): bool
-    {
-        return $this->attestationCleTokenExpiresAt !== null
-            && $this->attestationCleTokenExpiresAt > new \DateTimeImmutable();
-    }
-
-    /**
      * Complétude des informations portées par le dirigeant lui-même.
      * - Transport : requis pour tous ; attestation requise si volontaire.
      * - Dirigeant-joueur (lié à un licencié) : taille + droit image proviennent
@@ -442,11 +387,5 @@ class Dirigeant
     public function attestationTransportEstArchivee(): bool
     {
         return DrivePath::estArchive($this->getAttestationTransportDriveId());
-    }
-
-    /** Le PDF est-il sur Drive ? Tant qu'il ne l'est pas, la colonne porte un chemin local. */
-    public function attestationCleEstArchivee(): bool
-    {
-        return DrivePath::estArchive($this->getAttestationCleSignePath());
     }
 }

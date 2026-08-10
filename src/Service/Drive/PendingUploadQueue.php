@@ -22,8 +22,8 @@ final class PendingUploadQueue
     /** @var string[] uuids des dirigeants dont l'attestation transport doit être uploadée */
     private array $dirigeantAttestationUuids = [];
 
-    /** @var string[] uuids des dirigeants dont l'attestation de remise de clés doit être uploadée */
-    private array $dirigeantAttestationCleUuids = [];
+    /** @var int[] ids des attestations de remise de clés dont le PDF doit être uploadé */
+    private array $attestationCleIds = [];
 
     /** @var int[] ids des saisons dont le récapitulatif des détenteurs doit être régénéré */
     private array $attestationCleRecapSeasonIds = [];
@@ -43,9 +43,9 @@ final class PendingUploadQueue
         $this->dirigeantAttestationUuids[] = $dirigeantUuid;
     }
 
-    public function enqueueDirigeantAttestationCle(string $dirigeantUuid): void
+    public function enqueueAttestationCle(int $attestationId): void
     {
-        $this->dirigeantAttestationCleUuids[] = $dirigeantUuid;
+        $this->attestationCleIds[] = $attestationId;
     }
 
     /** Dédupliqué : plusieurs signatures dans une même requête ne régénèrent qu'un récapitulatif. */
@@ -92,14 +92,14 @@ final class PendingUploadQueue
     }
 
     /**
-     * @return string[]
+     * @return int[]
      */
-    public function flushDirigeantAttestationsCle(): array
+    public function flushAttestationsCle(): array
     {
-        $uuids = $this->dirigeantAttestationCleUuids;
-        $this->dirigeantAttestationCleUuids = [];
+        $ids = $this->attestationCleIds;
+        $this->attestationCleIds = [];
 
-        return $uuids;
+        return $ids;
     }
 
     /**

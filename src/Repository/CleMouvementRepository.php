@@ -3,8 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\CleMouvement;
-use App\Entity\Dirigeant;
-use App\Entity\Season;
+use App\Entity\Detenteur;
 use App\Enum\CleMouvementType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -20,19 +19,20 @@ class CleMouvementRepository extends ServiceEntityRepository
     }
 
     /**
-     * Tous les mouvements d'une saison, ordonnés pour le pli séquentiel du service :
-     * par personne, puis chronologiquement (id en tie-break, deux mouvements pouvant
+     * Tout l'historique du club, ordonné pour le pli séquentiel du service : par
+     * personne, puis chronologiquement (id en tie-break, deux mouvements pouvant
      * partager la même date).
+     *
+     * Aucun filtre de saison : une clé remise en janvier est toujours dehors en
+     * septembre, et c'est précisément ce que le registre doit savoir dire.
      *
      * @return CleMouvement[]
      */
-    public function findBySeasonOrdered(Season $season): array
+    public function findAllOrdered(): array
     {
         return $this->createQueryBuilder('m')
-            ->join('m.dirigeant', 'd')
+            ->join('m.detenteur', 'd')
             ->addSelect('d')
-            ->where('m.season = :season')
-            ->setParameter('season', $season)
             ->orderBy('d.nom', 'ASC')
             ->addOrderBy('d.prenom', 'ASC')
             ->addOrderBy('m.dateMouvement', 'ASC')
@@ -42,11 +42,11 @@ class CleMouvementRepository extends ServiceEntityRepository
     }
 
     /** @return CleMouvement[] historique complet d'une personne, du plus récent au plus ancien */
-    public function findByDirigeant(Dirigeant $dirigeant): array
+    public function findByDetenteur(Detenteur $detenteur): array
     {
         return $this->createQueryBuilder('m')
-            ->where('m.dirigeant = :dirigeant')
-            ->setParameter('dirigeant', $dirigeant)
+            ->where('m.detenteur = :detenteur')
+            ->setParameter('detenteur', $detenteur)
             ->orderBy('m.dateMouvement', 'DESC')
             ->addOrderBy('m.id', 'DESC')
             ->getQuery()
@@ -54,25 +54,23 @@ class CleMouvementRepository extends ServiceEntityRepository
     }
 
     /** Nombre de clés actuellement détenues par une personne */
-    public function getSolde(Dirigeant $dirigeant): int
+    public function getSolde(Detenteur $detenteur): int
     {
         return (int) $this->createQueryBuilder('m')
             ->select('COALESCE(SUM(CASE WHEN m.type = :remise THEN m.quantite ELSE -m.quantite END), 0)')
-            ->where('m.dirigeant = :dirigeant')
-            ->setParameter('dirigeant', $dirigeant)
+            ->where('m.detenteur = :detenteur')
+            ->setParameter('detenteur', $detenteur)
             ->setParameter('remise', CleMouvementType::REMISE)
             ->getQuery()
             ->getSingleScalarResult();
     }
 
-    /** @return CleMouvement[] derniers mouvements de la saison, toutes personnes confondues */
-    public function findRecentBySeason(Season $season, int $limit): array
+    /** @return CleMouvement[] derniers mouvements du club, toutes personnes confondues */
+    public function findRecents(int $limit): array
     {
         return $this->createQueryBuilder('m')
-            ->join('m.dirigeant', 'd')
+            ->join('m.detenteur', 'd')
             ->addSelect('d')
-            ->where('m.season = :season')
-            ->setParameter('season', $season)
             ->orderBy('m.dateMouvement', 'DESC')
             ->addOrderBy('m.id', 'DESC')
             ->setMaxResults($limit)
@@ -80,12 +78,12 @@ class CleMouvementRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function countBySeason(Season $season): int
+    public function countByDetenteur(Detenteur $detenteur): int
     {
         return (int) $this->createQueryBuilder('m')
             ->select('COUNT(m.id)')
-            ->where('m.season = :season')
-            ->setParameter('season', $season)
+            ->where('m.detenteur = :detenteur')
+            ->setParameter('detenteur', $detenteur)
             ->getQuery()
             ->getSingleScalarResult();
     }

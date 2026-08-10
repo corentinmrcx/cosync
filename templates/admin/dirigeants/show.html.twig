@@ -168,21 +168,22 @@
                 {% endfor %}
 
                 {# Attestation de remise de clés — affichée seulement pour les détenteurs de clés #}
-                {% if nbCles > 0 or dirigeant.hasSignedAttestationCle %}
-                {% include 'components/_checklist_item.html.twig' with {
-                    etat: dirigeant.hasSignedAttestationCle ? 'fait' : 'attente',
-                    label: 'Attestation de remise de clés',
-                    detail: dirigeant.hasSignedAttestationCle
-                        ? (dirigeant.attestationCleEstArchivee ? 'Archivée sur Drive' : 'Upload en attente')
-                        : (dirigeant.isAttestationCleTokenValid ? 'Lien envoyé' : null),
-                } only %}
+                {% if cleRow and cleRow.estDetenteur() %}
+                    {% set attestation = cleRow.attestation %}
+                    {% include 'components/_checklist_item.html.twig' with {
+                        etat: cleRow.attestationAJour() ? 'fait' : 'attente',
+                        label: 'Attestation de remise de clés — saison ' ~ dirigeant.season.label,
+                        detail: attestation and attestation.estSignee()
+                            ? (attestation.estArchivee() ? 'Archivée sur Drive' : 'Upload en attente')
+                            : cleRow.etatAttestation().label(),
+                    } only %}
                 {% endif %}
             </ul>
 
-            {% if nbCles > 0 %}
+            {% if cleRow and cleRow.estDetenteur() %}
                 <p class="licencie-show-card-note">
-                    Détient {{ nbCles }} clé{{ nbCles > 1 ? 's' : '' }} du club house —
-                    <a href="{{ path('admin_clubhouse_cles_index') }}">voir le registre</a>
+                    Détient {{ cleRow.detention.solde }} clé{{ cleRow.detention.solde > 1 ? 's' : '' }} du local —
+                    <a href="{{ path('admin_cles_index') }}">voir le registre</a>
                 </p>
             {% endif %}
         </div>

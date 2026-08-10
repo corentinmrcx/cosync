@@ -24,9 +24,9 @@ final class DashboardTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         $labels = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
-        self::assertSame(['Saisons', 'Stock', 'Le club'], $labels);
+        self::assertSame(['Saisons', 'Stock', 'Clés', 'Le club'], $labels);
 
-        $raccourci = $crawler->filter('.dashboard-season-link');
+        $raccourci = $crawler->filter('.dashboard-season a.quicklink');
         self::assertCount(1, $raccourci);
         self::assertStringContainsString('2025-2026', $raccourci->text());
         self::assertSame('/admin/saison', $raccourci->attr('href'));
@@ -45,7 +45,7 @@ final class DashboardTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/');
 
         self::assertResponseIsSuccessful();
-        self::assertCount(0, $crawler->filter('.dashboard-season-link'));
+        self::assertCount(0, $crawler->filter('.dashboard-season'));
         self::assertStringContainsString('Aucune saison configurée', (string) $client->getResponse()->getContent());
     }
 

@@ -3,10 +3,11 @@
 namespace App\Controller\Public;
 
 use App\DTO\AttestationCleSignatureData;
-use App\Repository\DirigeantRepository;
+use App\Entity\AttestationCle;
+use App\Repository\AttestationCleRepository;
 use App\Security\CsrfGuard;
-use App\Service\ClubHouse\AttestationCleFormService;
-use App\Service\ClubHouse\CleRegistreService;
+use App\Service\Cle\AttestationCleFormService;
+use App\Service\Cle\CleRegistreService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,14 +16,15 @@ use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * Signature publique de l'attestation de remise de clés, réservée aux détenteurs
- * de clés. Parcours autonome : son token est indépendant de celui du dossier dirigeant.
+ * Signature publique de l'attestation de remise de clés, réservée aux détenteurs.
+ * Parcours autonome : le lien porte l'attestation d'une saison, pas la personne —
+ * un lien de l'an dernier ne vaut donc jamais pour l'engagement de cette année.
  */
 #[Route('/attestation-cle', name: 'public_attestation_cle_')]
 class AttestationCleController extends AbstractController
 {
     public function __construct(
-        private readonly DirigeantRepository $dirigeantRepo,
+        private readonly AttestationCleRepository $attestationRepo,
         private readonly CleRegistreService $registre,
         private readonly AttestationCleFormService $formService,
         private readonly CsrfGuard $csrf,
@@ -31,39 +33,38 @@ class AttestationCleController extends AbstractController
     #[Route('/{uuid}', name: 'show', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
     public function show(string $uuid): Response
     {
-        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+        $attestation = $this->trouver($uuid);
 
-        if ($dirigeant === null) {
-            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
+        if ($attestation === null) {
+            return $this->lienInvalide();
         }
 
-        $detention = $this->registre->getDetentionDe($dirigeant);
-
-        // Déjà signé ET toujours exact : rien à resigner.
-        if ($detention->attestationAJour()) {
+        if ($attestation->estSignee()) {
             return $this->redirectToRoute('public_attestation_cle_confirmation', ['uuid' => $uuid]);
         }
 
-        if (!$dirigeant->isAttestationCleTokenValid()) {
-            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
+        if (!$attestation->isTokenValid()) {
+            return $this->lienInvalide();
         }
 
+        $detention = $this->registre->getDetentionDe($attestation->getDetenteur());
+
         return $this->render('public/attestation_cle/form.html.twig', [
-            'dirigeant' => $dirigeant,
+            'attestation' => $attestation,
+            'detenteur' => $attestation->getDetenteur(),
+            'season' => $attestation->getSeason(),
             'nbCles' => $detention->solde,
             'remiseLe' => $detention->detenteurDepuis,
         ]);
     }
 
     #[Route('/{uuid}', name: 'submit', methods: ['POST'], requirements: ['uuid' => Requirement::UUID])]
-    public function submit(
-        string $uuid,
-        Request $request,
-    ): Response {
-        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+    public function submit(string $uuid, Request $request): Response
+    {
+        $attestation = $this->trouver($uuid);
 
-        if ($dirigeant === null || !$dirigeant->isAttestationCleTokenValid()) {
-            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
+        if ($attestation === null || $attestation->estSignee() || !$attestation->isTokenValid()) {
+            return $this->lienInvalide();
         }
 
         $this->csrf->valider('attestation_cle_submit', $request);
@@ -76,7 +77,7 @@ class AttestationCleController extends AbstractController
             return $this->redirectToRoute('public_attestation_cle_show', ['uuid' => $uuid]);
         }
 
-        $this->formService->submit($dirigeant, $data);
+        $this->formService->submit($attestation, $data);
 
         return $this->redirectToRoute('public_attestation_cle_confirmation', ['uuid' => $uuid]);
     }
@@ -84,14 +85,30 @@ class AttestationCleController extends AbstractController
     #[Route('/{uuid}/confirmation', name: 'confirmation', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
     public function confirmation(string $uuid): Response
     {
-        $dirigeant = $this->dirigeantRepo->findByUuid(Uuid::fromString($uuid));
+        $attestation = $this->trouver($uuid);
 
-        if ($dirigeant === null || $dirigeant->getAttestationCleSignedAt() === null) {
-            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
+        if ($attestation === null || !$attestation->estSignee()) {
+            return $this->lienInvalide();
         }
 
         return $this->render('public/attestation_cle/confirmation.html.twig', [
-            'dirigeant' => $dirigeant,
+            'attestation' => $attestation,
+            'detenteur' => $attestation->getDetenteur(),
+            'season' => $attestation->getSeason(),
+        ]);
+    }
+
+    private function trouver(string $uuid): ?AttestationCle
+    {
+        return Uuid::isValid($uuid)
+            ? $this->attestationRepo->findByUuid(Uuid::fromString($uuid))
+            : null;
+    }
+
+    private function lienInvalide(): Response
+    {
+        return $this->render('public/lien_expire.html.twig', [
+            'message' => 'Ce lien de signature n\'est plus valide.',
         ]);
     }
 

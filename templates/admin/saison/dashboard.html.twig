@@ -29,12 +29,6 @@
             route: 'admin_dotations_dashboard'
         } %}
 
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'key',
-            label: 'Club house',
-            route: 'admin_clubhouse_index'
-        } %}
-
     </div>
 
     {# — Réglages de la saison — #}
@@ -70,7 +64,7 @@
         </div>
     </div>
 
-    {# — Raccourci hors saison : le stock physique se gère au niveau du club — #}
+    {# — Raccourcis hors saison : le stock physique et les clés se gèrent au niveau du club — #}
     <div class="saison-section">
         <div class="saison-section-header">
             <h2 class="saison-section-title">Géré au niveau du club</h2>
@@ -81,6 +75,14 @@
                 <span class="quicklink-body">
                     <span class="quicklink-title">Stock</span>
                     <span class="quicklink-text">Inventaire, articles, fournisseurs — communs à toutes les saisons</span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_cles_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('key', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Clés</span>
+                    <span class="quicklink-text">Registre des détenteurs — l'attestation, elle, se resigne chaque saison</span>
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>

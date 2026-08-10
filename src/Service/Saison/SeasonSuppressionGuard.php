@@ -2,7 +2,7 @@
 
 namespace App\Service\Saison;
 
-use App\Entity\CleMouvement;
+use App\Entity\AttestationCle;
 use App\Entity\Commande;
 use App\Entity\Dirigeant;
 use App\Entity\DocumentSignable;
@@ -41,7 +41,9 @@ final class SeasonSuppressionGuard
         DotationBesoin::class => ['besoin de dotation', 'besoins de dotation'],
         DotationAffectation::class => ['affectation de dotation', 'affectations de dotation'],
         Commande::class => ['commande', 'commandes'],
-        CleMouvement::class => ['mouvement de clé', 'mouvements de clé'],
+        // Le registre des clés, lui, ne dépend plus de la saison : seules les
+        // attestations signées dans l'année la référencent encore.
+        AttestationCle::class => ['attestation de clés', 'attestations de clés'],
     ];
 
     public function __construct(

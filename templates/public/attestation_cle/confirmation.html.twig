@@ -11,8 +11,9 @@
         <div class="inscription-expired-icon">✅</div>
         <h1 class="inscription-expired-title">Attestation signée !</h1>
         <p class="inscription-expired-text">
-            Merci {{ dirigeant.prenom }}, votre attestation de remise de clés
-            a bien été enregistrée le {{ dirigeant.attestationCleSignedAt|date('d/m/Y') }}.
+            Merci {{ detenteur.prenom }}, votre attestation de remise de clés pour la
+            saison {{ season.label }} a bien été enregistrée le
+            {{ attestation.signedAt|date('d/m/Y') }}.
         </p>
 
         <p style="margin-top: 1.5rem; font-size: 0.8125rem; color: var(--color-text-disabled); line-height: 1.6;">

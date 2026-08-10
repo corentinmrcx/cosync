@@ -14,7 +14,7 @@ use App\Repository\DirigeantRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
-use App\Service\ClubHouse\CleRegistreService;
+use App\Service\Cle\CleRegistrePresenter;
 use App\Service\Dirigeant\DirigeantDossierCompletion;
 use App\Service\Dirigeant\DirigeantFormPrefill;
 use App\Service\Dirigeant\DirigeantService;
@@ -37,7 +37,7 @@ class DirigeantController extends AbstractController
         private readonly TeamRepository $teamRepo,
         private readonly DirigeantService $dirigeantService,
         private readonly StockMovementRepository $stockMovementRepo,
-        private readonly CleRegistreService $registre,
+        private readonly CleRegistrePresenter $clePresenter,
         private readonly DirigeantLinkService $linkService,
         private readonly CsrfGuard $csrf,
         private readonly DirigeantFormPrefill $formPrefill,
@@ -136,7 +136,9 @@ class DirigeantController extends AbstractController
             'dirigeant' => $dirigeant,
             'dotations' => $this->stockMovementRepo->findDotationsByDirigeant($dirigeant),
             'history' => $this->historiqueService->pourDirigeant($dirigeant),
-            'nbCles' => $this->registre->getSolde($dirigeant),
+            // Détention et engagement de la saison en une lecture : la fiche affiche
+            // ce que le registre des clés sait de cette personne, ou rien.
+            'cleRow' => $this->clePresenter->pourDirigeant($dirigeant),
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande à ce dirigeant.
             'documents' => $this->documentResolver->attendusPourDirigeant($dirigeant),

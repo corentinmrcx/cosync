@@ -2,16 +2,20 @@
 
 namespace App\DTO;
 
-use App\Entity\Dirigeant;
+use App\Entity\Detenteur;
 
 /**
- * État de détention d'une personne, dérivé de son historique de mouvements.
- * Jamais persisté : recalculé à chaque lecture par CleRegistreService.
+ * État de détention d'une personne, dérivé de son historique de mouvements sur
+ * toute la vie du club. Jamais persisté : recalculé à chaque lecture par
+ * CleRegistreService.
+ *
+ * Ne dit rien des attestations : celles-ci dépendent d'une saison, que le registre
+ * ne connaît pas. C'est CleRegistreRow qui rapproche les deux.
  */
 final class CleDetention
 {
     public function __construct(
-        public readonly Dirigeant $dirigeant,
+        public readonly Detenteur $detenteur,
         public readonly int $remises,
         public readonly int $restitutions,
         public readonly int $pertes,
@@ -26,33 +30,5 @@ final class CleDetention
     public function estDetenteur(): bool
     {
         return $this->solde > 0;
-    }
-
-    public function aSigne(): bool
-    {
-        return $this->dirigeant->hasSignedAttestationCle();
-    }
-
-    /**
-     * L'attestation signée ne correspond plus à la réalité : des clés ont été
-     * remises après la signature, elle mentionne donc un nombre dépassé.
-     */
-    public function doitResigner(): bool
-    {
-        if (!$this->estDetenteur() || !$this->aSigne()) {
-            return false;
-        }
-
-        $signedAt = $this->dirigeant->getAttestationCleSignedAt();
-
-        return $signedAt !== null
-            && $this->derniereRemiseLe !== null
-            && $this->derniereRemiseLe > $signedAt;
-    }
-
-    /** L'attestation est-elle signée ET à jour ? */
-    public function attestationAJour(): bool
-    {
-        return $this->aSigne() && !$this->doitResigner();
     }
 }

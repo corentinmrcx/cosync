@@ -2,13 +2,14 @@
 
 namespace App\EventListener;
 
+use App\Repository\AttestationCleRepository;
 use App\Repository\DirigeantRepository;
 use App\Repository\DocumentSignatureRepository;
 use App\Repository\DossierClubRepository;
 use App\Repository\SeasonRepository;
+use App\Service\Drive\AttestationCleDriveSync;
 use App\Service\Drive\AttestationCleRecapDriveSync;
 use App\Service\Drive\AttestationDriveSync;
-use App\Service\Drive\DirigeantAttestationCleDriveSync;
 use App\Service\Drive\DirigeantAttestationDriveSync;
 use App\Service\Drive\DocumentSignatureDriveSync;
 use App\Service\Drive\PendingUploadQueue;
@@ -39,7 +40,8 @@ final class DriveUploadTerminateListener
         private readonly AttestationDriveSync $attestationDriveSync,
         private readonly DirigeantAttestationDriveSync $dirigeantAttestationDriveSync,
         private readonly SeasonRepository $seasonRepository,
-        private readonly DirigeantAttestationCleDriveSync $dirigeantAttestationCleDriveSync,
+        private readonly AttestationCleRepository $attestationCleRepository,
+        private readonly AttestationCleDriveSync $attestationCleDriveSync,
         private readonly AttestationCleRecapDriveSync $attestationCleRecapDriveSync,
         private readonly LoggerInterface $logger,
     ) {}
@@ -93,16 +95,16 @@ final class DriveUploadTerminateListener
 
         // Feuille individuelle puis récapitulatif : chaque itération est isolée pour
         // que l'échec de l'une n'empêche pas l'autre de partir.
-        foreach ($this->queue->flushDirigeantAttestationsCle() as $dirigeantUuid) {
+        foreach ($this->queue->flushAttestationsCle() as $attestationId) {
             try {
-                $dirigeant = $this->dirigeantRepository->findByUuid(Uuid::fromString($dirigeantUuid));
+                $attestation = $this->attestationCleRepository->find($attestationId);
 
-                if ($dirigeant !== null) {
-                    $this->dirigeantAttestationCleDriveSync->sync($dirigeant);
+                if ($attestation !== null) {
+                    $this->attestationCleDriveSync->sync($attestation);
                 }
             } catch (\Throwable $e) {
-                $this->logger->error('Échec sync attestation de remise du dirigeant {uuid} : {message}', [
-                    'uuid' => $dirigeantUuid,
+                $this->logger->error('Échec sync attestation de remise de clés {id} : {message}', [
+                    'id' => $attestationId,
                     'message' => $e->getMessage(),
                 ]);
             }

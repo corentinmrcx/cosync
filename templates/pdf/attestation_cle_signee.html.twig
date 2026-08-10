@@ -1,7 +1,7 @@
 {% extends 'pdf/_layout.html.twig' %}
 
 {% block titre %}Attestation de remise de clés{% endblock %}
-{% block sous_titre %}Club house — {{ club_nom }} — Saison {{ season.label }}{% endblock %}
+{% block sous_titre %}Clés du local — {{ club_nom }} — Saison {{ season.label }}{% endblock %}
 
 {% block styles %}
         .statement {
@@ -20,19 +20,20 @@
 {% endblock %}
 
 {% block corps %}
-    <p class="statement">
-        Je soussigné·e <span class="highlight">{{ prenom }} {{ nom }}</span>, reconnais avoir reçu
-        <span class="highlight">{{ nbCles }}</span> clé{{ nbCles > 1 ? 's' }} du club house du
-        {{ club_nom }}{% if remiseLe %} le <span class="highlight">{{ remiseLe|date('d/m/Y') }}</span>{% endif %},
-        pour la saison <span class="highlight">{{ season.label }}</span>.
-    </p>
-
-    {# Engagement complémentaire défini par le club, saisi depuis l'admin. #}
+    {# Même ordre que l'écran de signature : l'engagement rédigé par le club se lit
+       d'abord, la formule reprise du registre le conclut juste avant la signature. #}
     {% if season.attestationCleText %}
         <div class="content">
             {{ season.attestationCleText|raw }}
         </div>
     {% endif %}
+
+    <p class="statement">
+        Je soussigné·e <span class="highlight">{{ prenom }} {{ nom }}</span>, reconnais avoir reçu
+        <span class="highlight">{{ nbCles }}</span> clé{{ nbCles > 1 ? 's' }} du local du
+        {{ club_nom }}{% if remiseLe %} le <span class="highlight">{{ remiseLe|date('d/m/Y') }}</span>{% endif %},
+        pour la saison <span class="highlight">{{ season.label }}</span>.
+    </p>
 
     <div class="footer">
         <p class="footer-date">Soudron, le {{ signedAt|date('d/m/Y') }}</p>

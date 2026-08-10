@@ -224,6 +224,37 @@ created_by: User
 created_at: datetime
 ```
 
+### Detenteur, CleMouvement, AttestationCle — deux échelles de temps
+
+Les clés du local sont le seul domaine où **le fait et l'engagement ne vivent pas dans la
+même échelle de temps**, et c'est délibéré :
+
+| Ce qu'on veut savoir | Où ça vit | Pourquoi |
+|---|---|---|
+| Qui détient une clé, depuis quand | `Detenteur` + `CleMouvement`, **hors saison** | Un trousseau ne change pas de main au 1ᵉʳ juillet |
+| Qui s'est engagé cette année | `AttestationCle`, **par saison** | L'attestation se resigne chaque année |
+
+```php
+Detenteur       // niveau club : nom, prenom, email, telephone, num_licence, qualite
+CleMouvement    // append-only : detenteur, type (REMISE|RESTITUTION|PERTE), quantite, date
+AttestationCle  // append-only : detenteur, season, signed_at, nb_cles, drive_path, uuid public
+```
+
+Conséquences à ne pas défaire :
+
+- `CleMouvement` **ne porte pas de saison**. La colonne `season_id` subsiste en base,
+  dé-mappée. Filtrer le registre par saison ramènerait le défaut d'origine : un solde
+  remis à zéro chaque été alors que les clés sont physiquement dehors.
+- `Detenteur` n'est **pas** un `Dirigeant` : ce dernier est cloisonné par saison et ne
+  fournit donc aucune identité stable. Le rapprochement des deux se fait dans
+  `DetenteurEffectifResolver`, sur le numéro de licence puis sur le nom.
+- Un détenteur qui n'est plus à l'effectif **reste visible**, en alerte « hors effectif ».
+  Ses clés sont dehors : le faire disparaître serait mentir.
+- `AttestationCle` est append-only : une re-signature ajoute une ligne, elle n'écrase pas
+  la précédente. Les deux PDF font foi à leur date.
+- La campagne de renouvellement est **manuelle** (`AttestationCleService::lancerCampagne`).
+  Aucun mail ne part sans décision de l'admin.
+
 ---
 
 ## 5. Enums PHP
@@ -388,6 +419,10 @@ Drive/
         └── 2026-08/
             └── backup_20260808_023000.sql.gz
 ```
+
+⚠️ Le segment `Club house/Clés` n'a **pas** suivi le renommage du module en « Clés » : il
+désigne des dossiers qui contiennent déjà des PDF archivés, et le renommer laisserait un
+dossier vide à côté des documents signés.
 
 Le classement se fait **par type de document**, pas par équipe ni par licencié : les
 `driveSegments` sont fixés à la création de chaque `DocumentSignable`.
@@ -743,7 +778,7 @@ de l'ouvrir.
 ### Organisation de `src/Service/`
 
 Un dossier = un domaine métier, pas une couche technique. `Licencie/`, `Dirigeant/`,
-`Inscription/`, `Dotation/`, `Stock/`, `ClubHouse/`, `Saison/`, `Referentiel/`, `Compte/`,
+`Inscription/`, `Dotation/`, `Stock/`, `Cle/`, `Saison/`, `Referentiel/`, `Compte/`,
 `Document/`, `Payment/`, `Import/`, `Mail/`, `Pdf/`, `Drive/`, `Ops/` (exploitation),
 `Ui/` (état d'affichage).
 

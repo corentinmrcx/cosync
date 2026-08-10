@@ -31,6 +31,12 @@
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
+            icon: 'key',
+            label: 'Clés',
+            route: 'admin_cles_index'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
             icon: 'gear',
             label: 'Le club',
             route: 'admin_club_index'
