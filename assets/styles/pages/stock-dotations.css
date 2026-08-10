@@ -653,7 +653,8 @@
 }
 
 /* — Édition inline de la taille (suivi) — */
-.dot-taille-display {
+.dot-taille-display,
+.dot-option-display {
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -676,7 +677,8 @@
 .dot-taille-config:hover { text-decoration: underline; }
 
 /* Crayon de modification : toujours visible, clair */
-.dot-taille-pen {
+.dot-taille-pen,
+.dot-option-pen {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -692,13 +694,15 @@
     transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 
-.dot-taille-pen:hover {
+.dot-taille-pen:hover,
+.dot-option-pen:hover {
     color: var(--color-primary);
     background: var(--color-primary-light);
     border-color: var(--color-primary);
 }
 
-.dot-taille-form {
+.dot-taille-form,
+.dot-option-form {
     display: flex;
     align-items: center;
     gap: 0.3rem;
@@ -716,6 +720,7 @@
 }
 
 .dot-taille-ok,
+.dot-option-ok,
 .dot-taille-cancel {
     display: inline-flex;
     align-items: center;
@@ -730,9 +735,11 @@
     font-weight: 700;
 }
 
-.dot-taille-ok { color: var(--color-success); }
+.dot-taille-ok,
+.dot-option-ok { color: var(--color-success); }
 
-.dot-taille-ok:hover { background: var(--color-success-bg); border-color: var(--color-success); }
+.dot-taille-ok:hover,
+.dot-option-ok:hover { background: var(--color-success-bg); border-color: var(--color-success); }
 
 @media (max-width: 640px) {
     .dot-page { padding: 1rem; }

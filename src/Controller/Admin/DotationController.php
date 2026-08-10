@@ -19,6 +19,7 @@ use App\Repository\StockItemRepository;
 use App\Security\CsrfGuard;
 use App\Service\Dotation\DotationAffectationService;
 use App\Service\Dotation\DotationBesoinSynchronizer;
+use App\Service\Dotation\DotationChoixService;
 use App\Service\Dotation\DotationGroupeReglagesFactory;
 use App\Service\Dotation\DotationModeleFormContext;
 use App\Service\Dotation\DotationModeleService;
@@ -40,6 +41,7 @@ class DotationController extends AbstractController
         private readonly DotationAffectationRepository $affectationRepository,
         private readonly StockItemRepository $itemRepository,
         private readonly DotationBesoinSynchronizer $synchronizer,
+        private readonly DotationChoixService $choixService,
         private readonly DotationSuiviPresenter $suivi,
         private readonly DotationRemiseService $remiseService,
         private readonly DotationModeleService $modeleService,
@@ -319,9 +321,12 @@ class DotationController extends AbstractController
     {
         $this->synchronizer->syncTaillesFromDossiers($season);
 
+        $groupes = $this->suivi->groupesDeSuivi($season);
+
         return $this->render('admin/dotations/suivi.html.twig', [
             'season' => $season,
-            'groupes' => $this->suivi->groupesDeSuivi($season),
+            'groupes' => $groupes,
+            'optionsParBesoin' => $this->choixService->optionsParBesoin($groupes),
             'taillesConnues' => Tailles::toutes(),
             'pointures' => Tailles::pointures(),
         ]);
@@ -345,6 +350,30 @@ class DotationController extends AbstractController
 
         $this->remiseService->changerTaille($besoin, (string) $request->request->get('taille', ''), $user);
         $this->addFlash('success', sprintf('Taille mise à jour pour %s.', $besoin->getNomPrenom()));
+
+        return $this->redirectToRoute('admin_dotations_suivi');
+    }
+
+    /** Corrige l'option retenue dans un groupe de choix — repli automatique ou erreur du licencié. */
+    #[Route('/besoins/{id}/option', name: 'besoin_option', methods: ['POST'])]
+    public function besoinOption(DotationBesoin $besoin, Request $request): Response
+    {
+        $this->csrf->valider('dotation_besoin_option_' . $besoin->getId(), $request);
+
+        $option = $this->itemRepository->find((int) $request->request->get('stock_item_id'));
+
+        if ($option === null) {
+            $this->addFlash('error', 'Article introuvable.');
+
+            return $this->redirectToRoute('admin_dotations_suivi');
+        }
+
+        try {
+            $this->choixService->corriger($besoin, $option);
+            $this->addFlash('success', sprintf('Choix corrigé pour %s : %s.', $besoin->getNomPrenom(), $option->getNom()));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
 
         return $this->redirectToRoute('admin_dotations_suivi');
     }

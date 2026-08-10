@@ -76,7 +76,10 @@
                                     <span class="dot-person-role">{{ besoin.roleLabel }}</span>
                                 </td>
                                 <td>
-                                    <span class="dot-item-nom">{{ besoin.stockItem.nom }}</span>
+                                    {% include 'admin/dotations/_option_cell.html.twig' with {
+                                        besoin: besoin,
+                                        options: optionsParBesoin[besoin.id] ?? [],
+                                    } only %}
                                     {% include 'admin/dotations/_flocage_cell.html.twig' with { besoin: besoin } only %}
                                 </td>
                                 <td>
