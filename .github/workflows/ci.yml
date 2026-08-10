@@ -34,6 +34,11 @@ jobs:
       # n'est joignable qu'en local. Sans ça, DatabaseBackupService retombe sur son
       # défaut « database » (nom du service dans compose.yaml) et pg_dump échoue.
       DATABASE_HOST: 127.0.0.1
+      # En test, Doctrine suffixe la base (« _test », cf. config/packages/doctrine.yaml) :
+      # c'est cosync_test qui est migrée. Le service de sauvegarde, lui, dumpe POSTGRES_DB
+      # sans suffixe — il faut donc l'aligner, sinon il archive la base vide et rapporte
+      # un dump invalide. En prod les deux désignent naturellement la même base.
+      POSTGRES_DB: cosync_test
 
     steps:
       - uses: actions/checkout@v4
