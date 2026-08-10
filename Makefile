@@ -112,8 +112,18 @@ prod-down:
 # Le dump précède la migration : la prod contient des données irremplaçables et
 # PostgreSQL annule une migration qui plante, mais pas une migration qui « réussit »
 # en perdant des données (cf. CLAUDE.md §13).
-prod-deploy: prod-build prod-up prod-backup prod-migrate
+prod-deploy: prod-build prod-up prod-nginx-reload prod-backup prod-migrate
 	@echo "Déploiement terminé."
+
+# nginx.prod.conf est monté en bind mount et l'image nginx ne bouge jamais : `up -d` n'a
+# donc aucune raison de recréer le conteneur. Le fichier modifié est bien visible à
+# l'intérieur, mais le processus nginx tourne toujours avec la conf lue à son démarrage —
+# un changement d'en-tête ou de route ne prend effet qu'après ce rechargement. Sans cette
+# étape, un correctif de CSP peut être déployé trois fois sans jamais atteindre personne.
+prod-nginx-reload:
+	$(COMPOSE_PROD) exec nginx nginx -t
+	$(COMPOSE_PROD) exec nginx nginx -s reload
+	@echo "Configuration Nginx rechargée."
 
 prod-migrate:
 	$(COMPOSE_PROD) exec php php bin/console doctrine:migrations:migrate --no-interaction
