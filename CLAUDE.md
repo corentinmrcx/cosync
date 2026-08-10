@@ -799,6 +799,10 @@ n'est pas évident, c'est le signe qu'elle en fait trop.
 - ❌ React / SPA / API REST (hors scope V1)
 - ❌ Logique conditionnelle complexe dans les templates Twig (ça va dans un service ou un helper)
 - ❌ Classes CSS en dur dans le PHP
+- ❌ Utiliser dans `src/` une classe fournie par une dépendance de `require-dev` : l'image de
+  prod installe `--no-dev`, la classe manque et le code casse **en production uniquement**.
+  Tout paquet utilisé par `src/`, `bin/`, `config/` ou `public/` va dans `require`.
+  Garde-fou : `bin/check-prod-deps.php`, joué par le job CI `dependances-prod`.
 
 ### Schéma & données (la prod contient des données réelles — cf. bandeau en tête et §13)
 
