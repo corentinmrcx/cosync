@@ -30,6 +30,10 @@ jobs:
     env:
       APP_ENV: test
       DATABASE_URL: postgresql://cosync:cosync@127.0.0.1:5432/cosync?serverVersion=16&charset=utf8
+      # Le job tourne sur le runner, pas dans le réseau Docker : le service Postgres
+      # n'est joignable qu'en local. Sans ça, DatabaseBackupService retombe sur son
+      # défaut « database » (nom du service dans compose.yaml) et pg_dump échoue.
+      DATABASE_HOST: 127.0.0.1
 
     steps:
       - uses: actions/checkout@v4
@@ -108,12 +112,22 @@ jobs:
           echo "Migrations ajoutées : $added"
           statut=0
           for fichier in $added; do
-            if ! grep -qiE 'DROP (TABLE|COLUMN)|ALTER TABLE .* DROP' "$fichier"; then
+            # Seul up() est déployé. Une migration purement additive dont le down()
+            # défait proprement ses créations n'est pas destructrice : la scanner en
+            # entier obligerait à l'annoncer DESTRUCTIF, donc à mentir.
+            corps=$(sed -n '/function up(/,/function down(/p' "$fichier")
+            # Ce que l'on traque, c'est la perte de contenu : une table ou une colonne
+            # qui disparaît. DROP NOT NULL / DEFAULT / CONSTRAINT / INDEX assouplit le
+            # schéma sans effacer une seule ligne.
+            if ! echo "$corps" \
+              | grep -iE 'DROP (TABLE|COLUMN)|ALTER TABLE .* DROP ' \
+              | grep -qivE 'DROP (NOT NULL|DEFAULT|CONSTRAINT|INDEX)'; then
               continue
             fi
             # Une suppression reste possible, jamais silencieuse : le fichier doit
-            # l'annoncer et dire où le contenu supprimé vit désormais.
-            if grep -q 'DESTRUCTIF' "$fichier"; then
+            # l'annoncer et dire où le contenu supprimé vit désormais. « NON DESTRUCTIF »
+            # ne vaut pas annonce — sinon la garde se désamorce toute seule.
+            if grep 'DESTRUCTIF' "$fichier" | grep -qv 'NON DESTRUCTIF'; then
               echo "::warning::$fichier supprime des données de production — annoncé, relire le §13 et sauvegarder avant de déployer."
             else
               echo "::error::$fichier supprime une table ou une colonne sans l'annoncer."
