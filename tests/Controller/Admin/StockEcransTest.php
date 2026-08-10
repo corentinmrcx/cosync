@@ -224,6 +224,24 @@ final class StockEcransTest extends WebTestCase
         return (string) $champ->first()->attr('value');
     }
 
+    /**
+     * Quitter le formulaire article ramène là où l'enregistrement mène — la gestion du stock,
+     * pas le tableau de bord : renoncer à une modification ne doit pas déplacer l'utilisateur.
+     */
+    public function testAnnulerLeFormulaireArticleRamenneALaGestion(): void
+    {
+        $client = $this->loginAdmin();
+        $item = $this->makeItem('Chasuble');
+
+        foreach (['/admin/stock/items/nouveau', '/admin/stock/items/' . $item->getId() . '/modifier'] as $url) {
+            $crawler = $client->request('GET', $url);
+
+            self::assertResponseIsSuccessful($url);
+            $annuler = $crawler->filter('.stock-items-actions a')->first();
+            self::assertSame('/admin/stock/gestion', $annuler->attr('href'), $url);
+        }
+    }
+
     private function makeCategorie(string $nom, int $position): StockCategory
     {
         $category = (new StockCategory())->setName($nom)->setPosition($position);
