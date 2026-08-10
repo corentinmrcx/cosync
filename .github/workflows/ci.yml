@@ -62,6 +62,15 @@ jobs:
       - name: Tests
         run: vendor/bin/phpunit
 
+      # phpstan-symfony lit le conteneur compilé pour typer les appels au container et
+      # aux repositories (cf. containerXmlPath dans phpstan.dist.neon). Le job tourne en
+      # APP_ENV=test : sans ce réchauffage, le cache dev n'existe pas et l'analyse s'arrête
+      # avant d'avoir lu la moindre ligne.
+      - name: Réchauffer le conteneur dev pour PHPStan
+        run: php bin/console cache:warmup --env=dev
+        env:
+          APP_ENV: dev
+
       - name: Analyse statique
         run: vendor/bin/phpstan analyse --no-progress
 
