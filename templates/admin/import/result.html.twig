@@ -40,18 +40,6 @@
                 <span class="import-stat-value">{{ result.updated }}</span>
                 <span class="import-stat-label">Mis à jour</span>
             </div>
-            {% if result.emailAutoSend %}
-            <div class="import-stat import-stat-success">
-                <span class="import-stat-value">{{ result.emailsSent }}</span>
-                <span class="import-stat-label">Liens envoyés</span>
-            </div>
-            {% endif %}
-            {% if result.emailsFailed > 0 %}
-            <div class="import-stat import-stat-danger">
-                <span class="import-stat-value">{{ result.emailsFailed }}</span>
-                <span class="import-stat-label">Emails échoués</span>
-            </div>
-            {% endif %}
             <div class="import-stat import-stat-danger">
                 <span class="import-stat-value">{{ result.errors|length }}</span>
                 <span class="import-stat-label">Erreurs</span>
@@ -85,10 +73,11 @@
             </p>
         {% endif %}
 
-        {% if not result.emailAutoSend and result.created > 0 %}
+        {% if result.created > 0 %}
             <p class="import-guide-note">
-                Les liens d'inscription n'ont pas été envoyés automatiquement. Envoyez-les depuis le
-                tableau de bord des licenciés, quand vous le souhaitez.
+                Aucun mail n'est parti : un import ne prévient personne de lui-même. Affectez d'abord les
+                équipes, puis envoyez les liens depuis
+                <a href="{{ path('admin_licencies_send_links') }}">Joueurs → Envoyer les liens</a>.
             </p>
         {% endif %}
 

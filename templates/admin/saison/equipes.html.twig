@@ -112,6 +112,63 @@
             {{ form_end(newTeamForm) }}
         </div>
 
+        {# — Rattrapage : effectif importé avant la création des équipes — #}
+        {% if not affectation.estVide %}
+            <hr class="season-form-divider">
+
+            <div class="config-affectation" x-data="{ confirmation: false }">
+                <p class="config-affectation-titre">Affectation automatique</p>
+
+                {% if affectation.total > 0 %}
+                    <p class="config-teams-hint">
+                        {{ affectation.total }} licencié{{ affectation.total > 1 ? 's' }} sans équipe
+                        {{ affectation.total > 1 ? 'peuvent' : 'peut' }} être affecté{{ affectation.total > 1 ? 's' }}
+                        d'après les catégories ci-dessus. Utile après un import fait avant la création des équipes.
+                    </p>
+
+                    <button type="button" class="btn btn-secondary" x-show="!confirmation" @click="confirmation = true">
+                        {{ ui.icon('users') }}
+                        Affecter les licenciés sans équipe
+                    </button>
+
+                    <div class="config-affectation-confirm" x-show="confirmation" x-cloak>
+                        <p class="config-affectation-confirm-titre">Confirmer l'affectation</p>
+                        <ul class="config-affectation-liste">
+                            {% for nom, nombre in affectation.parEquipe %}
+                                <li class="config-affectation-ligne">
+                                    <span class="config-affectation-equipe">{{ nom }}</span>
+                                    <span class="config-affectation-nombre">+{{ nombre }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <p class="config-teams-hint">
+                            Seuls les licenciés <strong>sans équipe</strong> sont modifiés : une équipe déjà
+                            renseignée, à l'import ou à la main, n'est jamais remplacée.
+                        </p>
+                        <form method="post" action="{{ path('admin_equipes_affectation_auto') }}"
+                              class="config-affectation-actions">
+                            <input type="hidden" name="_token" value="{{ csrf_token('affectation_auto_equipes') }}">
+                            <button type="submit" class="btn btn-primary btn-sm">Confirmer l'affectation</button>
+                            <button type="button" class="btn btn-ghost btn-sm" @click="confirmation = false">Annuler</button>
+                        </form>
+                    </div>
+                {% else %}
+                    <p class="config-teams-hint">
+                        Aucun licencié sans équipe ne peut être affecté automatiquement.
+                    </p>
+                {% endif %}
+
+                {% if affectation.totalNonAffectables > 0 %}
+                    <p class="config-affectation-reste">
+                        {{ affectation.totalNonAffectables }} licencié{{ affectation.totalNonAffectables > 1 ? 's' }}
+                        {{ affectation.totalNonAffectables > 1 ? 'restent' : 'reste' }} à affecter à la main
+                        ({% for code, nombre in affectation.nonAffectables %}{{ code }} : {{ nombre }}{{ not loop.last ? ', ' }}{% endfor %}) —
+                        aucune équipe ne couvre leur catégorie, ou plusieurs la partagent.
+                    </p>
+                {% endif %}
+            </div>
+        {% endif %}
+
     </div>
 
 </div>

@@ -12,6 +12,16 @@
 
 <div class="licencies-page">
 
+    {% if liensEnAttente > 0 %}
+        <div class="licencies-liens-attente">
+            <p class="licencies-liens-attente-texte">
+                <strong>{{ liensEnAttente }}</strong> licencié{{ liensEnAttente > 1 ? 's' }} n'{{ liensEnAttente > 1 ? 'ont' : 'a' }}
+                jamais reçu {{ liensEnAttente > 1 ? 'leur' : 'son' }} lien d'inscription.
+            </p>
+            <a href="{{ path('admin_licencies_send_links') }}" class="btn btn-primary btn-sm">Envoyer les liens</a>
+        </div>
+    {% endif %}
+
     {% embed 'components/list-toolbar.html.twig' with {
         search: search ?? '',
         searchPlaceholder: 'Rechercher un licencié…',

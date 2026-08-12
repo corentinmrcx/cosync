@@ -69,8 +69,8 @@
 
             <h3 class="doc-h3">Le cycle de vie d'une inscription</h3>
             <ol class="doc-ol">
-                <li><strong>Importé</strong> — le licencié est présent dans CoSync, mais son lien d'inscription n'a pas encore été envoyé.</li>
-                <li><strong>Lien envoyé</strong> — le mail avec son lien unique est parti (automatiquement à l'import « Éditions et extractions », ou manuellement depuis sa fiche).</li>
+                <li><strong>Lien non envoyé</strong> — le licencié est présent dans CoSync, qu'il vienne de l'import ou d'une création à la main, mais son lien d'inscription n'est pas parti.</li>
+                <li><strong>Lien envoyé</strong> — le mail avec son lien unique est parti, soit par l'envoi groupé depuis la liste des joueurs, soit depuis sa fiche.</li>
                 <li><strong>Formulaire complété</strong> — il remplit ses tailles, autorisations et signe le règlement.</li>
                 <li><strong>Validé</strong> — vous confirmez la réception du paiement ; l'inscription est finalisée.</li>
             </ol>
@@ -119,12 +119,15 @@
             <ol class="doc-ol">
                 <li>Allez dans <em>Effectif → Import FootClubs</em> et déposez le fichier XLSX.</li>
                 <li>CoSync nettoie les données (noms en majuscules, prénoms capitalisés, téléphones au format +33, emails en minuscules) et ignore les non‑joueurs (dirigeants, éducateurs).</li>
-                <li>Pour chaque licencié : mise à jour s'il existe déjà, création + envoi automatique du lien s'il est nouveau.</li>
+                <li>Pour chaque licencié : mise à jour s'il existe déjà, création s'il est nouveau.</li>
                 <li>Un rapport s'affiche : X mis à jour, Y créés, Z erreurs.</li>
+                <li>Créez ou complétez les équipes, puis envoyez les liens depuis <em>Effectif → Joueurs</em>.</li>
             </ol>
 
             <div class="doc-tip">
-                <strong>Sans danger</strong> — un ré-import met à jour uniquement les données FFF (nom, email…). Les dossiers club et les paiements ne sont jamais touchés.
+                <strong>Sans danger</strong> — un import n'écrit à personne. Aucun mail ne part tant que vous ne
+                l'avez pas demandé : vous pouvez relire le rapport, corriger, ré-importer. Un ré-import met à jour
+                uniquement les données FFF (nom, email…) ; les dossiers club et les paiements ne sont jamais touchés.
             </div>
         </section>
 
@@ -143,7 +146,10 @@
             <p class="doc-p">À la validation, un PDF du règlement signé est généré et archivé sur le Drive du club, puis le dossier passe au statut <em>Formulaire complété</em>.</p>
 
             <div class="doc-tip">
-                <strong>Renvoyer un lien</strong> — depuis la fiche d'un licencié, le bouton « Renvoyer le lien » régénère un lien neuf et renvoie le mail (utile si le licencié l'a perdu).
+                <strong>Envoyer les liens</strong> — depuis <em>Effectif → Joueurs</em>, le bandeau « Envoyer les liens »
+                écrit d'un coup à tous ceux qui n'ont jamais reçu le leur. Les licenciés sans équipe en sont écartés par
+                défaut : sans équipe, le formulaire annonce la cotisation par défaut de la saison et une dotation
+                incomplète. Pour un renvoi individuel, le bouton « Renvoyer le lien » de la fiche régénère un lien neuf.
             </div>
         </section>
 
@@ -155,7 +161,7 @@
 
             <h3 class="doc-h3">Les badges de statut</h3>
             <ul class="doc-ul">
-                <li><span class="doc-badge doc-badge-imported">Importé</span> — le licencié est présent, son lien n'a pas encore été envoyé.</li>
+                <li><span class="doc-badge doc-badge-imported">Lien non envoyé</span> — le licencié est présent, son lien n'est pas parti.</li>
                 <li><span class="doc-badge doc-badge-sent">Lien envoyé</span> — le licencié n'a pas encore rempli son formulaire.</li>
                 <li><span class="doc-badge doc-badge-completed">Formulaire complété</span> — formulaire signé, en attente du paiement.</li>
                 <li><span class="doc-badge doc-badge-validated">Validé</span> — paiement confirmé, inscription finalisée.</li>

@@ -12,7 +12,9 @@ enum LicenceStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::IMPORTED => 'Importé',
+            // Le licencié peut être arrivé par l'import comme par une création à la main :
+            // ce statut ne dit rien de son origine, seulement que son lien n'est pas parti.
+            self::IMPORTED => 'Lien non envoyé',
             self::LINK_SENT => 'Lien envoyé',
             self::FORM_COMPLETED => 'Formulaire complété',
             self::VALIDATED => 'Validé',

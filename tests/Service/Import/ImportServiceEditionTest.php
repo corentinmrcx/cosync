@@ -37,7 +37,6 @@ final class ImportServiceEditionTest extends ImportIntegrationTestCase
         $dirigeants = $this->service(DirigeantRepository::class);
 
         self::assertSame('Éditions et extractions', $result->layoutLabel);
-        self::assertTrue($result->emailAutoSend, 'L\'ancien format envoie les liens automatiquement');
         self::assertEmpty($result->errors, implode(' | ', $result->errors));
 
         $dupont = $licencies->findByNumLicence('111111', $season);

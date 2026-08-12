@@ -104,11 +104,14 @@ class LicencieCreateType extends AbstractType
                 'placeholder' => '— Inconnue —',
                 'choice_label' => static fn (NatureLicence $nature): string => $nature->label(),
             ])
+            // Décochée : rien ne part sans décision. Un lien s'envoie ensuite depuis la fiche
+            // ou par l'envoi groupé, une fois l'équipe du licencié connue.
             ->add('sendLink', CheckboxType::class, [
                 'label' => 'Envoyer le lien d\'inscription par email',
+                'help' => 'Sans équipe, le formulaire annoncera la cotisation par défaut de la saison et une dotation incomplète.',
                 'mapped' => false,
                 'required' => false,
-                'data' => true,
+                'data' => false,
             ])
         ;
 

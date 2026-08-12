@@ -121,6 +121,10 @@ class DossierClub
     public function setLicencie(Licencie $licencie): static
     {
         $this->licencie = $licencie;
+        // Le côté inverse n'est peuplé par Doctrine qu'au rechargement : sans cette ligne,
+        // `$licencie->getDossierClub()` rend null pendant toute la requête qui vient de créer
+        // le dossier, et le code qui fait avancer le statut ne trouve rien à faire avancer.
+        $licencie->setDossierClub($this);
 
         return $this;
     }

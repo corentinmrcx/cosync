@@ -326,4 +326,12 @@ class Licencie
     {
         return $this->dossierClub;
     }
+
+    /** Tenu à jour par DossierClub::setLicencie() — ne pas appeler directement. */
+    public function setDossierClub(DossierClub $dossierClub): static
+    {
+        $this->dossierClub = $dossierClub;
+
+        return $this;
+    }
 }

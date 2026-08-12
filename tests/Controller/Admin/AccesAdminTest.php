@@ -31,6 +31,7 @@ final class AccesAdminTest extends WebTestCase
             '/admin/effectif',
             '/admin/effectif/joueurs',
             '/admin/effectif/joueurs/nouveau',
+            '/admin/effectif/joueurs/envoyer-liens',
             '/admin/effectif/dirigeants',
             '/admin/effectif/dirigeants/nouveau',
             '/admin/effectif/import',

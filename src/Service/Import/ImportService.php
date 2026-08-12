@@ -16,7 +16,6 @@ use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Service\Import\Layout\ImportLayoutResolver;
 use App\Service\Mail\LienPublic;
-use App\Service\Mail\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -31,7 +30,6 @@ final class ImportService
         private readonly CategoryRepository $categoryRepository,
         private readonly TeamRepository $teamRepository,
         private readonly EntityManagerInterface $em,
-        private readonly MailerService $mailerService,
         private readonly NatureLicenceResolver $natureResolver,
     ) {}
 
@@ -55,11 +53,9 @@ final class ImportService
             return $result;
         }
         $result->layoutLabel = $layout->label();
-        $result->emailAutoSend = $layout->sendsEmailOnCreate();
 
         $pendingLicencies = [];
         $pendingDirigeants = [];
-        $newLicencies = [];
 
         foreach (array_slice($rows, 1) as $offset => $row) {
             $lineNumber = $offset + 2;
@@ -68,7 +64,7 @@ final class ImportService
                 $data = $layout->map($row, $columns);
 
                 match ($data->type) {
-                    ImportRowType::LICENCIE => $this->processLicencieRow($data, $season, $result, $lineNumber, $pendingLicencies, $newLicencies),
+                    ImportRowType::LICENCIE => $this->processLicencieRow($data, $season, $result, $lineNumber, $pendingLicencies),
                     ImportRowType::DIRIGEANT => $this->processDirigeantRow($data, $season, $result, $lineNumber, $pendingDirigeants),
                     ImportRowType::SKIP => null,
                 };
@@ -86,42 +82,11 @@ final class ImportService
             return $result;
         }
 
-        if ($layout->sendsEmailOnCreate()) {
-            $this->sendInscriptionLinks($newLicencies, $result);
-        }
-
         return $result;
     }
 
     /**
-     * @param Licencie[] $newLicencies
-     */
-    private function sendInscriptionLinks(array $newLicencies, ImportResultData $result): void
-    {
-        $sent = false;
-        foreach ($newLicencies as $licencie) {
-            if ($licencie->getEmail() === null) {
-                continue;
-            }
-            try {
-                $this->mailerService->sendInscriptionLink($licencie);
-                $licencie->setLinkSentAt(new \DateTimeImmutable());
-                $licencie->getDossierClub()?->setStatus(LicenceStatus::LINK_SENT);
-                ++$result->emailsSent;
-                $sent = true;
-            } catch (\Throwable) {
-                ++$result->emailsFailed;
-            }
-        }
-
-        if ($sent) {
-            $this->em->flush();
-        }
-    }
-
-    /**
-     * @param array<string, bool>  $pendingLicencies
-     * @param Licencie[]           $newLicencies
+     * @param array<string, bool> $pendingLicencies
      */
     private function processLicencieRow(
         ImportRowData $data,
@@ -129,7 +94,6 @@ final class ImportService
         ImportResultData $result,
         int $lineNumber,
         array &$pendingLicencies,
-        array &$newLicencies,
     ): void {
         $nom = $data->nom;
         $prenom = $data->prenom;
@@ -257,7 +221,6 @@ final class ImportService
         $this->em->persist($licencie);
         $this->em->persist($dossier);
 
-        $newLicencies[] = $licencie;
         ++$result->created;
         $this->countNature($licencie, $result);
     }

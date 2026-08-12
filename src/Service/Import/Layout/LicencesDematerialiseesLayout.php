@@ -93,11 +93,6 @@ final class LicencesDematerialiseesLayout implements ImportLayoutInterface
         return trim($parts[1] ?? $parts[0]);
     }
 
-    public function sendsEmailOnCreate(): bool
-    {
-        return false;
-    }
-
     public function label(): string
     {
         return 'Licences dématérialisées';

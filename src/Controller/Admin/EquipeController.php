@@ -11,6 +11,7 @@ use App\Form\TeamSetupType;
 use App\Repository\CategoryRepository;
 use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
+use App\Service\Licencie\AffectationEquipeService;
 use App\Service\Referentiel\TeamService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,6 +25,7 @@ class EquipeController extends AbstractController
         private readonly TeamService $teamService,
         private readonly TeamRepository $teamRepo,
         private readonly CategoryRepository $categoryRepo,
+        private readonly AffectationEquipeService $affectationService,
         private readonly CsrfGuard $csrf,
     ) {}
 
@@ -38,7 +40,39 @@ class EquipeController extends AbstractController
                 'action' => $this->generateUrl('admin_equipes_new'),
             ]),
             'categories' => $this->categoryRepo->findBy([], ['minYear' => 'ASC']),
+            'affectation' => $this->affectationService->apercu($season),
         ]);
+    }
+
+    #[Route('/affectation-automatique', name: 'affectation_auto', methods: ['POST'])]
+    public function affectationAutomatique(
+        #[CurrentSeason] Season $season,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('affectation_auto_equipes', $request);
+
+        $resultat = $this->affectationService->appliquer($season);
+
+        if ($resultat->total() === 0) {
+            $this->addFlash('info', 'Aucun licencié à affecter : tous ont déjà une équipe, ou aucune équipe ne couvre leur catégorie.');
+
+            return $this->redirectToRoute('admin_equipes_index');
+        }
+
+        $detail = [];
+        foreach ($resultat->parEquipe as $nom => $nombre) {
+            $detail[] = sprintf('%s (%d)', $nom, $nombre);
+        }
+
+        $this->addFlash('success', sprintf(
+            '%d licencié%s affecté%s — %s.',
+            $resultat->total(),
+            $resultat->total() > 1 ? 's' : '',
+            $resultat->total() > 1 ? 's' : '',
+            implode(', ', $detail),
+        ));
+
+        return $this->redirectToRoute('admin_equipes_index');
     }
 
     #[Route('/nouveau', name: 'new', methods: ['POST'])]
