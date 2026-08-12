@@ -781,6 +781,15 @@
     text-align: center;
 }
 
+.inscription-overlay-attente,
+.inscription-overlay-echec {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
 .inscription-overlay-spinner {
     width: 2.75rem;
     height: 2.75rem;

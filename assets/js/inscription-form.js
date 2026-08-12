@@ -67,6 +67,19 @@ export function inscriptionForm({
 
         submitting: false,
 
+        /**
+         * Le voile de soumission ne se referme jamais tout seul : il disparaît parce que
+         * la page change. Si la navigation n'a pas lieu — redirection bloquée par le CSP,
+         * HelloAsso injoignable, réseau coupé — le licencié reste devant un spinner
+         * infini, alors que son inscription vient bel et bien d'être enregistrée. Un
+         * testeur s'est retrouvé exactement là : « je suis coincé en validation ».
+         */
+        echecRedirection: false,
+        minuteurRedirection: null,
+
+        /** Délai au-delà duquel une soumission qui n'a pas quitté la page est perdue. */
+        DELAI_REDIRECTION_MS: 20000,
+
         /** Numéro d'étape du document de rang `index`. */
         documentStep(index) {
             return 5 + index;
@@ -206,6 +219,40 @@ export function inscriptionForm({
             return this.multiPayment
                 ? this.paymentModes.includes(value)
                 : this.paymentMode === value;
+        },
+
+        /**
+         * Affiche le voile et arme sa porte de sortie. Appelé à la soumission du
+         * formulaire, quel que soit le mode de paiement retenu.
+         */
+        onSubmit() {
+            this.submitting = true;
+
+            // Une soumission qui aboutit quitte la page : ni le minuteur ni les écouteurs
+            // ci-dessous ne lui survivent. S'ils se déclenchent, c'est donc que la
+            // navigation n'a pas eu lieu.
+            window.clearTimeout(this.minuteurRedirection);
+            this.minuteurRedirection = window.setTimeout(() => {
+                this.echecRedirection = true;
+            }, this.DELAI_REDIRECTION_MS);
+
+            // Un blocage CSP est immédiat et parfaitement muet côté utilisateur : le
+            // navigateur émet cet événement et n'entreprend rien d'autre. Inutile
+            // d'attendre le minuteur dans ce cas-là.
+            document.addEventListener('securitypolicyviolation', (e) => {
+                if (!e.violatedDirective.startsWith('form-action')) return;
+                window.clearTimeout(this.minuteurRedirection);
+                this.echecRedirection = true;
+            }, { once: true });
+
+            // Retour arrière depuis HelloAsso : la page ressort du bfcache telle qu'elle
+            // avait été quittée, voile compris.
+            window.addEventListener('pageshow', (e) => {
+                if (!e.persisted) return;
+                window.clearTimeout(this.minuteurRedirection);
+                this.submitting = false;
+                this.echecRedirection = false;
+            });
         },
 
         /**
