@@ -66,6 +66,20 @@
             </div>
         {% endif %}
 
+        {# Boutique du club : annoncée seulement si un lien est configuré en administration. #}
+        {% if club_boutique_url %}
+            <div class="inscription-boutique">
+                <p class="inscription-boutique-title">La boutique du club</p>
+                <p class="inscription-boutique-text">
+                    Maillots, survêtements et accessoires aux couleurs du club : c'est par ici.
+                </p>
+                <a href="{{ club_boutique_url }}" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-secondary btn-block">
+                    Découvrir la boutique
+                </a>
+            </div>
+        {% endif %}
+
         <p class="inscription-confirm-note">
             Votre inscription sera définitivement validée dès réception du paiement.<br>
             Pour toute question, contactez le club directement.

@@ -37,6 +37,12 @@
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
+            icon: 'cart',
+            label: 'Boutique',
+            route: 'admin_boutique_index'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
             icon: 'gear',
             label: 'Le club',
             route: 'admin_club_index'

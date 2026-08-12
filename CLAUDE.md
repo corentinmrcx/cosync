@@ -384,6 +384,13 @@ avant tout enregistrement, de façon idempotente. Le licencié ne voit jamais au
 - `DossierClub.is_signed = true`, `status = FORM_COMPLETED`
 - Page de confirmation affichée au licencié
 
+**Boutique du club** — `ClubSettings.boutiqueUrl`, réglé dans `/admin/boutique/lien`. Réglage du
+club et non de la saison : la boutique HelloAsso est une page de l'association. Le lien est
+exposé aux templates par la variable globale `club_boutique_url` ; tant qu'il est vide, la
+boutique n'est annoncée nulle part. Son annonce est un **mail distinct** de l'accusé de
+réception : ce dernier porte le montant dû et les instructions de paiement, rien ne doit
+détourner le licencié de ce qu'il lui reste à faire.
+
 ### C. Dashboard Admin
 
 URL : `/admin/licencies`

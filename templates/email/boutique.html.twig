@@ -1,0 +1,26 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block sujet %}La boutique du club est ouverte — {{ club_nom }}{% endblock %}
+
+{% block corps %}
+    <tr>
+        <td style="padding: 44px 40px 8px;" class="px">
+            <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: {{ c.primaire }};">
+                Boutique · Saison {{ licencie.season.label }}
+            </p>
+            <h1 class="h1" style="margin: 0 0 6px; font-size: 30px; line-height: 1.2; font-weight: 800; color: {{ c.texteFort }};">
+                La boutique du club
+            </h1>
+            <p style="margin: 0; font-size: 16px; line-height: 1.65; color: {{ c.texteCourant }};">
+                Le {{ club_nom }} ouvre sa boutique en ligne : vous y trouverez les maillots,
+                survêtements et accessoires aux couleurs du club.
+            </p>
+        </td>
+    </tr>
+
+    {% include 'email/_bouton.html.twig' with {
+        url: url,
+        libelle: 'Voir la boutique →',
+        note: 'Commande facultative — elle est indépendante de votre inscription.',
+    } %}
+{% endblock %}
