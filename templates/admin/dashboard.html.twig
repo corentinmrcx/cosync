@@ -46,7 +46,7 @@
 
     {% if navbar_current_season %}
         <div class="quicklink-grid dashboard-season">
-            <a href="{{ path('admin_saison_dashboard') }}" class="quicklink quicklink-wide dashboard-season-item">
+            <a href="{{ path('admin_saison_dashboard') }}" class="quicklink">
                 <span class="quicklink-title">Reprendre la saison {{ navbar_current_season.label }}</span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
