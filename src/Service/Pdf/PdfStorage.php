@@ -12,10 +12,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  */
 final class PdfStorage
 {
-    private const REPERTOIRE = '/var/pdfs';
-
     public function __construct(
-        #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
+        #[Autowire('%app.pdf_dir%')] private readonly string $repertoire,
     ) {}
 
     public function ecrire(string $nomFichier, string $contenu): string
@@ -34,6 +32,32 @@ final class PdfStorage
 
     public function repertoire(): string
     {
-        return $this->projectDir . self::REPERTOIRE;
+        return $this->repertoire;
+    }
+
+    /**
+     * Supprime tous les PDF encore en attente d'archivage.
+     *
+     * Réservé à la purge du mode beta : hors de ce cas, un fichier présent ici porte la
+     * seule copie d'une signature et ne doit jamais être effacé sans upload Drive réussi.
+     *
+     * @return int nombre de fichiers supprimés
+     */
+    public function viderRepertoire(): int
+    {
+        $repertoire = $this->repertoire();
+
+        if (!is_dir($repertoire)) {
+            return 0;
+        }
+
+        $supprimes = 0;
+        foreach (glob($repertoire . '/*') ?: [] as $chemin) {
+            if (is_file($chemin) && unlink($chemin)) {
+                ++$supprimes;
+            }
+        }
+
+        return $supprimes;
     }
 }

@@ -232,7 +232,7 @@ final class InscriptionConfirmationMailTest extends KernelTestCase
 
     private function pdfTemporaire(string $nom, int $taille = 1024): string
     {
-        $repertoire = self::getContainer()->getParameter('kernel.project_dir') . '/var/pdfs';
+        $repertoire = self::getContainer()->getParameter('app.pdf_dir');
         @mkdir($repertoire, 0775, true);
 
         $path = sprintf('%s/test_%s_%d.pdf', $repertoire, $nom, random_int(1000, 9999));
