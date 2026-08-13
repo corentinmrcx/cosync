@@ -1,0 +1,44 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Boutique{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Boutique' }
+] } %}
+
+<div class="section-home-page">
+
+    <div class="section-home-header">
+        <div>
+            <h1 class="section-home-title">Boutique</h1>
+        </div>
+    </div>
+
+    {# — Accès rapides — #}
+    <div class="section-home-section">
+        <div class="section-home-section-header">
+            <h2 class="section-home-section-title">Accès rapides</h2>
+        </div>
+        <div class="quicklink-grid">
+            <a href="{{ path('admin_boutique_lien') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('cart', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Lien de la boutique</span>
+                    <span class="quicklink-text">
+                        {% if club_boutique_url %}
+                            Affiché au licencié après son inscription et envoyé par mail
+                        {% else %}
+                            Aucun lien renseigné — la boutique n'est annoncée nulle part
+                        {% endif %}
+                    </span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

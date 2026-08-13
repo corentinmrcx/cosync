@@ -62,8 +62,12 @@ services:
       - public_assets:/var/www/html/public:ro
     # Traverse nginx → php-fpm → Symfony : un 200 sur /login prouve que toute la
     # chaîne applicative répond, pas seulement que le process nginx est vivant.
+    # 127.0.0.1 et non localhost : dans le conteneur, localhost résout d'abord en ::1 et
+    # nginx n'écoute qu'en IPv4 (`listen 80`). La sonde échouait donc en permanence
+    # (« Connection refused »), marquait nginx unhealthy en continu, et masquait par la
+    # même occasion tout vrai incident de la chaîne nginx → php-fpm → Symfony.
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/login || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/login || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

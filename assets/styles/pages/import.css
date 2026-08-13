@@ -180,11 +180,14 @@
     color: var(--color-text-muted);
 }
 
+/* La note ferme un bloc et n'est jamais le dernier élément de la carte : sans marge basse,
+   elle colle aux boutons d'action qui la suivent. */
 .import-guide-note {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
     font-style: italic;
     margin-top: 0.25rem;
+    margin-bottom: 1.25rem;
 }
 
 /* — Stats résultat — */

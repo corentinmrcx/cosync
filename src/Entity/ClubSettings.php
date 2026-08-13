@@ -31,6 +31,13 @@ class ClubSettings
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $titulaireCompte = null;
 
+    /**
+     * Lien de la boutique du club (HelloAsso). Réglage du club et non de la saison : la
+     * boutique est une page de l'association, elle ne se recrée pas à chaque rentrée.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $boutiqueUrl = null;
+
     public function getId(): int
     {
         return $this->id;
@@ -74,10 +81,28 @@ class ClubSettings
         return $this;
     }
 
+    public function getBoutiqueUrl(): ?string
+    {
+        return $this->boutiqueUrl;
+    }
+
+    public function setBoutiqueUrl(?string $boutiqueUrl): static
+    {
+        $this->boutiqueUrl = $this->normaliser($boutiqueUrl);
+
+        return $this;
+    }
+
     /** Sans IBAN, l'option « virement » disparaît du formulaire public. */
     public function accepteVirement(): bool
     {
         return $this->iban !== null;
+    }
+
+    /** Sans lien renseigné, la boutique n'est annoncée nulle part — ni page, ni mail. */
+    public function aBoutique(): bool
+    {
+        return $this->boutiqueUrl !== null;
     }
 
     private function normaliser(?string $valeur): ?string

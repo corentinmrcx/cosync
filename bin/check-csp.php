@@ -42,6 +42,11 @@ $origcinesExecution = [
         'directive' => 'form-action',
         'raison' => "HelloAsso rebondit vers son domaine nu ; form-action est vérifié à chaque saut",
     ],
+    [
+        'origine' => 'https://www.helloasso-sandbox.com',
+        'directive' => 'form-action',
+        'raison' => "HELLOASSO_API_BASE_URL pointe le bac à sable pendant les campagnes de test, et sa page de paiement est sur un domaine distinct — pas un sous-domaine de helloasso.com",
+    ],
 ];
 
 // Les templates de mail et de PDF ne sont jamais rendus par un navigateur : DomPDF et les

@@ -27,7 +27,7 @@
     {# — Header — #}
 
     <form method="post"
-          {% if demo|default(false) %}@submit.prevent="demoSubmit()"{% else %}action="{{ path('public_inscription_submit', {uuid: licencie.uuid}) }}" @submit="submitting = true"{% endif %}>
+          {% if demo|default(false) %}@submit.prevent="demoSubmit()"{% else %}action="{{ path('public_inscription_submit', {uuid: licencie.uuid}) }}" @submit="onSubmit()"{% endif %}>
         <input type="hidden" name="_token" value="{{ csrf_token('inscription_submit') }}">
         <input type="hidden" name="attestation_signature_data" :value="signatureDataAttestation">
 
@@ -453,5 +453,13 @@
 {% endblock %}
 
 {% block hors_flux %}
-    {% include 'components/_overlay_chargement.html.twig' with { visible: 'submitting', titre: demo|default(false) ? "Enregistrement dans le Drive…" : "Validation de votre inscription…" } only %}
+    {% include 'components/_overlay_chargement.html.twig' with {
+        visible: 'submitting',
+        titre: demo|default(false) ? "Enregistrement dans le Drive…" : "Validation de votre inscription…",
+        echec: 'echecRedirection',
+        titreEchec: "Le paiement en ligne n'a pas pu démarrer",
+        texteEchec: "Votre inscription, elle, a bien été enregistrée. Vous pouvez relancer le paiement par carte ou choisir un autre moyen de règlement.",
+        libelleEchec: "Voir mon inscription",
+        lienEchec: path('public_inscription_confirmation', { uuid: licencie.uuid }),
+    } only %}
 {% endblock %}

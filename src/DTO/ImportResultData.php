@@ -6,16 +6,12 @@ final class ImportResultData
 {
     public int $created = 0;
     public int $updated = 0;
-    public int $emailsSent = 0;
-    public int $emailsFailed = 0;
     /** Répartition des licenciés traités par nature de licence, pour contrôle visuel du rapport. */
     public int $nouveaux = 0;
     public int $renouvellements = 0;
     public int $natureInconnue = 0;
     /** Libellé du format détecté (null si le fichier n'a pas été reconnu). */
     public ?string $layoutLabel = null;
-    /** Le format détecté envoie-t-il automatiquement les liens d'inscription ? */
-    public bool $emailAutoSend = true;
     /**
      * Erreurs bloquantes : la ligne concernée n'a pas été importée.
      *

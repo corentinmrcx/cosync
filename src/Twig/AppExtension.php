@@ -23,6 +23,7 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
     public function getGlobals(): array
     {
         $season = $this->seasonContext->getCurrentSeason();
+        $club = $this->clubSettings->get();
 
         return [
             'club_nom' => $this->nomClub,
@@ -31,7 +32,10 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
             'navbar_saison_label' => $season !== null ? 'Saison ' . $season->getLabel() : null,
             // Coordonnées bancaires du club : lues par le formulaire public, la page de
             // confirmation et le mail de confirmation, rendus depuis trois contextes différents.
-            'club_rib' => $this->clubSettings->get(),
+            'club_rib' => $club,
+            // Lien de la boutique du club, ou null tant qu'aucun n'est saisi : les écrans
+            // et les mails qui l'annoncent se taisent alors au lieu d'afficher un lien mort.
+            'club_boutique_url' => $club->getBoutiqueUrl(),
             'navbar_current_season' => $this->seasonContext->getCurrentSeason(),
             'navbar_seasons' => $this->seasonRepository->findBy([], ['createdAt' => 'DESC']),
         ];

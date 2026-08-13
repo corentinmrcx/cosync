@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
+use App\DTO\EnvoiLiensResultat;
 use App\DTO\FiltreListe;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
@@ -113,7 +114,76 @@ class LicencieController extends AbstractController
             'total' => $total,
             'page' => $page,
             'pages' => $pages,
+            'liensEnAttente' => $this->licencieRepo->countLienJamaisEnvoye($season),
         ]);
+    }
+
+    /**
+     * Envoi groupé des liens d'inscription.
+     *
+     * L'import ne prévient plus personne de lui-même : un fichier déposé par erreur écrivait
+     * jusqu'ici à tout un effectif avant même que le rapport soit lu, et un licencié importé
+     * avant que les équipes existent recevait un montant de cotisation et une liste de
+     * dotation faux. L'envoi est donc une décision, prise sur cet écran, après relecture.
+     */
+    #[Route('/envoyer-liens', name: 'send_links', methods: ['GET', 'POST'])]
+    public function sendLinks(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $enAttente = $this->licencieRepo->findLienJamaisEnvoye($season);
+
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('envoyer_liens_licencies', $request);
+
+            $resultat = $this->inscriptionLinkService->envoyerEnMasse(
+                $enAttente,
+                array_map(strval(...), $request->request->all('licencies')),
+            );
+
+            $this->addFlash(
+                $resultat->envoyes > 0 ? 'success' : 'info',
+                $this->resumeEnvoi($resultat),
+            );
+
+            return $this->redirectToRoute('admin_licencies_list');
+        }
+
+        $joignables = array_filter($enAttente, static fn (Licencie $l): bool => $l->getEmail() !== null);
+
+        return $this->render('admin/licencies/envoyer_liens.html.twig', [
+            'enAttente' => $enAttente,
+            'sansEmail' => count($enAttente) - count($joignables),
+            'sansEquipe' => count(array_filter($joignables, static fn (Licencie $l): bool => $l->getTeam() === null)),
+            // Cochés d'office : ceux dont le formulaire dira la vérité. Un licencié sans équipe
+            // annoncerait la cotisation par défaut de la saison — il reste dans la liste, à
+            // cocher à la main si l'admin le veut quand même.
+            'coches' => array_values(array_map(
+                static fn (Licencie $l): string => (string) $l->getUuid(),
+                array_filter($joignables, static fn (Licencie $l): bool => $l->getTeam() !== null),
+            )),
+            'joignables' => array_values(array_map(
+                static fn (Licencie $l): string => (string) $l->getUuid(),
+                $joignables,
+            )),
+        ]);
+    }
+
+    private function resumeEnvoi(EnvoiLiensResultat $resultat): string
+    {
+        $parties = [sprintf('%d lien%s envoyé%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '')];
+
+        if ($resultat->nonRetenus > 0) {
+            $parties[] = sprintf('%d décoché%s', $resultat->nonRetenus, $resultat->nonRetenus > 1 ? 's' : '');
+        }
+        if ($resultat->sansEmail > 0) {
+            $parties[] = sprintf('%d sans adresse email', $resultat->sansEmail);
+        }
+        if ($resultat->echecs > 0) {
+            $parties[] = sprintf('%d échec%s d\'envoi', $resultat->echecs, $resultat->echecs > 1 ? 's' : '');
+        }
+
+        return implode(', ', $parties) . '.';
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]

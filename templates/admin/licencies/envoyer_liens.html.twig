@@ -1,0 +1,94 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Envoyer les liens d'inscription{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs', route: 'admin_licencies_list' },
+    { label: 'Envoyer les liens' }
+] } %}
+
+<div class="envoi-liens-page">
+    <div class="envoi-liens-card">
+
+        <h1 class="envoi-liens-title">Envoyer les liens d'inscription</h1>
+
+        <hr class="envoi-liens-divider">
+
+        {% if enAttente is empty %}
+            <p class="envoi-liens-empty">Tout le monde a reçu son lien.</p>
+            <div class="envoi-liens-actions">
+                <a href="{{ path('admin_licencies_list') }}" class="btn btn-secondary">Retour</a>
+            </div>
+        {% else %}
+            <form method="post" action="{{ path('admin_licencies_send_links') }}"
+                  class="envoi-liens-form"
+                  x-data='{ retenus: {{ coches|json_encode|raw }}, joignables: {{ joignables|json_encode|raw }} }'>
+                <input type="hidden" name="_token" value="{{ csrf_token('envoyer_liens_licencies') }}">
+
+                <p class="envoi-liens-resume">
+                    <strong>{{ enAttente|length }}</strong> licencié{{ enAttente|length > 1 ? 's' }} en attente
+                    {%- if sansEmail > 0 %}, dont <strong>{{ sansEmail }}</strong> sans adresse email — à prévenir autrement{% endif %}.
+                </p>
+
+                {% if sansEquipe > 0 %}
+                    <div class="envoi-liens-garde-fou">
+                        <p class="envoi-liens-garde-fou-titre">
+                            {{ sansEquipe }} licencié{{ sansEquipe > 1 ? 's' }} sans équipe, décoché{{ sansEquipe > 1 ? 's' }} d'office
+                        </p>
+                        <p class="envoi-liens-garde-fou-texte">
+                            Sans équipe, le formulaire annonce la cotisation par défaut de la saison et n'affiche
+                            pas la dotation propre à l'équipe. Affectez-{{ sansEquipe > 1 ? 'les' : 'le' }} depuis
+                            <a href="{{ path('admin_equipes_index') }}">Équipes</a>, ou cochez-{{ sansEquipe > 1 ? 'les' : 'le' }} quand même.
+                        </p>
+                    </div>
+                {% endif %}
+
+                <div class="envoi-liens-selection">
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = [...joignables]">Tout cocher</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = []">Tout décocher</button>
+                </div>
+
+                <ul class="envoi-liens-list">
+                    {% for licencie in enAttente %}
+                        <li class="envoi-liens-item{{ licencie.email and not licencie.team ? ' envoi-liens-item-alerte' }}">
+                            {% if licencie.email %}
+                                <input type="checkbox"
+                                       name="licencies[]"
+                                       value="{{ licencie.uuid }}"
+                                       class="envoi-liens-case"
+                                       x-model="retenus"
+                                       {{ licencie.team ? 'checked' }}>
+                            {% else %}
+                                <input type="checkbox" class="envoi-liens-case" disabled>
+                            {% endif %}
+                            <span class="envoi-liens-nom">{{ licencie.nomPrenom }}</span>
+                            <span class="envoi-liens-equipe">
+                                {%- if licencie.team %}{{ licencie.team.name }}{% else %}Sans équipe{% endif -%}
+                            </span>
+                            <span class="envoi-liens-email">
+                                {%- if licencie.email %}{{ licencie.email }}{% else %}<span class="envoi-liens-manquant">Pas d'email</span>{% endif -%}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <hr class="envoi-liens-divider">
+
+                <div class="envoi-liens-actions">
+                    <a href="{{ path('admin_licencies_list') }}" class="btn btn-ghost">Annuler</a>
+                    <button type="submit" class="btn btn-primary"
+                            :disabled="retenus.length === 0"
+                            x-text="'Envoyer ' + retenus.length + ' lien' + (retenus.length > 1 ? 's' : '')">
+                        Envoyer {{ coches|length }} lien{{ coches|length > 1 ? 's' }}
+                    </button>
+                </div>
+            </form>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

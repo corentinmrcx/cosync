@@ -1,9 +1,26 @@
 {# Voile plein écran affiché pendant une soumission : `titre` dit ce qui est en cours,
-   `visible` est l'expression Alpine qui le déclenche. #}
+   `visible` est l'expression Alpine qui le déclenche.
+
+   `echec` (optionnel) est l'expression Alpine qui bascule le voile en état d'échec. Sans
+   elle, le voile n'a aucune porte de sortie : si la navigation n'aboutit jamais — CSP qui
+   bloque la redirection, prestataire injoignable, réseau coupé — le licencié reste devant
+   un spinner infini alors que son inscription, elle, est enregistrée. Un testeur s'est
+   retrouvé exactement là après avoir cliqué sur le paiement par carte. #}
+{% set echec = echec|default('false') %}
 <div class="inscription-overlay" x-show="{{ visible }}" x-cloak>
     <div class="inscription-overlay-box">
-        <div class="inscription-overlay-spinner"></div>
-        <p class="inscription-overlay-title">{{ titre }}</p>
-        <p class="inscription-overlay-text">Merci de patienter quelques secondes, ne fermez pas cette page.</p>
+        <div class="inscription-overlay-attente" x-show="!({{ echec }})">
+            <div class="inscription-overlay-spinner"></div>
+            <p class="inscription-overlay-title">{{ titre }}</p>
+            <p class="inscription-overlay-text">Merci de patienter quelques secondes, ne fermez pas cette page.</p>
+        </div>
+
+        {% if lienEchec is defined %}
+            <div class="inscription-overlay-echec" x-show="{{ echec }}" x-cloak>
+                <p class="inscription-overlay-title">{{ titreEchec|default("La redirection n'a pas abouti") }}</p>
+                <p class="inscription-overlay-text">{{ texteEchec|default('') }}</p>
+                <a href="{{ lienEchec }}" class="btn btn-primary btn-block">{{ libelleEchec|default('Continuer') }}</a>
+            </div>
+        {% endif %}
     </div>
 </div>

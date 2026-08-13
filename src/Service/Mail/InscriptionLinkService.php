@@ -2,6 +2,7 @@
 
 namespace App\Service\Mail;
 
+use App\DTO\EnvoiLiensResultat;
 use App\Entity\Licencie;
 use App\Enum\LicenceStatus;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,6 +32,53 @@ final class InscriptionLinkService
             $dossier->setStatus(LicenceStatus::LINK_SENT);
         }
         $this->em->flush();
+    }
+
+    /**
+     * Envoi groupé, une seule fois par licencié : l'import n'envoie plus rien de lui-même,
+     * c'est ici que l'admin déclenche le départ des liens une fois la saison en place.
+     *
+     * La sélection est repassée au crible de la liste réellement en attente plutôt que crue
+     * telle quelle : un uuid ajouté au formulaire ne peut pas faire écrire à quelqu'un qui
+     * n'était pas proposé.
+     *
+     * Un échec SMTP n'interrompt pas la boucle : les liens partis restent partis, le compte
+     * rendu dit combien sont à rejouer.
+     *
+     * @param Licencie[] $licencies    tous les licenciés en attente d'un lien
+     * @param string[]   $uuidsRetenus ceux que l'admin a laissés cochés
+     */
+    public function envoyerEnMasse(array $licencies, array $uuidsRetenus): EnvoiLiensResultat
+    {
+        $retenus = array_flip($uuidsRetenus);
+
+        $envoyes = 0;
+        $echecs = 0;
+        $sansEmail = 0;
+        $nonRetenus = 0;
+
+        foreach ($licencies as $licencie) {
+            if ($licencie->getEmail() === null) {
+                ++$sansEmail;
+
+                continue;
+            }
+
+            if (!isset($retenus[(string) $licencie->getUuid()])) {
+                ++$nonRetenus;
+
+                continue;
+            }
+
+            try {
+                $this->send($licencie);
+                ++$envoyes;
+            } catch (\Throwable) {
+                ++$echecs;
+            }
+        }
+
+        return new EnvoiLiensResultat($envoyes, $echecs, $sansEmail, $nonRetenus);
     }
 
     /**

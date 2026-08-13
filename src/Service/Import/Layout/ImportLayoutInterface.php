@@ -28,9 +28,6 @@ interface ImportLayoutInterface
      */
     public function map(array $row, array $columns): ImportRowData;
 
-    /** Faut-il envoyer automatiquement le lien d'inscription aux nouveaux licenciés ? */
-    public function sendsEmailOnCreate(): bool;
-
     /** Libellé lisible du format, affiché dans le rapport d'import. */
     public function label(): string;
 }

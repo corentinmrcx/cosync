@@ -24,7 +24,7 @@ final class DashboardTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         $labels = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
-        self::assertSame(['Saisons', 'Stock', 'Clés', 'Le club'], $labels);
+        self::assertSame(['Saisons', 'Stock', 'Clés', 'Boutique', 'Le club'], $labels);
 
         $raccourci = $crawler->filter('.dashboard-season a.quicklink');
         self::assertCount(1, $raccourci);
