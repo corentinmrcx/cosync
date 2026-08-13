@@ -96,8 +96,6 @@
 }
 
 /* Seul item de sa grille : il prend toute la largeur du cadre plutôt qu'une demi-colonne */
-.quicklink-wide { max-width: none; }
-
 .quicklink:hover {
     border-color: var(--color-primary);
     box-shadow: var(--shadow-card);

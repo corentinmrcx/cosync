@@ -62,15 +62,11 @@ final class ImportServiceDematerialiseeTest extends ImportIntegrationTestCase
         self::assertEmpty($result->errors, implode(' | ', $result->errors));
     }
 
-    public function testAucunMailEnvoyeSurCeFormat(): void
+    public function testAucunMailEnvoyeALImport(): void
     {
         $season = $this->seedSeasonAndCategories();
 
-        $result = $this->service(ImportService::class)->importFromXlsx($this->fichierComplet(), $season);
-
-        self::assertFalse($result->emailAutoSend);
-        self::assertSame(0, $result->emailsSent);
-        self::assertSame(0, $result->emailsFailed);
+        $this->service(ImportService::class)->importFromXlsx($this->fichierComplet(), $season);
 
         // Aucun mail parti → aucune date d'envoi ni statut « Lien envoyé » : le dossier reste « Importé ».
         /** @var LicencieRepository $licencies */

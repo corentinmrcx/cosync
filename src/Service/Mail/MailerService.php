@@ -7,6 +7,7 @@ use App\Entity\Detenteur;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
 use App\Service\Payment\CotisationResolver;
+use App\Service\Referentiel\ClubSettingsService;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -21,6 +22,7 @@ final class MailerService
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly CotisationResolver $cotisationResolver,
         private readonly PiecesJointesFilter $piecesJointes,
+        private readonly ClubSettingsService $clubSettings,
     ) {}
 
     public function sendInscriptionLink(Licencie $licencie): void
@@ -80,6 +82,32 @@ final class MailerService
                 'documentsJoints' => count($retenus),
             ],
             $retenus,
+        );
+    }
+
+    /**
+     * Annonce la boutique du club, juste après l'accusé de réception.
+     *
+     * Volontairement séparé du mail de confirmation : celui-ci porte le montant dû et les
+     * instructions de paiement, et rien ne doit détourner le licencié de ce qu'il lui reste
+     * à faire. Sans lien de boutique configuré, aucun mail ne part.
+     */
+    public function sendBoutique(Licencie $licencie): void
+    {
+        $url = $this->clubSettings->get()->getBoutiqueUrl();
+
+        if ($url === null || $licencie->getEmail() === null) {
+            return;
+        }
+
+        $this->clubMailer->envoyer(
+            $this->adresseDe($licencie),
+            'La boutique du club',
+            'email/boutique.html.twig',
+            [
+                'licencie' => $licencie,
+                'url' => $url,
+            ],
         );
     }
 

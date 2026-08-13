@@ -123,8 +123,13 @@ class DiagController extends AbstractController
 
         try {
             $counts = $this->purgeService->purgeAll();
-            $total = array_sum($counts);
-            $this->addFlash('success', sprintf('%d enregistrements supprimés. La base est vide et prête pour de nouvelles données de test.', $total));
+            $fichiers = $counts[PurgeService::CLE_FICHIERS_PDF] ?? 0;
+            unset($counts[PurgeService::CLE_FICHIERS_PDF]);
+            $this->addFlash('success', sprintf(
+                '%d enregistrements et %d PDF locaux supprimés. La base est vide et prête pour de nouvelles données de test.',
+                array_sum($counts),
+                $fichiers,
+            ));
         } catch (\Throwable $e) {
             $this->addFlash('error', 'Erreur lors de la purge : ' . $e->getMessage());
         }

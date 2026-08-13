@@ -1,0 +1,4 @@
+parameters:
+    # La purge du mode beta vide ce répertoire : sans cette surcharge, `make test`
+    # effacerait les PDF signés en attente d'upload Drive de la machine de dev.
+    app.pdf_dir: '%kernel.project_dir%/var/test-pdfs'

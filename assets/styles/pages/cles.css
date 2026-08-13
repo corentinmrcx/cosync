@@ -203,36 +203,13 @@
     color: var(--color-text-body);
 }
 
-/* — Modale de mouvement — */
-.cles-modal {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    background: rgb(0 0 0 / 0.45);
-    z-index: 50;
-}
-
+/* — Modales : voile, cadre et champs viennent des composants communs. Reste ici
+     la phrase d'introduction, propre à ces deux formulaires. — */
 .cles-modal-hint {
     margin: 0;
     font-size: var(--font-size-xs);
     line-height: 1.5;
     color: var(--color-text-muted);
-}
-
-/* — Formulaire — */
-.cles-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.cles-form-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
 }
 
 /* — Éditeur du texte d'attestation — */

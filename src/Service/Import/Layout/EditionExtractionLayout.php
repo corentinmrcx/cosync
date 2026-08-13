@@ -73,11 +73,6 @@ final class EditionExtractionLayout implements ImportLayoutInterface
         );
     }
 
-    public function sendsEmailOnCreate(): bool
-    {
-        return true;
-    }
-
     public function label(): string
     {
         return 'Éditions et extractions';

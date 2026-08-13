@@ -1,0 +1,43 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Lien de la boutique{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Boutique', route: 'admin_boutique_index' },
+    { label: 'Lien de la boutique' }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+
+        <h1 class="season-form-header">Lien de la boutique</h1>
+        <p class="config-teams-intro">
+            Affiché au licencié sur la page de confirmation de son inscription, et envoyé
+            par mail juste après la soumission de son formulaire. Il appartient au club :
+            il reste valable d'une saison à l'autre.
+        </p>
+        <hr class="season-form-divider">
+
+        <div class="field">
+            {{ form_label(form.boutiqueUrl) }}
+            {{ form_widget(form.boutiqueUrl) }}
+            {{ form_help(form.boutiqueUrl) }}
+            {{ form_errors(form.boutiqueUrl) }}
+        </div>
+
+        {% if club_boutique_url %}
+            <p class="config-teams-intro">
+                Lien actuel :
+                <a href="{{ club_boutique_url }}" target="_blank" rel="noopener noreferrer">{{ club_boutique_url }}</a>
+            </p>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

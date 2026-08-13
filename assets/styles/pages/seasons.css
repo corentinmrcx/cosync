@@ -243,6 +243,85 @@
     margin: 0;
 }
 
+/* — Rattrapage d'affectation automatique — */
+
+.config-affectation {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.config-affectation-titre {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-body);
+    margin: 0;
+}
+
+/* Le récapitulatif est la dernière chose lue avant d'écrire sur tout un effectif :
+   il se détache du reste de la carte pour qu'on ne confirme pas sans l'avoir vu. */
+.config-affectation-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.875rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+}
+
+.config-affectation-confirm-titre {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-base);
+    margin: 0;
+}
+
+.config-affectation-liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.config-affectation-ligne {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+}
+
+.config-affectation-equipe {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-affectation-nombre {
+    flex: none;
+    font-weight: 700;
+    color: var(--color-success);
+}
+
+.config-affectation-actions {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+}
+
+.config-affectation-reste {
+    font-size: var(--font-size-xs);
+    color: var(--color-warning);
+    margin: 0;
+}
+
 /* ============================================================
    Page cotisations
    ============================================================ */

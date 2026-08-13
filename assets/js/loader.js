@@ -21,6 +21,13 @@ document.addEventListener('click', (e) => {
 // Soumissions de formulaires (après confirm() éventuel)
 document.addEventListener('submit', () => show());
 
+// Un blocage CSP laisse la page en place : sans ça la barre courrait indéfiniment sur une
+// navigation qui n'aura jamais lieu. C'est le cas du bouton « Payer » de la confirmation,
+// dont la redirection vers HelloAsso passe par form-action.
+document.addEventListener('securitypolicyviolation', (e) => {
+    if (bar && e.violatedDirective.startsWith('form-action')) bar.classList.remove('loader-running');
+});
+
 // Bfcache : réinitialiser si l'utilisateur revient en arrière
 window.addEventListener('pageshow', (e) => {
     if (e.persisted && bar) bar.classList.remove('loader-running');

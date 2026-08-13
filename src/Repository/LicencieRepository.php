@@ -106,6 +106,56 @@ class LicencieRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Licenciés qui n'ont jamais reçu leur lien d'inscription.
+     *
+     * C'est `linkSentAt` qui fait foi, pas le statut du dossier : le statut peut avoir
+     * avancé par une saisie admin, l'envoi du mail est un fait daté.
+     *
+     * @return Licencie[]
+     */
+    public function findLienJamaisEnvoye(Season $season): array
+    {
+        return $this->queryLienJamaisEnvoye($season)
+            ->leftJoin('l.team', 't')
+            ->addSelect('t')
+            ->orderBy('l.nom', 'ASC')
+            ->addOrderBy('l.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countLienJamaisEnvoye(Season $season): int
+    {
+        return (int) $this->queryLienJamaisEnvoye($season)
+            ->select('COUNT(l.uuid)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function queryLienJamaisEnvoye(Season $season): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->createQueryBuilder('l')
+            ->where('l.season = :season')
+            ->andWhere('l.linkSentAt IS NULL')
+            ->setParameter('season', $season);
+    }
+
+    /** @return Licencie[] */
+    public function findSansEquipe(Season $season): array
+    {
+        return $this->createQueryBuilder('l')
+            ->join('l.category', 'c')
+            ->addSelect('c')
+            ->where('l.season = :season')
+            ->andWhere('l.team IS NULL')
+            ->setParameter('season', $season)
+            ->orderBy('l.nom', 'ASC')
+            ->addOrderBy('l.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     /** @return Licencie[] */
     public function findWithFilters(
         Season $season,

@@ -14,6 +14,10 @@ parameters:
     club_email_expediteur_defaut: 'soudron.fr@marne.lgef.fr'
     club_nom_expediteur_defaut: 'Foyer de Soudron'
 
+    # Répertoire des PDF signés en attente d'archivage Drive. Surchargé en environnement de
+    # test : la purge y efface tout, et les tests ne doivent pas toucher aux vraies signatures.
+    app.pdf_dir: '%kernel.project_dir%/var/pdfs'
+
 services:
     # default configuration for services in *this* file
     _defaults:

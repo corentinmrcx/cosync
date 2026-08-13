@@ -43,6 +43,37 @@ class TeamRepository extends ServiceEntityRepository
     }
 
     /**
+     * Équipe unique de chaque catégorie de la saison, indexée par id de catégorie.
+     *
+     * Même règle que findForCategory(), mais résolue en une requête : une catégorie
+     * couverte par deux équipes (« U15 A » et « U15 B ») est absente du tableau, aucune
+     * règle ne permettant de trancher.
+     *
+     * @return array<int, Team>
+     */
+    public function mapCategorieVersEquipeUnique(Season $season): array
+    {
+        $uniques = [];
+        $ambigues = [];
+
+        foreach ($this->findBySeason($season) as $team) {
+            foreach ($team->getCategories() as $category) {
+                $categoryId = (int) $category->getId();
+
+                if (isset($uniques[$categoryId])) {
+                    $ambigues[$categoryId] = true;
+
+                    continue;
+                }
+
+                $uniques[$categoryId] = $team;
+            }
+        }
+
+        return array_diff_key($uniques, $ambigues);
+    }
+
+    /**
      * Retourne l'équipe unique ayant cette catégorie dans la saison.
      * Si plusieurs équipes la partagent, retourne null (ambiguïté).
      */

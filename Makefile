@@ -112,8 +112,23 @@ prod-down:
 # Le dump précède la migration : la prod contient des données irremplaçables et
 # PostgreSQL annule une migration qui plante, mais pas une migration qui « réussit »
 # en perdant des données (cf. CLAUDE.md §13).
-prod-deploy: prod-build prod-up prod-backup prod-migrate
+prod-deploy: prod-build prod-up prod-nginx-recreate prod-backup prod-migrate
 	@echo "Déploiement terminé."
+
+# nginx.prod.conf est monté en bind mount de fichier unique : Docker résout l'inode au
+# moment où le conteneur est créé. `git pull` ne modifie pas le fichier, il en écrit un
+# nouveau et le renomme par-dessus — nouvel inode. Le conteneur reste donc accroché à
+# l'ancien contenu, et `up -d` ne le recrée pas puisque ni son image ni sa définition
+# n'ont changé. Un `nginx -s reload` n'y peut rien non plus : il relit le même vieux
+# fichier. Seule la recréation re-résout le montage.
+#
+# Trois déploiements du correctif de CSP sont partis sans jamais atteindre un navigateur
+# à cause de ça. La configuration est validée dans un conteneur jetable d'abord : une
+# erreur de syntaxe échoue le déploiement au lieu de laisser le service par terre.
+prod-nginx-recreate:
+	$(COMPOSE_PROD) run --rm --no-deps -T nginx nginx -t
+	$(COMPOSE_PROD) up -d --force-recreate nginx
+	@echo "Conteneur Nginx recréé sur la configuration courante."
 
 prod-migrate:
 	$(COMPOSE_PROD) exec php php bin/console doctrine:migrations:migrate --no-interaction
