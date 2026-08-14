@@ -11,6 +11,7 @@ use App\Repository\DirigeantRepository;
 use App\Repository\DocumentSignableRepository;
 use App\Repository\DocumentSignatureRepository;
 use App\Repository\LicencieRepository;
+use App\Service\Drive\DriveFilenameSanitizer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -31,6 +32,7 @@ final class DocumentSignableService
         private readonly LicencieRepository $licencieRepository,
         private readonly DocumentRequirementResolver $requirementResolver,
         private readonly RichTextSanitizer $sanitizer,
+        private readonly DriveFilenameSanitizer $filenameSanitizer,
     ) {}
 
     public function creer(DocumentSignableData $data, Season $season): DocumentSignable
@@ -149,16 +151,26 @@ final class DocumentSignableService
     /** Identifiant stable dérivé du titre : « Charte communication » → « charte_communication ». */
     private function slug(string $titre): string
     {
-        $slug = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $titre) ?: $titre;
-        $slug = strtolower((string) preg_replace('/[^A-Za-z0-9]+/', '_', $slug));
-
-        return substr(trim($slug, '_'), 0, 60);
+        return substr(trim($this->filenameSanitizer->sanitize($titre), '_'), 0, 60);
     }
 
-    /** Préfixe des PDF archivés : « charte_communication » → « CHARTE_COMMUNICATION ». */
+    /**
+     * Préfixe des PDF archivés : « reglement_interieur » → « reglement_interieur_dupont_thomas.pdf ».
+     *
+     * La colonne fait 30 caractères : un titre plus long est coupé sur un séparateur, pas
+     * en plein mot — « reglement_interieur_des » se lit, « reglement_interieur_des_dirige »
+     * ressemble à un fichier corrompu.
+     */
     private function filePrefix(string $code): string
     {
-        return substr(strtoupper($code), 0, 30);
+        if (strlen($code) <= 30) {
+            return $code;
+        }
+
+        $coupe = substr($code, 0, 30);
+        $separateur = strrpos($coupe, '_');
+
+        return trim($separateur !== false && $separateur >= 10 ? substr($coupe, 0, $separateur) : $coupe, '_');
     }
 
     /** Nom du sous-dossier Drive : le titre lisible, sans slash qui créerait un niveau parasite. */

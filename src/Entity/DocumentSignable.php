@@ -88,7 +88,7 @@ class DocumentSignable
     #[ORM\Column(type: 'json')]
     private array $driveSegments = [];
 
-    /** Préfixe du nom de fichier PDF archivé (ex : « RI » → RI_DUPONT_Thomas.pdf) */
+    /** Préfixe du nom de fichier PDF archivé (ex : « ri » → ri_dupont_thomas.pdf) */
     #[ORM\Column(length: 30)]
     private string $filePrefix;
 

@@ -113,6 +113,6 @@ final class DocumentFixtures
             ->setActif($actif)
             ->setSortOrder($sortOrder)
             ->setDriveSegments(['Documents signés', $titre])
-            ->setFilePrefix(strtoupper(substr($code, 0, 30)));
+            ->setFilePrefix(substr($code, 0, 30));
     }
 }

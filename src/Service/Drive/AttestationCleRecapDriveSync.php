@@ -20,7 +20,9 @@ final class AttestationCleRecapDriveSync
     /** @var string[] */
     private const DRIVE_PATH = ['Club house', 'Clés'];
 
-    private const FILENAME = 'Detenteurs des cles - Recapitulatif.pdf';
+    // Nom en minuscules sans espace, comme tous les documents archivés : c'est aussi la
+    // clé de remplacement du fichier sur Drive, le renommer y laisserait un doublon.
+    private const FILENAME = 'detenteurs_des_cles_recapitulatif.pdf';
 
     public function __construct(
         private readonly AttestationCleRecapService $recapService,
