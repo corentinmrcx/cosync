@@ -66,7 +66,8 @@ final class DotationSuiviPresenter
 
     /**
      * Besoins de la saison regroupés par équipe. Dans chaque équipe, les personnes sont triées
-     * par nom (tri du repository), mais celles entièrement servies passent en fin de liste :
+     * par nom (tri du repository), mais celles entièrement servies passent en fin de liste, et
+     * chez une personne partiellement servie les lignes déjà remises passent sous les autres :
      * l'écran sert à préparer ce qui reste à remettre.
      *
      * @return list<DotationSuiviGroupe>
@@ -76,7 +77,9 @@ final class DotationSuiviPresenter
         $groupes = [];
 
         foreach ($this->besoinsParEquipeEtPersonne($season) as $equipe => $personnes) {
-            $ordonnes = $this->aplatir($this->personnesNonServiesDAbord($personnes));
+            $ordonnes = $this->aplatir($this->personnesNonServiesDAbord(
+                array_map($this->remisesEnFin(...), $personnes),
+            ));
 
             $groupes[] = new DotationSuiviGroupe(
                 (string) $equipe,
@@ -145,6 +148,24 @@ final class DotationSuiviPresenter
         }
 
         return [...$aServir, ...$servies];
+    }
+
+    /**
+     * Lignes d'une même personne : ce qui reste à remettre d'abord, ce qui est déjà remis à la
+     * fin. Le tri de PHP étant stable, l'ordre du repository survit à l'intérieur de chaque bloc.
+     *
+     * @param list<DotationBesoin> $besoins
+     *
+     * @return list<DotationBesoin>
+     */
+    private function remisesEnFin(array $besoins): array
+    {
+        usort(
+            $besoins,
+            fn (DotationBesoin $a, DotationBesoin $b): int => $this->estDonne($a) <=> $this->estDonne($b),
+        );
+
+        return $besoins;
     }
 
     /**
