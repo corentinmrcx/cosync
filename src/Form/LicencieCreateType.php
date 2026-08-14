@@ -6,6 +6,7 @@ use App\DTO\LicencieCreateData;
 use App\Entity\Category;
 use App\Entity\Team;
 use App\Enum\NatureLicence;
+use App\Repository\CategoryRepository;
 use App\Repository\TeamRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -25,6 +26,8 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 /** @extends AbstractType<LicencieCreateData> */
 class LicencieCreateType extends AbstractType
 {
+    public function __construct(private readonly CategoryRepository $categoryRepo) {}
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -50,6 +53,7 @@ class LicencieCreateType extends AbstractType
             ])
             ->add('category', EntityType::class, [
                 'class' => Category::class,
+                'choices' => $this->categoryRepo->findAllOrdered(),
                 'choice_label' => fn (Category $c): string => $c->getCode(),
                 'label' => 'Catégorie',
                 'placeholder' => '— Sélectionner —',

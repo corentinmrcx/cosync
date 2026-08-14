@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\DTO\LicencieIdentityData;
 use App\Entity\Category;
+use App\Repository\CategoryRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -17,6 +18,8 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 /** @extends AbstractType<LicencieIdentityData> */
 class LicencieIdentityType extends AbstractType
 {
+    public function __construct(private readonly CategoryRepository $categoryRepo) {}
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -42,6 +45,7 @@ class LicencieIdentityType extends AbstractType
             ])
             ->add('category', EntityType::class, [
                 'class' => Category::class,
+                'choices' => $this->categoryRepo->findAllOrdered(),
                 'choice_label' => fn (Category $c): string => $c->getCode(),
                 'label' => 'Catégorie',
                 'placeholder' => '— Sélectionner —',
