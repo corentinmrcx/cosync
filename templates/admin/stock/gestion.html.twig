@@ -12,6 +12,7 @@
 
 <div class="stock-dashboard-page" x-data="stockMouvementModal({
         urlMouvement: '{{ path('admin_stock_items_movement', {id: '__ID__'}) }}',
+        urlArticle: '{{ path('admin_stock_items_edit', {id: '__ID__'}) }}',
         ordreTailles: {{ tailles_toutes()|json_encode }},
      })">
 
@@ -185,17 +186,26 @@
                     </div>
                 </div>
 
-                <div class="field">
+                {# Les tailles proposées suivent le type de l'article : pointures pour les pieds,
+                   tailles de vêtement pour le reste, aucune pour l'épicerie. #}
+                <div class="field" x-show="taillesOptions.length" x-cloak>
                     <label class="field-label">Taille <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(optionnel)</span></label>
                     <select name="taille" x-model="taille" class="field-input">
                         <option value="">— Sans taille —</option>
-                        {% for t in taillesConnues %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                        <template x-for="t in taillesOptions" :key="t">
+                            <option :value="t" x-text="t"></option>
+                        </template>
                     </select>
                     <span class="stock-modal-dispo"
                           x-show="taille && action !== 'entree'"
                           :class="{ 'is-empty': dispoTaille <= 0 }"
                           x-text="'Disponible en ' + taille + ' : ' + dispoTaille"></span>
                 </div>
+
+                <p class="stock-modal-hint" x-show="!taillesOptions.length && typeVetementARenseigner" x-cloak>
+                    Cet article n'a pas de déclinaison de taille. Renseignez son
+                    <a :href="urlArticle">type de vêtement</a> pour gérer le stock par taille.
+                </p>
 
                 <div class="field" x-show="action === 'dotation'" x-transition>
                     <label class="field-label">Licencié <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(paiement confirmé uniquement)</span></label>
@@ -230,11 +240,15 @@
 </div>
 
 
-{# Tokens CSRF + stock par taille (JSON) cachés pour chaque item, lus par la modale #}
+{# Tokens CSRF + tailles de chaque article (stock et options), lus par la modale #}
 {% for section in summary %}
     {% for row in section.items %}
         <input type="hidden" id="csrf-{{ row.item.id }}" value="{{ csrf_token('stock_movement_' ~ row.item.id) }}">
-        <input type="hidden" id="tailles-{{ row.item.id }}" value="{{ row.taillesMap|json_encode }}">
+        <input type="hidden" id="tailles-{{ row.item.id }}" value="{{ {
+            stock: row.taillesMap,
+            options: row.taillesOptions,
+            typeARenseigner: row.typeVetementARenseigner,
+        }|json_encode }}">
     {% endfor %}
 {% endfor %}
 

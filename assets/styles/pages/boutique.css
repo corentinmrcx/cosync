@@ -1,0 +1,45 @@
+/* ============================================================
+   Page « Boutique » — interrupteur d'ouverture
+   ============================================================ */
+
+.boutique-switch-form {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.boutique-switch-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.boutique-switch {
+    display: flex;
+    align-items: center;
+    width: 2.75rem;
+    padding: 0.15rem;
+    background: var(--color-border-strong);
+    border: none;
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.boutique-switch:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.boutique-switch-on {
+    background: var(--color-success);
+    justify-content: flex-end;
+}
+
+.boutique-switch-knob {
+    width: 1.15rem;
+    height: 1.15rem;
+    background: var(--color-bg-page);
+    border-radius: 50%;
+    box-shadow: var(--shadow-card);
+}

@@ -33,9 +33,10 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
             // Coordonnées bancaires du club : lues par le formulaire public, la page de
             // confirmation et le mail de confirmation, rendus depuis trois contextes différents.
             'club_rib' => $club,
-            // Lien de la boutique du club, ou null tant qu'aucun n'est saisi : les écrans
-            // et les mails qui l'annoncent se taisent alors au lieu d'afficher un lien mort.
-            'club_boutique_url' => $club->getBoutiqueUrl(),
+            // Lien de la boutique du club, ou null tant qu'elle n'est pas ouverte : les écrans
+            // et les mails qui l'annoncent se taisent alors au lieu d'afficher un lien mort —
+            // ou un lien préparé d'avance, avant que le club veuille en parler.
+            'club_boutique_url' => $club->getBoutiqueUrlPublique(),
             'navbar_current_season' => $this->seasonContext->getCurrentSeason(),
             'navbar_seasons' => $this->seasonRepository->findBy([], ['createdAt' => 'DESC']),
         ];

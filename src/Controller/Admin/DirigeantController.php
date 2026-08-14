@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
 use App\DTO\DirigeantData;
+use App\DTO\EnvoiGroupeResultat;
 use App\DTO\FiltreListe;
 use App\Entity\Dirigeant;
 use App\Entity\Season;
@@ -92,7 +93,74 @@ class DirigeantController extends AbstractController
             'search' => $search,
             'filterGroups' => $filterGroups,
             'activeFilterCount' => FiltreListe::compterActifs($filterGroups),
+            'liensEnAttente' => $this->dirigeantRepo->countLienJamaisEnvoye($season),
         ]);
+    }
+
+    /**
+     * Envoi groupé des liens de formulaire dirigeant.
+     *
+     * Même règle que pour les licenciés : ni l'import ni la création manuelle n'écrivent
+     * d'eux-mêmes. L'envoi est une décision, prise sur cet écran qui montre les
+     * destinataires avant tout départ.
+     *
+     * Déclaré avant la route `/{uuid}` : sans cela, « envoyer-liens » serait lu comme un uuid.
+     */
+    #[Route('/envoyer-liens', name: 'send_links', methods: ['GET', 'POST'])]
+    public function sendLinks(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $enAttente = $this->dirigeantRepo->findLienJamaisEnvoye($season);
+
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('envoyer_liens_dirigeants', $request);
+
+            $resultat = $this->linkService->envoyerEnMasse(
+                $enAttente,
+                array_map(strval(...), $request->request->all('dirigeants')),
+            );
+
+            $this->addFlash(
+                $resultat->envoyes > 0 ? 'success' : 'info',
+                $this->resumeEnvoi($resultat),
+            );
+
+            return $this->redirectToRoute('admin_dirigeants_list');
+        }
+
+        $joignables = array_values(array_filter(
+            $enAttente,
+            static fn (Dirigeant $d): bool => $d->getEmail() !== null,
+        ));
+
+        return $this->render('admin/dirigeants/envoyer_liens.html.twig', [
+            'enAttente' => $enAttente,
+            'sansEmail' => count($enAttente) - count($joignables),
+            // Tous cochés d'office : le formulaire dirigeant ne dépend d'aucune donnée
+            // encore à saisir côté admin — il n'y a rien qui puisse y sonner faux.
+            'joignables' => array_map(
+                static fn (Dirigeant $d): string => (string) $d->getUuid(),
+                $joignables,
+            ),
+        ]);
+    }
+
+    private function resumeEnvoi(EnvoiGroupeResultat $resultat): string
+    {
+        $parties = [sprintf('%d lien%s envoyé%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '')];
+
+        if ($resultat->nonRetenus > 0) {
+            $parties[] = sprintf('%d décoché%s', $resultat->nonRetenus, $resultat->nonRetenus > 1 ? 's' : '');
+        }
+        if ($resultat->sansEmail > 0) {
+            $parties[] = sprintf('%d sans adresse email', $resultat->sansEmail);
+        }
+        if ($resultat->echecs > 0) {
+            $parties[] = sprintf('%d échec%s d\'envoi', $resultat->echecs, $resultat->echecs > 1 ? 's' : '');
+        }
+
+        return implode(', ', $parties) . '.';
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
@@ -101,21 +169,35 @@ class DirigeantController extends AbstractController
         #[CurrentSeason] Season $season,
     ): Response {
         $data = new DirigeantData();
-        $form = $this->createForm(DirigeantType::class, $data, ['season' => $season]);
+        $form = $this->createForm(DirigeantType::class, $data, ['season' => $season, 'envoi_lien' => true]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $dirigeant = $this->dirigeantService->create($data, $season);
-                $message = $dirigeant->getEmail() !== null
-                    ? $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant. Lien envoyé par email.'
-                    : $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant (aucune adresse email renseignée).';
-                $this->addFlash('success', $message);
-
-                return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
             } catch (\DomainException $e) {
                 $this->addFlash('error', $e->getMessage());
+
+                return $this->render('admin/dirigeants/form.html.twig', [
+                    'form' => $form,
+                    'dirigeant' => null,
+                    'roleOptions' => DirigeantRole::options(),
+                    'licenciesSizes' => $this->formPrefill->parUuid($season),
+                ]);
             }
+
+            if ($form->get('sendLink')->getData() === true && $dirigeant->getEmail() !== null) {
+                try {
+                    $this->linkService->send($dirigeant);
+                    $this->addFlash('success', $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant. Lien envoyé par email.');
+                } catch (\Throwable) {
+                    $this->addFlash('warning', $dirigeant->getNomPrenom() . ' ajouté(e), mais l\'envoi du mail a échoué. Vérifiez la configuration SMTP.');
+                }
+            } else {
+                $this->addFlash('success', $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant.');
+            }
+
+            return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
         }
 
         return $this->render('admin/dirigeants/form.html.twig', [

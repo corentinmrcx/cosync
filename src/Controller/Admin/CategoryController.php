@@ -41,7 +41,7 @@ class CategoryController extends AbstractController
             return $this->redirectToRoute('admin_categories_index');
         }
 
-        $categories = $this->categoryRepo->findBy([], ['id' => 'ASC']);
+        $categories = $this->categoryRepo->findAllOrdered();
         $counts = [];
         foreach ($categories as $cat) {
             $counts[$cat->getId()] = $this->licencieRepo->countByCategory($cat);

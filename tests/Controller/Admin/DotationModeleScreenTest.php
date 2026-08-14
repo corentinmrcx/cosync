@@ -89,11 +89,10 @@ final class DotationModeleScreenTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
         $token = $crawler->filter('form[action$="/affectations"] input[name="_token"]')->attr('value');
 
-        $client->request('POST', '/admin/dotations/affectations', [
+        $client->request('POST', '/admin/dotations/' . $modele->getId() . '/affectations', [
             '_token' => $token,
-            'modele_id' => $modele->getId(),
             'cible_type' => 'team',
-            'cible_id' => $team->getId(),
+            'cible_ids' => [(string) $team->getId()],
         ]);
 
         // On revient sur la page du kit, pas sur l'index.
@@ -106,6 +105,113 @@ final class DotationModeleScreenTest extends WebTestCase
             'Ne remplit pas de formulaire d\'inscription',
             $html,
             'Un kit attribué à une équipe de joueurs n\'annonce pas ce qu\'un dirigeant recevrait.',
+        );
+    }
+
+    /**
+     * Le geste que l'écran doit permettre : donner le kit à plusieurs équipes d'un coup,
+     * au lieu de refaire l'attribution autant de fois qu'il y a d'équipes.
+     */
+    public function testPlusieursCiblesSontAttribueesEnUnSeulEnvoi(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+        $modele = $this->makeKit();
+
+        $u15 = (new Team())->setName('U15 A')->setSeason($this->season);
+        $u17 = (new Team())->setName('U17')->setSeason($this->season);
+        $seniors = (new Team())->setName('Séniors 1')->setSeason($this->season);
+        $this->em->persist($u15);
+        $this->em->persist($u17);
+        $this->em->persist($seniors);
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
+        $token = $crawler->filter('form[action$="/affectations"] input[name="_token"]')->attr('value');
+
+        // Les trois équipes sont proposées à la coche dans la liste déroulante des destinataires.
+        $proposees = $crawler->filter('[x-ref="panneau-team"] .cselect-option')->each(
+            static fn ($li): string => $li->attr('data-label'),
+        );
+        self::assertSame(['séniors 1', 'u15 a', 'u17'], $proposees);
+
+        $client->request('POST', '/admin/dotations/' . $modele->getId() . '/affectations', [
+            '_token' => $token,
+            'cible_type' => 'team',
+            'cible_ids' => [(string) $u15->getId(), (string) $u17->getId(), (string) $seniors->getId()],
+        ]);
+
+        self::assertResponseRedirects('/admin/dotations/' . $modele->getId() . '/modifier');
+        $crawler = $client->followRedirect();
+        $html = $crawler->html();
+
+        foreach (['U15 A', 'U17', 'Séniors 1'] as $nom) {
+            self::assertStringContainsString('Équipe — ' . $nom, $html);
+        }
+
+        // Ce que le kit dote déjà revient verrouillé dans la liste : plus moyen d'en faire un doublon.
+        self::assertCount(
+            3,
+            $crawler->filter('[x-ref="panneau-team"] .cselect-option-locked'),
+            'Les trois équipes attribuées sont verrouillées dans le sélecteur.',
+        );
+    }
+
+    /** La cible par défaut ne désigne personne : elle ne se pose qu'une fois. */
+    public function testLeKitParDefautNeSePoseQuUneFois(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+        $modele = $this->makeKit();
+
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
+        $token = $crawler->filter('form[action$="/affectations"] input[name="_token"]')->attr('value');
+
+        foreach ([1, 2] as $ignore) {
+            $client->request('POST', '/admin/dotations/' . $modele->getId() . '/affectations', [
+                '_token' => $token,
+                'cible_type' => 'default',
+            ]);
+            $client->followRedirect();
+        }
+
+        $this->em->clear();
+
+        self::assertCount(
+            1,
+            $this->em->getRepository(DotationAffectation::class)->findBy(['modele' => $modele->getId()]),
+            'Le second envoi est refusé plutôt que d\'ajouter un second défaut.',
+        );
+    }
+
+    /** Deux admins en parallèle ne doivent pas doubler une attribution déjà posée. */
+    public function testUneCibleDejaAttribueeNEstPasDoublee(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+        $modele = $this->makeKit();
+
+        $team = (new Team())->setName('U13')->setSeason($this->season);
+        $this->em->persist($team);
+        $this->em->persist((new DotationAffectation())->setSeason($this->season)->setModele($modele)->setTeam($team));
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
+        $token = $crawler->filter('form[action$="/affectations"] input[name="_token"]')->attr('value');
+
+        $client->request('POST', '/admin/dotations/' . $modele->getId() . '/affectations', [
+            '_token' => $token,
+            'cible_type' => 'team',
+            'cible_ids' => [(string) $team->getId()],
+        ]);
+
+        self::assertResponseRedirects('/admin/dotations/' . $modele->getId() . '/modifier');
+        $this->em->clear();
+
+        self::assertCount(
+            1,
+            $this->em->getRepository(DotationAffectation::class)->findBy(['modele' => $modele->getId()]),
+            'La cible déjà dotée est ignorée, pas enregistrée deux fois.',
         );
     }
 

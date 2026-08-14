@@ -3,7 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
-use App\DTO\EnvoiLiensResultat;
+use App\DTO\EnvoiGroupeResultat;
 use App\DTO\FiltreListe;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
@@ -169,7 +169,7 @@ class LicencieController extends AbstractController
         ]);
     }
 
-    private function resumeEnvoi(EnvoiLiensResultat $resultat): string
+    private function resumeEnvoi(EnvoiGroupeResultat $resultat): string
     {
         $parties = [sprintf('%d lien%s envoyé%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '')];
 

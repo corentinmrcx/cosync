@@ -457,6 +457,27 @@
     gap: 0.625rem;
 }
 
+/* — Qui reçoit ce kit : plusieurs destinataires en un envoi — */
+.dot-attribuer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+}
+
+/* Le panneau reste un <fieldset> pour ne rien poster quand il est masqué : on lui retire
+   la bordure et les marges que le navigateur lui donne par défaut. */
+.dot-pick {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+}
+
 /* Barre « ajouter un article » : contrôle large, quantité étroite, bouton compact. */
 .dot-add-row {
     display: flex;
@@ -770,6 +791,9 @@
     .dot-inline,
     .dot-add-row { flex-direction: column; align-items: stretch; }
     .dot-text-qty { flex-basis: auto; }
+
+    /* Choix des destinataires : le bouton d'attribution prend la largeur */
+    .dot-attribuer .dot-choix-actions > .btn { width: 100%; justify-content: center; }
     
     .dot-btn-ghost-start { align-self: stretch; }
 

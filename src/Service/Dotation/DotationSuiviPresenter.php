@@ -10,6 +10,7 @@ use App\Entity\Season;
 use App\Enum\DotationAvancementStatut;
 use App\Enum\DotationBesoinStatut;
 use App\Repository\DotationBesoinRepository;
+use App\Service\Stock\StockTailleResolver;
 
 /**
  * Met en forme les besoins de dotation pour les écrans d'administration.
@@ -20,6 +21,7 @@ final class DotationSuiviPresenter
     public function __construct(
         private readonly DotationBesoinRepository $besoinRepository,
         private readonly DotationResolver $resolver,
+        private readonly StockTailleResolver $tailles,
     ) {}
 
     /**
@@ -64,7 +66,8 @@ final class DotationSuiviPresenter
 
     /**
      * Besoins de la saison regroupés par équipe. Dans chaque équipe, les personnes sont triées
-     * par nom (tri du repository), mais celles entièrement servies passent en fin de liste :
+     * par nom (tri du repository), mais celles entièrement servies passent en fin de liste, et
+     * chez une personne partiellement servie les lignes déjà remises passent sous les autres :
      * l'écran sert à préparer ce qui reste à remettre.
      *
      * @return list<DotationSuiviGroupe>
@@ -74,7 +77,9 @@ final class DotationSuiviPresenter
         $groupes = [];
 
         foreach ($this->besoinsParEquipeEtPersonne($season) as $equipe => $personnes) {
-            $ordonnes = $this->aplatir($this->personnesNonServiesDAbord($personnes));
+            $ordonnes = $this->aplatir($this->personnesNonServiesDAbord(
+                array_map($this->remisesEnFin(...), $personnes),
+            ));
 
             $groupes[] = new DotationSuiviGroupe(
                 (string) $equipe,
@@ -85,6 +90,27 @@ final class DotationSuiviPresenter
         }
 
         return $groupes;
+    }
+
+    /**
+     * Tailles proposées à la correction d'un besoin, article par article : une paire de
+     * chaussettes se corrige en pointures, un maillot en tailles de vêtement.
+     *
+     * @param list<DotationSuiviGroupe> $groupes
+     *
+     * @return array<int, list<string>>
+     */
+    public function taillesParBesoin(array $groupes): array
+    {
+        $out = [];
+
+        foreach ($groupes as $groupe) {
+            foreach ($groupe->besoins as $besoin) {
+                $out[$besoin->getId()] = $this->tailles->options($besoin->getStockItem());
+            }
+        }
+
+        return $out;
     }
 
     /** @return array<string, array<string, list<DotationBesoin>>> */
@@ -122,6 +148,24 @@ final class DotationSuiviPresenter
         }
 
         return [...$aServir, ...$servies];
+    }
+
+    /**
+     * Lignes d'une même personne : ce qui reste à remettre d'abord, ce qui est déjà remis à la
+     * fin. Le tri de PHP étant stable, l'ordre du repository survit à l'intérieur de chaque bloc.
+     *
+     * @param list<DotationBesoin> $besoins
+     *
+     * @return list<DotationBesoin>
+     */
+    private function remisesEnFin(array $besoins): array
+    {
+        usort(
+            $besoins,
+            fn (DotationBesoin $a, DotationBesoin $b): int => $this->estDonne($a) <=> $this->estDonne($b),
+        );
+
+        return $besoins;
     }
 
     /**

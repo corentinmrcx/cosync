@@ -48,7 +48,7 @@ final class AttestationCleDriveSync extends LocalFileDriveSync
                 // La date de signature est dans le nom : une re-signature en cours de
                 // saison (clé supplémentaire remise) ajoute un document, elle n'en
                 // remplace pas un — les deux font foi à leur date.
-                'Attestation_cle_%s_%s_%s.pdf',
+                'attestation_cle_%s_%s_%s.pdf',
                 $this->sanitizer->sanitize($detenteur->getNom()),
                 $this->sanitizer->sanitize($detenteur->getPrenom()),
                 ($sujet->getSignedAt() ?? $sujet->getCreatedAt())->format('Y-m-d'),

@@ -7,6 +7,8 @@ use App\Entity\StockCategory;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
 use App\Entity\User;
+use App\Enum\StockItemKind;
+use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Repository\StockCategoryRepository;
@@ -49,6 +51,37 @@ final class StockEcransTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('Veste de survêtement', $html);
         self::assertStringContainsString('Stock bas', $html, '5 en stock pour un seuil de 5.');
+    }
+
+    /**
+     * La modale de mouvement est unique : c'est le serveur qui dépose, article par article,
+     * la liste de tailles qu'elle proposera. Une paire de chaussettes se réassortit en
+     * pointures, une bouteille sans taille du tout.
+     */
+    public function testChaqueArticleExposeLesTaillesQuiLuiCorrespondent(): void
+    {
+        $client = $this->loginAdmin();
+
+        $chaussettes = $this->makeItem('Chaussettes');
+        $chaussettes->setKind(StockItemKind::EQUIPEMENT)->setTypeVetement(StockItemVetementType::CHAUSSURES);
+        $maillot = $this->makeItem('Maillot');
+        $maillot->setKind(StockItemKind::EQUIPEMENT)->setTypeVetement(StockItemVetementType::HAUT);
+        $boisson = $this->makeItem('Coca-Cola');
+        $boisson->setKind(StockItemKind::EPICERIE)->setTaille('33cl');
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/admin/stock/gestion');
+        self::assertResponseIsSuccessful();
+
+        $options = static fn (StockItem $item): array => json_decode(
+            $crawler->filter('#tailles-' . $item->getId())->attr('value') ?? '',
+            true,
+        )['options'];
+
+        self::assertSame(['24', '25'], \array_slice($options($chaussettes), 0, 2));
+        self::assertNotContains('XL', $options($chaussettes));
+        self::assertContains('XL', $options($maillot));
+        self::assertSame([], $options($boisson), 'L\'épicerie porte sa contenance, pas une taille.');
     }
 
     public function testUnArticleSansMouvementEstSignaleEnRupture(): void

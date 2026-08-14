@@ -65,6 +65,14 @@ class Licencie
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $linkSentAt = null;
 
+    /**
+     * Date d'envoi de l'annonce de la boutique — null tant que personne ne lui a écrit à ce
+     * sujet. C'est ce fait daté, et non l'état du dossier, qui empêche un second envoi : la
+     * boutique s'annonce en une fois, à une population déjà inscrite.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $boutiqueAnnonceeAt = null;
+
     #[ORM\Column(options: ['default' => false])]
     private bool $createdManually = false;
 
@@ -268,6 +276,18 @@ class Licencie
     public function setLinkSentAt(?\DateTimeImmutable $linkSentAt): static
     {
         $this->linkSentAt = $linkSentAt;
+
+        return $this;
+    }
+
+    public function getBoutiqueAnnonceeAt(): ?\DateTimeImmutable
+    {
+        return $this->boutiqueAnnonceeAt;
+    }
+
+    public function setBoutiqueAnnonceeAt(?\DateTimeImmutable $boutiqueAnnonceeAt): static
+    {
+        $this->boutiqueAnnonceeAt = $boutiqueAnnonceeAt;
 
         return $this;
     }

@@ -10,7 +10,8 @@ final class StockLigne
 {
     /**
      * @param list<StockTailleLigne> $tailles
-     * @param array<string, int>     $taillesMap taille nommée => stock, pour la modale de mouvement
+     * @param array<string, int>     $taillesMap     taille nommée => stock, pour la modale de mouvement
+     * @param list<string>           $taillesOptions tailles proposées à la saisie d'un mouvement
      */
     public function __construct(
         public readonly StockItem $item,
@@ -18,6 +19,9 @@ final class StockLigne
         public readonly StockAlerteNiveau $niveau,
         public readonly array $tailles,
         public readonly array $taillesMap,
+        public readonly array $taillesOptions,
+        /** Équipement sans type de vêtement : la modale invite à le renseigner. */
+        public readonly bool $typeVetementARenseigner,
     ) {}
 
     public function hasTailles(): bool

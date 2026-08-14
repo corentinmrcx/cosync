@@ -8,7 +8,6 @@ use App\Entity\Season;
 use App\Enum\DirigeantRole;
 use App\Repository\DirigeantRepository;
 use App\Service\Import\DataSanitizer;
-use App\Service\Mail\DirigeantLinkService;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class DirigeantService
@@ -17,7 +16,6 @@ final class DirigeantService
         private readonly EntityManagerInterface $em,
         private readonly DirigeantRepository $dirigeantRepo,
         private readonly DataSanitizer $sanitizer,
-        private readonly DirigeantLinkService $dirigeantLinkService,
     ) {}
 
     /**
@@ -43,10 +41,8 @@ final class DirigeantService
         $this->em->persist($dirigeant);
         $this->em->flush();
 
-        if ($dirigeant->getEmail() !== null) {
-            $this->dirigeantLinkService->send($dirigeant);
-        }
-
+        // Aucun mail ici : le départ du lien est une décision, prise à la case du formulaire
+        // de création ou plus tard depuis la fiche ou l'écran d'envoi groupé.
         return $dirigeant;
     }
 

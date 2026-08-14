@@ -17,7 +17,6 @@ use App\Repository\StockItemRepository;
 use App\Repository\StockMovementRepository;
 use App\Security\CsrfGuard;
 use App\Service\Pdf\InventairePdfService;
-use App\Service\Referentiel\Tailles;
 use App\Service\Saison\SeasonContext;
 use App\Service\Stock\StockItemFormContext;
 use App\Service\Stock\StockItemService;
@@ -72,7 +71,6 @@ class StockController extends AbstractController
             'summary' => $this->rapports->getStockSummary($showArchived),
             'showArchived' => $showArchived,
             'licenciesValides' => $season !== null ? $this->licencieRepository->findValidatedBySeason($season) : [],
-            'taillesConnues' => Tailles::toutes(),
             'types' => StockMovementType::cases(),
             'sources' => StockMovementSource::cases(),
         ]);

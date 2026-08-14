@@ -3,6 +3,7 @@
 namespace App\Service\Pdf;
 
 use App\DTO\AttestationTransportData;
+use App\Service\Drive\DriveFilenameSanitizer;
 
 /**
  * Attestation de transport bénévole. Réutilisable pour licenciés et dirigeants.
@@ -13,6 +14,7 @@ final class AttestationTransportPdfService
         private readonly PdfRenderer $renderer,
         private readonly AssetEncoder $assets,
         private readonly PdfStorage $storage,
+        private readonly DriveFilenameSanitizer $filenameSanitizer,
     ) {}
 
     public function generate(AttestationTransportData $data, string $nom, string $prenom, string $seasonLabel): string
@@ -31,13 +33,16 @@ final class AttestationTransportPdfService
     }
 
     /**
+     * Ce nom est celui que le fichier gardera sur Drive : le sanitizer translittère les
+     * accents au lieu de les effacer — « Noël » restait « Nol » sur l'attestation archivée.
+     *
      * Un conducteur peut signer plusieurs attestations dans la saison (deux enfants,
      * une correction) : l'identifiant unique évite qu'elles s'écrasent.
      */
     private function nomFichier(AttestationTransportData $data): string
     {
-        $identite = preg_replace('/[^A-Za-z0-9_]/', '', $data->nomConducteur . '_' . $data->prenomConducteur);
+        $identite = $this->filenameSanitizer->sanitize($data->nomConducteur . ' ' . $data->prenomConducteur);
 
-        return sprintf('TRANSPORT_%s_%s.pdf', $identite, uniqid());
+        return sprintf('transport_%s_%s.pdf', $identite, uniqid());
     }
 }

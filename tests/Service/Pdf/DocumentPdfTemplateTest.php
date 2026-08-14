@@ -106,7 +106,7 @@ final class DocumentPdfTemplateTest extends KernelTestCase
             ->setContenuHtml($contenuHtml)
             ->setCible($cible)
             ->setDriveSegments(['Documents signés', $titre])
-            ->setFilePrefix(strtoupper($code));
+            ->setFilePrefix($code);
     }
 
     private function render(DocumentSignable $document): string

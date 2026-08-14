@@ -2,14 +2,29 @@
   Composant multi-select dropdown : trigger fermé style cselect, dropdown avec coches.
 
   Paramètres :
-    ms_name        (string)       Attribut name des inputs soumis, ex: "team[categories][]"
-    ms_options     (array)        [{value: int, label: string}]
-    ms_selected    (array)        IDs entiers pré-sélectionnés, ex: [5, 7]
-    ms_placeholder (string|null)  Texte affiché quand rien n'est sélectionné
+    ms_name         (string)       Attribut name des inputs soumis, ex: "team[categories][]"
+    ms_options      (array)        [{value: int|string, label: string}]
+    ms_selected     (array)        valeurs pré-sélectionnées, ex: [5, 7]
+    ms_placeholder  (string|null)  Texte affiché quand rien n'est sélectionné
+    ms_unite        (string|null)  Nom du compte au-delà de deux valeurs, ex: "catégories"
+    ms_verrouillees (array|null)   Valeurs cochées que l'on ne peut pas décocher ici
+    ms_verrou_note  (string|null)  Mention affichée à droite d'une valeur verrouillée
+    ms_recherche    (bool|null)    Champ de filtre en tête du panneau — pour les longues listes
+    ms_tout         (bool|null)    Boutons « Tout / Aucun » en tête du panneau
 #}
 
+{% set ms_verrouillees = ms_verrouillees|default([]) %}
+{% set ms_recherche = ms_recherche|default(false) %}
+{% set ms_tout = ms_tout|default(false) %}
+
 <div class="cselect"
-     x-data="multiSelect({{ ms_options|json_encode }}, {{ ms_selected|json_encode }}, {{ (ms_placeholder ?? '— Choisir —')|json_encode }})"
+     x-data="multiSelect({{ {
+         options: ms_options,
+         selection: ms_selected,
+         verrouillees: ms_verrouillees,
+         placeholder: ms_placeholder|default('— Choisir —'),
+         unite: ms_unite|default('éléments'),
+     }|json_encode }})"
      @click.outside="open = false">
 
     <button type="button"
@@ -17,7 +32,7 @@
             class="cselect-trigger"
             :class="{'cselect-trigger-open': open}"
             @click="toggle()">
-        <span x-text="label()" :class="{'cselect-placeholder': !selected.length}"></span>
+        <span x-text="label()" :class="{'cselect-placeholder': estVide()}"></span>
         <svg class="cselect-chevron" :class="{'cselect-chevron-open': open}"
              width="14" height="14" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2.5"
@@ -31,17 +46,41 @@
         x-cloak
         :style="`top:${top}px;left:${left}px;width:${width}px`"
         @mousedown.prevent>
+
+        {% if ms_recherche or ms_tout %}
+            {# Le panneau annule le mousedown pour ne pas perdre le focus : la barre d'outils
+               doit l'arrêter avant, sans quoi le champ de recherche ne serait jamais saisissable. #}
+            <li class="cselect-tools" @mousedown.stop>
+                {% if ms_recherche %}
+                    <input type="search" class="cselect-search" x-model="recherche"
+                           placeholder="Rechercher…" aria-label="Filtrer la liste">
+                {% endif %}
+                {% if ms_tout %}
+                    <span class="cselect-tools-actions">
+                        <button type="button" class="cselect-tool" @click="tout(true)">Tout</button>
+                        <button type="button" class="cselect-tool" @click="tout(false)">Aucun</button>
+                    </span>
+                {% endif %}
+            </li>
+        {% endif %}
+
         {% for opt in ms_options %}
-        <li class="cselect-option cselect-option-check"
-            :class="{'cselect-option-active': isSelected({{ opt.value }})}"
-            @click="pick({{ opt.value }})">
-            <input type="checkbox"
-                   :checked="isSelected({{ opt.value }})"
-                   style="accent-color:var(--color-primary);width:13px;height:13px;flex-shrink:0"
-                   tabindex="-1"
-                   @click.stop>
-            {{ opt.label }}
-        </li>
+            {% set verrouillee = opt.value in ms_verrouillees %}
+            <li class="cselect-option cselect-option-check{{ verrouillee ? ' cselect-option-locked' : '' }}"
+                data-label="{{ opt.label|lower }}"
+                x-show="correspond($el.dataset.label)"
+                :class="{'cselect-option-active': isSelected({{ opt.value|json_encode }})}"
+                @click="pick({{ opt.value|json_encode }})">
+                {# Coche décorative : son état vient de :checked, le clic traverse jusqu'à la ligne. #}
+                <input type="checkbox"
+                       :checked="isSelected({{ opt.value|json_encode }})"
+                       {{ verrouillee ? 'disabled' : '' }}
+                       tabindex="-1">
+                {{ opt.label }}
+                {% if verrouillee and ms_verrou_note|default(false) %}
+                    <span class="cselect-option-note">{{ ms_verrou_note }}</span>
+                {% endif %}
+            </li>
         {% endfor %}
     </ul>
 

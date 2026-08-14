@@ -26,7 +26,7 @@ class BoutiqueSettingsType extends AbstractType
         $builder
             ->add('boutiqueUrl', UrlType::class, [
                 'label' => 'Lien de la boutique',
-                'help' => 'Laisser vide tant que la boutique n\'est pas ouverte : elle n\'apparaîtra alors ni sur la page de confirmation, ni dans les mails.',
+                'help' => 'Peut être renseigné à l\'avance : tant que la boutique n\'est pas ouverte, le lien n\'apparaît ni sur la page de confirmation, ni dans les mails.',
                 'required' => false,
                 'default_protocol' => 'https',
                 'attr' => ['placeholder' => 'https://www.helloasso.com/associations/…/boutiques/…'],
