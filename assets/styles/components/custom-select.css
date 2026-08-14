@@ -89,3 +89,84 @@
     align-items: center;
     gap: 0.5rem;
 }
+
+.cselect-option-check input {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+    /* La ligne entière est la cible du clic : la coche ne l'intercepte pas. */
+    pointer-events: none;
+}
+
+/* Valeur déjà enregistrée ailleurs : cochée, mais pas décochable ici. */
+.cselect-option-locked {
+    color: var(--color-text-disabled);
+    cursor: default;
+}
+
+.cselect-option-locked:hover {
+    background: none;
+}
+
+.cselect-option-note {
+    margin-left: auto;
+    padding-left: 0.5rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+/* Barre d'outils du panneau : reste visible pendant que la liste défile. */
+.cselect-tools {
+    position: sticky;
+    top: -0.25rem;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: -0.25rem;
+    padding: 0.5rem 0.625rem;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-page);
+}
+
+.cselect-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-base);
+    background: var(--color-bg-page);
+}
+
+.cselect-search:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.cselect-tools-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.cselect-tool {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-body);
+    background: var(--color-bg-page);
+    cursor: pointer;
+}
+
+.cselect-tool:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
