@@ -25,7 +25,6 @@ use App\Service\Dotation\DotationModeleFormContext;
 use App\Service\Dotation\DotationModeleService;
 use App\Service\Dotation\DotationRemiseService;
 use App\Service\Dotation\DotationSuiviPresenter;
-use App\Service\Referentiel\Tailles;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -327,8 +326,7 @@ class DotationController extends AbstractController
             'season' => $season,
             'groupes' => $groupes,
             'optionsParBesoin' => $this->choixService->optionsParBesoin($groupes),
-            'taillesConnues' => Tailles::toutes(),
-            'pointures' => Tailles::pointures(),
+            'taillesParBesoin' => $this->suivi->taillesParBesoin($groupes),
         ]);
     }
 

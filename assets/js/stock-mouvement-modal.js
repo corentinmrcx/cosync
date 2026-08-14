@@ -1,11 +1,12 @@
 /**
  * Modale d'enregistrement d'un mouvement de stock, ouverte depuis le tableau de gestion.
  *
- * Les données propres à chaque article (jeton CSRF, stock par taille) sont déposées dans
- * des champs cachés par le serveur : la modale est unique, l'article varie.
+ * Les données propres à chaque article (jeton CSRF, stock par taille, tailles proposées) sont
+ * déposées dans des champs cachés par le serveur : la modale est unique, l'article varie.
  *
  * @param {object} config
  * @param {string} config.urlMouvement URL de soumission, {id} sera remplacé par l'article
+ * @param {string} config.urlArticle URL d'édition de l'article, {id} sera remplacé
  * @param {string[]} config.ordreTailles ordre d'affichage des tailles
  */
 export function stockMouvementModal(config) {
@@ -15,12 +16,19 @@ export function stockMouvementModal(config) {
         itemNom: '',
         stockActuel: 0,
         taillesStock: {},
+        /** Tailles proposées pour cet article : vêtement, pointures, ou aucune. */
+        taillesOptions: [],
+        typeVetementARenseigner: false,
         action: 'entree',
         quantite: 1,
         taille: '',
 
         get formAction() {
             return config.urlMouvement.replace('__ID__', String(this.itemId));
+        },
+
+        get urlArticle() {
+            return config.urlArticle.replace('__ID__', String(this.itemId));
         },
 
         get csrfToken() {
@@ -48,7 +56,10 @@ export function stockMouvementModal(config) {
             this.stockActuel = stock;
 
             const brut = document.getElementById('tailles-' + id)?.value;
-            this.taillesStock = brut ? JSON.parse(brut) : {};
+            const tailles = brut ? JSON.parse(brut) : {};
+            this.taillesStock = tailles.stock ?? {};
+            this.taillesOptions = tailles.options ?? [];
+            this.typeVetementARenseigner = tailles.typeARenseigner ?? false;
 
             this.action = 'entree';
             this.quantite = 1;

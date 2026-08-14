@@ -278,6 +278,11 @@
     color: var(--color-text-muted);
 }
 
+.stock-modal-hint a {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+}
+
 .stock-modal-stocklist {
     display: flex;
     flex-direction: column;

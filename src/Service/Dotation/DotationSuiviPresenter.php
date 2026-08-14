@@ -10,6 +10,7 @@ use App\Entity\Season;
 use App\Enum\DotationAvancementStatut;
 use App\Enum\DotationBesoinStatut;
 use App\Repository\DotationBesoinRepository;
+use App\Service\Stock\StockTailleResolver;
 
 /**
  * Met en forme les besoins de dotation pour les écrans d'administration.
@@ -20,6 +21,7 @@ final class DotationSuiviPresenter
     public function __construct(
         private readonly DotationBesoinRepository $besoinRepository,
         private readonly DotationResolver $resolver,
+        private readonly StockTailleResolver $tailles,
     ) {}
 
     /**
@@ -85,6 +87,27 @@ final class DotationSuiviPresenter
         }
 
         return $groupes;
+    }
+
+    /**
+     * Tailles proposées à la correction d'un besoin, article par article : une paire de
+     * chaussettes se corrige en pointures, un maillot en tailles de vêtement.
+     *
+     * @param list<DotationSuiviGroupe> $groupes
+     *
+     * @return array<int, list<string>>
+     */
+    public function taillesParBesoin(array $groupes): array
+    {
+        $out = [];
+
+        foreach ($groupes as $groupe) {
+            foreach ($groupe->besoins as $besoin) {
+                $out[$besoin->getId()] = $this->tailles->options($besoin->getStockItem());
+            }
+        }
+
+        return $out;
     }
 
     /** @return array<string, array<string, list<DotationBesoin>>> */
