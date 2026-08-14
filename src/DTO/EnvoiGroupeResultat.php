@@ -3,13 +3,14 @@
 namespace App\DTO;
 
 /**
- * Compte rendu d'un envoi groupé de liens d'inscription.
+ * Compte rendu d'un envoi groupé de mails décidé écran en main : liens d'inscription des
+ * licenciés, des dirigeants, annonce de la boutique.
  *
  * Les trois catégories qui ne sont pas des envois sont comptées séparément : elles
  * n'appellent pas la même suite. Un licencié sans adresse est à joindre autrement, un
  * licencié décoché attend une décision de l'admin, un échec SMTP est à rejouer.
  */
-final class EnvoiLiensResultat
+final class EnvoiGroupeResultat
 {
     public function __construct(
         public readonly int $envoyes,

@@ -15,9 +15,9 @@
 
         <h1 class="season-form-header">Lien de la boutique</h1>
         <p class="config-teams-intro">
-            Affiché au licencié sur la page de confirmation de son inscription, et envoyé
-            par mail juste après la soumission de son formulaire. Il appartient au club :
-            il reste valable d'une saison à l'autre.
+            Affiché au licencié sur la page de confirmation de son inscription une fois la
+            boutique ouverte, et envoyé par mail le jour où vous décidez de l'annoncer. Il
+            appartient au club : il reste valable d'une saison à l'autre.
         </p>
         <hr class="season-form-divider">
 
@@ -28,10 +28,12 @@
             {{ form_errors(form.boutiqueUrl) }}
         </div>
 
-        {% if club_boutique_url %}
+        {# Le lien enregistré, et non `club_boutique_url` : celui-ci se tait tant que la
+           boutique n'est pas ouverte, alors qu'ici l'admin doit relire ce qu'il a préparé. #}
+        {% if form.vars.data.boutiqueUrl %}
             <p class="config-teams-intro">
                 Lien actuel :
-                <a href="{{ club_boutique_url }}" target="_blank" rel="noopener noreferrer">{{ club_boutique_url }}</a>
+                <a href="{{ form.vars.data.boutiqueUrl }}" target="_blank" rel="noopener noreferrer">{{ form.vars.data.boutiqueUrl }}</a>
             </p>
         {% endif %}
 

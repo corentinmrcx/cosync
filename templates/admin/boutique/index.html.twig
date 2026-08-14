@@ -14,6 +14,34 @@
     <div class="section-home-header">
         <div>
             <h1 class="section-home-title">Boutique</h1>
+            <p class="section-home-subtitle">
+                {%- if settings.aBoutique %}
+                    Le lien est affiché aux licenciés à la fin de leur inscription. L'annonce par mail reste manuelle.
+                {%- elseif settings.boutiqueUrl %}
+                    Le lien est enregistré mais n'apparaît nulle part : ni page de confirmation, ni mail.
+                {%- else %}
+                    Aucun lien renseigné. Vous pouvez le préparer dès maintenant sans rien annoncer.
+                {%- endif %}
+            </p>
+        </div>
+
+        {# Ouvrir la boutique est une bascule, pas un formulaire : le lien reste enregistré
+           dans les deux sens. L'interrupteur est désactivé tant qu'aucun lien n'existe. #}
+        <div class="section-home-actions">
+            <form method="post" action="{{ path('admin_boutique_ouverture') }}" class="boutique-switch-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('boutique_ouverture') }}">
+                <input type="hidden" name="ouvrir" value="{{ settings.aBoutique ? '0' : '1' }}">
+                <span class="boutique-switch-label">{{ settings.aBoutique ? 'Ouverte' : 'Fermée' }}</span>
+                <button type="submit"
+                        class="boutique-switch{{ settings.aBoutique ? ' boutique-switch-on' }}"
+                        role="switch"
+                        aria-checked="{{ settings.aBoutique ? 'true' : 'false' }}"
+                        aria-label="Ouvrir la boutique aux licenciés"
+                        {{ settings.boutiqueUrl ? '' : 'disabled' }}
+                        title="{{ settings.boutiqueUrl ? 'Ouvrir ou fermer la boutique' : 'Renseignez d\'abord le lien de la boutique' }}">
+                    <span class="boutique-switch-knob"></span>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -28,15 +56,32 @@
                 <span class="quicklink-body">
                     <span class="quicklink-title">Lien de la boutique</span>
                     <span class="quicklink-text">
-                        {% if club_boutique_url %}
-                            Affiché au licencié après son inscription et envoyé par mail
+                        {% if settings.boutiqueUrl %}
+                            {{ settings.boutiqueUrl }}
                         {% else %}
-                            Aucun lien renseigné — la boutique n'est annoncée nulle part
+                            Aucun lien renseigné
                         {% endif %}
                     </span>
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
+
+            {% if settings.aBoutique %}
+                <a href="{{ path('admin_boutique_annoncer') }}" class="quicklink">
+                    <span class="quicklink-icon">{{ ui.icon('send', 20) }}</span>
+                    <span class="quicklink-body">
+                        <span class="quicklink-title">Annoncer la boutique</span>
+                        <span class="quicklink-text">
+                            {% if aAnnoncer > 0 %}
+                                {{ aAnnoncer }} licencié{{ aAnnoncer > 1 ? 's' }} inscrit{{ aAnnoncer > 1 ? 's' }} n'{{ aAnnoncer > 1 ? 'ont' : 'a' }} pas encore reçu l'annonce
+                            {% else %}
+                                Tout le monde a reçu l'annonce
+                            {% endif %}
+                        </span>
+                    </span>
+                    <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+                </a>
+            {% endif %}
         </div>
     </div>
 

@@ -2,7 +2,7 @@
 
 namespace App\Service\Mail;
 
-use App\DTO\EnvoiLiensResultat;
+use App\DTO\EnvoiGroupeResultat;
 use App\DTO\RelanceResultat;
 use App\Entity\Dirigeant;
 use Doctrine\ORM\EntityManagerInterface;
@@ -45,7 +45,7 @@ final class DirigeantLinkService
      * @param Dirigeant[] $dirigeants   tous les dirigeants en attente d'un lien
      * @param string[]    $uuidsRetenus ceux que l'admin a laissés cochés
      */
-    public function envoyerEnMasse(array $dirigeants, array $uuidsRetenus): EnvoiLiensResultat
+    public function envoyerEnMasse(array $dirigeants, array $uuidsRetenus): EnvoiGroupeResultat
     {
         $retenus = array_flip($uuidsRetenus);
 
@@ -75,7 +75,7 @@ final class DirigeantLinkService
             }
         }
 
-        return new EnvoiLiensResultat($envoyes, $echecs, $sansEmail, $nonRetenus);
+        return new EnvoiGroupeResultat($envoyes, $echecs, $sansEmail, $nonRetenus);
     }
 
     /**

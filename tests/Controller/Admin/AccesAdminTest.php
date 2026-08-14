@@ -46,6 +46,7 @@ final class AccesAdminTest extends WebTestCase
             '/admin/club/utilisateurs/nouveau',
             '/admin/boutique',
             '/admin/boutique/lien',
+            '/admin/boutique/annoncer',
             '/admin/saisons',
             '/admin/saisons/gerer',
             '/admin/saisons/nouvelle',

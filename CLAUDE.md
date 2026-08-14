@@ -395,11 +395,20 @@ avant tout enregistrement, de façon idempotente. Le licencié ne voit jamais au
 - Page de confirmation affichée au licencié
 
 **Boutique du club** — `ClubSettings.boutiqueUrl`, réglé dans `/admin/boutique/lien`. Réglage du
-club et non de la saison : la boutique HelloAsso est une page de l'association. Le lien est
-exposé aux templates par la variable globale `club_boutique_url` ; tant qu'il est vide, la
-boutique n'est annoncée nulle part. Son annonce est un **mail distinct** de l'accusé de
-réception : ce dernier porte le montant dû et les instructions de paiement, rien ne doit
-détourner le licencié de ce qu'il lui reste à faire.
+club et non de la saison : la boutique HelloAsso est une page de l'association.
+
+L'**ouverture** est un booléen distinct du lien (`ClubSettings.boutiqueOuverte`, basculé depuis
+`/admin/boutique`) : le club lance ses licences puis sa boutique quelques jours plus tard, le lien
+se prépare donc à froid. `getBoutiqueUrlPublique()` — et donc la variable globale
+`club_boutique_url` — ne rend le lien qu'une fois la boutique ouverte. **Les écrans publics et les
+mails passent toujours par là**, jamais par `getBoutiqueUrl()`, réservé au formulaire d'admin qui
+doit relire un lien préparé mais pas encore annoncé.
+
+L'annonce est un **mail distinct** de l'accusé de réception, et **ne part pas** à la soumission du
+formulaire : une annonce accrochée à l'inscription ne rattraperait jamais ceux qui se sont inscrits
+avant l'ouverture. C'est un envoi groupé décidé écran en main (`/admin/boutique/annoncer`), proposé
+aux licenciés dont le dossier est complété, une seule fois chacun — ce que `Licencie.boutiqueAnnonceeAt`
+atteste, comme `linkSentAt` pour les liens d'inscription.
 
 ### C. Dashboard Admin
 

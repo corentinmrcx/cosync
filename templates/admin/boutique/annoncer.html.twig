@@ -1,0 +1,74 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Annoncer la boutique{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Boutique', route: 'admin_boutique_index' },
+    { label: 'Annoncer la boutique' }
+] } %}
+
+<div class="envoi-liens-page">
+    <div class="envoi-liens-card">
+
+        <h1 class="envoi-liens-title">Annoncer la boutique</h1>
+
+        <hr class="envoi-liens-divider">
+
+        {% if aAnnoncer is empty %}
+            <p class="envoi-liens-empty">Tous les licenciés inscrits ont reçu l'annonce.</p>
+            <div class="envoi-liens-actions">
+                <a href="{{ path('admin_boutique_index') }}" class="btn btn-secondary">Retour</a>
+            </div>
+        {% else %}
+            <form method="post" action="{{ path('admin_boutique_annoncer') }}"
+                  class="envoi-liens-form"
+                  x-data='{ retenus: {{ uuids|json_encode|raw }}, tous: {{ uuids|json_encode|raw }} }'>
+                <input type="hidden" name="_token" value="{{ csrf_token('annoncer_boutique') }}">
+
+                <p class="envoi-liens-resume">
+                    <strong>{{ aAnnoncer|length }}</strong> licencié{{ aAnnoncer|length > 1 ? 's' }} inscrit{{ aAnnoncer|length > 1 ? 's' }}
+                    n'{{ aAnnoncer|length > 1 ? 'ont' : 'a' }} pas encore reçu l'annonce de la boutique.
+                    Le mail ne part qu'une fois par licencié : ceux qui l'ont déjà reçu ne sont plus proposés.
+                </p>
+
+                <div class="envoi-liens-selection">
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = [...tous]">Tout cocher</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = []">Tout décocher</button>
+                </div>
+
+                <ul class="envoi-liens-list">
+                    {% for licencie in aAnnoncer %}
+                        <li class="envoi-liens-item">
+                            <input type="checkbox"
+                                   name="licencies[]"
+                                   value="{{ licencie.uuid }}"
+                                   class="envoi-liens-case"
+                                   x-model="retenus"
+                                   checked>
+                            <span class="envoi-liens-nom">{{ licencie.nomPrenom }}</span>
+                            <span class="envoi-liens-equipe">
+                                {%- if licencie.team %}{{ licencie.team.name }}{% else %}Sans équipe{% endif -%}
+                            </span>
+                            <span class="envoi-liens-email">{{ licencie.email }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <hr class="envoi-liens-divider">
+
+                <div class="envoi-liens-actions">
+                    <a href="{{ path('admin_boutique_index') }}" class="btn btn-ghost">Annuler</a>
+                    <button type="submit" class="btn btn-primary"
+                            :disabled="retenus.length === 0"
+                            x-text="'Envoyer ' + retenus.length + ' annonce' + (retenus.length > 1 ? 's' : '')">
+                        Envoyer {{ aAnnoncer|length }} annonce{{ aAnnoncer|length > 1 ? 's' }}
+                    </button>
+                </div>
+            </form>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

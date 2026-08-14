@@ -86,15 +86,19 @@ final class MailerService
     }
 
     /**
-     * Annonce la boutique du club, juste après l'accusé de réception.
+     * Annonce la boutique du club.
      *
      * Volontairement séparé du mail de confirmation : celui-ci porte le montant dû et les
      * instructions de paiement, et rien ne doit détourner le licencié de ce qu'il lui reste
-     * à faire. Sans lien de boutique configuré, aucun mail ne part.
+     * à faire. Il ne part plus non plus dans la foulée d'une soumission : la boutique ouvre
+     * quelques jours après les licences, l'annonce est un envoi groupé décidé par l'admin
+     * depuis `/admin/boutique/annoncer`.
+     *
+     * Tant que la boutique n'est pas ouverte, aucun mail ne part.
      */
     public function sendBoutique(Licencie $licencie): void
     {
-        $url = $this->clubSettings->get()->getBoutiqueUrl();
+        $url = $this->clubSettings->get()->getBoutiqueUrlPublique();
 
         if ($url === null || $licencie->getEmail() === null) {
             return;

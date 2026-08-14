@@ -368,6 +368,34 @@ final class InscriptionParcoursCompletTest extends WebTestCase
         self::assertStringContainsString('Inscription bien reçue', $messages[0]->getSubject());
     }
 
+    /**
+     * La boutique ouvre quelques jours après les licences : une annonce accrochée à la
+     * soumission ne rattraperait jamais les premiers inscrits. Elle part d'un envoi groupé
+     * décidé en administration — jamais d'ici, même boutique grande ouverte.
+     */
+    public function testLaSoumissionNAnnoncePasLaBoutique(): void
+    {
+        $client = static::createClient();
+        $uuid = $this->seedSenior();
+
+        $settings = self::getContainer()->get(ClubSettingsService::class);
+        $settings->get()
+            ->setBoutiqueUrl('https://www.helloasso.com/associations/fc-soudron/boutiques/boutique')
+            ->setBoutiqueOuverte(true);
+        $settings->enregistrer();
+
+        $client->request('POST', '/inscription/' . $uuid, $this->payloadSenior($client, $uuid));
+
+        $messages = self::getMailerMessages();
+        self::assertCount(1, $messages, 'Seul l\'accusé de réception doit partir');
+        self::assertInstanceOf(\Symfony\Component\Mime\Email::class, $messages[0]);
+        self::assertStringContainsString('Inscription bien reçue', (string) $messages[0]->getSubject());
+
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        $em->clear();
+        self::assertNull($em->find(Licencie::class, Uuid::fromString($uuid))->getBoutiqueAnnonceeAt());
+    }
+
     public function testUnLicencieSansEmailSoumetQuandMemeSonDossier(): void
     {
         $client = static::createClient();

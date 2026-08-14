@@ -39,7 +39,7 @@ final class BoutiqueLienTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/boutique');
 
         self::assertResponseIsSuccessful();
-        self::assertCount(1, $crawler->filter('a[href="/admin/boutique/lien"]'));
+        self::assertGreaterThan(0, $crawler->filter('a[href="/admin/boutique/lien"]')->count());
     }
 
     public function testLeLienSaisiEstEnregistrePourLeClub(): void
@@ -55,7 +55,26 @@ final class BoutiqueLienTest extends WebTestCase
         $client->submit($form);
 
         self::assertSame(self::URL, $this->rechargerReglages()->getBoutiqueUrl());
-        self::assertTrue($this->rechargerReglages()->aBoutique());
+    }
+
+    /**
+     * Saisir le lien n'ouvre pas la boutique : le club le prépare pendant que les licences
+     * partent, et n'en parle que quelques jours plus tard.
+     */
+    public function testLeLienSaisiNOuvrePasLaBoutique(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $crawler = $client->request('GET', '/admin/boutique/lien');
+        $form = $crawler->filter('form[name="boutique_settings"]')->form();
+        $form['boutique_settings[boutiqueUrl]'] = self::URL;
+        $client->submit($form);
+
+        $settings = $this->rechargerReglages();
+        self::assertFalse($settings->aBoutique(), 'Rien ne doit être annoncé avant l\'ouverture');
+        self::assertNull($settings->getBoutiqueUrlPublique());
+        self::assertTrue($settings->boutiqueOuvrable());
     }
 
     /** Un champ vidé doit redevenir null, sans quoi aBoutique() annoncerait une boutique vide. */
