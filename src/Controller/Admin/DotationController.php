@@ -277,30 +277,36 @@ class DotationController extends AbstractController
         return $this->redirectToRoute('admin_dotations_edit', ['id' => $modeleId]);
     }
 
-    #[Route('/affectations', name: 'affectation_new', methods: ['POST'])]
-    public function affectationNew(Request $request, #[CurrentSeason] Season $season): Response
+    #[Route('/{id}/affectations', name: 'affectation_new', methods: ['POST'])]
+    public function affectationNew(DotationModele $modele, Request $request, #[CurrentSeason] Season $season): Response
     {
-        $this->csrf->valider('dotation_affectation_new', $request);
+        $this->csrf->valider('dotation_affectation_new_' . $modele->getId(), $request);
 
         $data = new DotationAffectationData(
-            (int) $request->request->get('modele_id'),
             DotationCibleType::tryFrom((string) $request->request->get('cible_type', '')) ?? DotationCibleType::DEFAUT,
-            $request->request->get('cible_id'),
+            array_map('strval', $request->request->all('cible_ids')),
         );
 
         try {
-            $affectation = $this->affectationService->creer($data, $season);
+            $creees = $this->affectationService->creer($modele, $data, $season);
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return $this->redirectToRoute('admin_dotations_modeles');
+            return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
         }
 
-        $this->addFlash('success', sprintf('Ce kit est maintenant attribué à : %s.', $affectation->cibleLabel()));
+        $labels = array_map(static fn (DotationAffectation $a): string => $a->cibleLabel(), $creees);
+
+        $this->addFlash(
+            $creees === [] ? 'info' : 'success',
+            $creees === []
+                ? 'Ces destinataires reçoivent déjà ce kit : rien n\'a changé.'
+                : sprintf('Ce kit est maintenant attribué à : %s.', implode(', ', $labels)),
+        );
 
         // Une affectation appartient toujours à un kit : on revient sur sa page, là où l'aperçu
         // se met à jour en conséquence.
-        return $this->redirectToRoute('admin_dotations_edit', ['id' => $affectation->getModele()->getId()]);
+        return $this->redirectToRoute('admin_dotations_edit', ['id' => $modele->getId()]);
     }
 
     #[Route('/affectations/{id}/supprimer', name: 'affectation_delete', methods: ['POST'])]
