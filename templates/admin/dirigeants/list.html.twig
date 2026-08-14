@@ -12,6 +12,16 @@
 
 <div class="dirigeants-page">
 
+    {% if liensEnAttente > 0 %}
+        <div class="dirigeants-liens-attente">
+            <p class="dirigeants-liens-attente-texte">
+                <strong>{{ liensEnAttente }}</strong> dirigeant{{ liensEnAttente > 1 ? 's' }} n'{{ liensEnAttente > 1 ? 'ont' : 'a' }}
+                jamais reçu {{ liensEnAttente > 1 ? 'leur' : 'son' }} lien de formulaire.
+            </p>
+            <a href="{{ path('admin_dirigeants_send_links') }}" class="btn btn-primary btn-sm">Envoyer les liens</a>
+        </div>
+    {% endif %}
+
     {% embed 'components/list-toolbar.html.twig' with {
         search: search ?? '',
         searchPlaceholder: 'Rechercher un dirigeant…',

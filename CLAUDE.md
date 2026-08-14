@@ -323,8 +323,18 @@ enum StockMovementType: string {
    - Email : trim + lowercase
 4. Pour chaque ligne : `upsert` sur `num_licence` (`Numéro personne`)
    - Si le licencié existe : mise à jour des données FFF uniquement. Les données club (DossierClub, Transaction) ne sont jamais touchées.
-   - Si nouveau : création + génération UUID + envoi mail automatique
+   - Si nouveau : création + génération UUID, **sans aucun mail**
 5. Rapport d'import affiché : X mis à jour, Y créés, Z erreurs
+
+**Aucun mail ne part de lui-même — ni pour un licencié, ni pour un dirigeant.** Un fichier
+déposé par erreur écrirait à tout un effectif avant que le rapport soit lu. Le départ des liens
+est une décision, prise sur un écran dédié qui liste les destinataires case par case
+(`/admin/effectif/joueurs/envoyer-liens` et `/admin/effectif/dirigeants/envoyer-liens`), ou à
+l'unité depuis une fiche. La création manuelle propose une case, **décochée d'office**.
+
+Ce qui fait foi, des deux côtés, c'est `linkSentAt` — un fait daté. Ni le statut du dossier
+(qui peut avancer par une saisie admin) ni `formTokenExpiresAt` (effacé dès le dossier complet)
+ne savent dire si la personne a été contactée un jour.
 
 
 ### B. Formulaire Public `/inscription/{uuid}`
