@@ -38,6 +38,14 @@ class ClubSettings
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $boutiqueUrl = null;
 
+    /**
+     * Ouverture de la boutique, séparée du lien : le club lance ses licences d'abord et sa
+     * boutique quelques jours plus tard. Le lien se prépare donc à froid, et rien n'est
+     * annoncé — ni page, ni mail — tant que l'admin n'a pas ouvert.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $boutiqueOuverte = false;
+
     public function getId(): int
     {
         return $this->id;
@@ -99,10 +107,39 @@ class ClubSettings
         return $this->iban !== null;
     }
 
-    /** Sans lien renseigné, la boutique n'est annoncée nulle part — ni page, ni mail. */
+    public function isBoutiqueOuverte(): bool
+    {
+        return $this->boutiqueOuverte;
+    }
+
+    public function setBoutiqueOuverte(bool $boutiqueOuverte): static
+    {
+        $this->boutiqueOuverte = $boutiqueOuverte;
+
+        return $this;
+    }
+
+    /**
+     * Le lien tel qu'il doit être vu du dehors : null tant que la boutique n'est pas
+     * ouverte. Les écrans publics et les mails passent par ici, jamais par
+     * {@see getBoutiqueUrl()} — qui, lui, sert au formulaire d'administration à relire
+     * un lien préparé mais pas encore annoncé.
+     */
+    public function getBoutiqueUrlPublique(): ?string
+    {
+        return $this->aBoutique() ? $this->boutiqueUrl : null;
+    }
+
+    /** Sans lien renseigné ni ouverture, la boutique n'est annoncée nulle part — ni page, ni mail. */
     public function aBoutique(): bool
     {
-        return $this->boutiqueUrl !== null;
+        return $this->boutiqueUrl !== null && $this->boutiqueOuverte;
+    }
+
+    /** Un lien est prêt : l'ouverture n'attend plus qu'une décision de l'admin. */
+    public function boutiqueOuvrable(): bool
+    {
+        return $this->boutiqueUrl !== null && !$this->boutiqueOuverte;
     }
 
     private function normaliser(?string $valeur): ?string

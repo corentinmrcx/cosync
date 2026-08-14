@@ -11,6 +11,7 @@ use App\Repository\TeamRepository;
 use App\Service\Referentiel\Tailles;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
@@ -115,6 +116,18 @@ class DirigeantType extends AbstractType
                 'help' => 'À renseigner si ce dirigeant est également licencié joueur cette saison.',
             ])
         ;
+
+        // Uniquement à la création, et décochée : rien ne part sans décision. Le lien
+        // s'envoie ensuite depuis la fiche ou par l'envoi groupé.
+        if ($options['envoi_lien'] === true) {
+            $builder->add('sendLink', CheckboxType::class, [
+                'label' => 'Envoyer le lien du formulaire par email',
+                'help' => 'Le dirigeant y renseigne ses tailles, ses autorisations et signe les documents de la saison.',
+                'mapped' => false,
+                'required' => false,
+                'data' => false,
+            ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -122,6 +135,7 @@ class DirigeantType extends AbstractType
         $resolver->setDefaults([
             'data_class' => DirigeantData::class,
             'season' => null,
+            'envoi_lien' => false,
         ]);
     }
 }

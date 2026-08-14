@@ -23,6 +23,7 @@ final class StockMovementService
     public function __construct(
         private readonly StockMovementRepository $movementRepository,
         private readonly LicencieRepository $licencieRepository,
+        private readonly StockTailleResolver $taillesResolver,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -82,6 +83,8 @@ final class StockMovementService
      */
     public function recordManualMovement(StockItem $item, ManualMovementData $data, ?User $createdBy): StockMovement
     {
+        $this->assertTailleAdmise($item, $data->taille);
+
         $licencie = $data->action->exigeUnLicencie()
             ? $this->resolveValidatedLicencie($data->licencieUuid)
             : null;
@@ -120,6 +123,28 @@ final class StockMovementService
 
         $this->em->remove($movement);
         $this->em->flush();
+    }
+
+    /**
+     * La modale ne propose que les tailles de l'article ; on revérifie ici pour qu'une
+     * soumission forgée n'aille pas ranger un réassort de chaussettes sous « XL ». Les tailles
+     * déjà en stock restent admises : un article dont le type a changé doit pouvoir se vider.
+     *
+     * @throws \InvalidArgumentException si la taille n'appartient pas à l'article
+     */
+    private function assertTailleAdmise(StockItem $item, ?string $taille): void
+    {
+        $taille = trim((string) $taille);
+        if ($taille === '') {
+            return;
+        }
+
+        $dejaUtilisees = array_map('strval', array_keys($this->movementRepository->getStockGroupedByTaille($item)));
+        if (in_array($taille, $this->taillesResolver->options($item, $dejaUtilisees), true)) {
+            return;
+        }
+
+        throw new \InvalidArgumentException(sprintf('La taille "%s" ne correspond pas à l\'article "%s".', $taille, $item->getNom()));
     }
 
     private function resolveValidatedLicencie(?string $uuid): Licencie

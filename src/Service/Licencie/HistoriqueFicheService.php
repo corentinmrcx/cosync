@@ -10,7 +10,6 @@ use App\Enum\PaymentMode;
 use App\Repository\AttestationCleRepository;
 use App\Service\Cle\DetenteurEffectifResolver;
 use App\Service\Document\DocumentRequirementResolver;
-use App\Service\Mail\LienPublic;
 
 /**
  * Chronologie affichée sur une fiche : ce qui s'est passé pour cette personne, dans l'ordre.
@@ -76,10 +75,9 @@ final class HistoriqueFicheService
             'Admin',
         )];
 
-        $expiration = $dirigeant->getFormTokenExpiresAt();
-        if ($expiration !== null) {
+        if ($dirigeant->getLinkSentAt() !== null) {
             $evenements[] = new EvenementHistorique(
-                LienPublic::envoiDeduitDe($expiration),
+                $dirigeant->getLinkSentAt(),
                 'Lien de formulaire envoyé par email',
                 'Système',
             );

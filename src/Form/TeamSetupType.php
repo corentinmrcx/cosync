@@ -4,7 +4,7 @@ namespace App\Form;
 
 use App\DTO\TeamSetupData;
 use App\Entity\Category;
-use Doctrine\ORM\EntityRepository;
+use App\Repository\CategoryRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -16,6 +16,8 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 /** @extends AbstractType<TeamSetupData> */
 class TeamSetupType extends AbstractType
 {
+    public function __construct(private readonly CategoryRepository $categoryRepo) {}
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -32,7 +34,7 @@ class TeamSetupType extends AbstractType
                 'expanded' => true,
                 'required' => false,
                 'by_reference' => false,
-                'query_builder' => fn (EntityRepository $repo) => $repo->createQueryBuilder('c')->orderBy('c.id', 'DESC'),
+                'choices' => $this->categoryRepo->findAllOrdered(),
             ]);
     }
 

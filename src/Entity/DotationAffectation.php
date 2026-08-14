@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Enum\DirigeantRole;
+use App\Enum\DotationCibleType;
 use App\Repository\DotationAffectationRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -145,6 +146,32 @@ class DotationAffectation
             $this->team !== null => 2, // équipe
             $this->category !== null || $this->role !== null => 1, // profil
             default => 0, // défaut saison
+        };
+    }
+
+    /** Nature de la cible portée par cette affectation. */
+    public function cibleType(): DotationCibleType
+    {
+        return match (true) {
+            $this->licencie !== null => DotationCibleType::LICENCIE,
+            $this->dirigeant !== null => DotationCibleType::DIRIGEANT,
+            $this->team !== null => DotationCibleType::TEAM,
+            $this->category !== null => DotationCibleType::CATEGORY,
+            $this->role !== null => DotationCibleType::ROLE,
+            default => DotationCibleType::DEFAUT,
+        };
+    }
+
+    /** Identifiant de la cible, dans la forme qu'attend le formulaire d'attribution. */
+    public function cibleId(): ?string
+    {
+        return match (true) {
+            $this->licencie !== null => (string) $this->licencie->getUuid(),
+            $this->dirigeant !== null => (string) $this->dirigeant->getUuid(),
+            $this->team !== null => (string) $this->team->getId(),
+            $this->category !== null => (string) $this->category->getId(),
+            $this->role !== null => $this->role->value,
+            default => null,
         };
     }
 

@@ -92,8 +92,10 @@ final class InscriptionFormService
             $this->uploadQueue->enqueueAttestation($dossier->getId());
         }
 
+        // La boutique n'est pas annoncée ici : elle ouvre quelques jours après les licences,
+        // et une annonce à la soumission ne rattraperait jamais les premiers inscrits.
+        // L'envoi groupé se décide depuis `/admin/boutique/annoncer`.
         $this->sendConfirmation($licencie, $pdfsSignes);
-        $this->sendBoutique($licencie);
     }
 
     /**
@@ -115,23 +117,6 @@ final class InscriptionFormService
             );
         } catch (\Throwable $e) {
             $this->logger->error('Mail de confirmation d\'inscription non envoyé ({uuid}) : {message}', [
-                'uuid' => (string) $licencie->getUuid(),
-                'message' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    /**
-     * Annonce de la boutique, envoyée dans la foulée de l'accusé de réception. Son échec
-     * est encore moins bloquant : elle ne porte aucune information dont le licencié a
-     * besoin pour aller au bout de son inscription.
-     */
-    private function sendBoutique(Licencie $licencie): void
-    {
-        try {
-            $this->mailerService->sendBoutique($licencie);
-        } catch (\Throwable $e) {
-            $this->logger->error('Mail boutique non envoyé ({uuid}) : {message}', [
                 'uuid' => (string) $licencie->getUuid(),
                 'message' => $e->getMessage(),
             ]);

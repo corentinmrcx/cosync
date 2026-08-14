@@ -143,6 +143,16 @@
             </div>
         </div>
 
+        {% if form.sendLink is defined %}
+            <hr class="season-form-divider">
+
+            <div class="licencie-new-checkbox">
+                {{ form_widget(form.sendLink) }}
+                {{ form_label(form.sendLink) }}
+                {{ form_errors(form.sendLink) }}
+            </div>
+        {% endif %}
+
         <div class="season-form-actions">
             <a href="{{ dirigeant ? path('admin_dirigeants_show', {uuid: dirigeant.uuid}) : path('admin_dirigeants_list') }}"
                class="btn btn-ghost">Annuler</a>

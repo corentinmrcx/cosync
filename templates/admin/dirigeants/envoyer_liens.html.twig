@@ -1,0 +1,79 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Envoyer les liens dirigeants{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Dirigeants', route: 'admin_dirigeants_list' },
+    { label: 'Envoyer les liens' }
+] } %}
+
+<div class="envoi-liens-page">
+    <div class="envoi-liens-card">
+
+        <h1 class="envoi-liens-title">Envoyer les liens du formulaire dirigeant</h1>
+
+        <hr class="envoi-liens-divider">
+
+        {% if enAttente is empty %}
+            <p class="envoi-liens-empty">Tout le monde a reçu son lien.</p>
+            <div class="envoi-liens-actions">
+                <a href="{{ path('admin_dirigeants_list') }}" class="btn btn-secondary">Retour</a>
+            </div>
+        {% else %}
+            <form method="post" action="{{ path('admin_dirigeants_send_links') }}"
+                  class="envoi-liens-form"
+                  x-data='{ retenus: {{ joignables|json_encode|raw }}, joignables: {{ joignables|json_encode|raw }} }'>
+                <input type="hidden" name="_token" value="{{ csrf_token('envoyer_liens_dirigeants') }}">
+
+                <p class="envoi-liens-resume">
+                    <strong>{{ enAttente|length }}</strong> dirigeant{{ enAttente|length > 1 ? 's' }} en attente
+                    {%- if sansEmail > 0 %}, dont <strong>{{ sansEmail }}</strong> sans adresse email — à prévenir autrement{% endif %}.
+                </p>
+
+                <div class="envoi-liens-selection">
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = [...joignables]">Tout cocher</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = []">Tout décocher</button>
+                </div>
+
+                <ul class="envoi-liens-list">
+                    {% for dirigeant in enAttente %}
+                        <li class="envoi-liens-item">
+                            {% if dirigeant.email %}
+                                <input type="checkbox"
+                                       name="dirigeants[]"
+                                       value="{{ dirigeant.uuid }}"
+                                       class="envoi-liens-case"
+                                       x-model="retenus"
+                                       checked>
+                            {% else %}
+                                <input type="checkbox" class="envoi-liens-case" disabled>
+                            {% endif %}
+                            <span class="envoi-liens-nom">{{ dirigeant.nomPrenom }}</span>
+                            <span class="envoi-liens-equipe">{{ dirigeant.role.label() }}</span>
+                            <span class="envoi-liens-email">
+                                {%- if dirigeant.email %}{{ dirigeant.email }}{% else %}<span class="envoi-liens-manquant">Pas d'email</span>{% endif -%}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <hr class="envoi-liens-divider">
+
+                <div class="envoi-liens-actions">
+                    <a href="{{ path('admin_dirigeants_list') }}" class="btn btn-ghost">Annuler</a>
+                    <button type="submit" class="btn btn-primary"
+                            :disabled="retenus.length === 0"
+                            x-text="'Envoyer ' + retenus.length + ' lien' + (retenus.length > 1 ? 's' : '')">
+                        Envoyer {{ joignables|length }} lien{{ joignables|length > 1 ? 's' }}
+                    </button>
+                </div>
+            </form>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

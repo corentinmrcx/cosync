@@ -97,6 +97,15 @@ class Dirigeant
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $formTokenExpiresAt = null;
 
+    /**
+     * Date du premier départ du lien par mail — null tant qu'il n'est jamais parti.
+     *
+     * Fait daté, distinct de `formTokenExpiresAt` : ce dernier est remis à null dès que le
+     * dossier est complet, il ne peut donc pas dire si le dirigeant a été contacté un jour.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $linkSentAt = null;
+
     /** Date de soumission du formulaire public */
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $formCompletedAt = null;
@@ -334,6 +343,18 @@ class Dirigeant
     public function setFormTokenExpiresAt(?\DateTimeImmutable $formTokenExpiresAt): static
     {
         $this->formTokenExpiresAt = $formTokenExpiresAt;
+
+        return $this;
+    }
+
+    public function getLinkSentAt(): ?\DateTimeImmutable
+    {
+        return $this->linkSentAt;
+    }
+
+    public function setLinkSentAt(?\DateTimeImmutable $linkSentAt): static
+    {
+        $this->linkSentAt = $linkSentAt;
 
         return $this;
     }

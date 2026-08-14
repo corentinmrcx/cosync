@@ -24,6 +24,7 @@ final class StockReportService
         private readonly StockItemRepository $itemRepository,
         private readonly StockCategoryRepository $categoryRepository,
         private readonly StockMovementRepository $movementRepository,
+        private readonly StockTailleResolver $taillesResolver,
     ) {}
 
     /** @return list<StockSection<StockLigne>> */
@@ -128,7 +129,17 @@ final class StockReportService
 
         $stock = $this->movementRepository->getCurrentStock($item);
 
-        return new StockLigne($item, $stock, $this->niveau($item, $stock), $tailles, $taillesMap);
+        return new StockLigne(
+            $item,
+            $stock,
+            $this->niveau($item, $stock),
+            $tailles,
+            $taillesMap,
+            // strval : une pointure « 42 » devient une clé entière en PHP, la comparaison au
+            // référentiel se fait sur des chaînes.
+            $this->taillesResolver->options($item, array_map('strval', array_keys($taillesMap))),
+            $this->taillesResolver->typeVetementARenseigner($item),
+        );
     }
 
     private function ligneDInventaire(StockItem $item): StockInventaireLigne

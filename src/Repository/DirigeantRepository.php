@@ -74,6 +74,41 @@ class DirigeantRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /**
+     * Dirigeants qui n'ont jamais reçu le lien de leur formulaire.
+     *
+     * C'est `linkSentAt` qui fait foi, pas le jeton : celui-ci est effacé dès le dossier
+     * complet, il dirait « jamais contacté » de quelqu'un qui a tout signé.
+     *
+     * @return Dirigeant[]
+     */
+    public function findLienJamaisEnvoye(Season $season): array
+    {
+        return $this->queryLienJamaisEnvoye($season)
+            ->leftJoin('d.team', 't')
+            ->addSelect('t')
+            ->orderBy('d.nom', 'ASC')
+            ->addOrderBy('d.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countLienJamaisEnvoye(Season $season): int
+    {
+        return (int) $this->queryLienJamaisEnvoye($season)
+            ->select('COUNT(d.uuid)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function queryLienJamaisEnvoye(Season $season): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.season = :season')
+            ->andWhere('d.linkSentAt IS NULL')
+            ->setParameter('season', $season);
+    }
+
     /** @return Dirigeant[] */
     public function findBySeasonWithFilters(
         Season $season,

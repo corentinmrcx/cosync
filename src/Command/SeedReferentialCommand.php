@@ -18,6 +18,7 @@ class SeedReferentialCommand extends Command
     // elles sont lues directement depuis la colonne "Sous catégorie" du XLSX FootClubs.
     private const CATEGORIES = [
         ['code' => 'U6',      'label' => 'U6 (Baby Foot)',    'ecole' => true],
+        ['code' => 'U6F',     'label' => 'U6 Féminin',        'ecole' => true],
         ['code' => 'U7',      'label' => 'U7',                'ecole' => true],
         ['code' => 'U7F',     'label' => 'U7 Féminin',        'ecole' => true],
         ['code' => 'U8',      'label' => 'U8',                'ecole' => true],

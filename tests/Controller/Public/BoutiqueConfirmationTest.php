@@ -48,12 +48,29 @@ final class BoutiqueConfirmationTest extends WebTestCase
         self::assertCount(0, $crawler->filter('.inscription-boutique'));
     }
 
+    /**
+     * Le club prépare son lien avant d'ouvrir sa boutique : tant qu'elle est fermée, la
+     * page de confirmation n'en dit rien.
+     */
+    public function testBoutiqueFermeeRienNEstAnnonce(): void
+    {
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $licencie = $this->createLicencie($em);
+        $this->configurerBoutique(self::URL, ouverte: false);
+
+        $crawler = $client->request('GET', '/inscription/' . $licencie->getUuid() . '/confirmation');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('.inscription-boutique'));
+    }
+
     /* ── Outils ── */
 
-    private function configurerBoutique(?string $url): void
+    private function configurerBoutique(?string $url, bool $ouverte = true): void
     {
         $settings = static::getContainer()->get(ClubSettingsService::class);
-        $settings->get()->setBoutiqueUrl($url);
+        $settings->get()->setBoutiqueUrl($url)->setBoutiqueOuverte($ouverte);
         $settings->enregistrer();
     }
 

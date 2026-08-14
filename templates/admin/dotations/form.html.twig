@@ -25,6 +25,30 @@
     </select>
 {% endmacro %}
 
+{# Un panneau de destinataires : la même liste déroulante à coches que les catégories d'une
+   équipe. Masqué, le panneau est aussi désactivé — un <fieldset disabled> ne poste rien,
+   donc seules les valeurs du type retenu partent au serveur. #}
+{% macro cibles(type, options, verrouillees, vide, recherche) %}
+    <fieldset class="dot-pick" x-ref="panneau-{{ type }}" x-show="type === '{{ type }}'"
+              :disabled="type !== '{{ type }}'" x-cloak>
+        {% if options is empty %}
+            <p class="dot-empty">{{ vide }}</p>
+        {% else %}
+            {% include 'components/multi-select.html.twig' with {
+                ms_name: 'cible_ids[]',
+                ms_options: options,
+                ms_selected: [],
+                ms_placeholder: '— Choisir les destinataires —',
+                ms_unite: 'destinataires',
+                ms_verrouillees: verrouillees,
+                ms_verrou_note: 'déjà attribué',
+                ms_recherche: recherche,
+                ms_tout: true,
+            } only %}
+        {% endif %}
+    </fieldset>
+{% endmacro %}
+
 {% block content %}
 {% import _self as ui %}
 {% include 'components/breadcrumb.html.twig' with { items: [
@@ -102,37 +126,45 @@
             </ul>
         {% endif %}
 
-        <form method="post" action="{{ path('admin_dotations_affectation_new') }}" class="dot-add-row"
-              x-data="{ cible: 'team' }">
-            <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_new') }}">
-            <input type="hidden" name="modele_id" value="{{ modele.id }}">
+        {# Un kit se donne rarement à une seule équipe : on coche tout ce qui le reçoit,
+           puis on attribue en un envoi. Les cases déjà attribuées sont verrouillées —
+           le retrait passe par la liste ci-dessus, seul endroit d'où l'on défait. #}
+        <form method="post" action="{{ path('admin_dotations_affectation_new', {id: modele.id}) }}"
+              class="dot-attribuer" x-data="dotationCibles('team')" @multi-select="majSelection($event.detail.nombre)">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_affectation_new_' ~ modele.id) }}">
 
-            <select name="cible_type" class="field-input" x-model="cible" aria-label="Type de cible">
-                <option value="team">Équipe</option>
-                <option value="category">Catégorie FFF</option>
-                <option value="role">Rôle dirigeant</option>
-                <option value="licencie">Un licencié</option>
-                <option value="dirigeant">Un dirigeant</option>
-                <option value="default">Par défaut (toute la saison)</option>
-            </select>
+            <div class="field">
+                <label class="field-label" for="cible-type">Type de destinataire</label>
+                <select id="cible-type" name="cible_type" class="field-input" x-model="type">
+                    <option value="team">Équipes</option>
+                    <option value="category">Catégories FFF</option>
+                    <option value="role">Rôles dirigeants</option>
+                    <option value="licencie">Licenciés</option>
+                    <option value="dirigeant">Dirigeants</option>
+                    <option value="default">Par défaut (toute la saison)</option>
+                </select>
+            </div>
 
-            <select name="cible_id" class="field-input" x-show="cible === 'team'" x-cloak :disabled="cible !== 'team'" aria-label="Équipe">
-                {% for t in teams %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
-            </select>
-            <select name="cible_id" class="field-input" x-show="cible === 'category'" x-cloak :disabled="cible !== 'category'" aria-label="Catégorie">
-                {% for c in categories %}<option value="{{ c.id }}">{{ c.label }}</option>{% endfor %}
-            </select>
-            <select name="cible_id" class="field-input" x-show="cible === 'role'" x-cloak :disabled="cible !== 'role'" aria-label="Rôle dirigeant">
-                {% for r in roles %}<option value="{{ r.value }}">{{ r.label() }}</option>{% endfor %}
-            </select>
-            <select name="cible_id" class="field-input" x-show="cible === 'licencie'" x-cloak :disabled="cible !== 'licencie'" aria-label="Licencié">
-                {% for l in licencies %}<option value="{{ l.uuid }}">{{ l.nom }} {{ l.prenom }}</option>{% endfor %}
-            </select>
-            <select name="cible_id" class="field-input" x-show="cible === 'dirigeant'" x-cloak :disabled="cible !== 'dirigeant'" aria-label="Dirigeant">
-                {% for d in dirigeants %}<option value="{{ d.uuid }}">{{ d.nomPrenom }}</option>{% endfor %}
-            </select>
+            {{ ui.cibles('team', cibles.team, ciblesVerrouillees.team, 'Aucune équipe dans cette saison.', false) }}
+            {{ ui.cibles('category', cibles.category, ciblesVerrouillees.category, 'Aucune catégorie au référentiel.', false) }}
+            {{ ui.cibles('role', cibles.role, ciblesVerrouillees.role, 'Aucun rôle dirigeant.', false) }}
+            {{ ui.cibles('licencie', cibles.licencie, ciblesVerrouillees.licencie, 'Aucun licencié validé dans cette saison.', true) }}
+            {{ ui.cibles('dirigeant', cibles.dirigeant, ciblesVerrouillees.dirigeant, 'Aucun dirigeant dans cette saison.', true) }}
 
-            <button type="submit" class="btn btn-ghost">+ Attribuer</button>
+            <fieldset class="dot-pick" x-ref="panneau-default" x-show="type === 'default'"
+                      :disabled="type !== 'default'" x-cloak>
+                {% if defautAttribue %}
+                    <p class="dot-hint">Ce kit est déjà le kit par défaut de la saison.</p>
+                {% else %}
+                    <p class="dot-hint">Ce kit ira à toute personne qu'aucune autre attribution ne vise.</p>
+                {% endif %}
+            </fieldset>
+
+            <div class="dot-choix-actions">
+                <button type="submit" class="btn btn-primary" :disabled="!peutValider">
+                    <span x-text="libelleBouton"></span>
+                </button>
+            </div>
         </form>
     </div>
 

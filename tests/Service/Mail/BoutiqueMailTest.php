@@ -15,11 +15,12 @@ use Symfony\Bundle\FrameworkBundle\Test\MailerAssertionsTrait;
 use Symfony\Component\Mime\Email;
 
 /**
- * Annonce de la boutique du club, envoyée dans la foulée de l'accusé de réception.
+ * Annonce de la boutique du club, envoyée sur décision de l'admin.
  *
- * Le lien étant un réglage facultatif, le point sensible est le silence : tant qu'aucune
- * boutique n'est configurée, le licencié ne doit recevoir aucun mail — surtout pas un
- * mail dont le bouton pointe dans le vide.
+ * Le point sensible est le silence : sans lien configuré, ou tant que la boutique n'est
+ * pas ouverte, le licencié ne doit recevoir aucun mail — surtout pas un mail dont le
+ * bouton pointe dans le vide, ou qui annonce une boutique dont le club ne veut pas
+ * encore parler.
  */
 final class BoutiqueMailTest extends KernelTestCase
 {
@@ -45,6 +46,20 @@ final class BoutiqueMailTest extends KernelTestCase
     {
         self::bootKernel();
         $this->configurerBoutique(null);
+
+        self::getContainer()->get(MailerService::class)->sendBoutique($this->seedLicencie());
+
+        self::assertCount(0, $this->messagesEnvoyes());
+    }
+
+    /**
+     * Le lien peut être préparé des jours avant l'ouverture : tant que la boutique est
+     * fermée, il ne doit pas fuiter par un mail.
+     */
+    public function testBoutiqueFermeeAucunMailNePart(): void
+    {
+        self::bootKernel();
+        $this->configurerBoutique(self::URL, ouverte: false);
 
         self::getContainer()->get(MailerService::class)->sendBoutique($this->seedLicencie());
 
@@ -82,10 +97,10 @@ final class BoutiqueMailTest extends KernelTestCase
 
     /* ── Outils ── */
 
-    private function configurerBoutique(?string $url): void
+    private function configurerBoutique(?string $url, bool $ouverte = true): void
     {
         $settings = self::getContainer()->get(ClubSettingsService::class);
-        $settings->get()->setBoutiqueUrl($url);
+        $settings->get()->setBoutiqueUrl($url)->setBoutiqueOuverte($ouverte);
         $settings->enregistrer();
     }
 

@@ -83,7 +83,7 @@
                                     {% include 'admin/dotations/_flocage_cell.html.twig' with { besoin: besoin } only %}
                                 </td>
                                 <td>
-                                    {% set options = besoin.stockItem.typeVetement and besoin.stockItem.typeVetement.value == 'chaussures' ? pointures : taillesConnues %}
+                                    {% set options = taillesParBesoin[besoin.id] ?? [] %}
                                     {% set estDonne = besoin.statut.value == 'donne' %}
                                     <div x-data="{ editing: false }" class="dot-taille-edit">
                                         <div x-show="!editing" class="dot-taille-display">

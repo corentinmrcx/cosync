@@ -141,6 +141,44 @@ class LicencieRepository extends ServiceEntityRepository
             ->setParameter('season', $season);
     }
 
+    /**
+     * Licenciés à qui la boutique reste à annoncer : dossier complété, annonce jamais partie.
+     *
+     * Le dossier complété est la borne volontaire — la boutique est facultative, et un mail
+     * de plus à qui n'a pas encore rempli son inscription la ferait passer au second plan.
+     *
+     * @return Licencie[]
+     */
+    public function findBoutiqueAAnnoncer(Season $season): array
+    {
+        return $this->queryBoutiqueAAnnoncer($season)
+            ->leftJoin('l.team', 't')
+            ->addSelect('t')
+            ->orderBy('l.nom', 'ASC')
+            ->addOrderBy('l.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countBoutiqueAAnnoncer(Season $season): int
+    {
+        return (int) $this->queryBoutiqueAAnnoncer($season)
+            ->select('COUNT(l.uuid)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function queryBoutiqueAAnnoncer(Season $season): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->createQueryBuilder('l')
+            ->join('l.dossierClub', 'd')
+            ->where('l.season = :season')
+            ->andWhere('d.formCompletedAt IS NOT NULL')
+            ->andWhere('l.boutiqueAnnonceeAt IS NULL')
+            ->andWhere('l.email IS NOT NULL')
+            ->setParameter('season', $season);
+    }
+
     /** @return Licencie[] */
     public function findSansEquipe(Season $season): array
     {

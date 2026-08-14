@@ -39,7 +39,7 @@ class EquipeController extends AbstractController
             'newTeamForm' => $this->createForm(TeamSetupType::class, new TeamSetupData(), [
                 'action' => $this->generateUrl('admin_equipes_new'),
             ]),
-            'categories' => $this->categoryRepo->findBy([], ['minYear' => 'ASC']),
+            'categories' => $this->categoryRepo->findAllOrdered(),
             'affectation' => $this->affectationService->apercu($season),
         ]);
     }
