@@ -139,8 +139,8 @@
 
             <div class="field">
                 <label class="field-label">Texte du document</label>
-                <div class="document-edit-editor-wrapper">
-                    <div id="quill-editor" class="document-edit-editor">{{ document ? document.contenuHtml|raw : '' }}</div>
+                <div class="editeur-riche-wrapper">
+                    <div id="quill-editor" class="editeur-riche-zone">{{ document ? document.contenuHtml|raw : '' }}</div>
                 </div>
             </div>
 
@@ -156,7 +156,7 @@
                 <span class="document-preview-title">Aperçu</span>
                 <span class="document-preview-hint">Mis à jour en direct</span>
             </div>
-            <div class="document-preview-content" id="document-preview">
+            <div class="document-preview-content editeur-riche-apercu" id="document-preview">
                 {{ document ? document.contenuHtml|raw : '' }}
             </div>
             {% if apercuUrl %}

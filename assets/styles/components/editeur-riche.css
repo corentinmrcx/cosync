@@ -1,0 +1,68 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Éditeur de texte enrichi — cadre Quill et rendu du HTML produit.
+
+   Le JS est mutualisé (assets/js/editeur-riche.js) : le style l'est aussi.
+   Les pages qui l'utilisent — documents à signer, attestation de clés — ne
+   gardent que leur mise en page : colonnes, cartes, panneau d'aperçu.
+
+   Les sélecteurs .ql-* sont générés par Quill, pas par nous : ils sont scopés
+   au wrapper pour ne pas fuir sur le reste de l'application. Ce scope suffit
+   à passer devant quill.snow.css, chargé à la demande par le JS.
+─────────────────────────────────────────────────────────────────────────── */
+
+.editeur-riche-wrapper .ql-toolbar.ql-snow {
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    font-family: var(--font-sans);
+}
+
+.editeur-riche-wrapper .ql-container.ql-snow {
+    border: 1.5px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    min-height: 25rem;
+}
+
+.editeur-riche-zone {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-base);
+    background: var(--color-bg-page);
+}
+
+/* — Rendu du HTML produit par l'éditeur —
+   Sans ces règles, l'aperçu retombe sur les styles par défaut du navigateur :
+   titres démesurés, paragraphes collés, puces sans retrait. C'est le seul
+   endroit où l'admin voit ce qu'il écrit : il doit ressembler au document. */
+.editeur-riche-apercu {
+    font-size: var(--font-size-sm);
+    line-height: 1.65;
+    color: var(--color-text-body);
+}
+
+.editeur-riche-apercu h1,
+.editeur-riche-apercu h2,
+.editeur-riche-apercu h3 {
+    font-weight: 700;
+    color: var(--color-text-base);
+    margin-top: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.editeur-riche-apercu h1 { font-size: var(--font-size-base); }
+
+.editeur-riche-apercu h2,
+.editeur-riche-apercu h3 { font-size: var(--font-size-sm); }
+
+.editeur-riche-apercu p { margin-bottom: 0.5rem; }
+
+.editeur-riche-apercu ul,
+.editeur-riche-apercu ol {
+    padding-left: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.editeur-riche-apercu > *:first-child { margin-top: 0; }
+.editeur-riche-apercu > *:last-child  { margin-bottom: 0; }

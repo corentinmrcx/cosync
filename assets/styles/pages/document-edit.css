@@ -55,27 +55,8 @@
     margin: 0;
 }
 
-.document-edit-editor {
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-base);
-    background: var(--color-bg-page);
-}
-
-.ql-toolbar.ql-snow {
-    border: 1.5px solid var(--color-border) !important;
-    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
-    font-family: var(--font-sans) !important;
-}
-
-.ql-container.ql-snow {
-    border: 1.5px solid var(--color-border) !important;
-    border-top: none !important;
-    border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
-    font-family: var(--font-sans) !important;
-    font-size: var(--font-size-sm) !important;
-    min-height: 400px;
-}
+/* Le cadre de l'éditeur et le rendu de l'aperçu sont portés par
+   components/editeur-riche.css — cette page n'en garde que la mise en page. */
 
 .document-edit-actions {
     display: flex;
@@ -156,23 +137,8 @@
     padding: 0.75rem;
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    color: var(--color-text-body);
-    line-height: 1.65;
     background: var(--color-bg-subtle);
 }
-
-.document-preview-content h1,
-.document-preview-content h2,
-.document-preview-content h3 { font-weight: 700; color: var(--color-text-base); margin-top: 0.875rem; margin-bottom: 0.25rem; }
-.document-preview-content h1 { font-size: var(--font-size-base); }
-
-.document-preview-content h2,
-.document-preview-content h3 { font-size: var(--font-size-sm); }
-.document-preview-content p  { margin-bottom: 0.5rem; }
-
-.document-preview-content ul,
-.document-preview-content ol { padding-left: 1.25rem; margin-bottom: 0.5rem; }
 
 /* — Champs propres au document : identité, cible, ciblage — */
 
