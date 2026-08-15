@@ -186,6 +186,10 @@
 .stock-taille-table th:last-child,
 .stock-taille-table td:last-child { text-align: right; }
 
+/* La note se lit comme du texte : alignée à gauche, même en dernière colonne. */
+.stock-taille-table th.stock-taille-table-note,
+.stock-taille-table td.stock-taille-table-note { text-align: left; width: 55%; }
+
 .stock-taille-table td {
     padding: 0.3rem 0.5rem;
     color: var(--color-text-body);
@@ -201,6 +205,51 @@
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
     margin-top: 0.1rem;
+}
+
+/* — Notes de stock —
+     Le texte vit dans une modale : une note de trois lignes déformait la ligne du tableau.
+     Ne reste ici que le bouton qui l'ouvre. */
+.stock-note-scope { display: contents; }
+
+.stock-note-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.25rem;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-disabled);
+    cursor: pointer;
+    text-align: left;
+}
+
+.stock-note-btn:hover { text-decoration: underline; }
+.stock-note-btn.is-remplie { color: var(--color-info); }
+
+.stock-taille-note-vide { color: var(--color-text-disabled); }
+
+.stock-note-modal-soustitre {
+    margin: 0.15rem 0 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.stock-note-modal-texte {
+    margin: 0;
+    white-space: pre-line;
+    color: var(--color-text-body);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
+.stock-note-modal-texte:empty::after {
+    content: 'Aucune note.';
+    color: var(--color-text-disabled);
 }
 
 /* Badges stock */

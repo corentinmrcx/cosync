@@ -224,6 +224,87 @@ created_by: User
 created_at: datetime
 ```
 
+### Taille — un référentiel en base, deux publics
+
+Les tailles ne sont plus une constante PHP : elles vivent dans la table `taille`, réglée
+depuis `/admin/club/tailles` (ordre au glisser-déposer, comme les catégories de stock).
+`TailleReferentiel` lit, `TailleService` écrit.
+
+```php
+Taille  // libelle, type (VETEMENT|POINTURE), groupe, proposeeAuxLicencies, position
+```
+
+- `groupesProposes()` sert les **formulaires** : une personne n'y déclare que ce qu'elle
+  sait dire d'elle-même — adulte, ou enfant **en âge**.
+- `pourLeStock()` sert le **stock** : tout le référentiel du type, étiquetages fournisseur
+  compris (`104`…`176`, `XS enfant`…`XL enfant`). C'est `proposeeAuxLicencies = false` qui
+  fait la différence. Ne pas remonter ces déclinaisons dans les formulaires : un parent ne
+  sait pas si le maillot de son enfant est un 128, et la taille déduite pour la dotation en
+  sortirait fausse.
+
+**Le libellé est une clé de fait, pas un simple label** : il est recopié tel quel dans
+`dossier_club`, `dirigeant`, `stock_movement`, `dotation_besoin` et `stock_taille_note`.
+`TailleService` refuse donc de le **renommer** ou de le **supprimer** dès qu'un
+enregistrement le désigne — on décoche « proposée » à la place. L'ordre du référentiel est
+celui de **tous** les sélecteurs, public compris.
+
+### GrilleTaille — traduire le déclaré en étiquette fournisseur
+
+Séparer les deux publics ne suffisait pas : il fallait encore **passer de l'un à l'autre**. Un
+licencié déclare « 44 » ou « 12 ans » ; le fournisseur vend en « 43-46 » et en « 128 ». Sans
+traduction, la dotation sortait du stock une déclinaison qui n'existe à aucun carton — le
+compteur du « 44 » partait en négatif pendant que celui du « 43-46 » ne bougeait pas.
+
+```php
+GrilleTaille       // nom, type (VETEMENT|POINTURE), valeurs
+GrilleTailleValeur // cible: Taille (le libellé du carton), couvertures: Taille[] (le déclaré)
+StockItem          // grilleTaille: ?GrilleTaille
+```
+
+- **Les deux côtés sont des `Taille`**, jamais du texte libre : la cible est recopiée dans
+  `stock_movement` et `dotation_besoin`, elle doit donc exister au référentiel — sinon la
+  saisie d'un mouvement ne la proposerait même pas. `TailleService` compte les grilles parmi
+  les emplois : une taille traduite ou couverte ne se renomme ni ne se supprime plus.
+- **`grilleTaille` nullable = pas de traduction**, et c'est le cas courant : le maillot adulte
+  se vend dans les tailles du formulaire. On ne crée une grille que quand le fournisseur a son
+  propre barème.
+- **Une taille déclarée mène à un seul libellé.** `GrilleTailleService` refuse le
+  chevauchement : deux plages pour une même pointure rendraient la traduction indécidable.
+- **Une taille non couverte donne `null`**, jamais une valeur approchante. Le besoin reste
+  « à renseigner » dans le suivi, et l'admin tranche. Mieux vaut un trou visible qu'une
+  déclinaison inventée. L'écran de la grille annonce ces trous avant qu'ils ne se voient.
+- Le point d'insertion unique est **`StockTailleResolver`** : `traduire()` pour la dotation
+  (appelé par `DotationResolver::sizeFor()`), `options()` pour restreindre la saisie d'un
+  mouvement aux déclinaisons réellement vendues. En aval, remise, ventilation, achat et bon de
+  commande parlent déjà « la taille du besoin » et suivent tout seuls.
+- L'ordre d'affichage reste celui du **référentiel**, pas de la grille : les libellés
+  fournisseur y figurent déjà, `TailleReferentiel::comparer()` les range sans rien savoir des
+  grilles.
+
+### Notes, correction et retrait d'un article de stock
+
+**Deux notes, deux portées.** `StockItem.note` vaut pour l'article entier (où il est rangé,
+ce qu'il reste à commander) ; `StockTailleNote` vaut pour une déclinaison (« le 128 taille
+petit »). Une note vidée est **supprimée**, jamais conservée vide. Le tableau n'affiche
+qu'un bouton — le texte vit dans une modale, une note de trois lignes déformait la ligne.
+Les deux se lisent aussi sur la feuille d'inventaire, qui se remplit au local.
+
+**Corriger un mouvement n'est pas l'effacer.** `StockMovementService::corrigerMouvementManuel()`
+change la quantité ou la taille d'un mouvement **manuel**, exige un **motif**, et écrit une
+ligne `StockMovementCorrection` (append-only) qui garde la valeur d'avant. Le stock, dérivé
+des mouvements, suit tout seul. Une dotation, une réception de commande ou une vente ne se
+corrige pas ici : son écran dédié tient le besoin ou la commande en face.
+
+**Supprimer ou archiver** — `StockItemService::analyserSuppression()` tranche, et l'écran de
+confirmation l'annonce **avant** d'agir. Un article part pour de bon quand les trois
+conditions tiennent : stock soldé **taille par taille**, mouvements **tous manuels**, aucun
+kit / besoin de dotation / bon de commande ne le référence. C'est le cas de l'erreur de
+saisie, et lui seul : ses mouvements et ses notes partent avec lui, après une case à cocher.
+Dès qu'une dotation, une commande ou une caisse l'a touché, on **archive** — la trace n'est
+plus une erreur mais une histoire. Supprimable ne veut pas dire obligé : l'écran offre
+toujours « Archiver plutôt ». Ne pas le remplacer par un `confirm()` : lui seul sait dire
+lequel des deux va se produire, et pourquoi.
+
 ### Detenteur, CleMouvement, AttestationCle — deux échelles de temps
 
 Les clés du local sont le seul domaine où **le fait et l'engagement ne vivent pas dans la
@@ -618,6 +699,28 @@ pas une page.
 **Annuler mène là où mène Enregistrer.** Si le contrôleur redirige vers `admin_stock_gestion`
 après enregistrement, le lien Annuler pointe sur `admin_stock_gestion`, pas sur un écran
 voisin : quitter un formulaire ne doit pas déplacer l'utilisateur.
+
+### 7.6 ter Un article du stock se désigne par nom · marque · couleur
+
+Le club crée **un article par déclinaison** : plusieurs `StockItem` portent le même `nom`
+et ne se distinguent que par leur `marque` et leur `couleur`. Un écran qui n'affiche que
+le nom présente donc à l'admin plusieurs lignes identiques entre lesquelles il ne peut pas
+choisir.
+
+Partout où un admin doit **reconnaître** un article — un `<select>`, une ligne de kit, un
+récapitulatif — la désignation passe par
+`components/_stock_item_label.html.twig` :
+
+```twig
+{% import 'components/_stock_item_label.html.twig' as article %}
+{{ article.label(item) }}     {# Short · Nike · Rouge — nom seul si ni marque ni couleur #}
+{{ article.details(item) }}   {# Nike · Rouge, à glisser dans une ligne de méta #}
+```
+
+L'ordre `nom · marque · couleur` est celui des écrans de stock ; ne pas en inventer un autre.
+Les écrans de stock ajoutent la taille entre les deux, parce qu'elle est portée par l'article ;
+côté dotation elle vit sur le `DotationBesoin` (déduite du dossier) et n'a rien à faire dans
+la désignation.
 
 ### 7.7 Alpine.js — Séparation données/affichage
 

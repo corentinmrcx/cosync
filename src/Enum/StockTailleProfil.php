@@ -2,11 +2,12 @@
 
 namespace App\Enum;
 
-use App\Service\Referentiel\Tailles;
-
 /**
- * Liste de tailles qu'un article de stock peut porter : un maillot se décline en S/M/L,
+ * Échelle de tailles qu'un article de stock peut porter : un maillot se décline en S/M/L,
  * une paire de chaussettes en pointures, une bouteille en rien du tout.
+ *
+ * Le profil dit *quelle* échelle s'applique ; les valeurs, elles, viennent du référentiel
+ * réglé en admin (TailleReferentiel).
  */
 enum StockTailleProfil: string
 {
@@ -14,13 +15,12 @@ enum StockTailleProfil: string
     case POINTURE = 'pointure';
     case AUCUNE = 'aucune';
 
-    /** @return list<string> */
-    public function options(): array
+    public function type(): ?TailleType
     {
         return match ($this) {
-            self::VETEMENT => Tailles::toutes(),
-            self::POINTURE => Tailles::pointures(),
-            self::AUCUNE => [],
+            self::VETEMENT => TailleType::VETEMENT,
+            self::POINTURE => TailleType::POINTURE,
+            self::AUCUNE => null,
         };
     }
 }

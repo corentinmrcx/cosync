@@ -2,15 +2,19 @@
 
 namespace App\Tests\Controller\Admin;
 
+use App\Entity\GrilleTaille;
+use App\Entity\GrilleTailleValeur;
 use App\Entity\Season;
 use App\Entity\StockCategory;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
+use App\Entity\Taille;
 use App\Entity\User;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
+use App\Enum\TailleType;
 use App\Repository\StockCategoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -82,6 +86,33 @@ final class StockEcransTest extends WebTestCase
         self::assertNotContains('XL', $options($chaussettes));
         self::assertContains('XL', $options($maillot));
         self::assertSame([], $options($boisson), 'L\'épicerie porte sa contenance, pas une taille.');
+    }
+
+    public function testUnArticleAGrilleNExposeQueLesDeclinaisonsDeSonFournisseur(): void
+    {
+        $client = $this->loginAdmin();
+
+        $plage = (new Taille())->setLibelle('43-46')->setType(TailleType::POINTURE)->setProposeeAuxLicencies(false);
+        $this->em->persist($plage);
+
+        $valeur = (new GrilleTailleValeur())->setCible($plage);
+        $grille = (new GrilleTaille())->setNom('Chaussettes Nike')->setType(TailleType::POINTURE);
+        $grille->addValeur($valeur);
+        $this->em->persist($grille);
+        $this->em->persist($valeur);
+
+        $chaussettes = $this->makeItem('Chaussettes');
+        $chaussettes->setKind(StockItemKind::EQUIPEMENT)
+            ->setTypeVetement(StockItemVetementType::CHAUSSURES)
+            ->setGrilleTaille($grille);
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/admin/stock/gestion');
+        self::assertResponseIsSuccessful();
+
+        $expose = json_decode($crawler->filter('#tailles-' . $chaussettes->getId())->attr('value') ?? '', true);
+
+        self::assertSame(['43-46'], $expose['options'], 'Un réassort ne se range que sous ce que le fournisseur vend.');
     }
 
     public function testUnArticleSansMouvementEstSignaleEnRupture(): void

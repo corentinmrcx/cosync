@@ -9,6 +9,7 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -62,6 +63,13 @@ class StockItemType extends AbstractType
                 'scale' => 2,
                 'attr' => ['placeholder' => 'ex: 12.50'],
                 'help' => 'Pour le suivi budgétaire. Non affiché aux licenciés.',
+            ])
+            ->add('note', TextareaType::class, [
+                'label' => 'Note sur le stock',
+                'required' => false,
+                'constraints' => [new Length(max: 1000)],
+                'attr' => ['rows' => 3, 'placeholder' => 'ex: rangé dans l\'armoire du local, reste à recommander en septembre'],
+                'help' => 'Affichée dans la gestion du stock. Une remarque propre à une taille se saisit dans le détail par taille.',
             ])
 
             // — Référence —

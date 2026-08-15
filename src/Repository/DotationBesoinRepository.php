@@ -72,4 +72,27 @@ class DotationBesoinRepository extends ServiceEntityRepository
     {
         return $this->findBy(['dirigeant' => $dirigeant, 'season' => $dirigeant->getSeason()]);
     }
+
+    /** Besoins de dotation attendus dans cette taille — garde du référentiel. */
+    public function countByTaille(string $libelle): int
+    {
+        return (int) $this->createQueryBuilder('b')
+            ->select('COUNT(b.id)')
+            ->where('b.taille = :libelle')
+            ->setParameter('libelle', $libelle)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** @return list<string> Tailles attendues par des besoins de dotation. */
+    public function findDistinctTailles(): array
+    {
+        $rows = $this->createQueryBuilder('b')
+            ->select('DISTINCT b.taille AS taille')
+            ->where('b.taille IS NOT NULL')
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_map('strval', array_column($rows, 'taille'));
+    }
 }

@@ -18,6 +18,7 @@
 @import './components/stock-ui.css';
 @import './components/section-home.css';
 @import './components/liste-triable.css';
+@import './components/editeur-riche.css';
 @import './pages/login.css';
 @import './pages/dashboard.css';
 @import './pages/import.css';
@@ -41,6 +42,8 @@
 @import './pages/diag.css';
 @import './pages/dirigeants.css';
 @import './pages/categories.css';
+@import './pages/tailles.css';
+@import './pages/grilles-tailles.css';
 @import './pages/documentation.css';
 @import './pages/error.css';
 @import './pages/legal.css';

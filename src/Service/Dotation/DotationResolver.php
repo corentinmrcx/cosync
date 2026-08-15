@@ -8,9 +8,11 @@ use App\Entity\DotationModele;
 use App\Entity\DotationModeleLigne;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Entity\StockItem;
 use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Repository\DotationAffectationRepository;
+use App\Service\Stock\StockTailleResolver;
 
 /**
  * Résout, pour une personne (licencié ou dirigeant), le modèle de dotation applicable
@@ -25,6 +27,7 @@ final class DotationResolver
 
     public function __construct(
         private readonly DotationAffectationRepository $affectationRepository,
+        private readonly StockTailleResolver $tailles,
     ) {}
 
     public function resolveModele(Licencie|Dirigeant $person): ?DotationModele
@@ -52,7 +55,7 @@ final class DotationResolver
     }
 
     /**
-     * @return array<int, array{stockItem: \App\Entity\StockItem, quantite: int, obligatoire: bool, groupeChoix: ?string, taille: ?string, personnalisation: ?string}>
+     * @return array<int, array{stockItem: StockItem, quantite: int, obligatoire: bool, groupeChoix: ?string, taille: ?string, personnalisation: ?string}>
      */
     public function resolveDotation(Licencie|Dirigeant $person): array
     {
@@ -67,7 +70,7 @@ final class DotationResolver
                 'quantite' => $ligne->getQuantite(),
                 'obligatoire' => $ligne->isObligatoire(),
                 'groupeChoix' => $ligne->getGroupeChoix(),
-                'taille' => $this->sizeFor($person, $item->getTypeVetement()),
+                'taille' => $this->sizeFor($person, $item),
                 // Un texte périmé, laissé sur une option qui n'exige plus de personnalisation,
                 // ne doit jamais remonter jusqu'au flocage.
                 'personnalisation' => $ligne->isPersonnalisationRequise()
@@ -284,7 +287,20 @@ final class DotationResolver
         return true;
     }
 
-    public function sizeFor(Licencie|Dirigeant $person, ?StockItemVetementType $type): ?string
+    /**
+     * Taille à servir à cette personne pour cet article : ce qu'elle a déclaré, traduit dans
+     * le vocabulaire du fournisseur quand l'article porte une grille.
+     *
+     * Le type de vêtement dit quel champ du dossier lire, la grille dans quelle échelle le
+     * dire. Les deux sont indépendants : un haut et un bas lisent deux champs différents pour
+     * une même échelle.
+     */
+    public function sizeFor(Licencie|Dirigeant $person, StockItem $item): ?string
+    {
+        return $this->tailles->traduire($item, $this->tailleDeclaree($person, $item->getTypeVetement()));
+    }
+
+    private function tailleDeclaree(Licencie|Dirigeant $person, ?StockItemVetementType $type): ?string
     {
         if ($type === null) {
             return null;

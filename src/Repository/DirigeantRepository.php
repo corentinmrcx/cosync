@@ -141,4 +141,35 @@ class DirigeantRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
+
+    /** Dirigeants qui déclarent cette taille — garde du référentiel. */
+    public function countByTaille(string $libelle): int
+    {
+        return (int) $this->createQueryBuilder('d')
+            ->select('COUNT(d.uuid)')
+            ->where('d.tailleHaut = :libelle OR d.tailleBas = :libelle OR d.pointure = :libelle')
+            ->setParameter('libelle', $libelle)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** @return list<string> Tailles réellement déclarées par des dirigeants. */
+    public function findDistinctTailles(): array
+    {
+        $rows = $this->createQueryBuilder('d')
+            ->select('DISTINCT d.tailleHaut AS haut', 'd.tailleBas AS bas', 'd.pointure AS pointure')
+            ->getQuery()
+            ->getScalarResult();
+
+        $libelles = [];
+        foreach ($rows as $row) {
+            foreach ($row as $valeur) {
+                if (is_string($valeur) && $valeur !== '') {
+                    $libelles[$valeur] = true;
+                }
+            }
+        }
+
+        return array_keys($libelles);
+    }
 }

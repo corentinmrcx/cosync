@@ -6,6 +6,7 @@ use App\DTO\ManualMovementData;
 use App\Entity\Licencie;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
+use App\Entity\StockMovementCorrection;
 use App\Entity\User;
 use App\Enum\LicenceStatus;
 use App\Enum\StockMovementSource;
@@ -126,6 +127,61 @@ final class StockMovementService
     }
 
     /**
+     * Corrige la quantité ou la taille d'un mouvement saisi à la main.
+     *
+     * Une erreur de frappe se rattrapait jusqu'ici en supprimant la ligne pour la ressaisir :
+     * deux gestes, et surtout plus aucune trace de ce qui avait été écrit d'abord. Ici le
+     * mouvement porte la valeur juste, et une ligne de correction — motif obligatoire —
+     * garde ce qu'il valait avant. Le stock, dérivé des mouvements, suit tout seul.
+     *
+     * @throws \InvalidArgumentException si le mouvement n'est pas manuel, si le motif manque,
+     *                                   si la quantité est nulle ou la taille étrangère à l'article
+     */
+    public function corrigerMouvementManuel(
+        StockMovement $movement,
+        int $quantite,
+        ?string $taille,
+        string $motif,
+        ?User $auteur,
+    ): StockMovementCorrection {
+        if ($movement->getSource() !== StockMovementSource::MANUEL) {
+            throw new \InvalidArgumentException('Seuls les mouvements manuels se corrigent ici. Une dotation ou une réception se corrige depuis son écran dédié.');
+        }
+
+        $motif = trim($motif);
+        if ($motif === '') {
+            throw new \InvalidArgumentException('Indiquez la raison de la correction : elle reste dans l\'historique.');
+        }
+        if ($quantite <= 0) {
+            throw new \InvalidArgumentException('La quantité doit être supérieure à zéro.');
+        }
+
+        $taille = trim((string) $taille) ?: null;
+        $this->assertTailleAdmise($movement->getItem(), $taille);
+
+        if ($quantite === $movement->getQuantite() && $taille === $movement->getTaille()) {
+            throw new \InvalidArgumentException('Rien n\'a changé : ni la quantité ni la taille.');
+        }
+
+        $correction = (new StockMovementCorrection())
+            ->setMovement($movement)
+            ->setQuantiteAvant($movement->getQuantite())
+            ->setQuantiteApres($quantite)
+            ->setTailleAvant($movement->getTaille())
+            ->setTailleApres($taille)
+            ->setMotif($motif)
+            ->setCorrectedBy($auteur);
+
+        $movement->setQuantite($quantite);
+        $movement->setTaille($taille);
+
+        $this->em->persist($correction);
+        $this->em->flush();
+
+        return $correction;
+    }
+
+    /**
      * La modale ne propose que les tailles de l'article ; on revérifie ici pour qu'une
      * soumission forgée n'aille pas ranger un réassort de chaussettes sous « XL ». Les tailles
      * déjà en stock restent admises : un article dont le type a changé doit pouvoir se vider.
@@ -140,7 +196,7 @@ final class StockMovementService
         }
 
         $dejaUtilisees = array_map('strval', array_keys($this->movementRepository->getStockGroupedByTaille($item)));
-        if (in_array($taille, $this->taillesResolver->options($item, $dejaUtilisees), true)) {
+        if ($this->taillesResolver->estAdmise($item, $taille, $dejaUtilisees)) {
             return;
         }
 

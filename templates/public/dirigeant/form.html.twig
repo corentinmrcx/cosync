@@ -52,7 +52,7 @@
                     {% include 'components/_select_liste.html.twig' with {
                         modele: 'tailleHaut',
                         nom: 'taille_haut',
-                        groupes: [{ label: 'Tailles enfants', options: tailles_enfant() }, { label: 'Tailles adultes', options: tailles_adulte() }],
+                        groupes: tailles_groupes(),
                     } only %}
                 </div>
 
@@ -61,7 +61,7 @@
                     {% include 'components/_select_liste.html.twig' with {
                         modele: 'tailleBas',
                         nom: 'taille_bas',
-                        groupes: [{ label: 'Tailles enfants', options: tailles_enfant() }, { label: 'Tailles adultes', options: tailles_adulte() }],
+                        groupes: tailles_groupes(),
                     } only %}
                 </div>
 
@@ -70,7 +70,7 @@
                     {% include 'components/_select_liste.html.twig' with {
                         modele: 'pointure',
                         nom: 'pointure',
-                        groupes: [{ options: pointures() }],
+                        groupes: pointures_groupes(),
                     } only %}
                 </div>
 
