@@ -1,0 +1,97 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Grilles de tailles{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Tailles', route: 'admin_tailles_index' },
+    { label: 'Grilles de tailles' }
+] } %}
+
+<div class="dot-page" x-data="{ adding: false }">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Grilles de tailles</h1>
+            <p class="dot-subtitle">
+                Un licencié déclare ce qu'il sait dire de lui-même — « 44 », « 12 ans ». Le
+                fournisseur, lui, vend ses chaussettes en « 43-46 » et ses vestes enfant en
+                « 128 ». Une grille traduit l'un dans l'autre : l'article rattaché sort du
+                stock sous la déclinaison qui existe vraiment au carton.
+            </p>
+        </div>
+        <div class="dot-header-actions">
+            {# Refermer un formulaire ne détruit rien : le bouton quitte le registre de l'action
+               attendue pour celui du retrait discret (CLAUDE.md §7.6 bis). #}
+            <button type="button" class="btn" :class="adding ? 'btn-ghost' : 'btn-primary'" @click="adding = !adding">
+                <span x-text="adding ? 'Annuler' : '+ Nouvelle grille'"></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="dot-card">
+
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">Grilles</h2>
+            <span class="dot-card-count">{{ grilles|length }}</span>
+        </div>
+
+        <form method="post" action="{{ path('admin_grilles_new') }}" class="dot-affect-form grille-add-form" x-show="adding" x-cloak>
+            <input type="hidden" name="_token" value="{{ csrf_token('grille_nouvelle') }}">
+            <input type="text" name="nom" class="field-input" placeholder="Nom (ex : Chaussettes Nike)" maxlength="100" required>
+            <select name="type" class="field-input">
+                {% for type in types %}
+                    <option value="{{ type.value }}">{{ type.label() }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Créer</button>
+        </form>
+
+        {% if grilles is empty %}
+            <p class="dot-empty">
+                Aucune grille. Tant qu'un article n'en a pas, sa taille de dotation reste celle
+                que la personne a déclarée — ce qui convient au maillot adulte, vendu dans les
+                mêmes tailles que celles du formulaire.
+            </p>
+        {% else %}
+            <ul class="dot-list">
+                {% for grille in grilles %}
+                    {% set articles = articlesParGrille[grille.id]|default(0) %}
+                    <li class="dot-list-item">
+                        <div class="dot-list-main">
+                            <a href="{{ path('admin_grilles_show', {id: grille.id}) }}" class="dot-list-name">{{ grille.nom }}</a>
+                            <span class="grille-meta">
+                                {{ grille.type.label() }}
+                                · {{ grille.valeurs|length }} ligne{{ grille.valeurs|length > 1 ? 's' : '' }}
+                                {% if articles %}
+                                    · {{ articles }} article{{ articles > 1 ? 's' : '' }}
+                                {% else %}
+                                    · <span class="grille-badge-libre">Aucun article</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="dot-list-actions">
+                            <a href="{{ path('admin_grilles_show', {id: grille.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
+                            {# Une grille en service ne se supprime pas : le stock des articles
+                               rattachés est rangé sous ses déclinaisons. #}
+                            {% if articles %}
+                                <span class="btn btn-danger btn-sm grille-btn-disabled"
+                                      title="{{ articles }} article(s) s'en servent — retirez-la d'abord">Supprimer</span>
+                            {% else %}
+                                {% include 'components/_form_suppression.html.twig' with {
+                                    action: path('admin_grilles_delete', {id: grille.id}),
+                                    jeton: 'grille_supprimer_' ~ grille.id,
+                                    message: 'Supprimer la grille ' ~ grille.nom ~ ' ?',
+                                } only %}
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

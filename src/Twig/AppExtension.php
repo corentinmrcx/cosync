@@ -2,9 +2,10 @@
 
 namespace App\Twig;
 
+use App\Enum\TailleType;
 use App\Repository\SeasonRepository;
 use App\Service\Referentiel\ClubSettingsService;
-use App\Service\Referentiel\Tailles;
+use App\Service\Referentiel\TailleReferentiel;
 use App\Service\Saison\SeasonContext;
 use Twig\Extension\AbstractExtension;
 use Twig\Extension\GlobalsInterface;
@@ -17,6 +18,7 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
         private readonly SeasonContext $seasonContext,
         private readonly SeasonRepository $seasonRepository,
         private readonly ClubSettingsService $clubSettings,
+        private readonly TailleReferentiel $tailles,
         private readonly string $nomClub,
     ) {}
 
@@ -52,10 +54,16 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('tailles_adulte', static fn (): array => Tailles::ADULTE),
-            new TwigFunction('tailles_enfant', static fn (): array => Tailles::ENFANT),
-            new TwigFunction('tailles_toutes', Tailles::toutes(...)),
-            new TwigFunction('pointures', Tailles::pointures(...)),
+            // Groupes proposés aux licenciés et aux dirigeants, tels qu'ils s'affichent
+            // dans les sélecteurs : intitulés et ordre viennent du référentiel admin.
+            new TwigFunction('tailles_groupes', fn (): array => $this->tailles->groupesProposes(TailleType::VETEMENT)),
+            new TwigFunction('pointures_groupes', fn (): array => $this->tailles->groupesProposes(TailleType::POINTURE)),
+            // Ordre d'affichage complet, tailles réservées au stock comprises : la modale
+            // de mouvement s'en sert pour ranger les déclinaisons d'un article.
+            new TwigFunction('tailles_ordre', fn (): array => array_merge(
+                $this->tailles->pourLeStock(TailleType::VETEMENT),
+                $this->tailles->pourLeStock(TailleType::POINTURE),
+            )),
         ];
     }
 

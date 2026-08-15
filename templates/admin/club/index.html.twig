@@ -25,6 +25,12 @@
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
+            icon: 'ruler',
+            label: 'Tailles',
+            route: 'admin_tailles_index'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
             icon: 'users',
             label: 'Utilisateurs',
             route: 'admin_users_list'

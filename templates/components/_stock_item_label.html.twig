@@ -1,0 +1,23 @@
+{# Désignation d'un article du stock.
+
+   Le nom seul ne suffit pas : le club crée un article par déclinaison, si bien que
+   plusieurs articles portent le même nom et ne se distinguent que par leur marque et
+   leur couleur. Partout où l'on demande à un admin de reconnaître un article — un
+   sélecteur, une ligne de kit — la désignation doit les porter.
+
+   Même ordre que les écrans de stock : nom · marque · couleur.
+
+   {% import 'components/_stock_item_label.html.twig' as article %}
+   {{ article.label(item) }}      → « Maillot · Nike · Rouge »
+   {{ article.details(item) }}    → « Nike · Rouge » (vide si ni l'un ni l'autre)
+#}
+
+{% macro details(item) %}
+    {{- [item.marque, item.couleur]|filter(v => v)|join(' · ') -}}
+{% endmacro %}
+
+{% macro label(item) %}
+    {%- import _self as self -%}
+    {%- set details = self.details(item)|trim -%}
+    {{- item.nom }}{% if details %} · {{ details }}{% endif -%}
+{% endmacro %}

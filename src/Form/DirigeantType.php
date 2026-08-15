@@ -6,9 +6,10 @@ use App\DTO\DirigeantData;
 use App\Entity\Licencie;
 use App\Entity\Team;
 use App\Enum\DirigeantRole;
+use App\Enum\TailleType;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
-use App\Service\Referentiel\Tailles;
+use App\Service\Referentiel\TailleReferentiel;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -25,10 +26,14 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 /** @extends AbstractType<DirigeantData> */
 class DirigeantType extends AbstractType
 {
+    public function __construct(
+        private readonly TailleReferentiel $tailles,
+    ) {}
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $tailleChoices = Tailles::choixGroupes();
-        $pointureChoices = Tailles::choixPointures();
+        $tailleChoices = $this->tailles->choixGroupes(TailleType::VETEMENT);
+        $pointureChoices = $this->tailles->choixGroupes(TailleType::POINTURE);
 
         $season = $options['season'];
 

@@ -77,7 +77,7 @@ final class DotationBesoinSynchronizer
 
             $personne = $besoin->getLicencie() ?? $besoin->getDirigeant();
             $taille = $personne !== null
-                ? $this->resolver->sizeFor($personne, $besoin->getStockItem()->getTypeVetement())
+                ? $this->resolver->sizeFor($personne, $besoin->getStockItem())
                 : null;
 
             if ($taille !== $besoin->getTaille()) {

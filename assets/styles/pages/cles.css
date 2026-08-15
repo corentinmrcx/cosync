@@ -278,18 +278,8 @@
     color: var(--color-text-muted);
 }
 
-.cles-editor-wrapper {
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-}
-
-.cles-editor-zone {
-    min-height: 22rem;
-    font-size: var(--font-size-sm);
-    line-height: 1.6;
-    color: var(--color-text-body);
-}
+/* Le cadre de l'éditeur et le rendu de l'aperçu sont portés par
+   components/editeur-riche.css — cette page n'en garde que la mise en page. */
 
 .cles-editor-actions {
     display: flex;
@@ -307,6 +297,8 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     overflow: hidden;
+    position: sticky;
+    top: 1.5rem;
 }
 
 .cles-preview-header {
@@ -334,9 +326,6 @@
 .cles-preview-content {
     flex: 1;
     padding: 1rem;
-    font-size: var(--font-size-sm);
-    line-height: 1.6;
-    color: var(--color-text-body);
     overflow-y: auto;
     max-height: 30rem;
 }

@@ -53,9 +53,26 @@ class StockItem
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?StockCategory $category = null;
 
+    /**
+     * Grille dans laquelle le fournisseur vend cet article — « 43-46 » pour des chaussettes,
+     * « 128 » pour une veste enfant. Null quand l'article se décline dans le vocabulaire
+     * déclaré lui-même, ce qui reste le cas du maillot adulte : rien à traduire.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?GrilleTaille $grilleTaille = null;
+
     /** Seuil d'alerte stock bas — null = pas d'alerte */
     #[ORM\Column(nullable: true)]
     private ?int $alertSeuil = null;
+
+    /**
+     * Remarque de l'admin sur le stock de cet article, toutes tailles confondues :
+     * où il est rangé, ce qu'il reste à commander. Les remarques propres à une
+     * déclinaison vivent dans StockTailleNote.
+     */
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $note = null;
 
     #[ORM\Column(options: ['default' => true])]
     private bool $actif = true;
@@ -205,6 +222,30 @@ class StockItem
     public function setAlertSeuil(?int $alertSeuil): static
     {
         $this->alertSeuil = $alertSeuil;
+
+        return $this;
+    }
+
+    public function getGrilleTaille(): ?GrilleTaille
+    {
+        return $this->grilleTaille;
+    }
+
+    public function setGrilleTaille(?GrilleTaille $grilleTaille): static
+    {
+        $this->grilleTaille = $grilleTaille;
+
+        return $this;
+    }
+
+    public function getNote(): ?string
+    {
+        return $this->note;
+    }
+
+    public function setNote(?string $note): static
+    {
+        $this->note = $note;
 
         return $this;
     }

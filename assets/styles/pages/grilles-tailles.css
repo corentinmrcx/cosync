@@ -1,0 +1,64 @@
+/* — Grilles de tailles (/admin/club/grilles-tailles) —
+     Les listes reprennent la mise en page commune des référentiels (dot-*) ; seuls les
+     éléments propres aux grilles sont définis ici. */
+
+.grille-meta {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.grille-badge-libre,
+.grille-badge-vide {
+    display: inline-block;
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-muted);
+    color: var(--color-text-body);
+    font-weight: 600;
+}
+
+/* Une ligne qui ne couvre rien ne traduit rien : elle mérite d'être signalée. */
+.grille-badge-vide {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+/* Grille en service : le bouton reste visible pour dire pourquoi c'est refusé. */
+.grille-btn-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.grille-alerte {
+    margin: 0 0 1rem;
+    padding: 0.65rem 0.85rem;
+    border-left: 3px solid var(--color-warning);
+    border-radius: var(--radius-sm);
+    background: var(--color-warning-bg);
+    color: var(--color-text-body);
+    font-size: var(--font-size-sm);
+}
+
+.grille-add-form,
+.grille-rename-form,
+.grille-valeur-form {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.grille-add-form .field-input,
+.grille-rename-form .field-input { flex: 1 1 10rem; min-width: 0; }
+
+.grille-cible-select { flex: 0 1 12rem; }
+
+/* En modification, le libellé fournisseur ne bouge plus : seule sa couverture se règle. */
+.grille-cible-fixe {
+    flex: 0 0 auto;
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-muted);
+    font-weight: 600;
+}

@@ -34,8 +34,8 @@
 
             <div class="cles-editor-field">
                 <label class="cles-editor-label">Engagement complémentaire (facultatif)</label>
-                <div class="cles-editor-wrapper">
-                    <div id="quill-editor" class="cles-editor-zone">{{ season.attestationCleText|raw }}</div>
+                <div class="editeur-riche-wrapper">
+                    <div id="quill-editor" class="editeur-riche-zone">{{ season.attestationCleText|raw }}</div>
                 </div>
             </div>
 
@@ -51,7 +51,7 @@
                 <span class="cles-preview-title">Aperçu — rendu signataire</span>
                 <span class="cles-preview-hint">Mis à jour en direct</span>
             </div>
-            <div class="cles-preview-content" id="attestation-preview">
+            <div class="cles-preview-content editeur-riche-apercu" id="attestation-preview">
                 {{ season.attestationCleText|raw }}
             </div>
             <div class="cles-preview-footer">

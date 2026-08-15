@@ -13,7 +13,7 @@
 <div class="stock-dashboard-page" x-data="stockMouvementModal({
         urlMouvement: '{{ path('admin_stock_items_movement', {id: '__ID__'}) }}',
         urlArticle: '{{ path('admin_stock_items_edit', {id: '__ID__'}) }}',
-        ordreTailles: {{ tailles_toutes()|json_encode }},
+        ordreTailles: {{ tailles_ordre()|json_encode }},
      })">
 
     <div class="stock-dashboard-header">
@@ -35,6 +35,10 @@
             <p>Aucun article.</p>
         </div>
     {% endif %}
+
+    {# Le tableau et la modale de note partagent un même composant Alpine ; le conteneur
+       s'efface de la mise en page (display: contents) pour ne pas casser la colonne. #}
+    <div class="stock-note-scope" x-data="stockNoteModal">
 
     {% for section in summary %}
         <div class="stock-dashboard-section">
@@ -77,6 +81,20 @@
                                                 {% if (row.item.marque or row.item.taille) and row.item.couleur %} · {% endif %}
                                                 {% if row.item.couleur %}{{ row.item.couleur }}{% endif %}
                                             </span>
+                                            {# Le texte vit dans la modale, pas dans la cellule : une note de
+                                               trois lignes déformait la ligne de l'article. #}
+                                            <button type="button"
+                                                    class="stock-note-btn{{ row.item.note ? ' is-remplie' : '' }}"
+                                                    @click.stop="ouvrir({{ {
+                                                        titre: 'Note — ' ~ row.item.nom,
+                                                        sousTitre: 'Note de l\'article, toutes tailles confondues',
+                                                        action: path('admin_stock_items_note', {id: row.item.id}),
+                                                        token: csrf_token('note_article_' ~ row.item.id),
+                                                        note: row.item.note,
+                                                    }|json_encode|e('html_attr') }})">
+                                                {{ ui.icon('file-text', 12) }}
+                                                {{ row.item.note ? 'Voir la note' : 'Ajouter une note' }}
+                                            </button>
                                         </div>
                                     </div>
                                 </td>
@@ -100,16 +118,17 @@
                                                 + / − Mouvement
                                             </button>
                                             <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
-                                            {% include 'components/_form_suppression.html.twig' with {
-                                                action: path('admin_stock_items_delete', {id: row.item.id}),
-                                                jeton: 'delete_stock_item_' ~ row.item.id,
-                                                message: 'Supprimer cet article ?',
-                                            } only %}
+                                            {# Écran de confirmation plutôt qu'une boîte de dialogue : lui seul sait dire
+                                               si l'article part avec ses mouvements ou s'il sera archivé, et pourquoi. #}
+                                            <a href="{{ path('admin_stock_items_delete_confirm', {id: row.item.id}) }}" class="btn btn-danger btn-sm">Supprimer</a>
                                         {% else %}
                                             <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">
                                                 <button type="submit" class="btn btn-secondary btn-sm">Désarchiver</button>
                                             </form>
+                                            {# Un article archivé par erreur doit pouvoir partir pour de bon : l'écran
+                                               de confirmation dira, là aussi, si son historique s'y oppose. #}
+                                            <a href="{{ path('admin_stock_items_delete_confirm', {id: row.item.id}) }}" class="btn btn-danger btn-sm">Supprimer</a>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -119,13 +138,34 @@
                                     <td colspan="4">
                                         <table class="stock-taille-table">
                                             <thead>
-                                                <tr><th>Taille</th><th>Stock</th></tr>
+                                                <tr><th>Taille</th><th>Stock</th><th class="stock-taille-table-note">Note</th></tr>
                                             </thead>
                                             <tbody>
                                                 {% for t in row.tailles %}
                                                     <tr>
                                                         <td>{{ t.taille }}</td>
                                                         <td class="stock-taille-table-stock">{{ t.stock }}</td>
+                                                        <td class="stock-taille-table-note">
+                                                            {# Une ligne sans taille (« — ») ne porte pas de note :
+                                                               celle de l'article la couvre déjà. #}
+                                                            {% if t.sansTaille %}
+                                                                <span class="stock-taille-note-vide">—</span>
+                                                            {% else %}
+                                                                <button type="button"
+                                                                        class="stock-note-btn{{ t.note ? ' is-remplie' : '' }}"
+                                                                        @click="ouvrir({{ {
+                                                                            titre: 'Note — ' ~ row.item.nom,
+                                                                            sousTitre: 'Taille ' ~ t.taille,
+                                                                            action: path('admin_stock_items_note_taille', {id: row.item.id}),
+                                                                            token: csrf_token('note_taille_' ~ row.item.id),
+                                                                            taille: t.taille,
+                                                                            note: t.note,
+                                                                        }|json_encode|e('html_attr') }})">
+                                                                    {{ ui.icon('file-text', 12) }}
+                                                                    {{ t.note ? 'Voir la note' : 'Ajouter une note' }}
+                                                                </button>
+                                                            {% endif %}
+                                                        </td>
                                                     </tr>
                                                 {% endfor %}
                                             </tbody>
@@ -139,6 +179,56 @@
             </div>
         </div>
     {% endfor %}
+
+    {# Modale de note — article ou taille, selon ce que la ligne lui passe au clic #}
+    <div class="modal-voile" x-show="ouverte" x-cloak @click.self="fermer()">
+        <div class="modal">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-titre" x-text="titre"></h3>
+                    <p class="stock-note-modal-soustitre" x-text="sousTitre"></p>
+                </div>
+                <button type="button" class="modal-fermer" @click="fermer()">✕</button>
+            </div>
+
+            <template x-if="lecture">
+                <div>
+                    <div class="modal-corps">
+                        <p class="stock-note-modal-texte" x-text="note"></p>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-ghost" @click="fermer()">Fermer</button>
+                        <button type="button" class="btn btn-secondary" @click="modifier()">Modifier</button>
+                    </div>
+                </div>
+            </template>
+
+            <template x-if="!lecture">
+                <form :action="action" method="post">
+                    <div class="modal-corps">
+                        <input type="hidden" name="_token" :value="token">
+                        <template x-if="taille !== null">
+                            <input type="hidden" name="taille" :value="taille">
+                        </template>
+
+                        <div class="field">
+                            <label class="field-label" for="stock-note-texte">Note</label>
+                            <textarea id="stock-note-texte" name="note" class="field-input" rows="5"
+                                      x-model="note"
+                                      placeholder="ex : taille petit, rangé dans l'armoire du local"></textarea>
+                            <span class="stock-modal-hint">Videz le champ pour supprimer la note.</span>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-ghost" @click="fermer()">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </template>
+        </div>
+    </div>
+
+    </div>{# fin du composant de note #}
 
     {# Modale mouvement #}
     <div class="modal-voile" x-show="modalOpen" x-transition.opacity style="display:none">

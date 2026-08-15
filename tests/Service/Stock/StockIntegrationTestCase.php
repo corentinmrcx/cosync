@@ -12,9 +12,12 @@ use App\Entity\DotationBesoin;
 use App\Entity\DotationModele;
 use App\Entity\DotationModeleLigne;
 use App\Entity\Fournisseur;
+use App\Entity\GrilleTaille;
+use App\Entity\GrilleTailleValeur;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\StockItem;
+use App\Entity\Taille;
 use App\Entity\Team;
 use App\Enum\CommandeStatut;
 use App\Enum\DotationBesoinStatut;
@@ -24,6 +27,9 @@ use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
+use App\Enum\TailleType;
+use App\Repository\TailleRepository;
+use App\Service\Referentiel\TailleReferentiel;
 use App\Service\Stock\StockMovementService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -92,6 +98,49 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         return $item;
     }
 
+    /**
+     * Grille de traduction, décrite comme on la lit : le libellé du fournisseur, puis les
+     * tailles déclarées qu'il habille.
+     *
+     * @param array<string, list<string>> $traductions { libellé fournisseur: [tailles couvertes] }
+     */
+    protected function makeGrille(string $nom, TailleType $type, array $traductions): GrilleTaille
+    {
+        $grille = (new GrilleTaille())->setNom($nom)->setType($type);
+        $this->em->persist($grille);
+
+        foreach ($traductions as $cible => $couvertes) {
+            $valeur = (new GrilleTailleValeur())->setCible($this->taille((string) $cible, $type));
+            foreach ($couvertes as $libelle) {
+                $valeur->addCouverture($this->taille($libelle, $type));
+            }
+
+            $grille->addValeur($valeur);
+            $this->em->persist($valeur);
+        }
+
+        return $grille;
+    }
+
+    /**
+     * Taille du référentiel, créée si le seed ne la contient pas — « 43-46 » est une
+     * déclinaison propre à un fournisseur, pas au référentiel livré.
+     */
+    protected function taille(string $libelle, TailleType $type, bool $proposee = false): Taille
+    {
+        $existante = self::getContainer()->get(TailleRepository::class)->findOneByLibelle($type, $libelle);
+        if ($existante !== null) {
+            return $existante;
+        }
+
+        $taille = (new Taille())->setLibelle($libelle)->setType($type)->setProposeeAuxLicencies($proposee);
+        $this->em->persist($taille);
+        $this->em->flush();
+        self::getContainer()->get(TailleReferentiel::class)->oublier();
+
+        return $taille;
+    }
+
     protected function makeModele(Season $season, string $nom = 'Dotation sénior'): DotationModele
     {
         $m = (new DotationModele())->setSeason($season)->setNom($nom);
@@ -145,6 +194,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
         string $tailleHaut = 'L',
         LicenceStatus $status = LicenceStatus::VALIDATED,
         ?NatureLicence $nature = null,
+        ?string $pointure = null,
     ): Licencie {
         static $n = 0;
         ++$n;
@@ -162,6 +212,7 @@ abstract class StockIntegrationTestCase extends KernelTestCase
 
         $dossier = (new DossierClub())->setLicencie($licencie);
         $dossier->setTailleHaut($tailleHaut);
+        $dossier->setPointure($pointure);
         $dossier->setStatus($status);
         $this->em->persist($dossier);
 
