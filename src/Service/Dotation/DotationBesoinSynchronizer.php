@@ -8,6 +8,7 @@ use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Enum\DotationBesoinStatut;
+use App\Enum\LicenceStatus;
 use App\Repository\DirigeantRepository;
 use App\Repository\DotationBesoinRepository;
 use App\Repository\LicencieRepository;
@@ -18,6 +19,13 @@ use Doctrine\ORM\EntityManagerInterface;
  * Matérialise et tient à jour les besoins de dotation d'une personne à partir du modèle
  * résolu (DotationResolver). Idempotent : préserve les besoins déjà « donnés », met à jour
  * les « à donner », retire ceux qui ne sont plus dus.
+ *
+ * C'est ici, et nulle part ailleurs, que se juge le **droit à la dotation** : licence
+ * validée pour un licencié, dossier complet pour un dirigeant. Les appelants n'ont pas à
+ * refaire ce test — plusieurs l'oubliaient (correction de la nature de licence, rattrapage
+ * d'affectation d'équipe) et matérialisaient le kit de gens qui n'avaient pas encore rempli
+ * leur formulaire. Une personne non éligible est traitée comme n'ayant rien de dû : ses
+ * besoins « à donner » sont retirés, ceux déjà remis sont conservés.
  */
 final class DotationBesoinSynchronizer
 {
@@ -42,19 +50,25 @@ final class DotationBesoinSynchronizer
         return $this->recompute($dirigeant, $this->besoinRepository->findForDirigeant($dirigeant));
     }
 
-    /** Recalcule pour toute la saison. Retourne le nombre de personnes ayant une dotation. */
+    /**
+     * Recalcule pour toute la saison. Retourne le nombre de personnes ayant une dotation.
+     *
+     * Balaie **tout** l'effectif, pas seulement les personnes éligibles : c'est ce qui fait
+     * du bouton « Recalculer les besoins » un vrai bouton de réparation. Un besoin matérialisé
+     * à tort pour une licence non validée est retiré par ce passage.
+     */
     public function recomputeAll(Season $season): int
     {
         $count = 0;
 
-        foreach ($this->licencieRepository->findValidatedBySeason($season) as $licencie) {
+        foreach ($this->licencieRepository->findBySeason($season) as $licencie) {
             if ($this->recomputeForLicencie($licencie)) {
                 ++$count;
             }
         }
 
         foreach ($this->dirigeantRepository->findBySeason($season) as $dirigeant) {
-            if ($this->dossierCompletion->isComplete($dirigeant) && $this->recomputeForDirigeant($dirigeant)) {
+            if ($this->recomputeForDirigeant($dirigeant)) {
                 ++$count;
             }
         }
@@ -98,7 +112,11 @@ final class DotationBesoinSynchronizer
      */
     private function recompute(Licencie|Dirigeant $personne, array $existants): bool
     {
-        $resolus = $this->resolver->resolveDotation($personne);
+        // Non éligible : rien n'est dû. On passe quand même par la purge, pour que le
+        // recalcul rattrape les besoins matérialisés à tort par une version antérieure.
+        $resolus = $this->aDroitALaDotation($personne)
+            ? $this->resolver->resolveDotation($personne)
+            : [];
         $existantsParEmplacement = $this->indexerParEmplacement($existants);
         $emplacementsResolus = [];
 
@@ -122,6 +140,21 @@ final class DotationBesoinSynchronizer
         $this->em->flush();
 
         return $resolus !== [];
+    }
+
+    /**
+     * Le kit n'est dû qu'à partir du moment où la personne est entrée dans l'effectif pour de
+     * bon : licence validée (donc payée, ou validée à la main) côté licencié, dossier complet
+     * côté dirigeant. Avant cela, le suivi de dotation annoncerait au club des sorties de
+     * stock à préparer pour des inscriptions qui ne sont pas encore acquises.
+     */
+    private function aDroitALaDotation(Licencie|Dirigeant $personne): bool
+    {
+        if ($personne instanceof Licencie) {
+            return $personne->getDossierClub()?->getStatus() === LicenceStatus::VALIDATED;
+        }
+
+        return $this->dossierCompletion->isComplete($personne);
     }
 
     /**
