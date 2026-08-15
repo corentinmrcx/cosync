@@ -171,4 +171,27 @@ class StockMovementRepository extends ServiceEntityRepository
 
         return ['movements' => $movements, 'total' => $total];
     }
+
+    /** Mouvements enregistrés dans cette taille — garde du référentiel. */
+    public function countByTaille(string $libelle): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->where('m.taille = :libelle')
+            ->setParameter('libelle', $libelle)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** @return list<string> Tailles employées par au moins un mouvement. */
+    public function findDistinctTailles(): array
+    {
+        $rows = $this->createQueryBuilder('m')
+            ->select('DISTINCT m.taille AS taille')
+            ->where('m.taille IS NOT NULL')
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_map('strval', array_column($rows, 'taille'));
+    }
 }

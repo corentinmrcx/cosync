@@ -21,6 +21,7 @@ use App\Service\Saison\SeasonContext;
 use App\Service\Stock\StockItemFormContext;
 use App\Service\Stock\StockItemService;
 use App\Service\Stock\StockMovementService;
+use App\Service\Stock\StockNoteService;
 use App\Service\Stock\StockReportService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,6 +44,7 @@ class StockController extends AbstractController
         private readonly StockMovementService $mouvements,
         private readonly StockReportService $rapports,
         private readonly StockItemService $itemService,
+        private readonly StockNoteService $notes,
         private readonly StockItemFormContext $itemFormContext,
         private readonly InventairePdfService $pdfService,
         private readonly StockItemRepository $itemRepository,
@@ -173,6 +175,31 @@ class StockController extends AbstractController
         return $this->redirectToRoute('admin_stock_gestion');
     }
 
+    /**
+     * Correction d'un mouvement saisi à la main. Le mouvement porte la valeur juste, la
+     * correction reste dans l'historique avec sa justification — corriger n'est pas effacer.
+     */
+    #[Route('/mouvements/{id}/corriger', name: 'mouvements_correct', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function mouvementCorrect(StockMovement $movement, Request $request, #[CurrentUser] ?User $user): Response
+    {
+        $this->csrf->valider('correct_stock_movement_' . $movement->getId(), $request);
+
+        try {
+            $this->mouvements->corrigerMouvementManuel(
+                $movement,
+                (int) $request->request->get('quantite', 0),
+                trim((string) $request->request->get('taille', '')) ?: null,
+                (string) $request->request->get('motif', ''),
+                $user,
+            );
+            $this->addFlash('success', 'Mouvement corrigé, stock recalculé. La correction est inscrite dans l\'historique.');
+        } catch (\InvalidArgumentException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_stock_mouvements_list');
+    }
+
     #[Route('/mouvements/{id}/supprimer', name: 'mouvements_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function mouvementDelete(StockMovement $movement, Request $request): Response
     {
@@ -188,12 +215,45 @@ class StockController extends AbstractController
         return $this->redirectToRoute('admin_stock_mouvements_list');
     }
 
+    /**
+     * Écran de confirmation : il annonce ce qui va réellement se passer — suppression avec
+     * ses mouvements, ou archivage et pourquoi. Une boîte de dialogue du navigateur ne sait
+     * pas dire ça, et supprimer un article n'est pas un geste qu'on rattrape.
+     */
+    #[Route('/items/{id}/supprimer', name: 'items_delete_confirm', methods: ['GET'])]
+    public function itemDeleteConfirm(StockItem $item): Response
+    {
+        return $this->render('admin/stock/items/supprimer.html.twig', [
+            'item' => $item,
+            'analyse' => $this->itemService->analyserSuppression($item),
+            'stock' => $this->mouvements->getCurrentStock($item),
+        ]);
+    }
+
     #[Route('/items/{id}/supprimer', name: 'items_delete', methods: ['POST'])]
     public function itemDelete(StockItem $item, Request $request): Response
     {
         $this->csrf->valider('delete_stock_item_' . $item->getId(), $request);
 
         $nom = $item->getNom();
+        $analyse = $this->itemService->analyserSuppression($item);
+
+        // Supprimable ne veut pas dire obligé de supprimer : l'admin peut préférer garder
+        // l'article sous le coude, hors des listes.
+        if ($request->request->get('geste') === 'archiver') {
+            $this->itemService->archiver($item);
+            $this->addFlash('info', sprintf('"%s" archivé — il disparaît des listes, et reste désarchivable.', $nom));
+
+            return $this->redirectToRoute('admin_stock_gestion');
+        }
+
+        // Deuxième vérification : la case n'est demandée que si des mouvements partent avec
+        // l'article. L'écran a pu être ouvert avant une entrée de stock enregistrée ailleurs.
+        if ($analyse->supprimable && $analyse->mouvementsEmportes > 0 && !$request->request->getBoolean('confirmation')) {
+            $this->addFlash('error', 'Cochez la confirmation pour supprimer l\'article et ses mouvements.');
+
+            return $this->redirectToRoute('admin_stock_items_delete_confirm', ['id' => $item->getId()]);
+        }
 
         try {
             $archive = $this->itemService->supprimerOuArchiver($item);
@@ -209,6 +269,39 @@ class StockController extends AbstractController
                 ? sprintf('"%s" archivé — il disparaît des listes, mais l\'historique des mouvements est conservé.', $nom)
                 : sprintf('Article "%s" supprimé.', $nom),
         );
+
+        return $this->redirectToRoute('admin_stock_gestion');
+    }
+
+    /** Note portée sur l'article, saisie depuis la modale du tableau de gestion. */
+    #[Route('/items/{id}/note', name: 'items_note', methods: ['POST'])]
+    public function itemNote(StockItem $item, Request $request): Response
+    {
+        $this->csrf->valider('note_article_' . $item->getId(), $request);
+
+        $this->notes->enregistrerNoteArticle($item, (string) $request->request->get('note', ''));
+        $this->addFlash('success', sprintf('Note enregistrée pour "%s".', $item->getNom()));
+
+        return $this->redirectToRoute('admin_stock_gestion');
+    }
+
+    /** Note portée sur une déclinaison de taille, depuis le détail d'un article. */
+    #[Route('/items/{id}/note-taille', name: 'items_note_taille', methods: ['POST'])]
+    public function itemNoteTaille(StockItem $item, Request $request, #[CurrentUser] ?User $user): Response
+    {
+        $this->csrf->valider('note_taille_' . $item->getId(), $request);
+
+        try {
+            $this->notes->enregistrerNoteTaille(
+                $item,
+                (string) $request->request->get('taille', ''),
+                (string) $request->request->get('note', ''),
+                $user,
+            );
+            $this->addFlash('success', sprintf('Note enregistrée pour "%s".', $item->getNom()));
+        } catch (\InvalidArgumentException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
 
         return $this->redirectToRoute('admin_stock_gestion');
     }
@@ -242,6 +335,9 @@ class StockController extends AbstractController
 
         return $this->render('admin/stock/mouvements/list.html.twig', [
             'movements' => $movements,
+            'taillesParArticle' => $this->rapports->taillesParArticle(
+                array_map(static fn (StockMovement $m): StockItem => $m->getItem(), $movements),
+            ),
             'total' => $total,
             'page' => $page,
             'perPage' => self::PER_PAGE,

@@ -1,0 +1,50 @@
+/* — Référentiel des tailles (/admin/club/tailles) —
+     La liste reprend la mise en page commune des référentiels (dot-*) ; seuls les
+     éléments propres aux tailles sont définis ici. */
+
+.taille-meta {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.taille-badge-stock {
+    display: inline-block;
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-muted);
+    color: var(--color-text-body);
+    font-weight: 600;
+}
+
+/* Taille employée quelque part : le bouton reste visible pour dire pourquoi c'est refusé. */
+.taille-btn-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.taille-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    white-space: nowrap;
+}
+
+.taille-add-form,
+.taille-edit-form {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.taille-add-form .field-input,
+.taille-edit-form .field-input { flex: 1 1 8rem; min-width: 0; }
+
+.taille-edit-form input[readonly] {
+    background: var(--color-bg-muted);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+}

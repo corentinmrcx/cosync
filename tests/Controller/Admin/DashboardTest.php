@@ -58,7 +58,7 @@ final class DashboardTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $labels = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
-        self::assertSame(['Coordonnées bancaires', 'Catégories FFF', 'Utilisateurs'], $labels);
+        self::assertSame(['Coordonnées bancaires', 'Catégories FFF', 'Tailles', 'Utilisateurs'], $labels);
     }
 
     /* ── Outils ── */

@@ -57,6 +57,14 @@ class StockItem
     #[ORM\Column(nullable: true)]
     private ?int $alertSeuil = null;
 
+    /**
+     * Remarque de l'admin sur le stock de cet article, toutes tailles confondues :
+     * où il est rangé, ce qu'il reste à commander. Les remarques propres à une
+     * déclinaison vivent dans StockTailleNote.
+     */
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $note = null;
+
     #[ORM\Column(options: ['default' => true])]
     private bool $actif = true;
 
@@ -205,6 +213,18 @@ class StockItem
     public function setAlertSeuil(?int $alertSeuil): static
     {
         $this->alertSeuil = $alertSeuil;
+
+        return $this;
+    }
+
+    public function getNote(): ?string
+    {
+        return $this->note;
+    }
+
+    public function setNote(?string $note): static
+    {
+        $this->note = $note;
 
         return $this;
     }

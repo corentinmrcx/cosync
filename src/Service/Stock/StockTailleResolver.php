@@ -6,6 +6,7 @@ use App\Entity\StockItem;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockTailleProfil;
+use App\Service\Referentiel\TailleReferentiel;
 
 /**
  * Choisit les tailles proposées pour un article. Proposer partout la même liste fait ranger
@@ -14,6 +15,10 @@ use App\Enum\StockTailleProfil;
  */
 final class StockTailleResolver
 {
+    public function __construct(
+        private readonly TailleReferentiel $referentiel,
+    ) {}
+
     public function profil(StockItem $item): StockTailleProfil
     {
         if ($item->getKind() === StockItemKind::EPICERIE) {
@@ -37,9 +42,23 @@ final class StockTailleResolver
      */
     public function options(StockItem $item, array $dejaUtilisees = []): array
     {
-        $referentiel = $this->profil($item)->options();
+        $type = $this->profil($item)->type();
+        // Le stock voit tout le référentiel du type, y compris les tailles que les
+        // formulaires ne proposent pas : c'est là qu'on range les étiquettes fournisseur.
+        $referentiel = $type === null ? [] : $this->referentiel->pourLeStock($type);
 
         return [...$referentiel, ...array_values(array_diff($dejaUtilisees, $referentiel))];
+    }
+
+    /**
+     * Vrai si la taille appartient à l'article. Les écrans ne proposent déjà que les bonnes,
+     * mais une soumission forgée irait sinon ranger un réassort de chaussettes sous « XL ».
+     *
+     * @param list<string> $dejaUtilisees
+     */
+    public function estAdmise(StockItem $item, string $taille, array $dejaUtilisees = []): bool
+    {
+        return in_array($taille, $this->options($item, $dejaUtilisees), true);
     }
 
     /**

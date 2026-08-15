@@ -9,7 +9,7 @@
     { label: 'Historique' }
 ] } %}
 
-<div class="stock-mouvements-page">
+<div class="stock-mouvements-page" x-data="stockCorrectionModal">
 
     <div class="stock-mouvements-header">
         <h1 class="stock-mouvements-title">Historique des mouvements</h1>
@@ -94,15 +94,38 @@
                             <td class="stock-mouvements-quantite stock-mouvements-quantite-{{ m.type.value }}">
                                 {{ m.type.value == 'entree' ? '+' : '−' }}{{ m.quantite }}
                             </td>
-                            <td class="stock-mouvements-note">{{ m.note ?? '—' }}</td>
+                            <td class="stock-mouvements-note">
+                                {{ m.note ?? '—' }}
+                                {# Une correction ne s'efface pas : elle se lit sous la ligne qu'elle a changée. #}
+                                {% for c in m.corrections %}
+                                    <span class="stock-mouvements-correction">
+                                        Corrigé le {{ c.createdAt|date('d/m/Y') }}
+                                        {%- if c.quantiteChangee %}, {{ c.quantiteAvant }} → {{ c.quantiteApres }}{% endif %}
+                                        {%- if c.tailleChangee %}, taille {{ c.tailleAvant ?? '—' }} → {{ c.tailleApres ?? '—' }}{% endif %}
+                                        : {{ c.motif }}
+                                    </span>
+                                {% endfor %}
+                            </td>
                             <td class="stock-mouvements-by">{{ m.createdBy ? m.createdBy.email : '—' }}</td>
                             <td class="stock-mouvements-action">
                                 {% if m.source.value == 'manuel' %}
-                                    <form method="post" action="{{ path('admin_stock_mouvements_delete', {id: m.id}) }}"
-                                          onsubmit="return confirm('Supprimer ce mouvement ? Le stock sera recalculé.')">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_movement_' ~ m.id) }}">
-                                        <button type="submit" class="stock-mouvements-delete" title="Supprimer ce mouvement">Supprimer</button>
-                                    </form>
+                                    <div class="stock-mouvements-actions-cellule">
+                                        <button type="button" class="stock-mouvements-corriger"
+                                                title="Corriger la quantité ou la taille"
+                                                @click="ouvrir({{ {
+                                                    action: path('admin_stock_mouvements_correct', {id: m.id}),
+                                                    article: m.item.nom,
+                                                    quantite: m.quantite,
+                                                    taille: m.taille,
+                                                    options: taillesParArticle[m.item.id]|default([]),
+                                                    token: csrf_token('correct_stock_movement_' ~ m.id),
+                                                }|json_encode|e('html_attr') }})">Modifier</button>
+                                        <form method="post" action="{{ path('admin_stock_mouvements_delete', {id: m.id}) }}"
+                                              onsubmit="return confirm('Supprimer ce mouvement ? Le stock sera recalculé.')">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_movement_' ~ m.id) }}">
+                                            <button type="submit" class="stock-mouvements-delete" title="Supprimer ce mouvement">Supprimer</button>
+                                        </form>
+                                    </div>
                                 {% else %}
                                     <span class="stock-mouvements-locked" title="Corrigez depuis l'écran dotation ou commande">—</span>
                                 {% endif %}
@@ -111,6 +134,52 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        {# Modale de correction — une seule pour tout l'écran, alimentée par la ligne cliquée #}
+        <div class="modal-voile" x-show="ouverte" x-cloak @click.self="fermer()">
+            <form :action="action" method="post" class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-titre" x-text="'Corriger — ' + article"></h3>
+                    <button type="button" class="modal-fermer" @click="fermer()">✕</button>
+                </div>
+
+                <div class="modal-corps">
+                    <input type="hidden" name="_token" :value="token">
+
+                    <p class="stock-modal-hint">
+                        Le mouvement gardera la valeur corrigée et le stock sera recalculé. Ce qu'il
+                        valait avant, et la raison du changement, restent dans l'historique.
+                    </p>
+
+                    <div class="field">
+                        <label class="field-label" for="correction-quantite">Quantité</label>
+                        <input type="number" id="correction-quantite" name="quantite" min="1"
+                               class="field-input" x-model.number="quantite" required>
+                    </div>
+
+                    <div class="field" x-show="taillesOptions.length">
+                        <label class="field-label" for="correction-taille">Taille</label>
+                        <select id="correction-taille" name="taille" class="field-input" x-model="taille">
+                            <option value="">— Sans taille —</option>
+                            <template x-for="t in taillesOptions" :key="t">
+                                <option :value="t" x-text="t"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="correction-motif">Raison de la correction *</label>
+                        <textarea id="correction-motif" name="motif" class="field-input" rows="2" required
+                                  x-model="motif" placeholder="ex : erreur de saisie, 5 au lieu de 3"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" @click="fermer()">Annuler</button>
+                    <button type="submit" class="btn btn-primary" :disabled="!pretAEnregistrer">Enregistrer la correction</button>
+                </div>
+            </form>
         </div>
 
         {% if pages > 1 %}

@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Repository\StockMovementRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: StockMovementRepository::class)]
@@ -57,10 +59,32 @@ class StockMovement
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    /**
+     * Corrections successives apportées à ce mouvement, de la plus ancienne à la plus
+     * récente. Le mouvement porte la valeur juste ; celles-ci disent d'où elle vient.
+     *
+     * @var Collection<int, StockMovementCorrection>
+     */
+    #[ORM\OneToMany(mappedBy: 'movement', targetEntity: StockMovementCorrection::class, cascade: ['persist', 'remove'])]
+    #[ORM\OrderBy(['id' => 'ASC'])]
+    private Collection $corrections;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->source = StockMovementSource::MANUEL;
+        $this->corrections = new ArrayCollection();
+    }
+
+    /** @return Collection<int, StockMovementCorrection> */
+    public function getCorrections(): Collection
+    {
+        return $this->corrections;
+    }
+
+    public function estCorrige(): bool
+    {
+        return !$this->corrections->isEmpty();
     }
 
     public function getId(): int

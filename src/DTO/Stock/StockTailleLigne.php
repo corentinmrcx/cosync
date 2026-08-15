@@ -10,6 +10,8 @@ final class StockTailleLigne
     public function __construct(
         public readonly string $taille,
         public readonly int $stock,
+        /** Remarque de l'admin sur cette déclinaison — null si aucune. */
+        public readonly ?string $note = null,
     ) {}
 
     public function sansTaille(): bool

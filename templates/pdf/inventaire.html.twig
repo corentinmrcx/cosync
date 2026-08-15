@@ -15,11 +15,13 @@
         table.lignes { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
         table.lignes th { background: #f3f4f6; text-align: left; padding: 6px 8px; font-size: 11px; border-bottom: 1px solid #d1d5db; }
         table.lignes td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
-        .taille { text-align: center; width: 70px; }
+        /* Assez large pour que la remarque d'une taille tienne sur une ou deux lignes. */
+        .taille { text-align: center; width: 120px; }
         .stock { text-align: center; width: 70px; font-weight: bold; }
         .compte { text-align: center; width: 90px; color: #9aa1aa; }
         .rupture { color: #ef4444; }
         .bas { color: #f59e0b; }
+        .note { display: block; font-size: 10px; color: #6b7280; font-style: italic; }
         .footer { margin-top: 24px; font-size: 10px; color: #9aa1aa; }
     </style>
 </head>
@@ -64,9 +66,15 @@
                                     {{ row.item.nom }}
                                     {% if row.item.marque %} — {{ row.item.marque }}{% endif %}
                                     {% if row.item.couleur %} — {{ row.item.couleur }}{% endif %}
+                                    {# La feuille se remplit dans le local, la remarque doit s'y lire. #}
+                                    {% if row.item.note %}<span class="note">{{ row.item.note }}</span>{% endif %}
                                 </td>
                             {% endif %}
-                            <td class="taille">{{ t.taille }}</td>
+                            <td class="taille">
+                                {{ t.taille }}
+                                {# Colonne étroite : la remarque est rappelée, pas recopiée en entier. #}
+                                {% if t.note %}<span class="note">{{ t.note|length > 60 ? t.note|slice(0, 60) ~ '…' : t.note }}</span>{% endif %}
+                            </td>
                             <td class="stock {{ t.stock <= 0 ? 'rupture' : (row.niveau.value == 'warning' ? 'bas') }}">{{ t.stock }}</td>
                             <td class="compte">_______</td>
                         </tr>

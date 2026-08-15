@@ -47,4 +47,50 @@ class DossierClubRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /** Dossiers qui désignent cette taille, tous champs confondus — garde du référentiel. */
+    public function countByTaille(string $libelle): int
+    {
+        return (int) $this->createQueryBuilder('d')
+            ->select('COUNT(d.id)')
+            ->where('d.tailleHaut = :libelle OR d.tailleBas = :libelle OR d.pointure = :libelle')
+            ->setParameter('libelle', $libelle)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Tailles réellement portées par des dossiers, tous champs confondus. Une requête pour
+     * tout le référentiel plutôt qu'un comptage par taille.
+     *
+     * @return list<string>
+     */
+    public function findDistinctTailles(): array
+    {
+        $rows = $this->createQueryBuilder('d')
+            ->select('DISTINCT d.tailleHaut AS haut', 'd.tailleBas AS bas', 'd.pointure AS pointure')
+            ->getQuery()
+            ->getScalarResult();
+
+        return self::libellesDe($rows);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     *
+     * @return list<string>
+     */
+    private static function libellesDe(array $rows): array
+    {
+        $libelles = [];
+        foreach ($rows as $row) {
+            foreach ($row as $valeur) {
+                if (is_string($valeur) && $valeur !== '') {
+                    $libelles[$valeur] = true;
+                }
+            }
+        }
+
+        return array_keys($libelles);
+    }
 }

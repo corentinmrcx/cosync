@@ -130,6 +130,13 @@
                 </div>
             </div>
 
+            <div class="field">
+                {{ form_label(form.note) }}
+                {{ form_widget(form.note) }}
+                {{ form_help(form.note) }}
+                {{ form_errors(form.note) }}
+            </div>
+
             {# ── Référence ── #}
             <div class="stock-items-section-title">Référence</div>
 

@@ -1,0 +1,133 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Tailles{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Tailles' }
+] } %}
+
+<div class="dot-page" x-data="{ editingId: null, adding: false }">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Tailles</h1>
+            <p class="dot-subtitle">
+                L'ordre défini ici est celui de tous les sélecteurs. Une taille cochée
+                « proposée » apparaît dans les formulaires licencié et dirigeant ; les autres
+                ne servent qu'au stock, pour ranger ce que le fournisseur étiquette sur le
+                carton (« 128 », « L enfant »).
+            </p>
+        </div>
+        <div class="dot-header-actions">
+            <button type="button" class="btn btn-primary" @click="adding = !adding">
+                <span x-text="adding ? 'Annuler' : '+ Nouvelle taille'"></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="dot-card" x-data="listeTriable">
+
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">Référentiel</h2>
+            <span class="dot-card-count">{{ tailles|length }}</span>
+        </div>
+
+        <form method="post"
+              action="{{ path('admin_tailles_new') }}"
+              class="dot-affect-form taille-add-form"
+              x-show="adding"
+              x-cloak>
+            <input type="hidden" name="_token" value="{{ csrf_token('taille_nouvelle') }}">
+            <input type="text" name="libelle" class="field-input" placeholder="Libellé (ex : 128)" maxlength="20" required>
+            <select name="type" class="field-input">
+                {% for type in types %}
+                    <option value="{{ type.value }}">{{ type.label() }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="groupe" class="field-input" placeholder="Groupe (ex : Tailles enfants)" maxlength="50">
+            <label class="taille-checkbox">
+                <input type="checkbox" name="proposee" value="1" checked>
+                <span>Proposée dans les formulaires</span>
+            </label>
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+        </form>
+
+        {% if tailles is empty %}
+            <p class="dot-empty">Aucune taille. Lancez <code>php bin/console app:seed-referential</code> pour initialiser le référentiel.</p>
+        {% else %}
+            {% if tailles|length > 1 %}
+                <p class="triable-aide">{{ ui.icon('grip', 14) }} Glissez une taille par sa poignée pour changer l'ordre d'affichage.</p>
+            {% endif %}
+
+            <form method="post"
+                  action="{{ path('admin_tailles_reorder') }}"
+                  x-ref="formulaire"
+                  data-ordre-initial="{{ tailles|map(t => t.id)|join(',') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('tailles_reorder') }}">
+                <span x-ref="ordre"></span>
+            </form>
+
+            <ul class="dot-list triable-liste"
+                x-ref="liste"
+                @pointermove.window="deplacer($event)"
+                @pointerup.window="terminer()"
+                @pointercancel.window="terminer()">
+                {% for taille in tailles %}
+                    {% set employee = employees[taille.id] %}
+                    <li class="dot-list-item triable-ligne" data-triable="{{ taille.id }}">
+                        <span class="triable-poignee"
+                              title="Déplacer"
+                              @pointerdown="saisir($event)"
+                              aria-hidden="true">{{ ui.icon('grip', 16) }}</span>
+
+                        <div x-show="editingId !== {{ taille.id }}" class="dot-list-main">
+                            <span class="dot-list-name">{{ taille.libelle }}</span>
+                            <span class="taille-meta">
+                                {{ taille.type.label() }}
+                                {% if taille.groupe %} · {{ taille.groupe }}{% endif %}
+                                {% if not taille.proposeeAuxLicencies %} · <span class="taille-badge-stock">Stock uniquement</span>{% endif %}
+                            </span>
+                        </div>
+                        <div x-show="editingId !== {{ taille.id }}" class="dot-list-actions">
+                            <button type="button" class="btn btn-secondary btn-sm" @click="editingId = {{ taille.id }}">Modifier</button>
+                            {# Une taille déjà employée n'est plus supprimable : des dossiers et des
+                               mouvements la désignent nommément. Elle se retire des formulaires. #}
+                            {% if employee %}
+                                <span class="btn btn-danger btn-sm taille-btn-disabled"
+                                      title="Des dossiers ou des mouvements la désignent — suppression impossible">Supprimer</span>
+                            {% else %}
+                                {% include 'components/_form_suppression.html.twig' with {
+                                    action: path('admin_tailles_delete', {id: taille.id}),
+                                    jeton: 'taille_supprimer_' ~ taille.id,
+                                    message: 'Supprimer la taille ' ~ taille.libelle ~ ' ?',
+                                } only %}
+                            {% endif %}
+                        </div>
+
+                        <form x-show="editingId === {{ taille.id }}" x-cloak method="post"
+                              action="{{ path('admin_tailles_edit', {id: taille.id}) }}" class="dot-affect-form taille-edit-form">
+                            <input type="hidden" name="_token" value="{{ csrf_token('taille_modifier_' ~ taille.id) }}">
+                            <input type="text" name="libelle" class="field-input" value="{{ taille.libelle }}"
+                                   maxlength="20" required {{ employee ? 'readonly' : '' }}
+                                   title="{{ employee ? 'Libellé verrouillé : des enregistrements le désignent.' : '' }}">
+                            <input type="text" name="groupe" class="field-input" value="{{ taille.groupe }}"
+                                   maxlength="50" placeholder="Groupe (ex : Tailles enfants)">
+                            <label class="taille-checkbox">
+                                <input type="checkbox" name="proposee" value="1" {{ taille.proposeeAuxLicencies ? 'checked' }}>
+                                <span>Proposée dans les formulaires</span>
+                            </label>
+                            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                            <button type="button" class="btn btn-ghost btn-sm" @click="editingId = null">Annuler</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

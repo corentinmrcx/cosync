@@ -1,0 +1,94 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_stock_item_label.html.twig' as article %}
+
+{% block title %}CoSync — Supprimer {{ item.nom }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: 'Gestion', route: 'admin_stock_gestion' },
+    { label: 'Supprimer' }
+] } %}
+
+<div class="stock-items-page">
+    <div class="stock-items-card">
+
+        <div class="stock-items-card-header">
+            <h1 class="stock-items-card-title">
+                {{ analyse.supprimable ? 'Supprimer cet article ?' : 'Archiver cet article ?' }}
+            </h1>
+        </div>
+
+        <div class="stock-suppr-article">
+            <span class="stock-suppr-article-nom">{{ article.label(item) }}</span>
+            <span class="stock-suppr-article-meta">Stock actuel : {{ stock }}</span>
+        </div>
+
+        {% if analyse.supprimable %}
+            <div class="stock-suppr-encart stock-suppr-encart-danger">
+                <p class="stock-suppr-encart-titre">Suppression définitive</p>
+                <p>
+                    L'article quittera le catalogue pour de bon
+                    {%- if analyse.mouvementsEmportes > 0 %},
+                        avec ses <strong>{{ analyse.mouvementsEmportes }} mouvement{{ analyse.mouvementsEmportes > 1 ? 's' : '' }}</strong>
+                        et les notes de ses tailles
+                    {%- endif %}. Rien ne se récupère ensuite.
+                </p>
+                {% if analyse.mouvementsEmportes > 0 %}
+                    <p class="stock-suppr-encart-aide">
+                        Tous ces mouvements ont été saisis à la main : aucune dotation remise à un
+                        licencié ni aucune réception de commande n'est concernée.
+                    </p>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="stock-suppr-encart stock-suppr-encart-info">
+                <p class="stock-suppr-encart-titre">Cet article ne peut pas être supprimé</p>
+                <p>Raison : {{ analyse.motifArchivage }}</p>
+                <p class="stock-suppr-encart-aide">
+                    {% if item.actif %}
+                        Il sera <strong>archivé</strong> : il disparaît des listes et des sélecteurs, mais son
+                        historique reste consultable et vous pourrez le désarchiver à tout moment.
+                    {% else %}
+                        Il est déjà <strong>archivé</strong> : il n'apparaît plus dans les listes ni dans les
+                        sélecteurs. Il redeviendra supprimable une fois son stock soldé et ses rattachements levés.
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+
+        <form method="post" action="{{ path('admin_stock_items_delete', {id: item.id}) }}" class="stock-suppr-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_item_' ~ item.id) }}">
+
+            {% if analyse.supprimable and analyse.mouvementsEmportes > 0 %}
+                <label class="stock-suppr-confirmation">
+                    <input type="checkbox" name="confirmation" value="1" required>
+                    <span>Je confirme la suppression de l'article et de ses {{ analyse.mouvementsEmportes }} mouvement{{ analyse.mouvementsEmportes > 1 ? 's' : '' }}.</span>
+                </label>
+            {% endif %}
+
+            <div class="stock-items-actions">
+                {# Un article déjà archivé et non supprimable n'a plus rien à valider ici :
+                   le seul geste restant est de repartir. #}
+                <a href="{{ path('admin_stock_gestion') }}" class="btn btn-ghost">
+                    {{ analyse.supprimable or item.actif ? 'Annuler' : 'Retour à la gestion' }}
+                </a>
+                {# Supprimable ne veut pas dire obligé : l'archivage reste offert tant que
+                   l'article n'est pas déjà rangé. #}
+                {% if analyse.supprimable and item.actif %}
+                    {# formnovalidate : archiver ne demande pas la case de confirmation,
+                       qui ne garde que la suppression. #}
+                    <button type="submit" name="geste" value="archiver" formnovalidate class="btn btn-secondary btn-lg">Archiver plutôt</button>
+                {% endif %}
+                {% if analyse.supprimable %}
+                    <button type="submit" name="geste" value="supprimer" class="btn btn-danger btn-lg">Supprimer définitivement</button>
+                {% elseif item.actif %}
+                    <button type="submit" name="geste" value="archiver" class="btn btn-secondary btn-lg">Archiver l'article</button>
+                {% endif %}
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

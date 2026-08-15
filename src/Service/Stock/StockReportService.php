@@ -13,6 +13,8 @@ use App\Enum\StockAlerteNiveau;
 use App\Repository\StockCategoryRepository;
 use App\Repository\StockItemRepository;
 use App\Repository\StockMovementRepository;
+use App\Repository\StockTailleNoteRepository;
+use App\Service\Referentiel\TailleReferentiel;
 
 /**
  * États du stock destinés à l'affichage : tableau de gestion, tableau de bord, inventaire.
@@ -24,7 +26,9 @@ final class StockReportService
         private readonly StockItemRepository $itemRepository,
         private readonly StockCategoryRepository $categoryRepository,
         private readonly StockMovementRepository $movementRepository,
+        private readonly StockTailleNoteRepository $noteRepository,
         private readonly StockTailleResolver $taillesResolver,
+        private readonly TailleReferentiel $referentiel,
     ) {}
 
     /** @return list<StockSection<StockLigne>> */
@@ -116,6 +120,30 @@ final class StockReportService
         return $sections;
     }
 
+    /**
+     * Tailles proposées pour chaque article, indexées par identifiant. L'historique s'en
+     * sert pour corriger un mouvement sans quitter l'écran ; les articles répétés d'une
+     * page à l'autre ne sont interrogés qu'une fois.
+     *
+     * @param StockItem[] $items
+     *
+     * @return array<int, list<string>>
+     */
+    public function taillesParArticle(array $items): array
+    {
+        $options = [];
+        foreach ($items as $item) {
+            if (isset($options[$item->getId()])) {
+                continue;
+            }
+
+            $dejaUtilisees = array_map('strval', array_keys($this->movementRepository->getStockGroupedByTaille($item)));
+            $options[$item->getId()] = $this->taillesResolver->options($item, $dejaUtilisees);
+        }
+
+        return $options;
+    }
+
     private function ligneDeGestion(StockItem $item): StockLigne
     {
         $tailles = $this->ventilationParTaille($item);
@@ -158,24 +186,43 @@ final class StockReportService
     }
 
     /**
-     * Ventilation du stock par taille, triée. La clé vide (article sans taille) s'affiche « — ».
+     * Ventilation du stock par taille, dans l'ordre du référentiel — un tri alphabétique
+     * rangerait le 128 avant le 8 ans et la pointure 40 avant la 5. La clé vide (article
+     * sans taille) s'affiche « — » et ouvre la liste.
      *
      * @return list<StockTailleLigne>
      */
     private function ventilationParTaille(StockItem $item): array
     {
         $parTaille = $this->movementRepository->getStockGroupedByTaille($item);
-        ksort($parTaille);
+        uksort($parTaille, $this->ordreDesTailles(...));
+
+        $notes = $this->noteRepository->parTaille($item);
 
         $lignes = [];
         foreach ($parTaille as $taille => $stock) {
+            $taille = (string) $taille;
             $lignes[] = new StockTailleLigne(
-                $taille === '' ? StockTailleLigne::SANS_TAILLE : (string) $taille,
+                $taille === '' ? StockTailleLigne::SANS_TAILLE : $taille,
                 $stock,
+                $notes[$taille] ?? null,
             );
         }
 
         return $lignes;
+    }
+
+    /** La clé vide n'est pas une taille : elle passe devant sans traverser le référentiel. */
+    private function ordreDesTailles(string|int $a, string|int $b): int
+    {
+        $a = (string) $a;
+        $b = (string) $b;
+
+        if ($a === '' || $b === '') {
+            return ($a === '' ? 0 : 1) <=> ($b === '' ? 0 : 1);
+        }
+
+        return $this->referentiel->comparer($a, $b);
     }
 
     private function rupturesEnTete(StockAlerte $a, StockAlerte $b): int

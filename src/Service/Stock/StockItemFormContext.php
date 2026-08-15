@@ -6,7 +6,6 @@ use App\Entity\StockItem;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
 use App\Repository\StockItemRepository;
-use App\Service\Referentiel\Tailles;
 
 /**
  * Listes proposées par le formulaire article. Les valeurs déjà saisies sont fusionnées avec
@@ -30,7 +29,8 @@ final class StockItemFormContext
             'kinds' => StockItemKind::cases(),
             'vetementTypes' => StockItemVetementType::cases(),
             'marques' => $this->itemRepository->findDistinctMarques(),
-            'taillesEquip' => $this->fusionne(StockItemKind::EQUIPEMENT, Tailles::toutes()),
+            // Pas de liste de tailles ici : un équipement n'a pas de taille figée, ses
+            // déclinaisons se saisissent mouvement par mouvement.
             'contenances' => $this->fusionne(StockItemKind::EPICERIE, self::CONTENANCES_EPICERIE),
             'couleurs' => $this->itemRepository->findDistinctCouleurs(),
         ];
