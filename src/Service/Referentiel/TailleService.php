@@ -6,6 +6,7 @@ use App\Entity\Taille;
 use App\Repository\DirigeantRepository;
 use App\Repository\DossierClubRepository;
 use App\Repository\DotationBesoinRepository;
+use App\Repository\GrilleTailleValeurRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\StockTailleNoteRepository;
 use App\Repository\TailleRepository;
@@ -31,6 +32,7 @@ final class TailleService
         private readonly DossierClubRepository $dossierRepository,
         private readonly DirigeantRepository $dirigeantRepository,
         private readonly DotationBesoinRepository $besoinRepository,
+        private readonly GrilleTailleValeurRepository $grilleValeurRepository,
     ) {}
 
     /**
@@ -122,9 +124,9 @@ final class TailleService
     }
 
     /**
-     * Libellés employés quelque part, en clés. Cinq requêtes pour tout le référentiel — la
+     * Libellés employés quelque part, en clés. Six requêtes pour tout le référentiel — la
      * liste d'admin n'a besoin que de savoir *si* une taille est employée, pas combien de
-     * fois, et un comptage par ligne en aurait demandé cinq par taille.
+     * fois, et un comptage par ligne en aurait demandé six par taille.
      *
      * @return array<string, true>
      */
@@ -137,6 +139,7 @@ final class TailleService
             $this->dossierRepository->findDistinctTailles(),
             $this->dirigeantRepository->findDistinctTailles(),
             $this->besoinRepository->findDistinctTailles(),
+            $this->grilleValeurRepository->findDistinctTailles(),
         ] as $libelles) {
             foreach ($libelles as $libelle) {
                 $employes[$libelle] = true;
@@ -155,7 +158,10 @@ final class TailleService
             + $this->noteRepository->countByTaille($libelle)
             + $this->dossierRepository->countByTaille($libelle)
             + $this->dirigeantRepository->countByTaille($libelle)
-            + $this->besoinRepository->countByTaille($libelle);
+            + $this->besoinRepository->countByTaille($libelle)
+            // Une grille traduit vers ce libellé ou l'englobe : le supprimer ferait tomber la
+            // traduction, et le renommer la ferait pointer vers une taille qui n'existe plus.
+            + $this->grilleValeurRepository->countByTaille($libelle);
     }
 
     /**

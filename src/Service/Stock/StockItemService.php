@@ -3,6 +3,7 @@
 namespace App\Service\Stock;
 
 use App\DTO\Stock\SuppressionArticle;
+use App\Entity\GrilleTaille;
 use App\Entity\StockItem;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
@@ -27,6 +28,7 @@ final class StockItemService
         private readonly DotationBesoinRepository $besoinRepository,
         private readonly DotationModeleLigneRepository $modeleLigneRepository,
         private readonly CommandeLigneRepository $commandeLigneRepository,
+        private readonly StockTailleResolver $taillesResolver,
     ) {}
 
     public function creer(StockItem $item): void
@@ -139,6 +141,8 @@ final class StockItemService
      * Applique les champs conditionnels au type d'article (équipement vs épicerie) sur un StockItem.
      * Centralise la règle : un vêtement n'a pas de taille figée (déclinaisons de stock), l'épicerie
      * porte sa contenance dans « taille ».
+     *
+     * @throws \DomainException si la grille ne traduit pas l'échelle du type de vêtement
      */
     public function applyEditableFields(
         StockItem $item,
@@ -147,6 +151,7 @@ final class StockItemService
         ?string $couleur,
         ?string $taille,
         ?StockItemVetementType $typeVetement,
+        ?GrilleTaille $grille = null,
     ): void {
         $item->setKind($kind);
         $item->setMarque($marque ?: null);
@@ -155,11 +160,34 @@ final class StockItemService
             $item->setTaille(null);
             $item->setCouleur($couleur ?: null);
             $item->setTypeVetement($typeVetement);
+            $item->setGrilleTaille($this->grilleAdmise($item, $grille));
         } else {
             $item->setTaille($taille ?: null);
             $item->setCouleur(null);
             $item->setTypeVetement(null);
+            $item->setGrilleTaille(null);
         }
+    }
+
+    /**
+     * Le formulaire ne propose déjà que les grilles de la bonne échelle, mais un onglet resté
+     * ouvert pendant qu'un type de vêtement changeait rattacherait sinon une grille de
+     * pointures à un maillot — et toutes ses dotations sortiraient sans taille.
+     *
+     * @throws \DomainException
+     */
+    private function grilleAdmise(StockItem $item, ?GrilleTaille $grille): ?GrilleTaille
+    {
+        if ($grille === null) {
+            return null;
+        }
+
+        $type = $this->taillesResolver->profil($item)->type();
+        if ($type !== $grille->getType()) {
+            throw new \DomainException(sprintf('La grille « %s » se mesure en %s : elle ne convient pas à cet article.', $grille->getNom(), mb_strtolower($grille->getType()->label())));
+        }
+
+        return $grille;
     }
 
     public function restaurer(StockItem $item): void

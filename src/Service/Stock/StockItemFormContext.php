@@ -5,6 +5,7 @@ namespace App\Service\Stock;
 use App\Entity\StockItem;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
+use App\Repository\GrilleTailleRepository;
 use App\Repository\StockItemRepository;
 
 /**
@@ -18,6 +19,7 @@ final class StockItemFormContext
 
     public function __construct(
         private readonly StockItemRepository $itemRepository,
+        private readonly GrilleTailleRepository $grilleRepository,
     ) {}
 
     /** @return array<string, mixed> */
@@ -33,6 +35,9 @@ final class StockItemFormContext
             // déclinaisons se saisissent mouvement par mouvement.
             'contenances' => $this->fusionne(StockItemKind::EPICERIE, self::CONTENANCES_EPICERIE),
             'couleurs' => $this->itemRepository->findDistinctCouleurs(),
+            // Toutes les grilles : le formulaire ne garde que celles de l'échelle choisie,
+            // qui se décide dans le même écran.
+            'grilles' => $this->grilleRepository->findAllOrdered(),
         ];
     }
 

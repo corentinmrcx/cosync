@@ -1,0 +1,55 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Tailles{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Tailles' }
+] } %}
+
+<div class="section-home-page">
+
+    <div class="section-home-header">
+        <div>
+            <h1 class="section-home-title">Tailles</h1>
+        </div>
+    </div>
+
+    {# — Accès rapides — #}
+    <div class="section-home-section">
+        <div class="section-home-section-header">
+            <h2 class="section-home-section-title">Accès rapides</h2>
+        </div>
+        <div class="quicklink-grid">
+            <a href="{{ path('admin_tailles_referentiel') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('ruler', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Référentiel</span>
+                    <span class="quicklink-text">
+                        {{ tailles }} taille{{ tailles > 1 ? 's' }} — celles des formulaires et celles réservées au stock, dans l'ordre de tous les sélecteurs
+                    </span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+            <a href="{{ path('admin_grilles_index') }}" class="quicklink">
+                <span class="quicklink-icon">{{ ui.icon('layers', 20) }}</span>
+                <span class="quicklink-body">
+                    <span class="quicklink-title">Grilles de tailles</span>
+                    <span class="quicklink-text">
+                        {% if grilles > 0 %}
+                            {{ grilles }} grille{{ grilles > 1 ? 's' }} — traduire une taille déclarée en étiquette fournisseur
+                        {% else %}
+                            Traduire une taille déclarée en étiquette fournisseur : « 44 » → « 43-46 »
+                        {% endif %}
+                    </span>
+                </span>
+                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

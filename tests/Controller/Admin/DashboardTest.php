@@ -58,6 +58,8 @@ final class DashboardTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $labels = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
+        // Les grilles de tailles ne sont pas une entrée de plus : elles traduisent le
+        // référentiel des tailles et se rejoignent depuis son écran.
         self::assertSame(['Coordonnées bancaires', 'Catégories FFF', 'Tailles', 'Utilisateurs'], $labels);
     }
 

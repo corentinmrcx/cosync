@@ -3,6 +3,17 @@
 {% block title %}CoSync — {{ title }}{% endblock %}
 
 {% set initialKind = item and item.kind ? item.kind.value : 'equipement' %}
+{% set initialTypeVetement = item and item.typeVetement ? item.typeVetement.value : '' %}
+{% set initialGrille = item and item.grilleTaille ? item.grilleTaille.id : '' %}
+
+{# Échelle de tailles impliquée par le type de vêtement : elle décide des grilles proposées.
+   Le serveur refait le contrôle — un onglet resté ouvert pendant qu'une grille changeait
+   d'échelle enverrait sinon un rattachement incohérent. #}
+{% set etatFormulaire = {
+    kind: initialKind,
+    typeVetement: initialTypeVetement,
+    grille: initialGrille,
+}|json_encode %}
 
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
@@ -18,7 +29,7 @@
             <h1 class="stock-items-card-title">{{ title }}</h1>
         </div>
 
-        {{ form_start(form, {attr: {class: 'stock-items-form', 'x-data': "{ kind: '" ~ initialKind ~ "' }"}}) }}
+        {{ form_start(form, {attr: {class: 'stock-items-form', 'x-data': 'stockItemForm(' ~ etatFormulaire ~ ')'}}) }}
 
             {# ── Type d'article ── #}
             <div class="stock-items-section-title">Type d'article</div>
@@ -80,17 +91,37 @@
                     </div>
                     <div class="field">
                         <label class="field-label">Type de vêtement</label>
-                        <select name="typeVetement" class="field-input">
+                        <select name="typeVetement" class="field-input" x-model="typeVetement">
                             <option value="">— Non applicable —</option>
                             {% for type in vetementTypes %}
-                                <option value="{{ type.value }}"
-                                        {{ item and item.typeVetement == type ? 'selected' }}>
-                                    {{ type.label() }}
-                                </option>
+                                <option value="{{ type.value }}">{{ type.label() }}</option>
                             {% endfor %}
                         </select>
                         <p class="stock-items-help">Un article = un modèle (sans taille figée). Les tailles sont gérées comme déclinaisons de stock à l'entrée, et la dotation choisit automatiquement la bonne taille selon la fiche du joueur.</p>
                     </div>
+                </div>
+            </template>
+
+            {# La grille ne se pose que sur un vêtement : sans type, on ne sait pas quelle
+               échelle traduire. #}
+            <template x-if="kind === 'equipement' && typeVetement !== ''">
+                <div class="field">
+                    <div class="stock-items-label-row">
+                        <label class="field-label">Grille de tailles</label>
+                        <a href="{{ path('admin_grilles_index') }}" class="stock-items-label-link" target="_blank">Gérer ↗</a>
+                    </div>
+                    <select name="grilleTaille" class="field-input" x-model="grille">
+                        <option value="">— Aucune : les tailles déclarées telles quelles —</option>
+                        {% for g in grilles %}
+                            <option value="{{ g.id }}"
+                                    :hidden="echelle !== '{{ g.type.value }}'">{{ g.nom }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="stock-items-help">
+                        À renseigner quand le fournisseur ne vend pas cet article dans les tailles
+                        du formulaire : des chaussettes en « 43-46 », une veste enfant en « 128 ».
+                        La dotation traduira la taille déclarée avant de sortir l'article du stock.
+                    </p>
                 </div>
             </template>
 

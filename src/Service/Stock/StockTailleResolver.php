@@ -9,9 +9,13 @@ use App\Enum\StockTailleProfil;
 use App\Service\Referentiel\TailleReferentiel;
 
 /**
- * Choisit les tailles proposées pour un article. Proposer partout la même liste fait ranger
- * un réassort de chaussettes en « XL » : la déclinaison suit le type de vêtement, et
- * l'épicerie n'en a aucune — sa contenance est portée par l'article lui-même.
+ * Autorité unique sur les tailles d'un article : celles qu'on peut lui saisir, et la
+ * traduction de ce qu'une personne a déclaré vers ce que le fournisseur étiquette.
+ *
+ * Proposer partout la même liste fait ranger un réassort de chaussettes en « XL » : la
+ * déclinaison suit le type de vêtement, l'épicerie n'en a aucune — sa contenance est portée
+ * par l'article lui-même — et une grille, quand l'article en a une, restreint encore la liste
+ * aux déclinaisons réellement vendues.
  */
 final class StockTailleResolver
 {
@@ -47,7 +51,40 @@ final class StockTailleResolver
         // formulaires ne proposent pas : c'est là qu'on range les étiquettes fournisseur.
         $referentiel = $type === null ? [] : $this->referentiel->pourLeStock($type);
 
+        // Une grille dit dans quelles déclinaisons ce fournisseur-là vend l'article : proposer
+        // le référentiel entier ferait ranger un réassort de chaussettes « 43-46 » sous « 44 ».
+        // Le filtre préserve l'ordre du référentiel, qui est celui de tous les sélecteurs.
+        $grille = $item->getGrilleTaille();
+        if ($grille !== null) {
+            $cibles = $grille->libellesCibles();
+            $referentiel = array_values(array_filter(
+                $referentiel,
+                static fn (string $libelle): bool => in_array($libelle, $cibles, true),
+            ));
+        }
+
         return [...$referentiel, ...array_values(array_diff($dejaUtilisees, $referentiel))];
+    }
+
+    /**
+     * Traduit une taille déclarée dans le vocabulaire de l'article.
+     *
+     * Sans grille, il n'y a rien à traduire : l'article se décline dans le vocabulaire déclaré
+     * lui-même. Avec grille, la pointure 44 devient le « 43-46 » du carton — sans quoi la
+     * dotation sortirait du stock une taille qui n'existe chez aucun fournisseur.
+     *
+     * Rend null pour une taille qu'aucune valeur ne couvre : le besoin reste sans taille et le
+     * suivi affiche « à renseigner », ce que l'admin corrige à la main.
+     */
+    public function traduire(StockItem $item, ?string $tailleDeclaree): ?string
+    {
+        if ($tailleDeclaree === null || $tailleDeclaree === '') {
+            return null;
+        }
+
+        $grille = $item->getGrilleTaille();
+
+        return $grille === null ? $tailleDeclaree : $grille->cibleQuiCouvre($tailleDeclaree);
     }
 
     /**

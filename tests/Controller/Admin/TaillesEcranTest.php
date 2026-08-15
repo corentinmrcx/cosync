@@ -36,7 +36,7 @@ final class TaillesEcranTest extends WebTestCase
     {
         $client = $this->loginAdmin();
 
-        $html = $client->request('GET', '/admin/club/tailles')->html();
+        $html = $client->request('GET', '/admin/club/tailles/referentiel')->html();
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('128', $html);
@@ -58,7 +58,7 @@ final class TaillesEcranTest extends WebTestCase
             'proposee' => '1',
         ]);
 
-        self::assertResponseRedirects('/admin/club/tailles');
+        self::assertResponseRedirects('/admin/club/tailles/referentiel');
         $tailles = $this->repository()->findAllOrdered();
         self::assertCount($avant + 1, $tailles);
         self::assertSame('5XL', end($tailles)->getLibelle());
@@ -92,7 +92,7 @@ final class TaillesEcranTest extends WebTestCase
             'groupe' => 'Tailles adultes',
         ]);
 
-        self::assertResponseRedirects('/admin/club/tailles');
+        self::assertResponseRedirects('/admin/club/tailles/referentiel');
         $this->em->clear();
         self::assertFalse($this->taille('4XL')->isProposeeAuxLicencies());
     }
@@ -112,7 +112,7 @@ final class TaillesEcranTest extends WebTestCase
 
         // L'écran ne propose même plus la suppression : le bouton reste, désactivé, pour
         // dire pourquoi. Le refus côté service est couvert par TailleServiceTest.
-        $crawler = $client->request('GET', '/admin/club/tailles');
+        $crawler = $client->request('GET', '/admin/club/tailles/referentiel');
         self::assertCount(0, $crawler->filter('form[action="/admin/club/tailles/' . $taille->getId() . '/supprimer"]'));
         self::assertGreaterThan(0, $crawler->filter('.taille-btn-disabled')->count());
 
@@ -129,7 +129,7 @@ final class TaillesEcranTest extends WebTestCase
             '_token' => $this->jeton($client, 'form[action="/admin/club/tailles/' . $taille->getId() . '/supprimer"]'),
         ]);
 
-        self::assertResponseRedirects('/admin/club/tailles');
+        self::assertResponseRedirects('/admin/club/tailles/referentiel');
         $this->em->clear();
         self::assertNull($this->repository()->findOneByLibelle(TailleType::VETEMENT, '176'));
     }
@@ -155,7 +155,7 @@ final class TaillesEcranTest extends WebTestCase
             'ordre' => $nouvelOrdre,
         ]);
 
-        self::assertResponseRedirects('/admin/club/tailles');
+        self::assertResponseRedirects('/admin/club/tailles/referentiel');
         $this->em->clear();
         self::assertSame('12 ans', $this->repository()->findAllOrdered()[0]->getLibelle());
     }
@@ -191,7 +191,7 @@ final class TaillesEcranTest extends WebTestCase
     /** Jeton repris du formulaire réellement rendu : le gestionnaire CSRF le stocke en session. */
     private function jeton(KernelBrowser $client, string $selecteur): string
     {
-        $crawler = $client->request('GET', '/admin/club/tailles');
+        $crawler = $client->request('GET', '/admin/club/tailles/referentiel');
         $champ = $crawler->filter($selecteur . ' input[name="_token"]');
 
         self::assertGreaterThan(0, $champ->count(), 'Formulaire introuvable : ' . $selecteur);

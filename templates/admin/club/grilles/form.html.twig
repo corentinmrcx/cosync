@@ -1,0 +1,149 @@
+{#
+  Édition d'une grille de tailles.
+
+  Paramètres :
+    grille       (GrilleTaille)
+    cibles       (Taille[])  tout le référentiel de l'échelle — les libellés fournisseur
+    declarables  (Taille[])  ce qu'une personne peut déclarer — les tailles couvrables
+    nonCouvertes (string[])  tailles déclarables qu'aucune ligne ne traduit encore
+#}
+{% extends 'admin/layout.html.twig' %}
+
+{% set optionsCouvertures = declarables|map(t => {value: t.id, label: t.libelle}) %}
+{% set dejaCibles = grille.libellesCibles %}
+
+{% block title %}CoSync — {{ grille.nom }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Tailles', route: 'admin_tailles_index' },
+    { label: 'Grilles de tailles', route: 'admin_grilles_index' },
+    { label: grille.nom }
+] } %}
+
+<div class="dot-page" x-data="{ renaming: false, adding: false, editingId: null }">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title" x-show="!renaming">{{ grille.nom }}</h1>
+            <form method="post" action="{{ path('admin_grilles_rename', {id: grille.id}) }}"
+                  class="dot-affect-form grille-rename-form" x-show="renaming" x-cloak>
+                <input type="hidden" name="_token" value="{{ csrf_token('grille_renommer_' ~ grille.id) }}">
+                <input type="text" name="nom" class="field-input" value="{{ grille.nom }}" maxlength="100" required>
+                <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                <button type="button" class="btn btn-ghost btn-sm" @click="renaming = false">Annuler</button>
+            </form>
+            <p class="dot-subtitle">
+                Échelle : {{ grille.type.label() }}. Chaque ligne dit sous quel libellé du
+                fournisseur ranger les tailles déclarées qu'elle couvre.
+            </p>
+        </div>
+        <div class="dot-header-actions">
+            <button type="button" class="btn btn-secondary" @click="renaming = !renaming" x-show="!renaming">Renommer</button>
+            {# Refermer un formulaire ne détruit rien : le bouton quitte le registre de l'action
+               attendue pour celui du retrait discret (CLAUDE.md §7.6 bis). #}
+            <button type="button" class="btn" :class="adding ? 'btn-ghost' : 'btn-primary'" @click="adding = !adding">
+                <span x-text="adding ? 'Annuler' : '+ Nouvelle ligne'"></span>
+            </button>
+        </div>
+    </div>
+
+    {# Rien à signaler sur une grille encore vide : tout y est non traduit par construction, et
+       lister l'échelle entière noierait l'écran au moment où il n'a rien à dire. L'alerte n'a
+       de sens qu'une fois la grille commencée — c'est là qu'un oubli devient possible. #}
+    {% if nonCouvertes is not empty and grille.valeurs is not empty %}
+        {# Non bloquant : une grille se remplit en plusieurs fois. Mais il faut dire ce que
+           cela produit, sinon l'admin découvre le trou au moment de préparer les dotations. #}
+        <p class="grille-alerte">
+            Non traduites pour l'instant : <strong>{{ nonCouvertes|join(', ') }}</strong>.
+            Une personne qui déclare l'une d'elles verra son besoin rester « à renseigner »
+            dans le suivi des dotations, à compléter à la main.
+        </p>
+    {% endif %}
+
+    <div class="dot-card">
+
+        <div class="dot-card-header">
+            <h2 class="dot-card-title">Traductions</h2>
+            <span class="dot-card-count">{{ grille.valeurs|length }}</span>
+        </div>
+
+        <form method="post" action="{{ path('admin_grilles_valeur_add', {id: grille.id}) }}"
+              class="dot-affect-form grille-valeur-form" x-show="adding" x-cloak>
+            <input type="hidden" name="_token" value="{{ csrf_token('grille_valeur_ajouter_' ~ grille.id) }}">
+
+            <select name="cible" class="field-input grille-cible-select" required>
+                <option value="">— Taille du fournisseur —</option>
+                {% for cible in cibles|filter(c => c.libelle not in dejaCibles) %}
+                    <option value="{{ cible.id }}">{{ cible.libelle }}{% if not cible.proposeeAuxLicencies %} (stock){% endif %}</option>
+                {% endfor %}
+            </select>
+
+            {% include 'components/multi-select.html.twig' with {
+                ms_name: 'couvertures[]',
+                ms_options: optionsCouvertures,
+                ms_selected: [],
+                ms_placeholder: '— Tailles couvertes —',
+                ms_unite: 'tailles',
+                ms_recherche: true,
+                ms_tout: true,
+            } only %}
+
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+        </form>
+
+        {% if grille.valeurs is empty %}
+            <p class="dot-empty">
+                Aucune traduction. Tant que la grille est vide, un article qui la porte n'a
+                aucune déclinaison où ranger son stock.
+            </p>
+        {% else %}
+            <ul class="dot-list">
+                {% for valeur in grille.valeurs %}
+                    <li class="dot-list-item">
+                        <div x-show="editingId !== {{ valeur.id }}" class="dot-list-main">
+                            <span class="dot-list-name">{{ valeur.cible.libelle }}</span>
+                            <span class="grille-meta">
+                                {% if valeur.libellesCouverts is empty %}
+                                    <span class="grille-badge-vide">Ne couvre rien</span>
+                                {% else %}
+                                    couvre {{ valeur.libellesCouverts|join(', ') }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div x-show="editingId !== {{ valeur.id }}" class="dot-list-actions">
+                            <button type="button" class="btn btn-secondary btn-sm" @click="editingId = {{ valeur.id }}">Modifier</button>
+                            {% include 'components/_form_suppression.html.twig' with {
+                                action: path('admin_grilles_valeur_delete', {id: valeur.id}),
+                                jeton: 'grille_valeur_supprimer_' ~ valeur.id,
+                                message: 'Retirer ' ~ valeur.cible.libelle ~ ' de la grille ?',
+                            } only %}
+                        </div>
+
+                        <form x-show="editingId === {{ valeur.id }}" x-cloak method="post"
+                              action="{{ path('admin_grilles_valeur_edit', {id: valeur.id}) }}"
+                              class="dot-affect-form grille-valeur-form">
+                            <input type="hidden" name="_token" value="{{ csrf_token('grille_valeur_modifier_' ~ valeur.id) }}">
+                            <span class="grille-cible-fixe">{{ valeur.cible.libelle }}</span>
+                            {% include 'components/multi-select.html.twig' with {
+                                ms_name: 'couvertures[]',
+                                ms_options: optionsCouvertures,
+                                ms_selected: valeur.idsCouverts,
+                                ms_placeholder: '— Tailles couvertes —',
+                                ms_unite: 'tailles',
+                                ms_recherche: true,
+                                ms_tout: true,
+                            } only %}
+                            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                            <button type="button" class="btn btn-ghost btn-sm" @click="editingId = null">Annuler</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

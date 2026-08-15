@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Taille;
 use App\Enum\TailleType;
+use App\Repository\GrilleTailleRepository;
 use App\Repository\TailleRepository;
 use App\Security\CsrfGuard;
 use App\Service\Referentiel\TailleService;
@@ -24,15 +25,26 @@ class TailleController extends AbstractController
         private readonly CsrfGuard $csrf,
         private readonly TailleService $tailleService,
         private readonly TailleRepository $repository,
+        private readonly GrilleTailleRepository $grilleRepository,
     ) {}
 
+    /** Accueil de la section : le référentiel et les grilles qui le traduisent. */
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): Response
+    {
+        return $this->render('admin/club/tailles/index.html.twig', [
+            'tailles' => $this->repository->count([]),
+            'grilles' => $this->grilleRepository->count([]),
+        ]);
+    }
+
+    #[Route('/referentiel', name: 'referentiel', methods: ['GET'])]
+    public function referentiel(): Response
     {
         $tailles = $this->repository->findAllOrdered();
         $employes = $this->tailleService->libellesEmployes();
 
-        return $this->render('admin/club/tailles/list.html.twig', [
+        return $this->render('admin/club/tailles/referentiel.html.twig', [
             'tailles' => $tailles,
             // Employée ou non : c'est ce qui verrouille le libellé et interdit la suppression.
             'employees' => array_map(
@@ -61,7 +73,7 @@ class TailleController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_tailles_index');
+        return $this->redirectToRoute('admin_tailles_referentiel');
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['POST'])]
@@ -81,7 +93,7 @@ class TailleController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_tailles_index');
+        return $this->redirectToRoute('admin_tailles_referentiel');
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
@@ -98,7 +110,7 @@ class TailleController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_tailles_index');
+        return $this->redirectToRoute('admin_tailles_referentiel');
     }
 
     /** Nouvel ordre reçu du glisser-déposer : la liste complète des identifiants, de haut en bas. */
@@ -110,6 +122,6 @@ class TailleController extends AbstractController
         $this->tailleService->reordonner(array_map('intval', (array) $request->request->all('ordre')));
         $this->addFlash('success', 'Ordre des tailles enregistré.');
 
-        return $this->redirectToRoute('admin_tailles_index');
+        return $this->redirectToRoute('admin_tailles_referentiel');
     }
 }

@@ -1,20 +1,21 @@
 {% extends 'admin/layout.html.twig' %}
 {% import 'components/_icon.html.twig' as ui %}
 
-{% block title %}CoSync — Tailles{% endblock %}
+{% block title %}CoSync — Référentiel des tailles{% endblock %}
 
 {% block content %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
     { label: 'Le club', route: 'admin_club_index' },
-    { label: 'Tailles' }
+    { label: 'Tailles', route: 'admin_tailles_index' },
+    { label: 'Référentiel' }
 ] } %}
 
 <div class="dot-page" x-data="{ editingId: null, adding: false }">
 
     <div class="dot-header">
         <div>
-            <h1 class="dot-title">Tailles</h1>
+            <h1 class="dot-title">Référentiel des tailles</h1>
             <p class="dot-subtitle">
                 L'ordre défini ici est celui de tous les sélecteurs. Une taille cochée
                 « proposée » apparaît dans les formulaires licencié et dirigeant ; les autres
@@ -23,7 +24,9 @@
             </p>
         </div>
         <div class="dot-header-actions">
-            <button type="button" class="btn btn-primary" @click="adding = !adding">
+            {# Refermer un formulaire ne détruit rien : le bouton quitte le registre de l'action
+               attendue pour celui du retrait discret (CLAUDE.md §7.6 bis). #}
+            <button type="button" class="btn" :class="adding ? 'btn-ghost' : 'btn-primary'" @click="adding = !adding">
                 <span x-text="adding ? 'Annuler' : '+ Nouvelle taille'"></span>
             </button>
         </div>

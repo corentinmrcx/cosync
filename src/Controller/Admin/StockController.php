@@ -12,6 +12,7 @@ use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Form\StockItemType;
+use App\Repository\GrilleTailleRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockItemRepository;
 use App\Repository\StockMovementRepository;
@@ -50,6 +51,7 @@ class StockController extends AbstractController
         private readonly StockItemRepository $itemRepository,
         private readonly StockMovementRepository $movementRepository,
         private readonly LicencieRepository $licencieRepository,
+        private readonly GrilleTailleRepository $grilleRepository,
         private readonly SeasonContext $seasonContext,
     ) {}
 
@@ -98,11 +100,15 @@ class StockController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->applyEditableFields($item, $request);
-            $this->itemService->creer($item);
-            $this->addFlash('success', sprintf('Article "%s" créé.', $item->getNom()));
+            try {
+                $this->applyEditableFields($item, $request);
+                $this->itemService->creer($item);
+                $this->addFlash('success', sprintf('Article "%s" créé.', $item->getNom()));
 
-            return $this->redirectToRoute('admin_stock_gestion');
+                return $this->redirectToRoute('admin_stock_gestion');
+            } catch (\DomainException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
         }
 
         return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext->build(null));
@@ -115,19 +121,29 @@ class StockController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->applyEditableFields($item, $request);
-            $this->itemService->enregistrer($item);
-            $this->addFlash('success', sprintf('Article "%s" mis à jour.', $item->getNom()));
+            try {
+                $this->applyEditableFields($item, $request);
+                $this->itemService->enregistrer($item);
+                $this->addFlash('success', sprintf('Article "%s" mis à jour.', $item->getNom()));
 
-            return $this->redirectToRoute('admin_stock_gestion');
+                return $this->redirectToRoute('admin_stock_gestion');
+            } catch (\DomainException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
         }
 
         return $this->render('admin/stock/items/form.html.twig', ['form' => $form] + $this->itemFormContext->build($item));
     }
 
-    /** Lit les champs conditionnels du formulaire article et délègue l'application au service. */
+    /**
+     * Lit les champs conditionnels du formulaire article et délègue l'application au service.
+     *
+     * @throws \DomainException si la grille de tailles ne convient pas à l'article
+     */
     private function applyEditableFields(StockItem $item, Request $request): void
     {
+        $grilleId = (string) $request->request->get('grilleTaille', '');
+
         $this->itemService->applyEditableFields(
             $item,
             StockItemKind::tryFrom((string) $request->request->get('kind', '')),
@@ -135,6 +151,7 @@ class StockController extends AbstractController
             trim((string) $request->request->get('couleur', '')) ?: null,
             trim((string) $request->request->get('taille', '')) ?: null,
             StockItemVetementType::tryFrom((string) $request->request->get('typeVetement', '')),
+            $grilleId === '' ? null : $this->grilleRepository->find((int) $grilleId),
         );
     }
 

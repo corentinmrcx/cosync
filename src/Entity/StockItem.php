@@ -53,6 +53,15 @@ class StockItem
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?StockCategory $category = null;
 
+    /**
+     * Grille dans laquelle le fournisseur vend cet article — « 43-46 » pour des chaussettes,
+     * « 128 » pour une veste enfant. Null quand l'article se décline dans le vocabulaire
+     * déclaré lui-même, ce qui reste le cas du maillot adulte : rien à traduire.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?GrilleTaille $grilleTaille = null;
+
     /** Seuil d'alerte stock bas — null = pas d'alerte */
     #[ORM\Column(nullable: true)]
     private ?int $alertSeuil = null;
@@ -213,6 +222,18 @@ class StockItem
     public function setAlertSeuil(?int $alertSeuil): static
     {
         $this->alertSeuil = $alertSeuil;
+
+        return $this;
+    }
+
+    public function getGrilleTaille(): ?GrilleTaille
+    {
+        return $this->grilleTaille;
+    }
+
+    public function setGrilleTaille(?GrilleTaille $grilleTaille): static
+    {
+        $this->grilleTaille = $grilleTaille;
 
         return $this;
     }

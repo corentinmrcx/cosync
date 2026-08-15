@@ -248,6 +248,39 @@ Taille  // libelle, type (VETEMENT|POINTURE), groupe, proposeeAuxLicencies, posi
 enregistrement le désigne — on décoche « proposée » à la place. L'ordre du référentiel est
 celui de **tous** les sélecteurs, public compris.
 
+### GrilleTaille — traduire le déclaré en étiquette fournisseur
+
+Séparer les deux publics ne suffisait pas : il fallait encore **passer de l'un à l'autre**. Un
+licencié déclare « 44 » ou « 12 ans » ; le fournisseur vend en « 43-46 » et en « 128 ». Sans
+traduction, la dotation sortait du stock une déclinaison qui n'existe à aucun carton — le
+compteur du « 44 » partait en négatif pendant que celui du « 43-46 » ne bougeait pas.
+
+```php
+GrilleTaille       // nom, type (VETEMENT|POINTURE), valeurs
+GrilleTailleValeur // cible: Taille (le libellé du carton), couvertures: Taille[] (le déclaré)
+StockItem          // grilleTaille: ?GrilleTaille
+```
+
+- **Les deux côtés sont des `Taille`**, jamais du texte libre : la cible est recopiée dans
+  `stock_movement` et `dotation_besoin`, elle doit donc exister au référentiel — sinon la
+  saisie d'un mouvement ne la proposerait même pas. `TailleService` compte les grilles parmi
+  les emplois : une taille traduite ou couverte ne se renomme ni ne se supprime plus.
+- **`grilleTaille` nullable = pas de traduction**, et c'est le cas courant : le maillot adulte
+  se vend dans les tailles du formulaire. On ne crée une grille que quand le fournisseur a son
+  propre barème.
+- **Une taille déclarée mène à un seul libellé.** `GrilleTailleService` refuse le
+  chevauchement : deux plages pour une même pointure rendraient la traduction indécidable.
+- **Une taille non couverte donne `null`**, jamais une valeur approchante. Le besoin reste
+  « à renseigner » dans le suivi, et l'admin tranche. Mieux vaut un trou visible qu'une
+  déclinaison inventée. L'écran de la grille annonce ces trous avant qu'ils ne se voient.
+- Le point d'insertion unique est **`StockTailleResolver`** : `traduire()` pour la dotation
+  (appelé par `DotationResolver::sizeFor()`), `options()` pour restreindre la saisie d'un
+  mouvement aux déclinaisons réellement vendues. En aval, remise, ventilation, achat et bon de
+  commande parlent déjà « la taille du besoin » et suivent tout seuls.
+- L'ordre d'affichage reste celui du **référentiel**, pas de la grille : les libellés
+  fournisseur y figurent déjà, `TailleReferentiel::comparer()` les range sans rien savoir des
+  grilles.
+
 ### Notes, correction et retrait d'un article de stock
 
 **Deux notes, deux portées.** `StockItem.note` vaut pour l'article entier (où il est rangé,
