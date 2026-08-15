@@ -619,6 +619,28 @@ pas une page.
 après enregistrement, le lien Annuler pointe sur `admin_stock_gestion`, pas sur un écran
 voisin : quitter un formulaire ne doit pas déplacer l'utilisateur.
 
+### 7.6 ter Un article du stock se désigne par nom · marque · couleur
+
+Le club crée **un article par déclinaison** : plusieurs `StockItem` portent le même `nom`
+et ne se distinguent que par leur `marque` et leur `couleur`. Un écran qui n'affiche que
+le nom présente donc à l'admin plusieurs lignes identiques entre lesquelles il ne peut pas
+choisir.
+
+Partout où un admin doit **reconnaître** un article — un `<select>`, une ligne de kit, un
+récapitulatif — la désignation passe par
+`components/_stock_item_label.html.twig` :
+
+```twig
+{% import 'components/_stock_item_label.html.twig' as article %}
+{{ article.label(item) }}     {# Short · Nike · Rouge — nom seul si ni marque ni couleur #}
+{{ article.details(item) }}   {# Nike · Rouge, à glisser dans une ligne de méta #}
+```
+
+L'ordre `nom · marque · couleur` est celui des écrans de stock ; ne pas en inventer un autre.
+Les écrans de stock ajoutent la taille entre les deux, parce qu'elle est portée par l'article ;
+côté dotation elle vit sur le `DotationBesoin` (déduite du dossier) et n'a rien à faire dans
+la désignation.
+
 ### 7.7 Alpine.js — Séparation données/affichage
 
 ```html

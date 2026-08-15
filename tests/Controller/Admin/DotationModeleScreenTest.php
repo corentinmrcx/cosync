@@ -69,6 +69,34 @@ final class DotationModeleScreenTest extends WebTestCase
     }
 
     /**
+     * Le club crée un article par déclinaison : plusieurs portent le même nom et ne se
+     * distinguent que par la marque et la couleur. Un sélecteur qui ne montre que le nom
+     * rend le choix impossible — la désignation doit porter les trois.
+     */
+    public function testLesArticlesHomonymesSontDistinguesParMarqueEtCouleur(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+        $modele = $this->makeKit();
+
+        $rouge = $this->makeItem('Short');
+        $rouge->setMarque('Nike')->setCouleur('Rouge');
+        $noir = $this->makeItem('Short');
+        $noir->setMarque('Adidas')->setCouleur('Noir');
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/admin/dotations/' . $modele->getId() . '/modifier');
+        $html = $crawler->html();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Short · Nike · Rouge', $html);
+        self::assertStringContainsString('Short · Adidas · Noir', $html);
+
+        // Un article sans marque ni couleur garde son nom seul, sans séparateur orphelin.
+        self::assertStringContainsString('T-shirt<', $html);
+    }
+
+    /**
      * Composer un kit et dire qui le reçoit est la même décision : l'attribution se fait sur la
      * page du kit, et l'aperçu s'y adapte immédiatement.
      */

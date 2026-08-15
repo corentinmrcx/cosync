@@ -5,20 +5,21 @@
 {# Le sélecteur d'article, identique partout où l'on désigne un article du stock :
    vêtements d'abord (taille déduite automatiquement), puis le reste. #}
 {% macro articleSelect(vetements, autres, name, placeholder, model = null) %}
+    {% import 'components/_stock_item_label.html.twig' as article %}
     <select name="{{ name }}" class="field-input" required
             {% if model %}x-model="{{ model }}"{% endif %}>
         <option value="">{{ placeholder }}</option>
         {% if vetements is not empty %}
             <optgroup label="Vêtements (taille automatique)">
                 {% for item in vetements %}
-                    <option value="{{ item.id }}">{{ item.nom }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
+                    <option value="{{ item.id }}">{{ article.label(item) }}</option>
                 {% endfor %}
             </optgroup>
         {% endif %}
         {% if autres is not empty %}
             <optgroup label="Autres articles">
                 {% for item in autres %}
-                    <option value="{{ item.id }}">{{ item.nom }}{% if item.couleur %} · {{ item.couleur }}{% endif %}</option>
+                    <option value="{{ item.id }}">{{ article.label(item) }}</option>
                 {% endfor %}
             </optgroup>
         {% endif %}
@@ -51,6 +52,7 @@
 
 {% block content %}
 {% import _self as ui %}
+{% import 'components/_stock_item_label.html.twig' as article %}
 {% include 'components/breadcrumb.html.twig' with { items: [
     { label: 'Tableau de bord', route: 'admin_dashboard' },
     { label: navbar_saison_label, route: 'admin_saison_dashboard' },
@@ -184,7 +186,7 @@
                     <li class="dot-list-item dot-list-item-stack" x-data="{ ouvert: false }">
                         <div class="dot-list-row">
                             <div class="dot-list-main">
-                                <span class="dot-list-name">{{ ligne.stockItem.nom }}</span>
+                                <span class="dot-list-name">{{ article.label(ligne.stockItem) }}</span>
                                 <span class="dot-list-meta">
                                     ×{{ ligne.quantite }}
                                     {%- if ligne.stockItem.typeVetement %} · {{ ligne.stockItem.typeVetement.label }}{% endif -%}

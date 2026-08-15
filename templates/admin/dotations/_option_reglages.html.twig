@@ -1,12 +1,13 @@
 {# Une option d'un choix, à l'intérieur du formulaire unique du groupe.
    `ligne` = App\Entity\DotationModeleLigne #}
+{% import 'components/_stock_item_label.html.twig' as article %}
 <li class="dot-opt" x-data="{ perso: {{ ligne.personnalisationRequise ? 'true' : 'false' }} }">
     {# Une case décochée n'est pas postée : ce marqueur dit au serveur que l'option était bien
        dans le formulaire, et qu'un « texte à personnaliser » absent veut dire « décoché ». #}
     <input type="hidden" name="reglages[{{ ligne.id }}][_present]" value="1">
 
     <div class="dot-opt-head">
-        <span class="dot-opt-name">{{ ligne.stockItem.nom }}</span>
+        <span class="dot-opt-name">{{ article.label(ligne.stockItem) }}</span>
         {% if ligne.stockItem.typeVetement %}
             <span class="dot-opt-meta">{{ ligne.stockItem.typeVetement.label }}</span>
         {% endif %}
