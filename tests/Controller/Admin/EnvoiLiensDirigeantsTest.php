@@ -121,6 +121,33 @@ final class EnvoiLiensDirigeantsTest extends WebTestCase
         self::assertStringContainsString('1 sans adresse email', $crawler->filter('.flash-info')->text());
     }
 
+    /**
+     * Licence déclarée au district : elle ne remplit aucun formulaire. La proposer saison
+     * après saison ferait d'un état normal un retard permanent — et un uuid forcé à la main
+     * ne doit pas davantage déclencher de mail.
+     */
+    public function testUneLicenceAdministrativeNEstNiProposeeNiContactee(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $president = $this->creerDirigeant('DUPONT', 'president@example.test');
+        $president->setLicenceAdministrative(true);
+        $this->creerDirigeant('MARTIN', 'kevin@example.test');
+        $this->em()->flush();
+
+        $crawler = $client->request('GET', '/admin/effectif/dirigeants/envoyer-liens');
+        self::assertCount(1, $crawler->filter('.envoi-liens-item'), 'Seul MARTIN est proposé');
+
+        $client->request('POST', '/admin/effectif/dirigeants/envoyer-liens', [
+            '_token' => $this->jeton($client),
+            'dirigeants' => [(string) $president->getUuid()],
+        ]);
+
+        self::assertCount(0, self::getMailerMessages());
+        self::assertNull($this->relire($president)->getLinkSentAt());
+    }
+
     /** Le bandeau de la liste est le seul chemin visible vers l'écran : il doit apparaître. */
     public function testLeBandeauAnnonceLesLiensEnAttenteSurLaListe(): void
     {

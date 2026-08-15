@@ -305,6 +305,30 @@ plus une erreur mais une histoire. Supprimable ne veut pas dire obligé : l'écr
 toujours « Archiver plutôt ». Ne pas le remplacer par un `confirm()` : lui seul sait dire
 lequel des deux va se produire, et pourquoi.
 
+### Dirigeant.licenceAdministrative — la licence que le district exige
+
+Le district impose de déclarer une licence dirigeante pour le président, la secrétaire et le
+trésorier de l'association. Ces personnes ne sont pas forcément dans le foot : elles ne
+signent rien, ne remplissent aucun formulaire et ne veulent pas de kit.
+
+`Dirigeant.licenceAdministrative` enregistre **un seul fait** — « cette licence existe pour le
+district » — d'où découlent **trois** conséquences, réglées ensemble et jamais séparément :
+
+- `DotationBesoinSynchronizer::aDroitALaDotation()` retourne `false` **avant** de regarder la
+  complétude du dossier. Verrou dur : sans lui, il suffisait qu'un admin renseigne une taille
+  sur la fiche pour que le kit se matérialise en sortie de stock à préparer ;
+- `DocumentRequirementResolver` ne lui attend **aucun** document, quel que soit le ciblage —
+  son dossier ne reste donc pas éternellement « incomplet » et elle ne remonte dans aucune
+  relance ;
+- `DirigeantRepository::queryLienJamaisEnvoye()` l'exclut de l'écran d'envoi groupé et
+  `DirigeantLinkService::send()` refuse l'envoi à l'unité.
+
+Les **clés font exception** : un président sans dossier club détient souvent le trousseau du
+local, sa fiche continue donc d'afficher le registre et son attestation.
+
+Ne pas remplacer ce drapeau par trois réglages indépendants : c'est justement ce qui faisait
+oublier l'un des trois.
+
 ### Detenteur, CleMouvement, AttestationCle — deux échelles de temps
 
 Les clés du local sont le seul domaine où **le fait et l'engagement ne vivent pas dans la

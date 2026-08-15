@@ -16,6 +16,10 @@ final class DirigeantLinkService
 
     public function send(Dirigeant $dirigeant): void
     {
+        if ($dirigeant->isLicenceAdministrative()) {
+            throw new \LogicException('Impossible d\'envoyer le lien : cette licence est administrative, aucun formulaire ne lui est demandé.');
+        }
+
         if ($dirigeant->getEmail() === null) {
             throw new \LogicException('Impossible d\'envoyer le lien : aucune adresse email pour ce dirigeant.');
         }

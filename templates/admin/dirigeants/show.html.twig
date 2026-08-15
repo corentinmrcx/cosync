@@ -28,7 +28,12 @@
                 Modifier
             </a>
 
-            {% if not dossierComplet %}
+            {% if dirigeant.licenceAdministrative %}
+                {# Ni retard ni alerte : un état normal et définitif, d'où le registre neutre. #}
+                <span class="badge-status badge-status-imported" title="Licence déclarée au district : aucun document, aucun lien, aucune dotation.">
+                    <span class="badge-status-dot"></span>Licence administrative
+                </span>
+            {% elseif not dossierComplet %}
                 {% if dirigeant.email %}
                     <form method="post" action="{{ path('admin_dirigeants_send_link', {uuid: dirigeant.uuid}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_send_link_' ~ dirigeant.uuid) }}">
@@ -110,6 +115,15 @@
         <div class="licencie-show-card">
             <h2 class="licencie-show-card-title">Dossier club</h2>
 
+            {# Licence administrative : aucun dossier n'est attendu. Les clés font exception —
+               un président sans dossier club détient souvent le trousseau du local. #}
+            {% if dirigeant.licenceAdministrative %}
+                <p class="licencie-show-card-note">
+                    Licence déclarée au district pour l'association. Aucun formulaire, aucun document
+                    à signer et aucune dotation ne sont attendus pour cette personne.
+                </p>
+            {% else %}
+
             <dl class="licencie-show-dl">
                 <div class="licencie-show-dl-row">
                     <dt class="licencie-show-dt">Taille haut</dt>
@@ -130,8 +144,10 @@
             {% set photoVal = dirigeant.licencie
                 ? (dirigeant.licencie.dossierClub ? dirigeant.licencie.dossierClub.autorisationPhoto : null)
                 : dirigeant.autorisationPhoto %}
+            {% endif %}
 
             <ul class="licencie-show-checklist">
+                {% if not dirigeant.licenceAdministrative %}
                 {# Droit à l'image #}
                 {% include 'components/_checklist_item.html.twig' with {
                     etat: photoVal is null ? 'attente' : (photoVal ? 'accorde' : 'refuse'),
@@ -166,6 +182,7 @@
                             : null,
                     } only %}
                 {% endfor %}
+            {% endif %}
 
                 {# Attestation de remise de clés — affichée seulement pour les détenteurs de clés #}
                 {% if cleRow and cleRow.estDetenteur() %}

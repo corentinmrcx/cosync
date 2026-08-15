@@ -90,6 +90,17 @@ class Dirigeant
     #[ORM\Column(options: ['default' => false])]
     private bool $createdManually = false;
 
+    /**
+     * Licence déclarée au district pour une raison légale (président, secrétaire, trésorier),
+     * sans vie club derrière : la personne ne signe aucun document, ne reçoit pas de lien de
+     * formulaire et n'a droit à aucune dotation.
+     *
+     * Un seul fait, trois conséquences : les régler séparément revenait à en oublier une, et
+     * un kit se matérialisait dès que quelqu'un complétait la fiche à la main.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $licenceAdministrative = false;
+
     #[ORM\Column]
     private \DateTimeImmutable $importedAt;
 
@@ -355,6 +366,18 @@ class Dirigeant
     public function setLinkSentAt(?\DateTimeImmutable $linkSentAt): static
     {
         $this->linkSentAt = $linkSentAt;
+
+        return $this;
+    }
+
+    public function isLicenceAdministrative(): bool
+    {
+        return $this->licenceAdministrative;
+    }
+
+    public function setLicenceAdministrative(bool $licenceAdministrative): static
+    {
+        $this->licenceAdministrative = $licenceAdministrative;
 
         return $this;
     }

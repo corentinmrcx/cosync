@@ -58,6 +58,13 @@
 
 .dirigeants-td-muted { color: var(--color-text-muted) !important; }
 
+/* Licence déclarée au district : une mention, pas une alerte — d'où le registre neutre. */
+.dirigeants-td-administrative {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-disabled);
+}
+
 @media (max-width: 640px) {
     .dirigeants-page { padding: 1rem; gap: 1rem; }
 }

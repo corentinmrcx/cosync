@@ -186,7 +186,11 @@ class DirigeantController extends AbstractController
                 ]);
             }
 
-            if ($form->get('sendLink')->getData() === true && $dirigeant->getEmail() !== null) {
+            // La licence administrative prime sur la case : cochée puis rendue administrative,
+            // elle produirait un « échec d'envoi » trompeur là où rien ne devait partir.
+            if ($form->get('sendLink')->getData() === true
+                && $dirigeant->getEmail() !== null
+                && !$dirigeant->isLicenceAdministrative()) {
                 try {
                     $this->linkService->send($dirigeant);
                     $this->addFlash('success', $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant. Lien envoyé par email.');
@@ -269,6 +273,7 @@ class DirigeantController extends AbstractController
         $data->team = $dirigeant->getTeam();
         $data->numLicence = $dirigeant->getNumLicence();
         $data->licencie = $dirigeant->getLicencie();
+        $data->licenceAdministrative = $dirigeant->isLicenceAdministrative();
 
         $form = $this->createForm(DirigeantType::class, $data, ['season' => $season]);
         $form->handleRequest($request);

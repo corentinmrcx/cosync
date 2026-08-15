@@ -147,11 +147,19 @@ final class DotationBesoinSynchronizer
      * bon : licence validée (donc payée, ou validée à la main) côté licencié, dossier complet
      * côté dirigeant. Avant cela, le suivi de dotation annoncerait au club des sorties de
      * stock à préparer pour des inscriptions qui ne sont pas encore acquises.
+     *
+     * La licence administrative est un verrou dur, en amont de la complétude : ces licences
+     * n'existent que pour le district, personne ne les équipe. Sans ce test, il suffisait
+     * qu'un admin renseigne une taille sur la fiche pour que le kit se matérialise.
      */
     private function aDroitALaDotation(Licencie|Dirigeant $personne): bool
     {
         if ($personne instanceof Licencie) {
             return $personne->getDossierClub()?->getStatus() === LicenceStatus::VALIDATED;
+        }
+
+        if ($personne->isLicenceAdministrative()) {
+            return false;
         }
 
         return $this->dossierCompletion->isComplete($personne);

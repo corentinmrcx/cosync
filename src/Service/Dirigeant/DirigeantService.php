@@ -79,6 +79,7 @@ final class DirigeantService
         $dirigeant->setTeam($data->team);
         $dirigeant->setNumLicence($numLicence);
         $dirigeant->setLicencie($data->licencie);
+        $dirigeant->setLicenceAdministrative($data->licenceAdministrative);
 
         return $dirigeant;
     }
