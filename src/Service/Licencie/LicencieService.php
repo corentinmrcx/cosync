@@ -2,11 +2,13 @@
 
 namespace App\Service\Licencie;
 
+use App\DTO\ContactData;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
 use App\Entity\DossierClub;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Enum\ChampContact;
 use App\Enum\LicenceStatus;
 use App\Enum\NatureLicence;
 use App\Repository\LicencieRepository;
@@ -112,14 +114,60 @@ final class LicencieService
         $licencie->setPrenom($prenom);
         $licencie->setDateNaissance($data->dateNaissance);
         $licencie->setCategory($data->category);
-        $licencie->setEmail($email);
-        $licencie->setTelephone($phone);
+        $this->appliquerCoordonnees($licencie, $email, $phone);
         $licencie->setVoieRue($data->voieRue !== null && trim($data->voieRue) !== '' ? trim($data->voieRue) : null);
         $licencie->setCodePostal($data->codePostal !== null && trim($data->codePostal) !== '' ? trim($data->codePostal) : null);
         $licencie->setVille($data->ville !== null && trim($data->ville) !== '' ? trim($data->ville) : null);
         $licencie->setNumLicence($numLicence);
 
         $this->em->flush();
+    }
+
+    /**
+     * Corrige les coordonnées sans toucher à l'identité FFF — seul écran disponible pour un
+     * licencié importé, dont le nom et le numéro de licence restent la propriété de FootClubs.
+     */
+    public function editContact(Licencie $licencie, ContactData $data): void
+    {
+        $this->appliquerCoordonnees(
+            $licencie,
+            $this->sanitizer->sanitizeEmail($data->email),
+            $this->sanitizer->sanitizePhone($data->telephone),
+        );
+
+        $this->em->flush();
+    }
+
+    /**
+     * Relâche le verrou : l'import FootClubs redevient la source de vérité pour ce champ.
+     * La valeur corrigée reste en place jusqu'au prochain import, qui la remplacera.
+     */
+    public function reprendreImport(Licencie $licencie, ChampContact $champ): void
+    {
+        match ($champ) {
+            ChampContact::EMAIL => $licencie->setEmailManuel(false),
+            ChampContact::TELEPHONE => $licencie->setTelephoneManuel(false),
+        };
+
+        $this->em->flush();
+    }
+
+    /**
+     * Une coordonnée saisie par l'admin fait autorité sur l'export : on pose le verrou dès
+     * qu'elle change, sinon le prochain import ramènerait la valeur que l'admin vient de
+     * corriger. Une valeur laissée telle quelle ne verrouille rien.
+     */
+    private function appliquerCoordonnees(Licencie $licencie, ?string $email, ?string $telephone): void
+    {
+        if ($email !== $licencie->getEmail()) {
+            $licencie->setEmail($email);
+            $licencie->setEmailManuel(true);
+        }
+
+        if ($telephone !== $licencie->getTelephone()) {
+            $licencie->setTelephone($telephone);
+            $licencie->setTelephoneManuel(true);
+        }
     }
 
     public function edit(

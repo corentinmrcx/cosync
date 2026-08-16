@@ -155,7 +155,9 @@ nom: string
 prenom: string
 date_naissance: Date
 email: ?string
+email_manuel: bool                // verrou : l'import ne réécrase pas une correction admin
 telephone: ?string
+telephone_manuel: bool            // même verrou, pour le téléphone
 voie_rue / code_postal / ville: ?string
 category: Category
 team: ?Team            // assigné manuellement par l'admin
@@ -167,6 +169,25 @@ link_sent_at: ?datetime
 created_manually: bool
 imported_at: datetime
 ```
+
+### Corriger des coordonnées fausses sans que l'import les ramène
+
+FootClubs fait foi sur l'identité, jamais sur la **joignabilité** : une adresse fausse
+empêche le lien d'inscription d'arriver, et elle ne peut pas toujours se corriger là-bas le
+jour même (dossier en cours de validation à la ligue). D'où le verrou `email_manuel` /
+`telephone_manuel`, porté à l'identique par `Licencie` et par `Dirigeant` :
+
+- l'admin corrige depuis `/admin/effectif/joueurs/{uuid}/coordonnees` — ouvert à **tous**, y
+  compris aux fiches importées, contrairement à l'écran d'identité qui reste réservé aux
+  fiches saisies à la main. Côté dirigeant, l'écran de modification existant suffit ;
+- le verrou se pose **au changement de valeur**, pas à l'enregistrement : rouvrir l'écran et
+  valider sans rien toucher ne fige rien. Il est posé par `LicencieService` et
+  `DirigeantService`, jamais par l'import ;
+- `ImportService` saute le champ verrouillé — pour ce champ seul, l'autre continue de suivre
+  l'export ;
+- une fois FootClubs corrigé, la fiche affiche « corrigé à la main » et un bouton **Reprendre
+  FootClubs** (`reprendreImport()`) qui relâche le verrou. Sans cette sortie, CoSync
+  ignorerait l'export pour toujours sur ce champ, même une fois la donnée bonne des deux côtés.
 
 ### DossierClub
 ```php

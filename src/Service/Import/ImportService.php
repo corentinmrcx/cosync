@@ -168,10 +168,12 @@ final class ImportService
             $licencie->setCategory($category);
             // Champs optionnels : on ne met à jour que si l'export apporte une valeur,
             // pour que combiner les deux imports enrichisse sans jamais effacer l'existant.
-            if ($email !== null) {
+            // Une coordonnée corrigée à la main fait autorité sur l'export : FootClubs ne se
+            // corrige pas toujours le jour même, et le lien repartirait à la mauvaise adresse.
+            if ($email !== null && !$licencie->isEmailManuel()) {
                 $licencie->setEmail($email);
             }
-            if ($telephone !== null) {
+            if ($telephone !== null && !$licencie->isTelephoneManuel()) {
                 $licencie->setTelephone($telephone);
             }
             if ($voieRue !== null) {
@@ -275,11 +277,12 @@ final class ImportService
             $dirigeant->setNom($nom);
             $dirigeant->setPrenom($prenom);
             // Champs optionnels : mise à jour uniquement si l'export apporte une valeur,
-            // pour enrichir sans effacer en combinant les deux imports.
-            if ($email !== null) {
+            // pour enrichir sans effacer en combinant les deux imports. Une coordonnée
+            // corrigée à la main fait autorité sur l'export — même règle que côté licencié.
+            if ($email !== null && !$dirigeant->isEmailManuel()) {
                 $dirigeant->setEmail($email);
             }
-            if ($telephone !== null) {
+            if ($telephone !== null && !$dirigeant->isTelephoneManuel()) {
                 $dirigeant->setTelephone($telephone);
             }
             if ($dateNaissance !== null) {

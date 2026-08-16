@@ -77,12 +77,24 @@
                     <dt class="licencie-show-dt">Email</dt>
                     <dd class="{{ dirigeant.email ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
                         {{ dirigeant.email ?? '—' }}
+                        {% if dirigeant.emailManuel %}
+                            {% include 'components/_contact_verrou.html.twig' with {
+                                url: path('admin_dirigeants_contact_reprendre_import', { uuid: dirigeant.uuid, champ: 'email' }),
+                                tokenId: 'dirigeant_contact_reprendre_import_' ~ dirigeant.uuid
+                            } only %}
+                        {% endif %}
                     </dd>
                 </div>
                 <div class="licencie-show-dl-row">
                     <dt class="licencie-show-dt">Téléphone</dt>
                     <dd class="{{ dirigeant.telephone ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
                         {{ dirigeant.telephone|phone_format }}
+                        {% if dirigeant.telephoneManuel %}
+                            {% include 'components/_contact_verrou.html.twig' with {
+                                url: path('admin_dirigeants_contact_reprendre_import', { uuid: dirigeant.uuid, champ: 'telephone' }),
+                                tokenId: 'dirigeant_contact_reprendre_import_' ~ dirigeant.uuid
+                            } only %}
+                        {% endif %}
                     </dd>
                 </div>
                 <div class="licencie-show-dl-row">

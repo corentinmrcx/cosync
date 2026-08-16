@@ -9,6 +9,7 @@ use App\DTO\FiltreListe;
 use App\Entity\Dirigeant;
 use App\Entity\Season;
 use App\Entity\Team;
+use App\Enum\ChampContact;
 use App\Enum\DirigeantRole;
 use App\Form\DirigeantType;
 use App\Repository\DirigeantRepository;
@@ -295,5 +296,19 @@ class DirigeantController extends AbstractController
             'roleOptions' => DirigeantRole::options(),
             'licenciesSizes' => $this->formPrefill->parUuid($season),
         ]);
+    }
+
+    #[Route('/{uuid}/coordonnees/{champ}/reprendre-import', name: 'contact_reprendre_import', methods: ['POST'])]
+    public function reprendreImportContact(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
+        ChampContact $champ,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('dirigeant_contact_reprendre_import_' . $dirigeant->getUuid(), $request);
+
+        $this->dirigeantService->reprendreImport($dirigeant, $champ);
+        $this->addFlash('success', $champ->label() . ' sera de nouveau mis à jour par le prochain import FootClubs.');
+
+        return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
     }
 }

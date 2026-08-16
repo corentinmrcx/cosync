@@ -5,6 +5,7 @@ namespace App\Service\Dirigeant;
 use App\DTO\DirigeantData;
 use App\Entity\Dirigeant;
 use App\Entity\Season;
+use App\Enum\ChampContact;
 use App\Enum\DirigeantRole;
 use App\Repository\DirigeantRepository;
 use App\Service\Import\DataSanitizer;
@@ -61,7 +62,35 @@ final class DirigeantService
             }
         }
 
+        // Une coordonnée saisie par l'admin fait autorité sur l'export : on pose le verrou dès
+        // qu'elle change, sinon le prochain import ramènerait la valeur qu'il vient de corriger.
+        // Relevé avant hydrate(), qui écrase les valeurs.
+        $emailChange = $this->sanitizer->sanitizeEmail($data->email) !== $dirigeant->getEmail();
+        $telephoneChange = $this->sanitizer->sanitizePhone($data->telephone) !== $dirigeant->getTelephone();
+
         $this->hydrate($dirigeant, $data, $nom, $prenom, $numLicence);
+
+        if ($emailChange) {
+            $dirigeant->setEmailManuel(true);
+        }
+        if ($telephoneChange) {
+            $dirigeant->setTelephoneManuel(true);
+        }
+
+        $this->em->flush();
+    }
+
+    /**
+     * Relâche le verrou : l'import FootClubs redevient la source de vérité pour ce champ.
+     * La valeur corrigée reste en place jusqu'au prochain import, qui la remplacera.
+     */
+    public function reprendreImport(Dirigeant $dirigeant, ChampContact $champ): void
+    {
+        match ($champ) {
+            ChampContact::EMAIL => $dirigeant->setEmailManuel(false),
+            ChampContact::TELEPHONE => $dirigeant->setTelephoneManuel(false),
+        };
+
         $this->em->flush();
     }
 
