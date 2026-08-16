@@ -1,8 +1,8 @@
+import { assembler } from './composant.js';
 import { attestationTransport } from './attestation-transport.js';
-export function completionForm({ manquants = [] }) {
-    return {
-        ...attestationTransport(),
 
+export function completionForm({ manquants = [] }) {
+    return assembler(attestationTransport(), {
         manquants,
 
         // Autorisations (seules celles présentes dans `manquants` sont affichées/requises)
@@ -48,5 +48,5 @@ export function completionForm({ manquants = [] }) {
             return true;
         },
 
-    };
+    });
 }

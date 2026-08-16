@@ -24,7 +24,7 @@ export function creerPad(canvas, onTrace) {
 
 /**
  * Pad unique, pour un formulaire qui n'a qu'un document à signer.
- * S'intègre dans un composant Alpine via le spread (`...singleSignaturePad()`).
+ * S'intègre dans un composant Alpine via `assembler()` (cf. composant.js).
  *
  * Référence x-ref attendue dans le template : signatureCanvas.
  */
