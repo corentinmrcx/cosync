@@ -1,0 +1,15 @@
+{#
+    Marque une coordonnée corrigée à la main et offre de rendre la main à l'import.
+
+    Sans ce rappel, un admin ne saurait pas pourquoi un import FootClubs pourtant à jour
+    ne change plus rien sur cette ligne.
+
+    Paramètres : url (action du POST), tokenId (jeton CSRF).
+#}
+<span class="licencie-show-verrou">
+    <span class="licencie-show-verrou-mention" title="Le prochain import FootClubs ne réécrira pas cette valeur">corrigé à la main</span>
+    <form method="post" action="{{ url }}" class="licencie-show-verrou-form">
+        <input type="hidden" name="_token" value="{{ csrf_token(tokenId) }}">
+        <button type="submit" class="licencie-show-verrou-btn">Reprendre FootClubs</button>
+    </form>
+</span>

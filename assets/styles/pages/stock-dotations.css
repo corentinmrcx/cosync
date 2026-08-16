@@ -762,6 +762,31 @@
 .dot-taille-ok:hover,
 .dot-option-ok:hover { background: var(--color-success-bg); border-color: var(--color-success); }
 
+/* — Article servi par écoulement de stock (suivi) —
+   Sous le nom de l'article du kit : ce qu'on prend réellement dans l'armoire. Ton d'info,
+   pas d'alerte — un écoulement est le fonctionnement voulu pendant une transition. */
+.dot-ecoulement { margin-top: 0.2rem; }
+
+.dot-ecoulement-display {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.dot-ecoulement-badge {
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-info-bg);
+    color: var(--color-info);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.dot-ecoulement-lock {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
 @media (max-width: 640px) {
     .dot-page { padding: 1rem; }
 

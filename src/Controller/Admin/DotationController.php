@@ -20,6 +20,8 @@ use App\Security\CsrfGuard;
 use App\Service\Dotation\DotationAffectationService;
 use App\Service\Dotation\DotationBesoinSynchronizer;
 use App\Service\Dotation\DotationChoixService;
+use App\Service\Dotation\DotationEcoulementAllocator;
+use App\Service\Dotation\DotationEcoulementService;
 use App\Service\Dotation\DotationGroupeReglagesFactory;
 use App\Service\Dotation\DotationModeleFormContext;
 use App\Service\Dotation\DotationModeleService;
@@ -41,6 +43,8 @@ class DotationController extends AbstractController
         private readonly StockItemRepository $itemRepository,
         private readonly DotationBesoinSynchronizer $synchronizer,
         private readonly DotationChoixService $choixService,
+        private readonly DotationEcoulementAllocator $ecoulementAllocator,
+        private readonly DotationEcoulementService $ecoulementService,
         private readonly DotationSuiviPresenter $suivi,
         private readonly DotationRemiseService $remiseService,
         private readonly DotationModeleService $modeleService,
@@ -325,6 +329,9 @@ class DotationController extends AbstractController
     public function suivi(#[CurrentSeason] Season $season): Response
     {
         $this->synchronizer->syncTaillesFromDossiers($season);
+        // Après les tailles, avant la lecture : l'arbitrage de l'écoulement dépend d'elles, et
+        // le stock a pu bouger depuis le dernier affichage.
+        $this->ecoulementAllocator->allouer($season);
 
         $groupes = $this->suivi->groupesDeSuivi($season);
 
@@ -332,6 +339,7 @@ class DotationController extends AbstractController
             'season' => $season,
             'groupes' => $groupes,
             'optionsParBesoin' => $this->choixService->optionsParBesoin($groupes),
+            'articlesParBesoin' => $this->ecoulementService->articlesParBesoin($groupes),
             'taillesParBesoin' => $this->suivi->taillesParBesoin($groupes),
         ]);
     }
@@ -342,6 +350,7 @@ class DotationController extends AbstractController
         $this->csrf->valider('dotation_recalculer', $request);
 
         $count = $this->synchronizer->recomputeAll($season);
+        $this->ecoulementAllocator->allouer($season);
         $this->addFlash('success', sprintf('Besoins recalculés pour %d personne%s.', $count, $count > 1 ? 's' : ''));
 
         return $this->redirectToRoute('admin_dotations_suivi');
@@ -375,6 +384,26 @@ class DotationController extends AbstractController
         try {
             $this->choixService->corriger($besoin, $option);
             $this->addFlash('success', sprintf('Choix corrigé pour %s : %s.', $besoin->getNomPrenom(), $option->getNom()));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_dotations_suivi');
+    }
+
+    /**
+     * Fixe l'article servi sur une ligne : celui du kit, ou l'un de ceux qu'on écoule à sa
+     * place. Distinct de l'option de choix — ici la personne reçoit bien l'article prévu,
+     * c'est le carton dans lequel on le prend qui change.
+     */
+    #[Route('/besoins/{id}/article', name: 'besoin_article', methods: ['POST'])]
+    public function besoinArticle(DotationBesoin $besoin, Request $request): Response
+    {
+        $this->csrf->valider('dotation_besoin_article_' . $besoin->getId(), $request);
+
+        try {
+            $this->ecoulementService->fixerArticle($besoin, (string) $request->request->get('article', ''));
+            $this->addFlash('success', sprintf('Article servi mis à jour pour %s : %s.', $besoin->getNomPrenom(), $besoin->getArticleServi()->getNom()));
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
         }

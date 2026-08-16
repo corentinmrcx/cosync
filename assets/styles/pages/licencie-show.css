@@ -140,6 +140,41 @@
     font-weight: 500;
 }
 
+/* — Coordonnée corrigée à la main : l'import ne la réécrit plus — */
+.licencie-show-verrou {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-left: 0.375rem;
+}
+
+.licencie-show-verrou-mention {
+    padding: 0.05rem 0.375rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-warning);
+    background: var(--color-warning-bg);
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+}
+
+.licencie-show-verrou-form {
+    display: inline;
+}
+
+.licencie-show-verrou-btn {
+    padding: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.licencie-show-verrou-btn:hover {
+    color: var(--color-text-base);
+}
+
 @media (max-width: 640px) {
     .licencie-show-page { padding: 1rem; gap: 1rem; }
 

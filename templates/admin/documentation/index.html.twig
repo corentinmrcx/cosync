@@ -132,6 +132,15 @@
                 l'avez pas demandé : vous pouvez relire le rapport, corriger, ré-importer. Un ré-import met à jour
                 uniquement les données FFF (nom, email…) ; les dossiers club et les paiements ne sont jamais touchés.
             </div>
+
+            <h3 class="doc-h3">Une adresse mail fausse dans FootClubs</h3>
+            <p class="doc-p">
+                Tant que l'erreur n'est pas corrigée dans FootClubs, chaque import la ramène — et le lien
+                d'inscription repart dans le vide. Depuis la fiche du licencié, <em>Corriger les coordonnées</em>
+                enregistre la bonne adresse et la <strong>protège des imports suivants</strong> ; la fiche affiche
+                alors la mention <em>corrigé à la main</em>. Une fois FootClubs corrigé de votre côté, cliquez
+                <em>Reprendre FootClubs</em> pour que l'import redevienne la référence sur ce champ.
+            </p>
         </section>
 
         {# ───────────────────────────── 4. FORMULAIRE PUBLIC ───────────────────────────── #}
@@ -295,6 +304,18 @@
             </ol>
             <div class="doc-warn">
                 Si une taille reste vide alors que le dossier est rempli, c'est presque toujours que l'<strong>article n'a pas de « type de vêtement »</strong>. Le suivi affiche alors un lien « type à définir » vers l'article à corriger.
+            </div>
+
+            <h3 class="doc-h3">Écouler un stock avant de commander du neuf</h3>
+            <p class="doc-p">Au changement de fournisseur, il reste souvent du stock de l'ancien. Plutôt que de le laisser dormir pendant qu'on rachète l'équivalent, on déclare l'<strong>écoulement</strong> : sur la fiche de l'article qui reste (les chaussettes Nike), le champ <em>« Cet article en remplace un autre »</em> désigne l'article du kit (les chaussettes ERIMA).</p>
+            <ol class="doc-ol">
+                <li>Les dotations qui attendent l'article du kit piochent d'abord dans l'ancien stock, <strong>dans la limite de ce qu'il en reste à la bonne taille</strong>. Une fois épuisé, on repasse au neuf.</li>
+                <li>Le suivi affiche l'article <strong>réellement à remettre</strong> sous celui du kit : c'est ce carton-là qu'on ouvre au local, et c'est lui qui est décrémenté à la remise.</li>
+                <li>Un article d'écoulement n'apparaît <strong>jamais</strong> sur un bon de commande : seul le reliquat non couvert est acheté.</li>
+                <li>Le <strong>crayon</strong> permet de fixer l'article d'une ligne à la main — garantir le neuf à quelqu'un, ou au contraire lui réserver l'ancien.</li>
+            </ol>
+            <div class="doc-tip">
+                Les deux articles doivent porter le <strong>même type de vêtement</strong> : c'est lui qui dit où lire la taille de la personne. Une taille que l'ancien fournisseur n'étiquetait pas écarte simplement la substitution — la ligne reste sur l'article du kit plutôt que de partir dans une taille approchante.
             </div>
         </section>
 

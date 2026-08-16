@@ -24,6 +24,35 @@ final class FicheDocumentsChecklistTest extends WebTestCase
 {
     private ?Season $season = null;
 
+    /**
+     * Licence déclarée au district : sa fiche n'annonce aucune attente. Le bouton d'envoi
+     * du lien disparaît lui aussi — il ne mènerait qu'à un refus du service.
+     */
+    public function testLaFicheDUneLicenceAdministrativeNAnnonceAucuneAttente(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+
+        (new DocumentFixtures($em))->documentDirigeant($this->season);
+
+        $president = (new Dirigeant())
+            ->setNom('DUPONT')->setPrenom('Jean')->setSeason($this->season)
+            ->setEmail('president@example.test')
+            ->setLicenceAdministrative(true);
+
+        $em->persist($president);
+        $em->flush();
+
+        $client->request('GET', '/admin/effectif/dirigeants/' . $president->getUuid());
+        $html = (string) $client->getResponse()->getContent();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Licence administrative', $html);
+        self::assertStringNotContainsString('Règlement intérieur des dirigeants', $html);
+        self::assertStringNotContainsString('Envoyer le lien', $html);
+    }
+
     public function testLaFicheDirigeantListeLesDocumentsAttendusEtLeurEtat(): void
     {
         $client = static::createClient();

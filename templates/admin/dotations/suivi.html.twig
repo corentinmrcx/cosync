@@ -80,6 +80,10 @@
                                         besoin: besoin,
                                         options: optionsParBesoin[besoin.id] ?? [],
                                     } only %}
+                                    {% include 'admin/dotations/_ecoulement_cell.html.twig' with {
+                                        besoin: besoin,
+                                        articles: articlesParBesoin[besoin.id] ?? [],
+                                    } only %}
                                     {% include 'admin/dotations/_flocage_cell.html.twig' with { besoin: besoin } only %}
                                 </td>
                                 <td>
@@ -91,10 +95,10 @@
                                                 <span class="dot-item-taille">{{ besoin.taille }}</span>
                                             {% elseif estDonne %}
                                                 <span class="dot-taille-none">—</span>
-                                            {% elseif besoin.stockItem.typeVetement %}
+                                            {% elseif besoin.articleServi.typeVetement %}
                                                 <span class="dot-item-taille-missing">à renseigner</span>
-                                            {% elseif besoin.stockItem.kind and besoin.stockItem.kind.value == 'equipement' %}
-                                                <a href="{{ path('admin_stock_items_edit', {id: besoin.stockItem.id}) }}"
+                                            {% elseif besoin.articleServi.kind and besoin.articleServi.kind.value == 'equipement' %}
+                                                <a href="{{ path('admin_stock_items_edit', {id: besoin.articleServi.id}) }}"
                                                    class="dot-taille-config"
                                                    title="Définir le type de vêtement de l'article pour récupérer automatiquement la taille du licencié">type à définir ↗</a>
                                             {% else %}

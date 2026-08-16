@@ -1,0 +1,52 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Corriger les coordonnées de {{ licencie.nomPrenom }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs', route: 'admin_licencies_list' },
+    { label: licencie.nomPrenom, route: 'admin_licencies_show', params: { uuid: licencie.uuid } },
+    { label: 'Corriger les coordonnées' }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card licencie-new-card' } }) }}
+
+        <h1 class="season-form-header">Corriger les coordonnées</h1>
+        <p class="licencie-new-intro">
+            À utiliser quand FootClubs porte une adresse ou un numéro faux et qu'on ne peut pas
+            encore l'y corriger. Une valeur modifiée ici ne sera plus réécrite par les imports
+            suivants, jusqu'à ce que vous rendiez la main à FootClubs depuis la fiche.
+        </p>
+
+        <hr class="season-form-divider">
+
+        <p class="licencie-edit-section">Contact</p>
+
+        <div class="season-form-row">
+            <div class="field">
+                {{ form_label(form.email) }}
+                {{ form_widget(form.email) }}
+                {{ form_errors(form.email) }}
+                <p class="licencie-new-hint">C'est à cette adresse que part le lien du dossier d'inscription.</p>
+            </div>
+            <div class="field">
+                {{ form_label(form.telephone) }}
+                {{ form_widget(form.telephone) }}
+                {{ form_errors(form.telephone) }}
+            </div>
+        </div>
+
+        <div class="season-form-actions">
+            <a href="{{ path('admin_licencies_show', { uuid: licencie.uuid }) }}" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+        </div>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

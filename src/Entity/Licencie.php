@@ -32,8 +32,20 @@ class Licencie
     #[ORM\Column(length: 180, nullable: true)]
     private ?string $email = null;
 
+    /**
+     * Verrou : l'adresse a été corrigée à la main, l'import FootClubs ne la réécrit plus.
+     * Une adresse fausse dans FootClubs ne se corrige pas toujours tout de suite (dossier
+     * en cours de validation) ; sans ce verrou, le prochain import ramènerait la faute.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $emailManuel = false;
+
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $telephone = null;
+
+    /** Même verrou que {@see $emailManuel}, pour le numéro de téléphone. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $telephoneManuel = false;
 
     #[ORM\Column(length: 200, nullable: true)]
     private ?string $voieRue = null;
@@ -162,6 +174,30 @@ class Licencie
     public function setEmail(?string $email): static
     {
         $this->email = $email;
+
+        return $this;
+    }
+
+    public function isEmailManuel(): bool
+    {
+        return $this->emailManuel;
+    }
+
+    public function setEmailManuel(bool $emailManuel): static
+    {
+        $this->emailManuel = $emailManuel;
+
+        return $this;
+    }
+
+    public function isTelephoneManuel(): bool
+    {
+        return $this->telephoneManuel;
+    }
+
+    public function setTelephoneManuel(bool $telephoneManuel): static
+    {
+        $this->telephoneManuel = $telephoneManuel;
 
         return $this;
     }

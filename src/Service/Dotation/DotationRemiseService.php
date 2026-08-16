@@ -110,8 +110,10 @@ final class DotationRemiseService
 
     private function sortirDuStock(DotationBesoin $besoin, ?string $taille, ?User $user): StockMovement
     {
+        // L'article servi, pas celui du kit : c'est le carton Nike qu'on ouvre quand la ligne
+        // est couverte par un écoulement, et c'est donc lui qui doit décrémenter.
         $mouvement = $this->stockService->recordMovement(
-            $besoin->getStockItem(),
+            $besoin->getArticleServi(),
             $besoin->getQuantite(),
             StockMovementType::SORTIE,
             StockMovementSource::DOTATION,

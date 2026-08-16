@@ -143,6 +143,7 @@ class StockController extends AbstractController
     private function applyEditableFields(StockItem $item, Request $request): void
     {
         $grilleId = (string) $request->request->get('grilleTaille', '');
+        $remplaceId = (string) $request->request->get('remplaceArticle', '');
 
         $this->itemService->applyEditableFields(
             $item,
@@ -152,6 +153,12 @@ class StockController extends AbstractController
             trim((string) $request->request->get('taille', '')) ?: null,
             StockItemVetementType::tryFrom((string) $request->request->get('typeVetement', '')),
             $grilleId === '' ? null : $this->grilleRepository->find((int) $grilleId),
+        );
+
+        // Après le type de vêtement : c'est lui qui décide si l'écoulement est admissible.
+        $this->itemService->appliquerEcoulement(
+            $item,
+            $remplaceId === '' ? null : $this->itemRepository->find((int) $remplaceId),
         );
     }
 

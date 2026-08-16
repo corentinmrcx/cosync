@@ -33,6 +33,57 @@ class StockItemRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    /**
+     * Articles écoulés à la place de celui-ci, dans l'ordre où ils doivent partir : les
+     * archivés d'abord — un article sorti du catalogue est justement celui dont il faut se
+     * débarrasser — puis par nom, pour que l'arbitrage soit reproductible d'un écran à l'autre.
+     *
+     * @return list<StockItem>
+     */
+    public function findSubstituts(StockItem $officiel): array
+    {
+        return $this->createQueryBuilder('i')
+            ->where('i.remplaceArticle = :officiel')
+            ->setParameter('officiel', $officiel)
+            ->orderBy('i.actif', 'ASC')
+            ->addOrderBy('i.nom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countSubstituts(StockItem $officiel): int
+    {
+        return $this->count(['remplaceArticle' => $officiel]);
+    }
+
+    /**
+     * Articles que celui-ci peut déclarer remplacer. On écarte l'article lui-même, les
+     * articles d'écoulement (pas de chaîne : Nike → Adidas → ERIMA) et, si l'article est
+     * déjà remplacé par d'autres, tous les candidats — il est une cible, il ne peut pas
+     * devenir substitut à son tour.
+     *
+     * @return list<StockItem>
+     */
+    public function findCiblesEcoulementPossibles(?StockItem $item): array
+    {
+        if ($item !== null && $this->countSubstituts($item) > 0) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('i')
+            ->where('i.actif = true')
+            ->andWhere('i.kind = :equipement')
+            ->andWhere('i.remplaceArticle IS NULL')
+            ->setParameter('equipement', StockItemKind::EQUIPEMENT)
+            ->orderBy('i.nom', 'ASC');
+
+        if ($item !== null) {
+            $qb->andWhere('i.id != :self')->setParameter('self', $item->getId());
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     /** @return string[] */
     public function findDistinctMarques(): array
     {

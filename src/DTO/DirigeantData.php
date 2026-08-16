@@ -30,4 +30,5 @@ final class DirigeantData
     public ?Team $team = null;
     public ?string $numLicence = null;
     public ?Licencie $licencie = null;
+    public bool $licenceAdministrative = false;
 }

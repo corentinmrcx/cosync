@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
+use App\DTO\ContactData;
 use App\DTO\EnvoiGroupeResultat;
 use App\DTO\FiltreListe;
 use App\DTO\LicencieCreateData;
@@ -12,9 +13,11 @@ use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\Team;
 use App\Entity\User;
+use App\Enum\ChampContact;
 use App\Enum\LicenceStatus;
 use App\Enum\NatureLicence;
 use App\Enum\PaymentMode;
+use App\Form\ContactType;
 use App\Form\LicencieCreateType;
 use App\Form\LicencieEditType;
 use App\Form\LicencieIdentityType;
@@ -260,6 +263,50 @@ class LicencieController extends AbstractController
             'form' => $form,
             'licencie' => $licencie,
         ]);
+    }
+
+    /**
+     * Ouvert à tous, importés compris : l'identité FFF reste la propriété de FootClubs, mais
+     * une adresse mail fausse doit pouvoir se corriger tout de suite — le lien d'inscription
+     * en dépend, et l'export ne se corrige parfois qu'après validation du dossier à la ligue.
+     */
+    #[Route('/{uuid}/coordonnees', name: 'edit_contact', methods: ['GET', 'POST'])]
+    public function editContact(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        Request $request,
+    ): Response {
+        $data = new ContactData();
+        $data->email = $licencie->getEmail();
+        $data->telephone = $licencie->getTelephone();
+
+        $form = $this->createForm(ContactType::class, $data);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->licencieService->editContact($licencie, $data);
+            $this->addFlash('success', 'Coordonnées de ' . $licencie->getNomPrenom() . ' mises à jour.');
+
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+        }
+
+        return $this->render('admin/licencies/contact.html.twig', [
+            'form' => $form,
+            'licencie' => $licencie,
+        ]);
+    }
+
+    #[Route('/{uuid}/coordonnees/{champ}/reprendre-import', name: 'contact_reprendre_import', methods: ['POST'])]
+    public function reprendreImportContact(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        ChampContact $champ,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('contact_reprendre_import_' . $licencie->getUuid(), $request);
+
+        $this->licencieService->reprendreImport($licencie, $champ);
+        $this->addFlash('success', $champ->label() . ' sera de nouveau mis à jour par le prochain import FootClubs.');
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
     }
 
     #[Route('/{uuid}', name: 'show')]

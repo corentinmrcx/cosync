@@ -6,6 +6,7 @@ use App\Entity\DotationBesoin;
 use App\Entity\Licencie;
 use App\Enum\DotationAvancementStatut;
 use App\Enum\DotationBesoinStatut;
+use App\Enum\LicenceStatus;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
@@ -295,6 +296,49 @@ final class DotationBesoinSynchronizerTest extends StockIntegrationTestCase
             $this->em->find(DotationBesoin::class, $idEtranger),
             'Le besoin de la saison précédente doit survivre au recalcul.',
         );
+    }
+
+    public function testLicencieNonValideNeGenereAucunBesoin(): void
+    {
+        $season = $this->makeSeason();
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $modele = $this->makeModele($season);
+        $this->addLigne($modele, $item, 1);
+        $this->affecterCategorie($season, $modele, $cat);
+
+        // Formulaire rempli mais cotisation pas encore encaissée : le kit n'est pas dû.
+        $licencie = $this->makeLicencie($season, $cat, null, 'L', LicenceStatus::FORM_COMPLETED);
+
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+        self::assertFalse($this->synchronizer()->recomputeForLicencie($licencie));
+
+        self::assertSame([], $this->besoinRepo()->findForLicencie($licencie), 'Aucun besoin tant que la licence n\'est pas validée.');
+    }
+
+    public function testRecalculGlobalRetireLesBesoinsDUnLicencieNonValide(): void
+    {
+        $season = $this->makeSeason();
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $autreItem = $this->makeItem('Short', StockItemVetementType::BAS);
+        $modele = $this->makeModele($season);
+        $this->addLigne($modele, $item, 1);
+        $this->affecterCategorie($season, $modele, $cat);
+
+        $licencie = $this->makeLicencie($season, $cat, null, 'L', LicenceStatus::LINK_SENT);
+        // Besoins matérialisés à tort par une version antérieure du synchronizer.
+        $aDonner = $this->makeBesoin($season, $item, 'L')->setLicencie($licencie);
+        $dejaDonne = $this->makeBesoin($season, $autreItem, 'L', 1, DotationBesoinStatut::DONNE)->setLicencie($licencie);
+        $this->em->flush();
+        $idADonner = $aDonner->getId();
+        $idDejaDonne = $dejaDonne->getId();
+
+        $this->synchronizer()->recomputeAll($season);
+
+        self::assertNull($this->em->find(DotationBesoin::class, $idADonner), 'Le besoin à donner d\'une licence non validée est retiré par le recalcul.');
+        self::assertNotNull($this->em->find(DotationBesoin::class, $idDejaDonne), 'Un article déjà remis reste tracé, même hors droit à la dotation.');
     }
 
     public function testStatutFicheLicencie(): void
