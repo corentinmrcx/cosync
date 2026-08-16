@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
 use App\Entity\Season;
+use App\Service\Dotation\DotationEcoulementAllocator;
 use App\Service\Stock\AchatService;
 use App\Service\Stock\CommandeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,11 +21,16 @@ class DotationDashboardController extends AbstractController
     public function __construct(
         private readonly AchatService $achatService,
         private readonly CommandeService $commandeService,
+        private readonly DotationEcoulementAllocator $ecoulementAllocator,
     ) {}
 
     #[Route('', name: 'dashboard', methods: ['GET'])]
     public function index(#[CurrentSeason] Season $season): Response
     {
+        // Le compteur « à commander » se lit après l'arbitrage de l'écoulement : sans lui, il
+        // annoncerait des achats que l'ancien stock couvre déjà.
+        $this->ecoulementAllocator->allouer($season);
+
         return $this->render('admin/dotations/dashboard.html.twig', [
             'season' => $season,
             'aCommanderCount' => $this->achatService->compterACommander($season),

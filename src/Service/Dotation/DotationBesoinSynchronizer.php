@@ -90,8 +90,10 @@ final class DotationBesoinSynchronizer
             }
 
             $personne = $besoin->getLicencie() ?? $besoin->getDirigeant();
+            // L'article servi : un stock d'écoulement s'étiquette dans la grille de son propre
+            // fournisseur, la taille du besoin doit parler celle-là.
             $taille = $personne !== null
-                ? $this->resolver->sizeFor($personne, $besoin->getStockItem())
+                ? $this->resolver->sizeFor($personne, $besoin->getArticleServi())
                 : null;
 
             if ($taille !== $besoin->getTaille()) {
@@ -205,6 +207,13 @@ final class DotationBesoinSynchronizer
      */
     private function realigner(DotationBesoin $besoin, array $ligne): void
     {
+        // Changer l'article du kit périme l'écoulement en cours : il écoulait l'ancien. On le
+        // relâche plutôt que de le valider ici — l'allocateur en rendra un autre si la
+        // nouvelle option en a un, et lui seul sait ce qu'il reste en stock.
+        if ($besoin->getStockItem()->getId() !== $ligne['stockItem']->getId()) {
+            $besoin->setArticleEcoulement(null)->setArticleManuel(false);
+        }
+
         $besoin
             ->setStockItem($ligne['stockItem'])
             ->setQuantite($ligne['quantite'])

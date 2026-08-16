@@ -11,12 +11,16 @@ export function stockItemForm(initial) {
         kind: initial.kind,
         typeVetement: initial.typeVetement,
         grille: initial.grille,
+        remplace: initial.remplace,
 
         init() {
             // Changer de type de vêtement change d'échelle : la grille retenue jusque-là ne
             // traduit plus la bonne chose, on repart d'aucune plutôt que d'en garder une fausse.
+            // L'article écoulé tombe pour la même raison : il n'est plus du même type, la
+            // dotation irait lire la taille du bas pour servir un haut.
             this.$watch('typeVetement', () => {
                 this.grille = '';
+                this.remplace = '';
             });
         },
 

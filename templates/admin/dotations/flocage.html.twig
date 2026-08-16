@@ -46,7 +46,8 @@
                         <tr>
                             <td><span class="dot-item-nom">{{ besoin.nomPrenom }}</span></td>
                             <td>{{ besoin.teamName ?? '—' }}</td>
-                            <td>{{ besoin.stockItem.nom }}</td>
+                            {# L'article servi : c'est celui-là qui part chez le floqueur. #}
+                            <td>{{ besoin.articleServi.nom }}</td>
                             <td>
                                 {% if besoin.taille %}
                                     <span class="dot-item-taille">{{ besoin.taille }}</span>

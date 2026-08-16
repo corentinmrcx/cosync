@@ -11,6 +11,7 @@ use App\Enum\StockMovementSource;
 use App\Repository\CommandeLigneRepository;
 use App\Repository\DotationBesoinRepository;
 use App\Repository\DotationModeleLigneRepository;
+use App\Repository\StockItemRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\StockTailleNoteRepository;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
@@ -28,6 +29,7 @@ final class StockItemService
         private readonly DotationBesoinRepository $besoinRepository,
         private readonly DotationModeleLigneRepository $modeleLigneRepository,
         private readonly CommandeLigneRepository $commandeLigneRepository,
+        private readonly StockItemRepository $itemRepository,
         private readonly StockTailleResolver $taillesResolver,
     ) {}
 
@@ -133,6 +135,8 @@ final class StockItemService
         return [
             'il figure dans un kit de dotation.' => $this->modeleLigneRepository->count(['stockItem' => $item]),
             'il est attendu dans une dotation à remettre.' => $this->besoinRepository->count(['stockItem' => $item]),
+            'il est servi à la place d\'un article de kit, dans une dotation à remettre.' => $this->besoinRepository->countByArticleEcoulement($item),
+            'des articles sont en cours d\'écoulement à sa place.' => $this->itemRepository->countSubstituts($item),
             'il figure sur un bon de commande.' => $this->commandeLigneRepository->count(['stockItem' => $item]),
         ];
     }
@@ -167,6 +171,56 @@ final class StockItemService
             $item->setTypeVetement(null);
             $item->setGrilleTaille(null);
         }
+    }
+
+    /**
+     * Déclare (ou retire) l'article de dotation que celui-ci écoule : le stock Nike qu'on sert
+     * tant qu'il en reste, avant de commander de l'ERIMA.
+     *
+     * Quatre refus, et chacun correspond à une dotation qui sortirait fausse :
+     *
+     * - **soi-même** : un article ne s'écoule pas à sa propre place ;
+     * - **une chaîne** (Nike → Adidas → ERIMA) : l'arbitrage ne remonte qu'un cran, la cible
+     *   doit donc être un vrai article de kit. Deux anciens fournisseurs pointent chacun
+     *   directement sur le nouveau, ce qui couvre le cas réel ;
+     * - **un article déjà écoulé par d'autres** : il est une cible, il ne peut pas devenir
+     *   substitut sans créer cette même chaîne dans l'autre sens ;
+     * - **une échelle de tailles différente** : le type de vêtement dit quel champ du dossier
+     *   lire. Écouler un short à la place d'un maillot ferait servir la taille du bas sur le
+     *   haut, et la sortie de stock partirait dans la mauvaise déclinaison.
+     *
+     * @throws \DomainException
+     */
+    public function appliquerEcoulement(StockItem $item, ?StockItem $cible): void
+    {
+        // L'épicerie n'a pas de dotation : la règle n'a aucun sens sur une bouteille.
+        if ($cible === null || $item->getKind() !== StockItemKind::EQUIPEMENT) {
+            $item->setRemplaceArticle(null);
+
+            return;
+        }
+
+        // Un article encore à créer n'a pas d'id : il ne peut être ni sa propre cible, ni
+        // déjà remplacé par d'autres. Les deux contrôles qui en dépendent ne le concernent pas.
+        $connu = $this->em->contains($item);
+
+        if ($connu && $cible->getId() === $item->getId()) {
+            throw new \DomainException('Un article ne peut pas s\'écouler à sa propre place.');
+        }
+
+        if ($cible->estArticleDEcoulement()) {
+            throw new \DomainException(sprintf('« %s » est lui-même un article en cours d\'écoulement : indiquez plutôt l\'article du kit qu\'il remplace.', $cible->getNom()));
+        }
+
+        if ($connu && $this->itemRepository->countSubstituts($item) > 0) {
+            throw new \DomainException(sprintf('« %s » est déjà remplacé par d\'autres articles : il ne peut pas en remplacer un à son tour.', $item->getNom()));
+        }
+
+        if ($cible->getTypeVetement() !== $item->getTypeVetement()) {
+            throw new \DomainException(sprintf('« %s » ne se mesure pas comme cet article : les deux doivent porter le même type de vêtement pour que la taille du licencié se lise au bon endroit.', $cible->getNom()));
+        }
+
+        $item->setRemplaceArticle($cible);
     }
 
     /**

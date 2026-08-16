@@ -6,6 +6,7 @@ use App\Entity\Dirigeant;
 use App\Entity\DotationBesoin;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Entity\StockItem;
 use App\Enum\DotationBesoinStatut;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -27,6 +28,7 @@ class DotationBesoinRepository extends ServiceEntityRepository
         // champ HIDDEN (exclu de l'hydratation) pour pouvoir trier dessus.
         return $this->createQueryBuilder('b')
             ->leftJoin('b.stockItem', 'i')->addSelect('i')
+            ->leftJoin('b.articleEcoulement', 'e')->addSelect('e')
             ->leftJoin('b.licencie', 'l')->addSelect('l')
             ->leftJoin('b.dirigeant', 'd')->addSelect('d')
             ->addSelect('COALESCE(l.nom, d.nom) AS HIDDEN personneNom')
@@ -47,12 +49,20 @@ class DotationBesoinRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('b')
             ->leftJoin('b.stockItem', 'i')->addSelect('i')
             ->leftJoin('i.fournisseur', 'f')->addSelect('f')
+            ->leftJoin('b.articleEcoulement', 'e')->addSelect('e')
+            ->leftJoin('e.fournisseur', 'ef')->addSelect('ef')
             ->where('b.season = :season')
             ->andWhere('b.statut = :statut')
             ->setParameter('season', $season)
             ->setParameter('statut', DotationBesoinStatut::A_DONNER)
             ->getQuery()
             ->getResult();
+    }
+
+    /** Besoins servis par cet article d'écoulement — garde de suppression du catalogue. */
+    public function countByArticleEcoulement(StockItem $item): int
+    {
+        return $this->count(['articleEcoulement' => $item]);
     }
 
     /**

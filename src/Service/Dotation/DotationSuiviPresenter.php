@@ -106,7 +106,9 @@ final class DotationSuiviPresenter
 
         foreach ($groupes as $groupe) {
             foreach ($groupe->besoins as $besoin) {
-                $out[$besoin->getId()] = $this->tailles->options($besoin->getStockItem());
+                // Options de l'article servi : une ligne couverte par un écoulement se corrige
+                // dans les déclinaisons de CE carton-là, pas dans celles du kit.
+                $out[$besoin->getId()] = $this->tailles->options($besoin->getArticleServi());
             }
         }
 

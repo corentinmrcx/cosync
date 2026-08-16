@@ -302,6 +302,40 @@ StockItem          // grilleTaille: ?GrilleTaille
   fournisseur y figurent déjà, `TailleReferentiel::comparer()` les range sans rien savoir des
   grilles.
 
+### Écoulement — servir l'ancien stock avant de commander du neuf
+
+Le club change de fournisseur sans jeter ce qui reste : les chaussettes du kit sont des ERIMA,
+mais il dort des Nike au local. Sans arbitrage, le besoin porte l'article du kit, `AchatService`
+ne déduit que **son** stock, et le club rachète du neuf par-dessus un carton plein.
+
+```php
+StockItem.remplaceArticle: ?StockItem   // « je m'écoule à la place de celui-ci »
+DotationBesoin.articleEcoulement: ?StockItem  // l'article réellement servi (null = celui du kit)
+DotationBesoin.articleManuel: bool             // l'admin a épinglé, l'arbitrage ne touche plus
+```
+
+- **La règle se déclare sur l'article à écouler**, et une seule fois pour le club — pas kit par
+  kit. Un club change de fournisseur une fois ; la déclarer dans chaque `DotationModele` ferait
+  oublier l'un des cinq et l'écoulement ne se ferait qu'à moitié.
+- **`DotationBesoin.stockItem` reste l'article du kit.** C'est lui que `realigner()` réaligne et
+  que `emplacementDe()` identifie ; changer sa valeur ferait purger et recréer le besoin à chaque
+  bascule, en perdant le statut « donné », la taille manuelle et l'historique. Le point de
+  lecture unique en aval est **`getArticleServi()`** — achats, remise, suivi, flocage passent
+  tous par là. Lire `getStockItem()` en aval fait recommander du neuf.
+- **L'arbitrage est une passe saison entière, idempotente** (`DotationEcoulementAllocator`),
+  jouée avant chaque lecture du suivi et des achats — même dispositif que
+  `syncTaillesFromDossiers()`, et pour la même raison : il dépend d'un stock qui bouge. Ordre de
+  service : par création du besoin, premier inscrit premier servi. Il doit rester déterministe,
+  sinon deux écrans consécutifs n'annoncent pas la même chose.
+- **Jamais au-delà du stock, jamais à moitié, jamais dans une taille approchée.** La première
+  règle est celle qui tient tout : un besoin servi par un substitut étant toujours couvert,
+  `AchatService` ne propose jamais de racheter un article d'écoulement. Un épinglage manuel que
+  le stock ne couvre plus est **relâché** — c'est ce qui préserve l'invariant.
+- **Les deux articles doivent porter le même `typeVetement`** : c'est lui qui dit quel champ du
+  dossier lire. Écouler un short à la place d'un maillot servirait la taille du bas sur le haut.
+  Ni chaîne (Nike → Adidas → ERIMA) ni auto-remplacement : `StockItemService::appliquerEcoulement()`
+  refuse les deux, et `analyserSuppression()` compte ces liens parmi les emplois.
+
 ### Notes, correction et retrait d'un article de stock
 
 **Deux notes, deux portées.** `StockItem.note` vaut pour l'article entier (où il est rangé,

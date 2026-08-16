@@ -81,6 +81,11 @@ final class AchatService
      * Besoins « à donner » cumulés par couple (article, taille) : deux licenciés qui
      * attendent la même veste en L ne font qu'une ligne de commande.
      *
+     * C'est l'article **servi** qui compte, pas celui du kit : une ligne couverte par un stock
+     * en cours d'écoulement se cumule sous l'ancien article, dont le stock l'absorbe — et le
+     * club ne rachète pas du neuf par-dessus. L'allocateur ne substituant jamais au-delà du
+     * stock, ces lignes-là se soldent d'elles-mêmes et ne remontent pas au bon de commande.
+     *
      * @return array<string, array{item: StockItem, taille: ?string, besoin: int}>
      */
     private function besoinsParArticleEtTaille(Season $season): array
@@ -88,7 +93,7 @@ final class AchatService
         $cumul = [];
 
         foreach ($this->besoinRepository->findADonnerBySeason($season) as $besoin) {
-            $item = $besoin->getStockItem();
+            $item = $besoin->getArticleServi();
             $cle = $item->getId() . '|' . ($besoin->getTaille() ?? '');
 
             $cumul[$cle] ??= ['item' => $item, 'taille' => $besoin->getTaille(), 'besoin' => 0];

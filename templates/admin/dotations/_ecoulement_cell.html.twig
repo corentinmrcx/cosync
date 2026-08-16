@@ -1,0 +1,52 @@
+{% import 'components/_icon.html.twig' as ui %}
+{% import 'components/_stock_item_label.html.twig' as article %}
+{# Article réellement servi, quand un stock en cours d'écoulement peut remplacer celui du kit.
+
+   Ne s'affiche que si un écoulement concerne cette ligne : la quasi-totalité des dotations
+   n'a rien à arbitrer, et une mention permanente alourdirait chaque ligne du tableau.
+
+   `besoin` = App\Entity\DotationBesoin, `articles` = [article du kit, ...articles d'écoulement]. #}
+{% if articles|length > 1 %}
+    {% set estDonne = besoin.statut.value == 'donne' %}
+
+    <div class="dot-ecoulement" x-data="{ editing: false }">
+        <div x-show="!editing" class="dot-ecoulement-display">
+            {% if besoin.estServiParEcoulement %}
+                <span class="dot-ecoulement-badge" title="Servi depuis un stock en cours d'écoulement — cet article n'est pas racheté">
+                    ↳ {{ article.label(besoin.articleEcoulement) }}
+                </span>
+            {% endif %}
+
+            {% if besoin.articleManuel %}
+                <span class="dot-ecoulement-lock" title="Article fixé à la main : l'arbitrage automatique ne le change plus">📌</span>
+            {% endif %}
+
+            {% if not estDonne %}
+                <button type="button" class="dot-option-pen" @click="editing = true"
+                        title="Choisir l'article servi" aria-label="Choisir l'article servi">
+                    {{ ui.icon('edit', 14) }}
+                </button>
+            {% endif %}
+        </div>
+
+        {% if not estDonne %}
+            <form x-show="editing" x-cloak method="post"
+                  action="{{ path('admin_dotations_besoin_article', {id: besoin.id}) }}"
+                  class="dot-option-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_article_' ~ besoin.id) }}">
+                <select name="article" class="field-input field-input-compact"
+                        x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
+                    <option value="auto"{{ not besoin.articleManuel ? ' selected' }}>Automatique (écouler d'abord)</option>
+                    {% for possible in articles %}
+                        <option value="{{ possible.id }}"
+                                {{- besoin.articleManuel and possible.id == besoin.articleServi.id ? ' selected' }}>
+                            {{ article.label(possible) }}{{ loop.first ? ' — article du kit' }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="dot-option-ok" title="Valider">✓</button>
+                <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
+            </form>
+        {% endif %}
+    </div>
+{% endif %}
