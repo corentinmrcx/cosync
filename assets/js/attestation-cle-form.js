@@ -1,3 +1,4 @@
+import { assembler } from './composant.js';
 import { singleSignaturePad } from './signature-pad.js';
 
 /**
@@ -6,8 +7,7 @@ import { singleSignaturePad } from './signature-pad.js';
  * les parties « signature » du mixin partagé sont utilisées.
  */
 export function attestationCleForm() {
-    return {
-        ...singleSignaturePad(),
+    return assembler(singleSignaturePad(), {
         submitting: false,
 
         init() {
@@ -21,5 +21,5 @@ export function attestationCleForm() {
         get canSubmit() {
             return this.hasRead && this.signatureData !== '';
         },
-    };
+    });
 }

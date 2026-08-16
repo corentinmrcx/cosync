@@ -9,6 +9,9 @@ import { creerPad } from './signature-pad.js';
  * simplement au signataire un aller-retour inutile.
  *
  * Référence x-ref attendue dans le template : signatureCanvasAttestation.
+ *
+ * S'intègre dans un composant Alpine via `assembler()`, jamais par le spread : ce bloc
+ * expose des getters, que le spread figerait à leur valeur initiale (cf. composant.js).
  */
 export function attestationTransport() {
     return {

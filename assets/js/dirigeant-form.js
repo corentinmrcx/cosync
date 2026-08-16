@@ -1,3 +1,4 @@
+import { assembler } from './composant.js';
 import { documentSignatures } from './document-signatures.js';
 import { attestationTransport } from './attestation-transport.js';
 
@@ -9,11 +10,7 @@ import { attestationTransport } from './attestation-transport.js';
  * il n'est donc pas connu du code : `documents` est fourni par le serveur.
  */
 export function dirigeantForm({ needTaille, needPhoto, needTransport, documents }) {
-    return {
-        ...attestationTransport(),
-
-        ...documentSignatures(documents),
-
+    return assembler(attestationTransport(), documentSignatures(documents), {
         needTaille,
         needPhoto,
         needTransport,
@@ -127,5 +124,5 @@ export function dirigeantForm({ needTaille, needPhoto, needTransport, documents 
             }
         },
 
-    };
+    });
 }

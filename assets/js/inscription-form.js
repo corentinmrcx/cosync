@@ -1,3 +1,4 @@
+import { assembler } from './composant.js';
 import { documentSignatures } from './document-signatures.js';
 import { attestationTransport } from './attestation-transport.js';
 
@@ -11,11 +12,7 @@ export function inscriptionForm({
     dotationFlocages = {},
     dotationAutoFlocages = [],
 }) {
-    return {
-        ...attestationTransport(),
-
-        ...documentSignatures(documents),
-
+    return assembler(attestationTransport(), documentSignatures(documents), {
         step: 1,
 
         /**
@@ -279,5 +276,5 @@ export function inscriptionForm({
                 window.location.href = this.demoUrl;
             }, 3500);
         },
-    };
+    });
 }
