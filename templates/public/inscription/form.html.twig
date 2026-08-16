@@ -102,7 +102,13 @@
                             {% for opt in grp.options %}
                                 <label class="inscription-radio-option">
                                     <input type="radio" name="dotation_choix[{{ grp.groupe }}]" value="{{ opt.stockItem.id }}" x-model="dotationChoix['{{ grp.groupe|e('js') }}']">
-                                    <span class="inscription-radio-label">{{ opt.stockItem.nom }}</span>
+                                    <span class="inscription-radio-label inscription-radio-label-riche">
+                                        <span class="inscription-dotation-nom">{{ opt.stockItem.nom }}</span>
+                                        {% set details = [opt.stockItem.marque, opt.stockItem.couleur]|filter(v => v is not empty) %}
+                                        {% if details is not empty %}
+                                            <span class="inscription-dotation-details">{{ details|join(' · ') }}</span>
+                                        {% endif %}
+                                    </span>
                                 </label>
                             {% endfor %}
                         </div>
