@@ -15,6 +15,10 @@ use Symfony\Component\Mime\Part\File;
  *
  * En mode bêta, aucun mail ne part vers un vrai licencié : le destinataire est remplacé et
  * le sujet préfixé par l'adresse réellement visée, pour que le test reste vérifiable.
+ *
+ * L'expéditeur et l'adresse de réponse sont volontairement dissociés : le premier doit vivre
+ * sur le domaine authentifié chez Brevo pour que la signature DKIM tienne, le second désigne
+ * la boîte du foot, que personne n'a besoin d'authentifier. Cf. `club.email_reponse`.
  */
 final class ClubMailer
 {
@@ -24,6 +28,7 @@ final class ClubMailer
         private readonly Security $security,
         private readonly string $emailExpediteur,
         private readonly string $nomExpediteur,
+        private readonly string $emailReponse,
     ) {}
 
     /**
@@ -39,6 +44,7 @@ final class ClubMailer
     ): void {
         $email = (new TemplatedEmail())
             ->from(new Address($this->emailExpediteur, $this->nomExpediteur))
+            ->replyTo(new Address($this->emailReponse, $this->nomExpediteur))
             ->to($this->destinataireEffectif($destinataire))
             ->subject($this->sujetEffectif($sujet, $destinataire->getAddress()))
             ->htmlTemplate($template)

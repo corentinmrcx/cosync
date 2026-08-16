@@ -19,6 +19,7 @@ final class DiagMailerService
         private readonly MailerInterface $mailer,
         private readonly string $emailExpediteur,
         private readonly string $nomExpediteur,
+        private readonly string $emailReponse,
     ) {}
 
     public function envoyerMailDeTest(string $destinataire): void
@@ -52,6 +53,7 @@ final class DiagMailerService
         $this->mailer->send(
             (new TemplatedEmail())
                 ->from(new Address($this->emailExpediteur, $this->nomExpediteur))
+                ->replyTo(new Address($this->emailReponse, $this->nomExpediteur))
                 ->to($destinataire)
                 ->subject($sujet . ' — ' . $this->nomExpediteur)
                 ->htmlTemplate($template)

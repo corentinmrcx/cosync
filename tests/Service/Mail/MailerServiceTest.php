@@ -77,6 +77,44 @@ final class MailerServiceTest extends KernelTestCase
         self::assertStringContainsString('Licence de Kevin validée', $this->messagesEnvoyes()[0]->getSubject());
     }
 
+    /* ── Délivrabilité ── */
+
+    /**
+     * L'expéditeur porte la signature DKIM, donc l'alignement DMARC, donc le passage en
+     * boîte de réception : il doit rester sur le domaine authentifié chez Brevo. Le Reply-To
+     * n'est soumis à aucune vérification — c'est lui qui ramène les réponses des licenciés
+     * sur la boîte du foot, hébergée sur un domaine que Brevo ne peut pas signer.
+     */
+    public function testLExpediteurEstAuthentifiableEtLesReponsesVontALaBoiteDuFoot(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MailerService::class)->sendInscriptionLink($this->seedLicencie());
+
+        $message = $this->messagesEnvoyes()[0];
+        self::assertSame('contact@foyerdesoudron.fr', $message->getFrom()[0]->getAddress());
+        self::assertSame('soudron.fr@marne.lgef.fr', $message->getReplyTo()[0]->getAddress());
+    }
+
+    /**
+     * Symfony dérive la version texte du HTML, mais son convertisseur par défaut est un
+     * `strip_tags` qui perd les `href` : sur un mail dont l'unique raison d'être est un lien,
+     * la version texte n'en gardait que le libellé du bouton. `league/html-to-markdown`
+     * conserve les URL — d'où cette dépendance, sans laquelle le test retombe.
+     */
+    public function testLaVersionTexteConserveLeLienDInscription(): void
+    {
+        self::bootKernel();
+        $licencie = $this->seedLicencie();
+
+        self::getContainer()->get(MailerService::class)->sendInscriptionLink($licencie);
+
+        self::assertStringContainsString(
+            '/inscription/' . $licencie->getUuid(),
+            (string) $this->messagesEnvoyes()[0]->getTextBody(),
+        );
+    }
+
     /* ── Mode beta ── */
 
     public function testEnModeBetaAucunMailNAtteintLeLicencie(): void
