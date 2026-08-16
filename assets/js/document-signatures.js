@@ -3,7 +3,7 @@ import { creerPad } from './signature-pad.js';
 /**
  * État et comportements de la (des) étape(s) « Lecture + signature d'un document ».
  * Utilisé par le formulaire licencié comme par le formulaire dirigeant.
- * S'intègre dans un composant Alpine via le spread (`...documentSignatures(docs)`).
+ * S'intègre dans un composant Alpine via `assembler()` (cf. composant.js).
  *
  * Le nombre de documents n'étant plus fixé par le code, l'état est indexé : chaque
  * document a son propre déblocage au scroll, sa case « J'ai lu » et son pad.
