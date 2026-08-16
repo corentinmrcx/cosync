@@ -62,6 +62,18 @@ class StockItem
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?GrilleTaille $grilleTaille = null;
 
+    /**
+     * Article de dotation que celui-ci remplace tant qu'il en reste — le stock Nike qu'on
+     * écoule avant de commander de l'ERIMA. Null pour l'immense majorité des articles : ils
+     * se commandent normalement.
+     *
+     * La règle se déclare ici, sur l'article à écouler, et non kit par kit : le club change
+     * de fournisseur une fois, pas une fois par modèle de dotation.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?StockItem $remplaceArticle = null;
+
     /** Seuil d'alerte stock bas — null = pas d'alerte */
     #[ORM\Column(nullable: true)]
     private ?int $alertSeuil = null;
@@ -236,6 +248,24 @@ class StockItem
         $this->grilleTaille = $grilleTaille;
 
         return $this;
+    }
+
+    public function getRemplaceArticle(): ?StockItem
+    {
+        return $this->remplaceArticle;
+    }
+
+    public function setRemplaceArticle(?StockItem $remplaceArticle): static
+    {
+        $this->remplaceArticle = $remplaceArticle;
+
+        return $this;
+    }
+
+    /** Vrai pour un article qu'on écoule à la place d'un autre : il ne se commande jamais. */
+    public function estArticleDEcoulement(): bool
+    {
+        return $this->remplaceArticle !== null;
     }
 
     public function getNote(): ?string

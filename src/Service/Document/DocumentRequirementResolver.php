@@ -32,6 +32,13 @@ final class DocumentRequirementResolver
      */
     public function attendusPourDirigeant(Dirigeant $dirigeant): array
     {
+        // Licence purement administrative : rien ne lui est demandé, quel que soit le ciblage
+        // des documents de la saison. C'est ce qui empêche son dossier de rester éternellement
+        // « incomplet » dans les écrans et de la faire apparaître dans les relances.
+        if ($dirigeant->isLicenceAdministrative()) {
+            return [];
+        }
+
         $documents = $this->documentRepo->findActifsByCible($dirigeant->getSeason(), DocumentCible::DIRIGEANT);
 
         return array_values(array_filter(
@@ -90,7 +97,8 @@ final class DocumentRequirementResolver
 
         return array_values(array_filter(
             $this->dirigeantRepo->findBySeason($document->getSeason()),
-            static fn (Dirigeant $dirigeant): bool => $document->concerne($dirigeant)
+            static fn (Dirigeant $dirigeant): bool => !$dirigeant->isLicenceAdministrative()
+                && $document->concerne($dirigeant)
                 && !in_array((string) $dirigeant->getUuid(), $signataires, true),
         ));
     }

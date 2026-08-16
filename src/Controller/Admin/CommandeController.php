@@ -9,6 +9,7 @@ use App\Entity\Season;
 use App\Entity\User;
 use App\Repository\CommandeRepository;
 use App\Security\CsrfGuard;
+use App\Service\Dotation\DotationEcoulementAllocator;
 use App\Service\Pdf\BonCommandePdfService;
 use App\Service\Stock\AchatService;
 use App\Service\Stock\CommandeService;
@@ -27,11 +28,16 @@ class CommandeController extends AbstractController
         private readonly CommandeService $commandeService,
         private readonly CommandeRepository $commandeRepository,
         private readonly BonCommandePdfService $pdfService,
+        private readonly DotationEcoulementAllocator $ecoulementAllocator,
     ) {}
 
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(#[CurrentSeason] Season $season): Response
     {
+        // Ce qu'un stock en cours d'écoulement couvre déjà n'a pas à figurer sur un bon de
+        // commande : l'arbitrage passe avant le calcul, pas après.
+        $this->ecoulementAllocator->allouer($season);
+
         return $this->render('admin/commandes/index.html.twig', [
             'season' => $season,
             'aCommander' => $this->achatService->computeACommander($season),
@@ -43,6 +49,10 @@ class CommandeController extends AbstractController
     public function generer(Request $request, #[CurrentSeason] Season $season): Response
     {
         $this->csrf->valider('commande_generer', $request);
+
+        // Le bon de commande fige ce qui sera acheté : l'arbitrage doit être à jour au moment
+        // où il s'écrit, pas seulement au moment où l'écran a été affiché.
+        $this->ecoulementAllocator->allouer($season);
 
         $bons = $this->commandeService->genererBons($season);
 

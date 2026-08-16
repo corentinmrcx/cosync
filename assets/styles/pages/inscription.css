@@ -197,6 +197,13 @@
 .inscription-radio-option {
     flex: 1;
     position: relative;
+    display: flex;
+}
+
+/* Les options d'une même rangée doivent faire la même hauteur : un libellé qui
+   passe sur deux lignes ne doit pas grandir sa seule carte. */
+.inscription-radio-option > .inscription-radio-label {
+    flex: 1;
 }
 
 .inscription-radio-option input[type="radio"] {
@@ -224,6 +231,25 @@
     border-color: var(--color-primary);
     background: var(--color-primary-light);
     color: var(--color-primary);
+}
+
+/* — Option de dotation : nom centré, marque · couleur en dessous — */
+.inscription-radio-label-riche {
+    flex-direction: column;
+    gap: 0.15rem;
+    text-align: center;
+    line-height: 1.25;
+}
+
+.inscription-dotation-details {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.inscription-radio-option input[type="radio"]:checked + .inscription-radio-label .inscription-dotation-details {
+    color: var(--color-primary);
+    opacity: 0.75;
 }
 
 .inscription-question-divider {

@@ -120,6 +120,11 @@ class DirigeantType extends AbstractType
                     ->orderBy('l.nom', 'ASC'),
                 'help' => 'À renseigner si ce dirigeant est également licencié joueur cette saison.',
             ])
+            ->add('licenceAdministrative', CheckboxType::class, [
+                'label' => 'Licence administrative (district)',
+                'required' => false,
+                'help' => 'Licence déclarée pour le district uniquement : aucun document à signer, aucun lien de formulaire, aucune dotation.',
+            ])
         ;
 
         // Uniquement à la création, et décochée : rien ne part sans décision. Le lien

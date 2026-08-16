@@ -35,6 +35,22 @@ class DotationBesoin
     #[ORM\JoinColumn(nullable: false)]
     private StockItem $stockItem;
 
+    /**
+     * Article réellement servi quand il diffère de celui du kit : le stock de l'ancien
+     * fournisseur qu'on écoule avant de commander du neuf. Null dans le cas normal.
+     *
+     * Volontairement à côté de `stockItem` plutôt qu'à sa place : le besoin continue de dire
+     * ce que le kit prévoit — c'est cela que le recalcul réaligne et que l'emplacement
+     * identifie — pendant que cette colonne dit ce qu'on prend dans l'armoire.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?StockItem $articleEcoulement = null;
+
+    /** Vrai si l'article servi a été fixé à la main par l'admin → l'écoulement ne l'arbitre plus. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $articleManuel = false;
+
     #[ORM\Column]
     private int $quantite = 1;
 
@@ -119,6 +135,46 @@ class DotationBesoin
         $this->stockItem = $stockItem;
 
         return $this;
+    }
+
+    public function getArticleEcoulement(): ?StockItem
+    {
+        return $this->articleEcoulement;
+    }
+
+    public function setArticleEcoulement(?StockItem $articleEcoulement): static
+    {
+        $this->articleEcoulement = $articleEcoulement;
+
+        return $this;
+    }
+
+    public function isArticleManuel(): bool
+    {
+        return $this->articleManuel;
+    }
+
+    public function setArticleManuel(bool $articleManuel): static
+    {
+        $this->articleManuel = $articleManuel;
+
+        return $this;
+    }
+
+    /**
+     * L'article à sortir du stock, à déduire des achats et à afficher au suivi : celui du kit,
+     * sauf quand un article d'écoulement le remplace. Point de lecture unique — lire
+     * `getStockItem()` en aval ferait commander du neuf alors que l'ancien stock est servi.
+     */
+    public function getArticleServi(): StockItem
+    {
+        return $this->articleEcoulement ?? $this->stockItem;
+    }
+
+    /** Vrai quand cette ligne est servie depuis un stock en cours d'écoulement. */
+    public function estServiParEcoulement(): bool
+    {
+        return $this->articleEcoulement !== null;
     }
 
     public function getQuantite(): int

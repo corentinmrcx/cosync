@@ -121,6 +121,23 @@
 
         <hr class="season-form-divider">
 
+        {# ── Licence administrative ──
+           Cochée, elle retire la personne de tout le parcours club : ni documents, ni lien,
+           ni dotation. Les champs d'équipement et l'envoi du lien n'ont alors plus de sens,
+           d'où leur masquage — ils restent dans le DOM, le prefill JS s'y adosse. #}
+        <div class="licencie-new-checkbox">
+            {{ form_widget(form.licenceAdministrative) }}
+            {{ form_label(form.licenceAdministrative) }}
+            {{ form_errors(form.licenceAdministrative) }}
+        </div>
+
+        <div x-data="{ administrative: document.getElementById('{{ form.licenceAdministrative.vars.id }}').checked }"
+             x-init="document.getElementById('{{ form.licenceAdministrative.vars.id }}')
+                 .addEventListener('change', e => administrative = e.target.checked)"
+             x-show="!administrative">
+
+        <hr class="season-form-divider">
+
         {# ── Équipement ── #}
         <p class="licencie-edit-section">Équipement</p>
         <p class="licencie-new-hint">Pré-rempli depuis le profil joueur si disponible. Laissez vide si non renseigné.</p>
@@ -152,6 +169,8 @@
                 {{ form_errors(form.sendLink) }}
             </div>
         {% endif %}
+
+        </div>
 
         <div class="season-form-actions">
             <a href="{{ dirigeant ? path('admin_dirigeants_show', {uuid: dirigeant.uuid}) : path('admin_dirigeants_list') }}"

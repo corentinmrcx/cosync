@@ -9,6 +9,7 @@ use App\DTO\FiltreListe;
 use App\Entity\Dirigeant;
 use App\Entity\Season;
 use App\Entity\Team;
+use App\Enum\ChampContact;
 use App\Enum\DirigeantRole;
 use App\Form\DirigeantType;
 use App\Repository\DirigeantRepository;
@@ -186,7 +187,11 @@ class DirigeantController extends AbstractController
                 ]);
             }
 
-            if ($form->get('sendLink')->getData() === true && $dirigeant->getEmail() !== null) {
+            // La licence administrative prime sur la case : cochée puis rendue administrative,
+            // elle produirait un « échec d'envoi » trompeur là où rien ne devait partir.
+            if ($form->get('sendLink')->getData() === true
+                && $dirigeant->getEmail() !== null
+                && !$dirigeant->isLicenceAdministrative()) {
                 try {
                     $this->linkService->send($dirigeant);
                     $this->addFlash('success', $dirigeant->getNomPrenom() . ' ajouté(e) comme dirigeant. Lien envoyé par email.');
@@ -269,6 +274,7 @@ class DirigeantController extends AbstractController
         $data->team = $dirigeant->getTeam();
         $data->numLicence = $dirigeant->getNumLicence();
         $data->licencie = $dirigeant->getLicencie();
+        $data->licenceAdministrative = $dirigeant->isLicenceAdministrative();
 
         $form = $this->createForm(DirigeantType::class, $data, ['season' => $season]);
         $form->handleRequest($request);
@@ -290,5 +296,19 @@ class DirigeantController extends AbstractController
             'roleOptions' => DirigeantRole::options(),
             'licenciesSizes' => $this->formPrefill->parUuid($season),
         ]);
+    }
+
+    #[Route('/{uuid}/coordonnees/{champ}/reprendre-import', name: 'contact_reprendre_import', methods: ['POST'])]
+    public function reprendreImportContact(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
+        ChampContact $champ,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('dirigeant_contact_reprendre_import_' . $dirigeant->getUuid(), $request);
+
+        $this->dirigeantService->reprendreImport($dirigeant, $champ);
+        $this->addFlash('success', $champ->label() . ' sera de nouveau mis à jour par le prochain import FootClubs.');
+
+        return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
     }
 }

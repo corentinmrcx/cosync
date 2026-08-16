@@ -106,6 +106,9 @@ class DirigeantRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('d')
             ->where('d.season = :season')
             ->andWhere('d.linkSentAt IS NULL')
+            // Les licences administratives ne remplissent aucun formulaire : les proposer
+            // saison après saison ferait d'un état normal un retard permanent.
+            ->andWhere('d.licenceAdministrative = false')
             ->setParameter('season', $season);
     }
 

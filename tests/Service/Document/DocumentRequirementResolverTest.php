@@ -160,6 +160,26 @@ final class DocumentRequirementResolverTest extends KernelTestCase
         self::assertSame([], $this->resolver->manquantsPourDirigeant($dirigeant));
     }
 
+    /**
+     * Licence déclarée au district : rien ne lui est demandé, quel que soit le ciblage.
+     * Sans cela son dossier resterait éternellement incomplet et elle remonterait dans
+     * chaque relance de document.
+     */
+    public function testUneLicenceAdministrativeNaAucunDocumentADemander(): void
+    {
+        $season = $this->season();
+        $president = $this->dirigeant($season, 'DUPONT', DirigeantRole::DIRIGEANT);
+        $president->setLicenceAdministrative(true);
+        $this->em->flush();
+
+        $document = $this->fixtures->documentDirigeant($season);
+        $this->em->flush();
+
+        self::assertSame([], $this->resolver->attendusPourDirigeant($president));
+        self::assertSame([], $this->resolver->manquantsPourDirigeant($president));
+        self::assertNotContains($president, $this->resolver->dirigeantsEnAttente($document));
+    }
+
     private function dirigeant(Season $season, string $nom, DirigeantRole $role): Dirigeant
     {
         $dirigeant = (new Dirigeant())

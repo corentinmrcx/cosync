@@ -1,10 +1,12 @@
 {% extends 'admin/layout.html.twig' %}
+{% import 'components/_stock_item_label.html.twig' as article %}
 
 {% block title %}CoSync — {{ title }}{% endblock %}
 
 {% set initialKind = item and item.kind ? item.kind.value : 'equipement' %}
 {% set initialTypeVetement = item and item.typeVetement ? item.typeVetement.value : '' %}
 {% set initialGrille = item and item.grilleTaille ? item.grilleTaille.id : '' %}
+{% set initialRemplace = item and item.remplaceArticle ? item.remplaceArticle.id : '' %}
 
 {# Échelle de tailles impliquée par le type de vêtement : elle décide des grilles proposées.
    Le serveur refait le contrôle — un onglet resté ouvert pendant qu'une grille changeait
@@ -13,6 +15,7 @@
     kind: initialKind,
     typeVetement: initialTypeVetement,
     grille: initialGrille,
+    remplace: initialRemplace,
 }|json_encode %}
 
 {% block content %}
@@ -122,6 +125,43 @@
                         du formulaire : des chaussettes en « 43-46 », une veste enfant en « 128 ».
                         La dotation traduira la taille déclarée avant de sortir l'article du stock.
                     </p>
+                </div>
+            </template>
+
+            {# ── Écoulement ──
+               La règle se déclare ici, sur le stock qui reste, et pas kit par kit : le club
+               change de fournisseur une fois. Réservée à l'équipement — l'épicerie ne se dote
+               pas. Les cibles proposées sont restreintes au même type de vêtement, sans quoi
+               la dotation irait lire la taille du bas pour servir un haut ; le serveur refait
+               le contrôle. #}
+            <template x-if="kind === 'equipement'">
+                <div class="field">
+                    <div class="stock-items-section-title">Écoulement de stock</div>
+                    <label class="field-label">Cet article en remplace un autre</label>
+                    <select name="remplaceArticle" class="field-input" x-model="remplace">
+                        <option value="">— Non : cet article se commande normalement —</option>
+                        {% for cible in ciblesEcoulement %}
+                            <option value="{{ cible.id }}"
+                                    :hidden="typeVetement !== '{{ cible.typeVetement ? cible.typeVetement.value : '' }}'">
+                                {{ article.label(cible) }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <p class="stock-items-help">
+                        Pour un reste de stock qu'on écoule avant de commander du neuf — les
+                        chaussettes de l'ancien fournisseur, servies tant qu'il y en a dans la
+                        bonne taille. Les dotations qui attendent l'article choisi ici piochent
+                        d'abord dans celui-ci, et cet article-là n'est jamais commandé.
+                    </p>
+
+                    {% if substituts is not empty %}
+                        <p class="stock-items-help">
+                            <strong>Écoulé d'abord à la place de cet article :</strong>
+                            {% for substitut in substituts %}
+                                {{ article.label(substitut) }}{{ not loop.last ? ',' }}
+                            {% endfor %}
+                        </p>
+                    {% endif %}
                 </div>
             </template>
 

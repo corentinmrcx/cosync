@@ -155,7 +155,9 @@ nom: string
 prenom: string
 date_naissance: Date
 email: ?string
+email_manuel: bool                // verrou : l'import ne réécrase pas une correction admin
 telephone: ?string
+telephone_manuel: bool            // même verrou, pour le téléphone
 voie_rue / code_postal / ville: ?string
 category: Category
 team: ?Team            // assigné manuellement par l'admin
@@ -167,6 +169,25 @@ link_sent_at: ?datetime
 created_manually: bool
 imported_at: datetime
 ```
+
+### Corriger des coordonnées fausses sans que l'import les ramène
+
+FootClubs fait foi sur l'identité, jamais sur la **joignabilité** : une adresse fausse
+empêche le lien d'inscription d'arriver, et elle ne peut pas toujours se corriger là-bas le
+jour même (dossier en cours de validation à la ligue). D'où le verrou `email_manuel` /
+`telephone_manuel`, porté à l'identique par `Licencie` et par `Dirigeant` :
+
+- l'admin corrige depuis `/admin/effectif/joueurs/{uuid}/coordonnees` — ouvert à **tous**, y
+  compris aux fiches importées, contrairement à l'écran d'identité qui reste réservé aux
+  fiches saisies à la main. Côté dirigeant, l'écran de modification existant suffit ;
+- le verrou se pose **au changement de valeur**, pas à l'enregistrement : rouvrir l'écran et
+  valider sans rien toucher ne fige rien. Il est posé par `LicencieService` et
+  `DirigeantService`, jamais par l'import ;
+- `ImportService` saute le champ verrouillé — pour ce champ seul, l'autre continue de suivre
+  l'export ;
+- une fois FootClubs corrigé, la fiche affiche « corrigé à la main » et un bouton **Reprendre
+  FootClubs** (`reprendreImport()`) qui relâche le verrou. Sans cette sortie, CoSync
+  ignorerait l'export pour toujours sur ce champ, même une fois la donnée bonne des deux côtés.
 
 ### DossierClub
 ```php
@@ -281,6 +302,40 @@ StockItem          // grilleTaille: ?GrilleTaille
   fournisseur y figurent déjà, `TailleReferentiel::comparer()` les range sans rien savoir des
   grilles.
 
+### Écoulement — servir l'ancien stock avant de commander du neuf
+
+Le club change de fournisseur sans jeter ce qui reste : les chaussettes du kit sont des ERIMA,
+mais il dort des Nike au local. Sans arbitrage, le besoin porte l'article du kit, `AchatService`
+ne déduit que **son** stock, et le club rachète du neuf par-dessus un carton plein.
+
+```php
+StockItem.remplaceArticle: ?StockItem   // « je m'écoule à la place de celui-ci »
+DotationBesoin.articleEcoulement: ?StockItem  // l'article réellement servi (null = celui du kit)
+DotationBesoin.articleManuel: bool             // l'admin a épinglé, l'arbitrage ne touche plus
+```
+
+- **La règle se déclare sur l'article à écouler**, et une seule fois pour le club — pas kit par
+  kit. Un club change de fournisseur une fois ; la déclarer dans chaque `DotationModele` ferait
+  oublier l'un des cinq et l'écoulement ne se ferait qu'à moitié.
+- **`DotationBesoin.stockItem` reste l'article du kit.** C'est lui que `realigner()` réaligne et
+  que `emplacementDe()` identifie ; changer sa valeur ferait purger et recréer le besoin à chaque
+  bascule, en perdant le statut « donné », la taille manuelle et l'historique. Le point de
+  lecture unique en aval est **`getArticleServi()`** — achats, remise, suivi, flocage passent
+  tous par là. Lire `getStockItem()` en aval fait recommander du neuf.
+- **L'arbitrage est une passe saison entière, idempotente** (`DotationEcoulementAllocator`),
+  jouée avant chaque lecture du suivi et des achats — même dispositif que
+  `syncTaillesFromDossiers()`, et pour la même raison : il dépend d'un stock qui bouge. Ordre de
+  service : par création du besoin, premier inscrit premier servi. Il doit rester déterministe,
+  sinon deux écrans consécutifs n'annoncent pas la même chose.
+- **Jamais au-delà du stock, jamais à moitié, jamais dans une taille approchée.** La première
+  règle est celle qui tient tout : un besoin servi par un substitut étant toujours couvert,
+  `AchatService` ne propose jamais de racheter un article d'écoulement. Un épinglage manuel que
+  le stock ne couvre plus est **relâché** — c'est ce qui préserve l'invariant.
+- **Les deux articles doivent porter le même `typeVetement`** : c'est lui qui dit quel champ du
+  dossier lire. Écouler un short à la place d'un maillot servirait la taille du bas sur le haut.
+  Ni chaîne (Nike → Adidas → ERIMA) ni auto-remplacement : `StockItemService::appliquerEcoulement()`
+  refuse les deux, et `analyserSuppression()` compte ces liens parmi les emplois.
+
 ### Notes, correction et retrait d'un article de stock
 
 **Deux notes, deux portées.** `StockItem.note` vaut pour l'article entier (où il est rangé,
@@ -304,6 +359,30 @@ Dès qu'une dotation, une commande ou une caisse l'a touché, on **archive** —
 plus une erreur mais une histoire. Supprimable ne veut pas dire obligé : l'écran offre
 toujours « Archiver plutôt ». Ne pas le remplacer par un `confirm()` : lui seul sait dire
 lequel des deux va se produire, et pourquoi.
+
+### Dirigeant.licenceAdministrative — la licence que le district exige
+
+Le district impose de déclarer une licence dirigeante pour le président, la secrétaire et le
+trésorier de l'association. Ces personnes ne sont pas forcément dans le foot : elles ne
+signent rien, ne remplissent aucun formulaire et ne veulent pas de kit.
+
+`Dirigeant.licenceAdministrative` enregistre **un seul fait** — « cette licence existe pour le
+district » — d'où découlent **trois** conséquences, réglées ensemble et jamais séparément :
+
+- `DotationBesoinSynchronizer::aDroitALaDotation()` retourne `false` **avant** de regarder la
+  complétude du dossier. Verrou dur : sans lui, il suffisait qu'un admin renseigne une taille
+  sur la fiche pour que le kit se matérialise en sortie de stock à préparer ;
+- `DocumentRequirementResolver` ne lui attend **aucun** document, quel que soit le ciblage —
+  son dossier ne reste donc pas éternellement « incomplet » et elle ne remonte dans aucune
+  relance ;
+- `DirigeantRepository::queryLienJamaisEnvoye()` l'exclut de l'écran d'envoi groupé et
+  `DirigeantLinkService::send()` refuse l'envoi à l'unité.
+
+Les **clés font exception** : un président sans dossier club détient souvent le trousseau du
+local, sa fiche continue donc d'afficher le registre et son attestation.
+
+Ne pas remplacer ce drapeau par trois réglages indépendants : c'est justement ce qui faisait
+oublier l'un des trois.
 
 ### Detenteur, CleMouvement, AttestationCle — deux échelles de temps
 
