@@ -119,4 +119,51 @@ final class DotationRoleDirigeantTest extends StockIntegrationTestCase
 
         self::assertNull($this->resolver()->resolveModele($licencie));
     }
+
+    /**
+     * Une cible « équipe » ne désigne que des joueurs. L'équipe d'un dirigeant dit de qui il
+     * s'occupe, pas ce qu'il reçoit : sans ce cloisonnement, un dirigeant rattaché aux Séniors
+     * héritait du kit joueur de l'équipe alors qu'aucune affectation ne visait son rôle.
+     */
+    public function testUnDirigeantNEstJamaisCaptePArUneCibleEquipe(): void
+    {
+        $season = $this->makeSeason();
+        $seniors = $this->makeTeam($season, 'Séniors');
+
+        $kitJoueurs = $this->makeModele($season, 'Kit joueur Séniors');
+        $this->addLigne($kitJoueurs, $this->makeItem('Maillot'));
+        $this->em->persist((new DotationAffectation())->setSeason($season)->setModele($kitJoueurs)->setTeam($seniors));
+
+        $dirigeant = $this->makeDirigeant($season, DirigeantRole::DIRIGEANT);
+        $dirigeant->setTeam($seniors);
+
+        /** @var Dirigeant $dirigeant */
+        $dirigeant = $this->reload($dirigeant);
+
+        self::assertNull($this->resolver()->resolveModele($dirigeant));
+        self::assertSame([], $this->resolver()->resolveDotation($dirigeant));
+    }
+
+    /** Le cloisonnement ne coupe pas le kit par défaut de la saison, qui vise bien tout le monde. */
+    public function testLeKitParDefautContinueDeCouvrirUnDirigeantAvecEquipe(): void
+    {
+        $season = $this->makeSeason();
+        $seniors = $this->makeTeam($season, 'Séniors');
+
+        $kitJoueurs = $this->makeModele($season, 'Kit joueur Séniors');
+        $this->addLigne($kitJoueurs, $this->makeItem('Maillot'));
+        $this->em->persist((new DotationAffectation())->setSeason($season)->setModele($kitJoueurs)->setTeam($seniors));
+
+        $kitDefaut = $this->makeModele($season, 'Kit standard');
+        $this->addLigne($kitDefaut, $this->makeItem('Sweat'));
+        $this->em->persist((new DotationAffectation())->setSeason($season)->setModele($kitDefaut));
+
+        $dirigeant = $this->makeDirigeant($season, DirigeantRole::DIRIGEANT);
+        $dirigeant->setTeam($seniors);
+
+        /** @var Dirigeant $dirigeant */
+        $dirigeant = $this->reload($dirigeant);
+
+        self::assertSame('Kit standard', $this->resolver()->resolveModele($dirigeant)?->getNom());
+    }
 }

@@ -12,8 +12,9 @@ use App\Service\Stock\StockMovementService;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Remise effective d'une dotation : ce qui sort réellement du stock, et les corrections
- * que l'admin apporte depuis le suivi (taille, flocage).
+ * Remise effective d'une dotation : ce qui sort réellement du stock, et la taille à laquelle
+ * il en sort. Le texte à floquer relève de DotationFlocageService — il se règle sur le kit,
+ * pas sur le mouvement de stock.
  */
 final class DotationRemiseService
 {
@@ -69,25 +70,6 @@ final class DotationRemiseService
         }
 
         $besoin->setTaille($taille)->setTailleManuelle($taille !== null);
-
-        $this->em->flush();
-    }
-
-    /**
-     * Corrige le texte de flocage depuis le suivi admin — pour rattraper une faute de frappe du
-     * licencié avant la commande. Refusé une fois l'article remis : le vêtement est déjà floqué,
-     * et le texte porté par le besoin est la trace de ce qui a réellement été donné.
-     *
-     * @throws \DomainException si le besoin est déjà marqué comme donné
-     */
-    public function changerPersonnalisation(DotationBesoin $besoin, ?string $texte): void
-    {
-        if ($besoin->getStatut() === DotationBesoinStatut::DONNE) {
-            throw new \DomainException('Cet article a déjà été remis : son flocage ne peut plus être modifié.');
-        }
-
-        $normalise = $texte !== null ? trim((string) preg_replace('/\s+/u', ' ', $texte)) : '';
-        $besoin->setPersonnalisation($normalise !== '' ? $normalise : null);
 
         $this->em->flush();
     }

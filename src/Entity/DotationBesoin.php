@@ -71,6 +71,15 @@ class DotationBesoin
     #[ORM\Column(length: 60, nullable: true)]
     private ?string $personnalisation = null;
 
+    /**
+     * Vrai si le texte a été saisi à la main par l'admin → le recalcul ne l'écrase plus avec
+     * celui du dossier. Même verrou que `tailleManuelle`, et pour la même raison : un licencié
+     * qui n'a pas pu répondre au formulaire n'a aucun texte à propager, et sans ce drapeau
+     * celui de l'admin disparaissait au premier « Recalculer les besoins ».
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $personnalisationManuelle = false;
+
     /** Mouvement de sortie créé lors de la remise. */
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -245,6 +254,18 @@ class DotationBesoin
     public function setPersonnalisation(?string $personnalisation): static
     {
         $this->personnalisation = $personnalisation;
+
+        return $this;
+    }
+
+    public function isPersonnalisationManuelle(): bool
+    {
+        return $this->personnalisationManuelle;
+    }
+
+    public function setPersonnalisationManuelle(bool $personnalisationManuelle): static
+    {
+        $this->personnalisationManuelle = $personnalisationManuelle;
 
         return $this;
     }

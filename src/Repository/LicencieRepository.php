@@ -84,6 +84,33 @@ class LicencieRepository extends ServiceEntityRepository
         return $this->find($uuid);
     }
 
+    /**
+     * Fiches désignées par un formulaire, bornées à la saison de travail : un uuid forgé ne
+     * peut pas atteindre une autre saison. L'ordre alphabétique est celui de l'écran de
+     * confirmation, qui se relit nom par nom.
+     *
+     * @param list<string> $uuids
+     *
+     * @return list<Licencie>
+     */
+    public function findByUuidsInSeason(array $uuids, Season $season): array
+    {
+        $valides = array_values(array_filter($uuids, Uuid::isValid(...)));
+        if ($valides === []) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('l')
+            ->where('l.uuid IN (:uuids)')
+            ->andWhere('l.season = :season')
+            ->setParameter('uuids', array_map(Uuid::fromString(...), $valides))
+            ->setParameter('season', $season)
+            ->orderBy('l.nom', 'ASC')
+            ->addOrderBy('l.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function countByCategory(Category $category): int
     {
         return (int) $this->createQueryBuilder('l')

@@ -10,6 +10,7 @@ use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Enum\ImportRowType;
 use App\Enum\LicenceStatus;
+use App\Enum\StatutDossierFff;
 use App\Repository\CategoryRepository;
 use App\Repository\DirigeantRepository;
 use App\Repository\LicencieRepository;
@@ -63,6 +64,10 @@ final class ImportService
             try {
                 $data = $layout->map($row, $columns);
 
+                if ($data->type !== ImportRowType::SKIP && !$this->statutPermetImport($data, $result)) {
+                    continue;
+                }
+
                 match ($data->type) {
                     ImportRowType::LICENCIE => $this->processLicencieRow($data, $season, $result, $lineNumber, $pendingLicencies),
                     ImportRowType::DIRIGEANT => $this->processDirigeantRow($data, $season, $result, $lineNumber, $pendingDirigeants),
@@ -83,6 +88,33 @@ final class ImportService
         }
 
         return $result;
+    }
+
+    /**
+     * Garde-fou du format dématérialisé : ce fichier contient tout le fichier des licences du
+     * club, statuts confondus. Importer un dossier que le licencié n'a pas rempli remplit CoSync
+     * de fiches qui ne deviendront peut-être jamais des licences, et que plus rien ne distingue
+     * ensuite des vraies. La procédure demande de filtrer sur « En attente signature club » avant
+     * l'export ; ceci rattrape l'oubli.
+     *
+     * Un statut non reconnu n'est pas importé non plus : mieux vaut un rapport qui annonce des
+     * lignes écartées qu'un effectif rempli de fiches fantômes. L'ancien export n'a pas cette
+     * colonne — `rawStatut` y vaut null et rien n'est filtré.
+     */
+    private function statutPermetImport(ImportRowData $data, ImportResultData $result): bool
+    {
+        if ($data->rawStatut === null) {
+            return true;
+        }
+
+        $statut = StatutDossierFff::fromExport($data->rawStatut);
+        if ($statut?->permetImport() === true) {
+            return true;
+        }
+
+        $result->addIgnore($data->rawStatut, $statut);
+
+        return false;
     }
 
     /**

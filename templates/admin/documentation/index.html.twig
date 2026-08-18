@@ -108,22 +108,39 @@
 
             <p class="doc-p">CoSync se remplit à partir d'un export Excel de FootClubs. L'import est <strong>idempotent</strong> : vous pouvez le relancer autant de fois que nécessaire sans créer de doublons ni écraser les données club.</p>
 
-            <h3 class="doc-h3">Exporter depuis FootClubs</h3>
+            <h3 class="doc-h3">Exporter depuis FootClubs — licences dématérialisées</h3>
             <ol class="doc-ol">
-                <li>Menu gauche → <strong>Licenciés → Éditions et extractions</strong>.</li>
-                <li>Sélectionnez <strong>Édition licenciés</strong>.</li>
-                <li>Catégories : tout sélectionner (clic sur la première, puis Maj+clic sur la dernière).</li>
-                <li>Format : <strong>Extraction MS Excel</strong>.</li>
-                <li>Sortie et tri : <strong>Complet</strong> (important — donne les emails et mobiles).</li>
-                <li>Cliquez sur <strong>Valider</strong>.</li>
+                <li>Menu gauche → <strong>Licences → Dématérialisées</strong>.</li>
+                <li>Dans les filtres, <strong>Statut</strong> : « En attente de signature club » → <strong>Rechercher</strong>.</li>
+                <li>Cliquez sur <strong>Télécharger</strong> : un fichier Excel est produit.</li>
+                <li>Vérifiez d'un coup d'œil que ce sont bien les bonnes licences. Inutile de retirer celles déjà importées : elles seront simplement mises à jour.</li>
             </ol>
+
+            <div class="doc-tip">
+                <strong>Pourquoi ce filtre</strong> — CoSync ne refait pas FootClubs. Un licencié n'y entre qu'une fois
+                sa démarche FFF terminée, c'est-à-dire à partir du statut « En attente de signature club ». Avant, rien
+                ne dit qu'il rejoindra le club : l'importer remplit l'effectif de fiches qui ne deviendront peut-être
+                jamais des licences, et fausse aussi bien les comptes que les relances.
+                <br><br>
+                Si le filtre est oublié, CoSync le rattrape : il relit la colonne <strong>Statut</strong> du fichier et
+                écarte les lignes en « Prise de contact » comme les dossiers rejetés. Le rapport d'import indique
+                alors combien de lignes ont été écartées, et à quel statut.
+            </div>
+
+            <h3 class="doc-h3">Autre export accepté — éditions et extractions</h3>
+            <p class="doc-p">
+                L'ancien export reste lisible : <strong>Licenciés → Éditions et extractions → Édition licenciés</strong>,
+                toutes les catégories (clic sur la première, puis Maj+clic sur la dernière), format
+                <strong>Extraction MS Excel</strong>, sortie et tri <strong>Complet</strong> (important — donne les
+                emails et mobiles). Il ne contient que des licences déjà signées : il n'y a rien à y filtrer.
+            </p>
 
             <h3 class="doc-h3">Importer dans CoSync</h3>
             <ol class="doc-ol">
-                <li>Allez dans <em>Effectif → Import FootClubs</em> et déposez le fichier XLSX.</li>
-                <li>CoSync nettoie les données (noms en majuscules, prénoms capitalisés, téléphones au format +33, emails en minuscules) et ignore les non‑joueurs (dirigeants, éducateurs).</li>
-                <li>Pour chaque licencié : mise à jour s'il existe déjà, création s'il est nouveau.</li>
-                <li>Un rapport s'affiche : X mis à jour, Y créés, Z erreurs.</li>
+                <li>Allez dans <em>Effectif → Import FootClubs</em> et déposez le fichier XLSX. Le format est reconnu tout seul.</li>
+                <li>CoSync nettoie les données (noms en majuscules, prénoms capitalisés, téléphones au format +33, emails en minuscules). Les <strong>Joueurs</strong> deviennent des licenciés, les autres rôles des dirigeants.</li>
+                <li>Pour chaque fiche : mise à jour si elle existe déjà, création si elle est nouvelle.</li>
+                <li>Un rapport s'affiche : X créés, Y mis à jour, Z écartés, et le détail des erreurs.</li>
                 <li>Créez ou complétez les équipes, puis envoyez les liens depuis <em>Effectif → Joueurs</em>.</li>
             </ol>
 
@@ -354,6 +371,24 @@
             </ul>
             <div class="doc-warn">
                 <strong>La purge est irréversible</strong> et disponible <strong>uniquement en mode beta</strong>. Elle supprime tout (saisons, équipes, licenciés, dossiers, paiements, stock, dotations, commandes, fournisseurs) et ne conserve que les comptes admin et les référentiels FFF (catégories, rôles). Elle se déverrouille en tapant « SUPPRIMER ». Une fois la prod réelle lancée (hors beta), le bouton est désactivé.
+            </div>
+
+            <h3 class="doc-h3">Mode édition — retirer des fiches entrées par erreur</h3>
+            <p class="doc-p">
+                Les listes <em>Joueurs</em> et <em>Dirigeants</em> ont un bouton <strong>Mode édition</strong>, visible du
+                seul compte de diagnostic. Il fait apparaître une case à cocher par ligne : cochez les fiches à retirer,
+                validez, et un écran annonce <strong>nom par nom</strong> ce qui va être supprimé avant d'agir.
+            </p>
+            <p class="doc-p">
+                Une fiche n'est supprimable que si <strong>rien ne s'y est passé</strong> : aucun lien envoyé, aucun
+                formulaire rempli, aucune signature, aucun paiement, aucune sortie de stock, aucune dotation affectée.
+                Dès qu'un de ces faits existe, la fiche est <strong>épargnée</strong> et l'écran affiche pourquoi — ce
+                n'est plus une erreur de saisie mais une histoire du club, et rien ne la reconstituerait.
+            </p>
+            <div class="doc-warn">
+                <strong>La suppression est définitive.</strong> C'est l'outil du ménage après un import mal filtré, pas
+                un outil de gestion courante : un joueur qui quitte le club se gère par la saison suivante, pas en
+                effaçant sa fiche. Si la personne s'inscrit pour de vrai, le prochain import la recréera.
             </div>
         </section>
 

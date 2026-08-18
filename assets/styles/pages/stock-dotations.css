@@ -603,6 +603,16 @@
     color: var(--color-text-muted);
 }
 
+/* Article floqué dont personne n'a encore donné le texte : à saisir avant la commande. */
+.dot-flocage-missing {
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
 /* Liste de flocage : le texte doit se relire d'un coup d'œil avant impression. */
 .dot-flocage-print {
     font-weight: 600;

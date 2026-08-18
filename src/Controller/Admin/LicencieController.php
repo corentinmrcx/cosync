@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
 use App\DTO\ContactData;
+use App\DTO\Effectif\ResultatSuppression;
 use App\DTO\EnvoiGroupeResultat;
 use App\DTO\FiltreListe;
 use App\DTO\LicencieCreateData;
@@ -26,8 +27,10 @@ use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
 use App\Security\CsrfGuard;
+use App\Security\Voter\SuperAdminVoter;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Dotation\DotationSuiviPresenter;
+use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Inscription\AutorisationCompletionService;
 use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Licencie\LicencieService;
@@ -41,6 +44,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/effectif/joueurs', name: 'admin_licencies_')]
 class LicencieController extends AbstractController
@@ -60,6 +64,7 @@ class LicencieController extends AbstractController
         private readonly PaiementService $paiementService,
         private readonly HistoriqueFicheService $historiqueService,
         private readonly DocumentRequirementResolver $documentResolver,
+        private readonly SuppressionFicheService $suppressionService,
     ) {}
 
     #[Route('', name: 'list')]
@@ -67,9 +72,14 @@ class LicencieController extends AbstractController
         Request $request,
         #[CurrentSeason] Season $season,
     ): Response {
+        // Le mode édition n'est pas un filtre : il n'est jamais mémorisé, sinon la liste
+        // rouvrirait ses cases à cocher de suppression à la prochaine visite. Il est seulement
+        // reporté sur la redirection de restauration des filtres, pour ne pas se perdre en route.
+        $edition = $request->query->getBoolean('edition') && $this->isGranted(SuperAdminVoter::ACCES_DIAGNOSTIC);
+
         $restored = $this->filterMemory->restoreOrRemember('licencies', $request, ['team', 'status', 'nature', 'search']);
         if ($restored !== null) {
-            return $this->redirectToRoute('admin_licencies_list', $restored);
+            return $this->redirectToRoute('admin_licencies_list', $edition ? $restored + ['edition' => 1] : $restored);
         }
 
         $currentTeam = null;
@@ -118,6 +128,7 @@ class LicencieController extends AbstractController
             'page' => $page,
             'pages' => $pages,
             'liensEnAttente' => $this->licencieRepo->countLienJamaisEnvoye($season),
+            'edition' => $edition,
         ]);
     }
 
@@ -187,6 +198,80 @@ class LicencieController extends AbstractController
         }
 
         return implode(', ', $parties) . '.';
+    }
+
+    /**
+     * Écran de confirmation du mode édition : il annonce, nom par nom, ce qui va être supprimé
+     * et ce qui est refusé avec son motif. Déclaré avant `/{uuid}` : sans cela, « supprimer »
+     * serait lu comme l'uuid d'une fiche.
+     */
+    #[Route('/supprimer', name: 'delete_confirm', methods: ['POST'])]
+    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    public function deleteConfirm(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $this->csrf->valider('supprimer_licencies', $request);
+
+        $fiches = $this->licencieRepo->findByUuidsInSeason(
+            array_map(strval(...), $request->request->all('licencies')),
+            $season,
+        );
+
+        if ($fiches === []) {
+            $this->addFlash('info', 'Aucune fiche sélectionnée.');
+
+            return $this->redirectToRoute('admin_licencies_list', ['edition' => 1]);
+        }
+
+        return $this->render('admin/licencies/supprimer.html.twig', [
+            'analyses' => $this->suppressionService->analyserLot($fiches),
+        ]);
+    }
+
+    #[Route('/supprimer/confirmer', name: 'delete', methods: ['POST'])]
+    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    public function delete(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $this->csrf->valider('supprimer_licencies_confirmer', $request);
+
+        $fiches = $this->licencieRepo->findByUuidsInSeason(
+            array_map(strval(...), $request->request->all('licencies')),
+            $season,
+        );
+
+        try {
+            $resultat = $this->suppressionService->supprimerLot($fiches);
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+
+            return $this->redirectToRoute('admin_licencies_list', ['edition' => 1]);
+        }
+
+        $this->addFlash(
+            $resultat->supprimees > 0 ? 'success' : 'info',
+            $this->resumeSuppression($resultat),
+        );
+
+        return $this->redirectToRoute('admin_licencies_list');
+    }
+
+    private function resumeSuppression(ResultatSuppression $resultat): string
+    {
+        $resume = sprintf(
+            '%d fiche%s supprimée%s.',
+            $resultat->supprimees,
+            $resultat->supprimees > 1 ? 's' : '',
+            $resultat->supprimees > 1 ? 's' : '',
+        );
+
+        if ($resultat->refusees !== []) {
+            $resume .= ' Épargnée(s) : ' . implode(' ; ', $resultat->refusees) . '.';
+        }
+
+        return $resume;
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]

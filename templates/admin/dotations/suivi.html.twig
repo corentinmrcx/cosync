@@ -84,7 +84,10 @@
                                         besoin: besoin,
                                         articles: articlesParBesoin[besoin.id] ?? [],
                                     } only %}
-                                    {% include 'admin/dotations/_flocage_cell.html.twig' with { besoin: besoin } only %}
+                                    {% include 'admin/dotations/_flocage_cell.html.twig' with {
+                                        besoin: besoin,
+                                        reglages: flocagesParBesoin[besoin.id] ?? null,
+                                    } only %}
                                 </td>
                                 <td>
                                     {% set options = taillesParBesoin[besoin.id] ?? [] %}
