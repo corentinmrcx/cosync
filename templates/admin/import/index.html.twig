@@ -26,6 +26,7 @@
         <p class="import-card-desc">
             Importe un fichier XLSX exporté depuis FootClubs. Le format est <strong>détecté automatiquement</strong> : dépose l'export « Licences dématérialisées » (recommandé) ou l'ancien « Éditions et extractions ». Les licenciés existants sont mis à jour, les nouveaux créés.
             <strong>Aucun mail n'est envoyé</strong> : les liens d'inscription partent quand vous le décidez, depuis la liste des joueurs.
+            Seuls les dossiers <strong>signés par le licencié côté FFF</strong> sont importés — les licences encore en cours de démarche sont écartées et signalées dans le rapport.
         </p>
 
         {% if currentSeason %}
@@ -85,8 +86,19 @@
             <div class="import-guide-body" x-show="open" x-transition>
                 <div class="import-guide-step">
                     <p class="import-guide-step-title">Option A — Licences dématérialisées <em>(recommandé)</em></p>
-                    <p class="import-guide-step-text">Cet export contient <strong>toutes les licences, même non signées</strong> : il permet de collecter les dossiers club avant la signature FFF. Connecte-toi à FootClubs, menu <strong>Licences</strong> → <strong>Dématérialisées</strong>, puis exporte la liste au format <strong>Excel</strong>.</p>
+                    <ul class="import-guide-list">
+                        <li>Sur FootClubs, menu <strong>Licences</strong> → <strong>Dématérialisées</strong></li>
+                        <li>Dans les filtres, <strong>Statut : « En attente de signature club »</strong> → <strong>Rechercher</strong></li>
+                        <li><strong>Télécharger</strong> : le fichier Excel arrive. Un coup d'œil pour vérifier que ce sont bien les bonnes licences — pas besoin de retirer celles déjà importées, elles seront simplement mises à jour</li>
+                        <li>Reviens ici, sélectionne le fichier et lance l'import</li>
+                    </ul>
                     <p class="import-guide-step-text">Les <strong>Joueurs</strong> deviennent des licenciés, tous les autres rôles (Dirigeant, Arbitre, Éducateur) des dirigeants. Aucun mail n'est envoyé automatiquement : tu enverras les liens depuis le tableau de bord.</p>
+                    <p class="import-guide-note">
+                        Si tu oublies le filtre, ce n'est pas grave : CoSync relit la colonne <strong>Statut</strong> du fichier et
+                        n'importe que les dossiers à partir de « En attente de signature club ». Les licences encore en
+                        « Prise de contact » — celles dont le licencié n'a pas fini sa démarche FFF — et les dossiers
+                        rejetés sont écartés, et le rapport te dit combien.
+                    </p>
                 </div>
 
                 <div class="import-guide-step">

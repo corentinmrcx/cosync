@@ -40,11 +40,47 @@
                 <span class="import-stat-value">{{ result.updated }}</span>
                 <span class="import-stat-label">Mis à jour</span>
             </div>
+            {% if result.ignores > 0 %}
+            <div class="import-stat import-stat-warning">
+                <span class="import-stat-value">{{ result.ignores }}</span>
+                <span class="import-stat-label">Écartés</span>
+            </div>
+            {% endif %}
             <div class="import-stat import-stat-danger">
                 <span class="import-stat-value">{{ result.errors|length }}</span>
                 <span class="import-stat-label">Erreurs</span>
             </div>
         </div>
+
+        {# Lignes écartées d'après la colonne « Statut ». Le décompte est affiché même quand tout
+           s'est bien passé : c'est ce qui permet de constater qu'un export non filtré a bien été
+           rattrapé, plutôt que de le découvrir dans la liste des licenciés. #}
+        {% if result.ignoresParStatut is not empty %}
+            <div class="import-ignores">
+                <p class="import-ignores-title">Lignes écartées d'après leur statut FootClubs</p>
+                <ul class="import-ignores-list">
+                    {% for libelle, nombre in result.ignoresParStatut %}
+                        <li>
+                            <strong>{{ nombre }}</strong> ligne{{ nombre > 1 ? 's' : '' }} au statut
+                            « {{ libelle }} »
+                            {%- if libelle in result.statutsInconnus %} — statut inconnu de CoSync{% endif -%}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p class="import-guide-note">
+                    CoSync n'importe que les dossiers à partir de « En attente signature club » : avant, le
+                    licencié n'a pas encore rempli sa part côté FFF et rien ne dit qu'il rejoindra le club.
+                    Ces lignes reviendront d'elles-mêmes au prochain import, une fois leur dossier avancé.
+                </p>
+                {% if result.statutsInconnus is not empty %}
+                    <p class="import-ignores-alerte">
+                        Un ou plusieurs statuts ci-dessus ne sont pas reconnus : l'export FootClubs a
+                        probablement changé de libellés. Par précaution ces lignes n'ont pas été importées —
+                        signalez-le avant de relancer l'import.
+                    </p>
+                {% endif %}
+            </div>
+        {% endif %}
 
         {# Répartition par nature de licence : elle pilote les options de dotation proposées
            au licencié, une répartition aberrante doit sauter aux yeux dès l'import. #}

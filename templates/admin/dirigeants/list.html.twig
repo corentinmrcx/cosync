@@ -31,6 +31,13 @@
         formId: 'dirigeants'
     } %}
         {% block actions %}
+            {# Réservé au compte de diagnostic : supprimer une fiche est le seul geste
+               irréversible de cet écran. #}
+            {% if is_granted('ACCES_DIAGNOSTIC') and not edition %}
+                <a href="{{ path('admin_dirigeants_list', app.request.query.all|merge({edition: 1})) }}" class="btn btn-secondary">
+                    Mode édition
+                </a>
+            {% endif %}
             <a href="{{ path('admin_dirigeants_new') }}" class="btn btn-primary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -40,39 +47,70 @@
         {% endblock %}
     {% endembed %}
 
+    {% if edition %}
+        {% include 'components/_edition_bandeau.html.twig' with {
+            quitterUrl: path('admin_dirigeants_list', app.request.query.all|filter((v, k) => k != 'edition')),
+            population: 'dirigeants'
+        } only %}
+    {% endif %}
+
     {% if dirigeants is empty %}
         <div class="dirigeants-empty">
             <p>Aucun dirigeant trouvé.</p>
         </div>
     {% else %}
-        <div class="table-wrapper">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nom / Prénom</th>
-                        <th class="dirigeants-col-role">Rôle</th>
-                        <th class="dirigeants-col-team">Équipe</th>
-                        <th class="dirigeants-col-email">Email</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for dirigeant in dirigeants %}
-                        <tr class="dirigeants-row"
-                            onclick="window.location='{{ path('admin_dirigeants_show', {uuid: dirigeant.uuid}) }}'">
-                            <td class="dirigeants-td-name">{{ dirigeant.nomPrenom }}</td>
-                            <td class="dirigeants-col-role dirigeants-td-muted">
-                                {{ dirigeant.role.label() }}
-                                {% if dirigeant.licenceAdministrative %}
-                                    <span class="dirigeants-td-administrative">licence district</span>
-                                {% endif %}
-                            </td>
-                            <td class="dirigeants-col-team dirigeants-td-muted">{{ dirigeant.team ? dirigeant.team.name : '—' }}</td>
-                            <td class="dirigeants-col-email dirigeants-td-muted">{{ dirigeant.email ?? '—' }}</td>
+        {# Même règle que côté joueurs : en mode édition la ligne ne mène plus à la fiche. #}
+        {% if edition %}
+        <form method="post"
+              action="{{ path('admin_dirigeants_delete_confirm') }}"
+              x-data="{ selection: [] }">
+            <input type="hidden" name="_token" value="{{ csrf_token('supprimer_dirigeants') }}">
+        {% endif %}
+
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            {% if edition %}<th class="edition-col-check"></th>{% endif %}
+                            <th>Nom / Prénom</th>
+                            <th class="dirigeants-col-role">Rôle</th>
+                            <th class="dirigeants-col-team">Équipe</th>
+                            <th class="dirigeants-col-email">Email</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        {% for dirigeant in dirigeants %}
+                            <tr class="dirigeants-row {{ edition ? 'edition-row' }}"
+                                {% if not edition %}onclick="window.location='{{ path('admin_dirigeants_show', {uuid: dirigeant.uuid}) }}'"{% endif %}>
+                                {% if edition %}
+                                    <td class="edition-col-check">
+                                        <input type="checkbox"
+                                               class="edition-check"
+                                               name="dirigeants[]"
+                                               value="{{ dirigeant.uuid }}"
+                                               x-model="selection"
+                                               aria-label="Sélectionner {{ dirigeant.nomPrenom }}">
+                                    </td>
+                                {% endif %}
+                                <td class="dirigeants-td-name">{{ dirigeant.nomPrenom }}</td>
+                                <td class="dirigeants-col-role dirigeants-td-muted">
+                                    {{ dirigeant.role.label() }}
+                                    {% if dirigeant.licenceAdministrative %}
+                                        <span class="dirigeants-td-administrative">licence district</span>
+                                    {% endif %}
+                                </td>
+                                <td class="dirigeants-col-team dirigeants-td-muted">{{ dirigeant.team ? dirigeant.team.name : '—' }}</td>
+                                <td class="dirigeants-col-email dirigeants-td-muted">{{ dirigeant.email ?? '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% if edition %}
+            {% include 'components/_edition_barre.html.twig' %}
+        </form>
+        {% endif %}
 
         <div class="dirigeants-footer">
             <p class="dirigeants-count">{{ dirigeants|length }} dirigeant{{ dirigeants|length > 1 ? 's' : '' }}</p>

@@ -29,6 +29,12 @@ final class ImportRowData
         public readonly ?string $rawVille,
         /** Colonne « Nature » FootClubs — absente de certains exports, d'où la valeur par défaut. */
         public readonly ?string $rawNature = null,
+        /**
+         * Colonne « Statut » de l'export dématérialisé — null quand le format n'en a pas.
+         * Distinguer « absente » de « vide » est ce qui permet de ne filtrer que les formats
+         * qui portent l'information : cf. `StatutDossierFff`.
+         */
+        public readonly ?string $rawStatut = null,
     ) {}
 
     public static function skipped(): self

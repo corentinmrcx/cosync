@@ -31,6 +31,13 @@
         formId: 'licencies'
     } %}
         {% block actions %}
+            {# Réservé au compte de diagnostic : supprimer une fiche est le seul geste
+               irréversible de cet écran. #}
+            {% if is_granted('ACCES_DIAGNOSTIC') and not edition %}
+                <a href="{{ path('admin_licencies_list', app.request.query.all|merge({edition: 1})) }}" class="btn btn-secondary">
+                    Mode édition
+                </a>
+            {% endif %}
             <a href="{{ path('admin_licencies_new') }}" class="licencies-add-btn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -40,40 +47,73 @@
         {% endblock %}
     {% endembed %}
 
+    {% if edition %}
+        {% include 'components/_edition_bandeau.html.twig' with {
+            quitterUrl: path('admin_licencies_list', app.request.query.all|filter((v, k) => k != 'edition')),
+            population: 'joueurs'
+        } only %}
+    {% endif %}
+
     {% if licencies is empty %}
         <div class="licencies-empty">
             <p>Aucun licencié trouvé.</p>
         </div>
     {% else %}
-        <div class="table-wrapper">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nom / Prénom</th>
-                        <th class="licencies-col-team">Équipe</th>
-                        <th class="licencies-col-email">Email</th>
-                        <th class="licencies-col-status">Statut</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for licencie in licencies %}
-                        <tr class="licencies-row"
-                            onclick="window.location='{{ path('admin_licencies_show', {uuid: licencie.uuid}) }}'">
-                            <td class="licencies-td-name">{{ licencie.nomPrenom }}</td>
-                            <td class="licencies-col-team">{{ licencie.team ? licencie.team.name : '—' }}</td>
-                            <td class="licencies-col-email licencies-td-muted">{{ licencie.email ?? '—' }}</td>
-                            <td class="licencies-col-status">
-                                {% if licencie.dossierClub %}
-                                    {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
-                                {% else %}
-                                    <span class="licencies-td-muted">—</span>
-                                {% endif %}
-                            </td>
+        {# En mode édition la ligne ne mène plus à la fiche : le seul geste possible est de
+           cocher. Mélanger navigation et sélection sur le même clic ferait ouvrir une fiche
+           alors qu'on croyait la désigner. #}
+        {% if edition %}
+        <form method="post"
+              action="{{ path('admin_licencies_delete_confirm') }}"
+              x-data="{ selection: [] }">
+            <input type="hidden" name="_token" value="{{ csrf_token('supprimer_licencies') }}">
+        {% endif %}
+
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            {% if edition %}<th class="edition-col-check"></th>{% endif %}
+                            <th>Nom / Prénom</th>
+                            <th class="licencies-col-team">Équipe</th>
+                            <th class="licencies-col-email">Email</th>
+                            <th class="licencies-col-status">Statut</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        {% for licencie in licencies %}
+                            <tr class="licencies-row {{ edition ? 'edition-row' }}"
+                                {% if not edition %}onclick="window.location='{{ path('admin_licencies_show', {uuid: licencie.uuid}) }}'"{% endif %}>
+                                {% if edition %}
+                                    <td class="edition-col-check">
+                                        <input type="checkbox"
+                                               class="edition-check"
+                                               name="licencies[]"
+                                               value="{{ licencie.uuid }}"
+                                               x-model="selection"
+                                               aria-label="Sélectionner {{ licencie.nomPrenom }}">
+                                    </td>
+                                {% endif %}
+                                <td class="licencies-td-name">{{ licencie.nomPrenom }}</td>
+                                <td class="licencies-col-team">{{ licencie.team ? licencie.team.name : '—' }}</td>
+                                <td class="licencies-col-email licencies-td-muted">{{ licencie.email ?? '—' }}</td>
+                                <td class="licencies-col-status">
+                                    {% if licencie.dossierClub %}
+                                        {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}
+                                    {% else %}
+                                        <span class="licencies-td-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% if edition %}
+            {% include 'components/_edition_barre.html.twig' %}
+        </form>
+        {% endif %}
 
         <div class="licencies-footer">
             <p class="licencies-count">{{ total }} licencié{{ total > 1 ? 's' : '' }}</p>

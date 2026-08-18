@@ -1,0 +1,23 @@
+{#
+  Bandeau du mode édition d'une liste d'effectif.
+
+  Le mode existe pour un cas précis : retirer des fiches entrées par erreur (import non filtré,
+  saisie fautive). Le bandeau annonce la règle avant tout geste, plutôt que de la faire découvrir
+  au refus. Partagé entre joueurs et dirigeants pour que la règle ne dérive pas d'une liste à l'autre.
+
+  Paramètres attendus :
+    quitterUrl (string) — URL de la même liste, hors mode édition
+    population (string) — « joueurs » ou « dirigeants »
+#}
+<div class="edition-bandeau">
+    <div class="edition-bandeau-corps">
+        <p class="edition-bandeau-titre">Mode édition</p>
+        <p class="edition-bandeau-texte">
+            Cochez les {{ population }} à retirer de la saison, puis validez : l'écran suivant annonce
+            nom par nom ce qui sera supprimé. Une fiche n'est supprimable que si <strong>rien ne s'y est
+            passé</strong> — aucun lien envoyé, aucun formulaire rempli, aucune signature, aucun paiement,
+            aucune sortie de stock.
+        </p>
+    </div>
+    <a href="{{ quitterUrl }}" class="btn btn-ghost btn-sm">Quitter</a>
+</div>

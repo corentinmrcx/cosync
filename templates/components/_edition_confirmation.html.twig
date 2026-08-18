@@ -1,0 +1,77 @@
+{#
+  Écran de confirmation d'une suppression de fiches d'effectif.
+
+  Partagé entre joueurs et dirigeants : c'est le dernier écran avant un geste irréversible, il
+  ne doit pas exister en deux versions qui pourraient dire deux choses différentes. Il annonce
+  nom par nom ce qui part et nom par nom ce qui est épargné, avec son motif — comme l'écran de
+  suppression d'un article de stock.
+
+  Paramètres attendus :
+    analyses (SuppressionFiche[]) — verdict par fiche
+    actionUrl (string)            — route de suppression effective
+    tokenId (string)              — identifiant du jeton CSRF de cette route
+    champ (string)                — nom du tableau de champs cachés (« licencies » / « dirigeants »)
+    retourUrl (string)            — la liste, en mode édition
+#}
+{% set supprimables = analyses|filter(a => a.supprimable) %}
+{% set refusees = analyses|filter(a => not a.supprimable) %}
+
+{% if supprimables|length > 0 %}
+    <div class="edition-suppr-groupe edition-suppr-groupe-danger">
+        <p class="edition-suppr-titre">
+            {{ supprimables|length }} fiche{{ supprimables|length > 1 ? 's' : '' }} sera{{ supprimables|length > 1 ? 'ont' : '' }} supprimée{{ supprimables|length > 1 ? 's' : '' }}
+        </p>
+        <ul class="edition-suppr-liste">
+            {% for analyse in supprimables %}
+                <li>{{ analyse.nomPrenom }}</li>
+            {% endfor %}
+        </ul>
+        <p class="edition-suppr-note">
+            Rien ne s'est passé sur ces fiches : elles quitteront la saison pour de bon, sans laisser
+            de trace. Si la personne s'inscrit pour de vrai, le prochain import la recréera.
+        </p>
+    </div>
+{% endif %}
+
+{% if refusees|length > 0 %}
+    <div class="edition-suppr-groupe edition-suppr-groupe-info">
+        <p class="edition-suppr-titre">
+            {{ refusees|length }} fiche{{ refusees|length > 1 ? 's' : '' }} épargnée{{ refusees|length > 1 ? 's' : '' }}
+        </p>
+        <ul class="edition-suppr-liste">
+            {% for analyse in refusees %}
+                <li>{{ analyse.nomPrenom }} — <span class="edition-suppr-motif">{{ analyse.motifRefus }}</span></li>
+            {% endfor %}
+        </ul>
+        <p class="edition-suppr-note">
+            Ces fiches ont une histoire dans le club : la supprimer emporterait un mail parti, une
+            signature, un paiement ou une sortie de stock. Elles restent en place.
+        </p>
+    </div>
+{% endif %}
+
+<form method="post" action="{{ actionUrl }}">
+    <input type="hidden" name="_token" value="{{ csrf_token(tokenId) }}">
+    {% for analyse in supprimables %}
+        <input type="hidden" name="{{ champ }}[]" value="{{ analyse.uuid }}">
+    {% endfor %}
+
+    {% if supprimables|length > 0 %}
+        <label class="edition-suppr-confirmation">
+            <input type="checkbox" name="confirmation" value="1" required>
+            <span>
+                Je confirme la suppression définitive de
+                {{ supprimables|length }} fiche{{ supprimables|length > 1 ? 's' : '' }}.
+            </span>
+        </label>
+    {% endif %}
+
+    <div class="edition-suppr-actions">
+        <a href="{{ retourUrl }}" class="btn btn-ghost btn-lg">
+            {{ supprimables|length > 0 ? 'Annuler' : 'Retour à la liste' }}
+        </a>
+        {% if supprimables|length > 0 %}
+            <button type="submit" class="btn btn-danger btn-lg">Supprimer définitivement</button>
+        {% endif %}
+    </div>
+</form>
