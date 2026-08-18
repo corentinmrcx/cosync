@@ -1,27 +1,36 @@
 {% import 'components/_icon.html.twig' as ui %}
-{# Texte de flocage d'un besoin, corrigible en ligne tant que l'article n'a pas été remis.
-   Rien n'est affiché pour un article non personnalisé — la très grande majorité des lignes.
-   `besoin` = App\Entity\DotationBesoin #}
+{# Texte de flocage d'un besoin, saisissable en ligne tant que l'article n'a pas été remis.
+   Rien n'est affiché pour un article non floqué — la très grande majorité des lignes.
+   `besoin`   = App\Entity\DotationBesoin
+   `reglages` = App\DTO\DotationFlocageReglages, ou null si l'article ne se floque pas #}
 {% set estDonne = besoin.statut.value == 'donne' %}
-{% if besoin.personnalisation %}
+{% set saisissable = reglages is not null and not estDonne %}
+{% if besoin.personnalisation or saisissable %}
     <div class="dot-flocage" x-data="{ editing: false }">
         <div x-show="!editing" class="dot-flocage-display">
-            <span class="dot-flocage-value">Flocage : {{ besoin.personnalisation }}</span>
-            {% if not estDonne %}
+            {% if besoin.personnalisation %}
+                <span class="dot-flocage-value">Flocage : {{ besoin.personnalisation }}</span>
+            {% else %}
+                {# Floqué mais sans texte : le licencié n'a pas pu répondre. C'est au club de le saisir. #}
+                <span class="dot-flocage-missing">Flocage à renseigner</span>
+            {% endif %}
+            {% if saisissable %}
                 <button type="button" class="dot-taille-pen" @click="editing = true"
-                        title="Corriger le texte à floquer" aria-label="Corriger le texte à floquer">
+                        title="{{ besoin.personnalisation ? 'Corriger le texte à floquer' : 'Saisir le texte à floquer' }}"
+                        aria-label="{{ besoin.personnalisation ? 'Corriger le texte à floquer' : 'Saisir le texte à floquer' }}">
                     {{ ui.icon('edit', 12) }}
                 </button>
             {% endif %}
         </div>
 
-        {% if not estDonne %}
+        {% if saisissable %}
             <form x-show="editing" x-cloak method="post"
                   action="{{ path('admin_dotations_besoin_personnalisation', {id: besoin.id}) }}"
                   class="dot-taille-form">
                 <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_personnalisation_' ~ besoin.id) }}">
-                <input type="text" name="personnalisation" class="field-input field-input-compact" maxlength="60"
-                       value="{{ besoin.personnalisation }}" placeholder="Texte à floquer"
+                <input type="text" name="personnalisation" class="field-input field-input-compact"
+                       maxlength="{{ reglages.maxLength }}" value="{{ besoin.personnalisation }}"
+                       placeholder="{{ reglages.label }}"
                        x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
                 <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
                 <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>

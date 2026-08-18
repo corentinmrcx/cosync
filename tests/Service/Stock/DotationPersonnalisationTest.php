@@ -3,6 +3,7 @@
 namespace App\Tests\Service\Stock;
 
 use App\Entity\DotationBesoin;
+use App\Entity\DotationModeleLigne;
 use App\Entity\Licencie;
 use App\Enum\DotationBesoinStatut;
 use App\Enum\DotationEligibilite;
@@ -10,7 +11,7 @@ use App\Enum\NatureLicence;
 use App\Enum\StockItemVetementType;
 use App\Repository\DotationBesoinRepository;
 use App\Service\Dotation\DotationBesoinSynchronizer;
-use App\Service\Dotation\DotationRemiseService;
+use App\Service\Dotation\DotationFlocageService;
 use App\Service\Dotation\DotationResolver;
 use App\Service\Dotation\DotationSuiviPresenter;
 
@@ -33,9 +34,9 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         return $this->service(DotationSuiviPresenter::class);
     }
 
-    private function remise(): DotationRemiseService
+    private function flocage(): DotationFlocageService
     {
-        return $this->service(DotationRemiseService::class);
+        return $this->service(DotationFlocageService::class);
     }
 
     /** @return DotationBesoin[] */
@@ -48,9 +49,10 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
     }
 
     /**
-     * Kit avec un t-shirt floqué imposé (option unique éligible).
+     * Kit avec un t-shirt floqué imposé (option unique éligible). Un texte vide simule le
+     * licencié qui n'a jamais répondu au formulaire : son dossier ne porte alors aucune clé.
      *
-     * @return array{0: Licencie}
+     * @return array{0: Licencie, 1: int} le licencié et l'id de la ligne du kit
      */
     private function licencieAvecTshirtFloque(string $texte = 'Coco', ?int $max = null): array
     {
@@ -66,12 +68,14 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         $this->em->flush();
 
         $ligne = $modele->getLignes()->first();
-        $this->setReponsesFormulaire($licencie, [], ['ligne:' . $ligne->getId() => $texte]);
+        $this->setReponsesFormulaire($licencie, [], $texte !== '' ? ['ligne:' . $ligne->getId() => $texte] : []);
+
+        $ligneId = $ligne->getId();
 
         /** @var Licencie $licencie */
         $licencie = $this->reload($licencie);
 
-        return [$licencie];
+        return [$licencie, $ligneId];
     }
 
     public function testTextePropageDuDossierVersLeBesoin(): void
@@ -160,7 +164,7 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         $this->synchronizer()->recomputeForLicencie($licencie);
 
         $besoin = $this->besoinsDe($licencie)[0];
-        $this->remise()->changerPersonnalisation($besoin, '  Coco   Bel ');
+        $this->flocage()->changer($besoin, '  Coco   Bel ');
 
         self::assertSame('Coco Bel', $besoin->getPersonnalisation(), 'Trim + espaces compactés.');
     }
@@ -175,7 +179,82 @@ final class DotationPersonnalisationTest extends StockIntegrationTestCase
         $this->em->flush();
 
         $this->expectException(\DomainException::class);
-        $this->remise()->changerPersonnalisation($besoin, 'Trop tard');
+        $this->flocage()->changer($besoin, 'Trop tard');
+    }
+
+    /**
+     * Le cas qui manquait : le licencié n'a jamais rempli son formulaire — kit créé après la
+     * validation de sa licence, ou incident de saisie. Le club doit pouvoir renseigner le
+     * flocage depuis le suivi, et surtout le retrouver après un « Recalculer les besoins ».
+     */
+    public function testFlocageSaisiParLAdminSurvitAuRecalcul(): void
+    {
+        [$licencie] = $this->licencieAvecTshirtFloque('');
+        $this->synchronizer()->recomputeForLicencie($licencie);
+
+        $besoin = $this->besoinsDe($licencie)[0];
+        self::assertNull($besoin->getPersonnalisation(), 'Rien n\'a été saisi au formulaire.');
+        self::assertNotNull(
+            $this->flocage()->reglagesPour($besoin),
+            'L\'article se floque : le suivi doit proposer la saisie même sans texte.',
+        );
+
+        $this->flocage()->changer($besoin, 'Coco');
+        $this->synchronizer()->recomputeForLicencie($licencie);
+
+        $besoins = $this->besoinsDe($licencie);
+        self::assertCount(1, $besoins);
+        self::assertSame('Coco', $besoins[0]->getPersonnalisation(), 'Le dossier vide ne l\'efface plus.');
+    }
+
+    /** Vider le champ rend la ligne au dossier, comme une taille effacée. */
+    public function testViderLeFlocageRelacheLeVerrou(): void
+    {
+        [$licencie] = $this->licencieAvecTshirtFloque('Coco');
+        $this->synchronizer()->recomputeForLicencie($licencie);
+
+        $besoin = $this->besoinsDe($licencie)[0];
+        $this->flocage()->changer($besoin, 'Saisi à la main');
+        $this->flocage()->changer($besoin, '');
+
+        self::assertNull($besoin->getPersonnalisation());
+        self::assertFalse($besoin->isPersonnalisationManuelle());
+
+        $this->synchronizer()->recomputeForLicencie($licencie);
+
+        self::assertSame('Coco', $this->besoinsDe($licencie)[0]->getPersonnalisation(), 'Le dossier reprend la main.');
+    }
+
+    /** Le kit garde le dernier mot : une option qui ne se floque plus n'emporte aucun texte. */
+    public function testUnArticleQuiNeSeFloquePlusPerdSonTexteManuel(): void
+    {
+        [$licencie, $ligneId] = $this->licencieAvecTshirtFloque('');
+        $this->synchronizer()->recomputeForLicencie($licencie);
+
+        $besoin = $this->besoinsDe($licencie)[0];
+        $this->flocage()->changer($besoin, 'Coco');
+
+        // L'admin retire le flocage de la ligne du kit.
+        $this->em->find(DotationModeleLigne::class, $ligneId)->setPersonnalisationRequise(false);
+        $this->em->flush();
+
+        $this->synchronizer()->recomputeForLicencie($licencie);
+
+        $besoin = $this->besoinsDe($licencie)[0];
+        self::assertNull($besoin->getPersonnalisation());
+        self::assertFalse($besoin->isPersonnalisationManuelle(), 'Le verrou tombe avec le flocage.');
+    }
+
+    /** Un texte plus long que ce que le kit autorise est refusé, pas tronqué en silence. */
+    public function testFlocageTropLongRefuse(): void
+    {
+        [$licencie] = $this->licencieAvecTshirtFloque('Coco', max: 6);
+        $this->synchronizer()->recomputeForLicencie($licencie);
+
+        $besoin = $this->besoinsDe($licencie)[0];
+
+        $this->expectException(\DomainException::class);
+        $this->flocage()->changer($besoin, 'Beaucoup trop long');
     }
 
     /**

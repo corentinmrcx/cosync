@@ -55,7 +55,7 @@ final class DotationResolver
     }
 
     /**
-     * @return array<int, array{stockItem: StockItem, quantite: int, obligatoire: bool, groupeChoix: ?string, taille: ?string, personnalisation: ?string}>
+     * @return array<int, array{stockItem: StockItem, quantite: int, obligatoire: bool, groupeChoix: ?string, taille: ?string, personnalisation: ?string, personnalisationRequise: bool}>
      */
     public function resolveDotation(Licencie|Dirigeant $person): array
     {
@@ -76,10 +76,36 @@ final class DotationResolver
                 'personnalisation' => $ligne->isPersonnalisationRequise()
                     ? ($textes[$this->personnalisationKey($ligne)] ?? null)
                     : null,
+                // Distinct du texte : « pas de texte » et « pas de flocage du tout » n'ont pas
+                // les mêmes suites — le premier laisse l'admin saisir, le second efface.
+                'personnalisationRequise' => $ligne->isPersonnalisationRequise(),
             ];
         }
 
         return $out;
+    }
+
+    /**
+     * La ligne du kit dont un besoin est issu : celle du groupe de choix quand il y en a un,
+     * sinon celle de l'article. Null si le kit ne prévoit plus cet emplacement — le besoin est
+     * alors en sursis jusqu'au prochain recalcul.
+     *
+     * C'est par elle que le suivi admin sait qu'un article est floqué même quand personne n'a
+     * encore saisi le texte : le besoin, lui, ne porte que le texte.
+     */
+    public function ligneRetenue(Licencie|Dirigeant $person, ?string $groupeChoix, StockItem $item): ?DotationModeleLigne
+    {
+        foreach ($this->retainedLines($person, $this->storedChoices($person)) as $ligne) {
+            $correspond = $groupeChoix !== null
+                ? $ligne->getGroupeChoix() === $groupeChoix
+                : $ligne->getGroupeChoix() === null && $ligne->getStockItem()->getId() === $item->getId();
+
+            if ($correspond) {
+                return $ligne;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -265,9 +291,14 @@ final class DotationResolver
                 && (string) $affectation->getDirigeant()->getUuid() === (string) $person->getUuid();
         }
 
-        // Cible équipe
+        // Cible équipe : des joueurs, et eux seuls. L'équipe d'un dirigeant est une indication
+        // interne — « il s'occupe des U15 » — qui ne dit rien de ce qu'il reçoit. Sans ce
+        // `instanceof`, un dirigeant rattaché aux Séniors héritait du kit joueur de l'équipe
+        // alors même qu'aucune affectation ne visait son rôle. Un dirigeant se cible par son
+        // rôle ou nommément.
         if ($affectation->getTeam() !== null) {
-            return $person->getTeam() !== null
+            return $person instanceof Licencie
+                && $person->getTeam() !== null
                 && $affectation->getTeam()->getId() === $person->getTeam()->getId();
         }
 

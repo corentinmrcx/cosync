@@ -336,6 +336,46 @@ DotationBesoin.articleManuel: bool             // l'admin a épinglé, l'arbitra
   Ni chaîne (Nike → Adidas → ERIMA) ni auto-remplacement : `StockItemService::appliquerEcoulement()`
   refuse les deux, et `analyserSuppression()` compte ces liens parmi les emplois.
 
+### Qui reçoit quel kit — et qui ne reçoit rien
+
+**Une personne relève d'un seul modèle de dotation.** `DotationResolver::resolveModele()` retient
+la cible la plus spécifique — individu > équipe > catégorie FFF ou rôle dirigeant > défaut saison
+— et rend **ce modèle-là**, pas la somme des modèles qui la visent. Créer un « kit exceptionnel »
+à côté du « kit joueur » ne cumule donc rien : le plus spécifique remplace l'autre, et à priorité
+égale c'est la dernière affectation créée qui gagne. Un article exceptionnel s'ajoute en **ligne**
+du modèle existant, ou dans un modèle complet affecté nommément à la personne.
+
+**L'équipe d'un dirigeant n'est pas une cible de dotation.** Elle dit de qui il s'occupe, pas ce
+qu'il reçoit. Une cible « équipe » ne capte donc que des `Licencie` — sans ce cloisonnement, un
+dirigeant rattaché aux Séniors héritait du kit joueur de l'équipe alors qu'aucune affectation ne
+visait son rôle. Un dirigeant se cible par son **rôle** ou **nommément** ; le défaut saison, lui,
+continue de couvrir tout le monde. `DotationModelePreview` tenait déjà ce raisonnement côté
+aperçu : le résolveur s'y est aligné, pas l'inverse.
+
+**Le suivi sépare les deux populations.** `/admin/dotations/suivi` groupe par équipe, puis
+« Sans équipe », puis **« Dirigeants »** en fin de liste. Mêler l'encadrement aux joueurs de son
+équipe mettait deux kits sans rapport dans le même tableau, et renvoyait le reste de l'encadrement
+dans un « Sans équipe » qu'on lisait comme un oubli d'affectation. Une personne à la fois joueuse
+et dirigeante tient **deux blocs de lignes** — c'est bien deux kits qu'elle reçoit.
+
+### Flocage — le club peut saisir ce que le licencié n'a pas pu dire
+
+Le texte à floquer vient du formulaire d'inscription. Deux situations le laissent vide sans que
+personne ne se soit trompé : un kit créé **après** la validation d'une licence — le dossier ne
+porte alors aucune réponse — et l'incident qui a empêché la personne de répondre. Sans saisie
+admin, il ne restait que la base.
+
+- `DotationFlocageService` porte le sujet en entier : `reglagesPour()` dit si un besoin se floque
+  (en lisant **le kit**, seul à distinguer « floqué, texte pas encore saisi » de « pas floqué du
+  tout » — le besoin porte `null` dans les deux cas), `changer()` écrit le texte.
+- Le verrou `DotationBesoin.personnalisationManuelle` est le jumeau de `tailleManuelle` : une fois
+  le texte saisi, le recalcul ne le remplace plus par celui — absent — du dossier. **Vider le
+  champ relâche le verrou** et rend la ligne au dossier.
+- **Le kit garde le dernier mot** : une option qui ne se floque plus n'emporte aucun texte, pas
+  même un texte manuel, et le verrou tombe avec lui.
+- Refusé une fois l'article remis : le vêtement est déjà floqué, et le texte porté par le besoin
+  est la trace de ce qui a réellement été donné.
+
 ### Notes, correction et retrait d'un article de stock
 
 **Deux notes, deux portées.** `StockItem.note` vaut pour l'article entier (où il est rangé,

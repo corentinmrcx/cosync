@@ -22,6 +22,7 @@ use App\Service\Dotation\DotationBesoinSynchronizer;
 use App\Service\Dotation\DotationChoixService;
 use App\Service\Dotation\DotationEcoulementAllocator;
 use App\Service\Dotation\DotationEcoulementService;
+use App\Service\Dotation\DotationFlocageService;
 use App\Service\Dotation\DotationGroupeReglagesFactory;
 use App\Service\Dotation\DotationModeleFormContext;
 use App\Service\Dotation\DotationModeleService;
@@ -45,6 +46,7 @@ class DotationController extends AbstractController
         private readonly DotationChoixService $choixService,
         private readonly DotationEcoulementAllocator $ecoulementAllocator,
         private readonly DotationEcoulementService $ecoulementService,
+        private readonly DotationFlocageService $flocageService,
         private readonly DotationSuiviPresenter $suivi,
         private readonly DotationRemiseService $remiseService,
         private readonly DotationModeleService $modeleService,
@@ -341,6 +343,7 @@ class DotationController extends AbstractController
             'optionsParBesoin' => $this->choixService->optionsParBesoin($groupes),
             'articlesParBesoin' => $this->ecoulementService->articlesParBesoin($groupes),
             'taillesParBesoin' => $this->suivi->taillesParBesoin($groupes),
+            'flocagesParBesoin' => $this->flocageService->reglagesParBesoin($groupes),
         ]);
     }
 
@@ -417,7 +420,7 @@ class DotationController extends AbstractController
         $this->csrf->valider('dotation_besoin_personnalisation_' . $besoin->getId(), $request);
 
         try {
-            $this->remiseService->changerPersonnalisation($besoin, $request->request->get('personnalisation'));
+            $this->flocageService->changer($besoin, $request->request->get('personnalisation'));
             $this->addFlash('success', sprintf('Texte de flocage mis à jour pour %s.', $besoin->getNomPrenom()));
         } catch (\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
