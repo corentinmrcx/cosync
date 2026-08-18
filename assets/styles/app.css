@@ -19,6 +19,7 @@
 @import './components/section-home.css';
 @import './components/liste-triable.css';
 @import './components/editeur-riche.css';
+@import './components/edition.css';
 @import './pages/login.css';
 @import './pages/dashboard.css';
 @import './pages/import.css';

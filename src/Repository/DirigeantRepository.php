@@ -40,6 +40,33 @@ class DirigeantRepository extends ServiceEntityRepository
         return $this->find($uuid);
     }
 
+    /**
+     * Fiches désignées par un formulaire, bornées à la saison de travail : un uuid forgé ne
+     * peut pas atteindre une autre saison. L'ordre alphabétique est celui de l'écran de
+     * confirmation, qui se relit nom par nom.
+     *
+     * @param list<string> $uuids
+     *
+     * @return list<Dirigeant>
+     */
+    public function findByUuidsInSeason(array $uuids, Season $season): array
+    {
+        $valides = array_values(array_filter($uuids, Uuid::isValid(...)));
+        if ($valides === []) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('d')
+            ->where('d.uuid IN (:uuids)')
+            ->andWhere('d.season = :season')
+            ->setParameter('uuids', array_map(Uuid::fromString(...), $valides))
+            ->setParameter('season', $season)
+            ->orderBy('d.nom', 'ASC')
+            ->addOrderBy('d.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     /** @return Dirigeant[] */
     public function findBySeason(Season $season): array
     {

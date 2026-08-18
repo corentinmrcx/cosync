@@ -9,13 +9,15 @@ use App\Service\Import\DataSanitizer;
 /**
  * Nouvel export FFF : Licences → Dématérialisées.
  *
- * Contient TOUTES les licences, y compris non signées (statuts « Prise de contact »…). C'est le
- * format qui permet de collecter les données club avant la signature. Colonnes « Nom » et « Prénom »
- * séparées, « Type » (Joueur / Dirigeant / Arbitre / Educateur), « Sous-catégorie » préfixée
- * (« Libre / U15 (- 15 ans) », « Dirigeant / Dirigeante »).
+ * Colonnes « Nom » et « Prénom » séparées, « Type » (Joueur / Dirigeant / Arbitre / Educateur),
+ * « Sous-catégorie » préfixée (« Libre / U15 (- 15 ans) », « Dirigeant / Dirigeante »).
  *
- * Comme l'import concerne le roster complet, aucun mail n'est envoyé automatiquement : l'admin
- * envoie les liens depuis le tableau de bord.
+ * Le fichier contient TOUTES les licences du club, y compris des dossiers que le licencié n'a pas
+ * encore remplis (« Prise de contact ») ou qui ont été rejetés. La colonne « Statut » est donc lue
+ * et transmise telle quelle : c'est `ImportService` qui écarte les lignes non importables, d'après
+ * `StatutDossierFff`. Le layout, lui, ne fait que du mapping de colonnes.
+ *
+ * Aucun mail n'est envoyé automatiquement : l'admin envoie les liens depuis le tableau de bord.
  */
 final class LicencesDematerialiseesLayout implements ImportLayoutInterface
 {
@@ -33,6 +35,7 @@ final class LicencesDematerialiseesLayout implements ImportLayoutInterface
     private const COL_CODE_POSTAL = 'code postal';
     private const COL_VILLE = 'ville';
     private const COL_NATURE = 'nature';
+    private const COL_STATUT = 'statut';
 
     private const TYPE_JOUEUR = 'joueur';
 
@@ -76,6 +79,7 @@ final class LicencesDematerialiseesLayout implements ImportLayoutInterface
             $this->value($row, $columns, self::COL_CODE_POSTAL),
             $this->value($row, $columns, self::COL_VILLE),
             $this->value($row, $columns, self::COL_NATURE),
+            $this->value($row, $columns, self::COL_STATUT),
         );
     }
 

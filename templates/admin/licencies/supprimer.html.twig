@@ -1,0 +1,25 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Supprimer des joueurs{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs', route: 'admin_licencies_list' },
+    { label: 'Supprimer' }
+] } %}
+
+<div class="licencies-page">
+    <h1 class="licencies-suppr-titre">Retirer ces joueurs de la saison ?</h1>
+
+    {% include 'components/_edition_confirmation.html.twig' with {
+        analyses: analyses,
+        actionUrl: path('admin_licencies_delete'),
+        tokenId: 'supprimer_licencies_confirmer',
+        champ: 'licencies',
+        retourUrl: path('admin_licencies_list', {edition: 1})
+    } only %}
+</div>
+{% endblock %}

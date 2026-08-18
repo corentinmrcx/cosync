@@ -336,6 +336,46 @@ DotationBesoin.articleManuel: bool             // l'admin a épinglé, l'arbitra
   Ni chaîne (Nike → Adidas → ERIMA) ni auto-remplacement : `StockItemService::appliquerEcoulement()`
   refuse les deux, et `analyserSuppression()` compte ces liens parmi les emplois.
 
+### Qui reçoit quel kit — et qui ne reçoit rien
+
+**Une personne relève d'un seul modèle de dotation.** `DotationResolver::resolveModele()` retient
+la cible la plus spécifique — individu > équipe > catégorie FFF ou rôle dirigeant > défaut saison
+— et rend **ce modèle-là**, pas la somme des modèles qui la visent. Créer un « kit exceptionnel »
+à côté du « kit joueur » ne cumule donc rien : le plus spécifique remplace l'autre, et à priorité
+égale c'est la dernière affectation créée qui gagne. Un article exceptionnel s'ajoute en **ligne**
+du modèle existant, ou dans un modèle complet affecté nommément à la personne.
+
+**L'équipe d'un dirigeant n'est pas une cible de dotation.** Elle dit de qui il s'occupe, pas ce
+qu'il reçoit. Une cible « équipe » ne capte donc que des `Licencie` — sans ce cloisonnement, un
+dirigeant rattaché aux Séniors héritait du kit joueur de l'équipe alors qu'aucune affectation ne
+visait son rôle. Un dirigeant se cible par son **rôle** ou **nommément** ; le défaut saison, lui,
+continue de couvrir tout le monde. `DotationModelePreview` tenait déjà ce raisonnement côté
+aperçu : le résolveur s'y est aligné, pas l'inverse.
+
+**Le suivi sépare les deux populations.** `/admin/dotations/suivi` groupe par équipe, puis
+« Sans équipe », puis **« Dirigeants »** en fin de liste. Mêler l'encadrement aux joueurs de son
+équipe mettait deux kits sans rapport dans le même tableau, et renvoyait le reste de l'encadrement
+dans un « Sans équipe » qu'on lisait comme un oubli d'affectation. Une personne à la fois joueuse
+et dirigeante tient **deux blocs de lignes** — c'est bien deux kits qu'elle reçoit.
+
+### Flocage — le club peut saisir ce que le licencié n'a pas pu dire
+
+Le texte à floquer vient du formulaire d'inscription. Deux situations le laissent vide sans que
+personne ne se soit trompé : un kit créé **après** la validation d'une licence — le dossier ne
+porte alors aucune réponse — et l'incident qui a empêché la personne de répondre. Sans saisie
+admin, il ne restait que la base.
+
+- `DotationFlocageService` porte le sujet en entier : `reglagesPour()` dit si un besoin se floque
+  (en lisant **le kit**, seul à distinguer « floqué, texte pas encore saisi » de « pas floqué du
+  tout » — le besoin porte `null` dans les deux cas), `changer()` écrit le texte.
+- Le verrou `DotationBesoin.personnalisationManuelle` est le jumeau de `tailleManuelle` : une fois
+  le texte saisi, le recalcul ne le remplace plus par celui — absent — du dossier. **Vider le
+  champ relâche le verrou** et rend la ligne au dossier.
+- **Le kit garde le dernier mot** : une option qui ne se floque plus n'emporte aucun texte, pas
+  même un texte manuel, et le verrou tombe avec lui.
+- Refusé une fois l'article remis : le vêtement est déjà floqué, et le texte porté par le besoin
+  est la trace de ce qui a réellement été donné.
+
 ### Notes, correction et retrait d'un article de stock
 
 **Deux notes, deux portées.** `StockItem.note` vaut pour l'article entier (où il est rangé,
@@ -454,37 +494,61 @@ enum StockMovementType: string {
 
 **Comportement attendu : idempotent, jamais destructeur.**
 
+Deux formats coexistent, reconnus à leurs en-têtes par `ImportLayoutResolver` :
+**Licences dématérialisées** (celui de la procédure) et **Éditions et extractions** (l'ancien).
+
 #### Procédure d'export depuis FootClubs (documentée dans l'UI `/admin/import`)
-1. Menu gauche → **Licenciés → Éditions et extractions**
-2. Sélectionner **Édition licenciés**
-3. Catégories : **tout sélectionner** (clic sur la première, puis Shift+clic sur la dernière)
-4. Format : **Extraction MS Excel**
-5. Sortie et tri : **Complet** ← important, donne les colonnes avec emails et mobiles
-6. Cliquer **Valider**
+1. Menu gauche → **Licences → Dématérialisées**
+2. Filtre **Statut** : « En attente de signature club » → **Rechercher**
+3. **Télécharger** → fichier Excel. Contrôler les licences ; inutile de retirer les déjà importées
+4. CoSync → saison → **Effectif → Import**, déposer le fichier
+
+L'ancien export reste lisible : **Licenciés → Éditions et extractions → Édition licenciés**,
+toutes les catégories, format **Extraction MS Excel**, sortie et tri **Complet** (donne emails
+et mobiles). Il ne contient que des licences signées — rien à y filtrer.
+
+#### N'importer que les dossiers que le licencié a remplis
+
+CoSync ne refait pas FootClubs : une fiche n'y entre qu'une fois la démarche FFF faite. L'export
+dématérialisé, lui, contient **tout le fichier des licences**, y compris des dossiers en
+« Prise de contact » que personne n'a remplis. Importés, ils sont indiscernables des vrais et
+faussent effectifs comme relances — c'est arrivé en prod le 18/08/2026, sur un export non filtré.
+
+Le filtre de la procédure ne suffit donc pas : il s'oublie. `ImportService::statutPermetImport()`
+relit la colonne **Statut** et n'accepte que `StatutDossierFff::permetImport()` — « En attente
+signature club » et au-delà. Trois règles à ne pas défaire :
+
+- **La colonne absente ne filtre rien.** `rawStatut === null` distingue « format sans statut »
+  (l'ancien export, déjà signé) de « statut vide ». Filtrer sans colonne écarterait tout.
+- **Un statut inconnu n'est pas importé.** Si la FFF renomme ses libellés, mieux vaut un rapport
+  qui annonce des lignes écartées qu'un effectif rempli en silence. Le rapport nomme le libellé
+  incompris (`ImportResultData::$statutsInconnus`), il ne se contente pas de le compter.
+- **Le filtre vaut aussi pour les dirigeants** : la même passe les crée depuis le même fichier.
 
 #### Colonnes utiles du fichier
-| Colonne FootClubs | Champ CoSync |
-|---|---|
-| `Numéro personne` | `num_licence` — clé d'upsert |
-| `Nom, prénom` | split → `nom` (MAJUSCULES) + `prenom` (Capitalize) |
-| `Né(e) le` | `date_naissance` |
-| `Sous catégorie` | `category` |
-| `Email principal` | `email` |
-| `Mobile personnel` | `telephone` |
-| Toutes les autres | ignorées |
+| Dématérialisées | Éditions et extractions | Champ CoSync |
+|---|---|---|
+| `Numéro personne` | `Numéro personne` | `num_licence` — clé d'upsert |
+| `Nom` + `Prénom` | `Nom, prénom` (split) | `nom` (MAJUSCULES) + `prenom` (Capitalize) |
+| `Date de naissance` | `Né(e) le` | `date_naissance` |
+| `Sous-catégorie` (préfixe famille retiré) | `Sous catégorie` | `category` |
+| `Type` (Joueur → licencié, reste → dirigeant) | `Type licence` (Libre / Dirigeant) | cible de la ligne |
+| `Statut` | — | filtre d'import, jamais stocké |
+| `Email` | `Email principal` | `email` |
+| `Téléphone mobile` | `Mobile personnel` | `telephone` |
+| Toutes les autres | Toutes les autres | ignorées |
 
 #### Traitement dans CoSync
 1. Admin drag & drop le fichier XLSX sur `/admin/import`
-2. `ImportService` lit le fichier via PhpSpreadsheet
-3. `DataSanitizer` normalise chaque ligne :
-   - Ignorer les lignes où `Type licence` ≠ `Libre` (pas de dirigeants, éducateurs)
-   - Nom en MAJUSCULES, Prénom en Capitalize
-   - Téléphone : supprime espaces/tirets, format +33
-   - Email : trim + lowercase
-4. Pour chaque ligne : `upsert` sur `num_licence` (`Numéro personne`)
-   - Si le licencié existe : mise à jour des données FFF uniquement. Les données club (DossierClub, Transaction) ne sont jamais touchées.
-   - Si nouveau : création + génération UUID, **sans aucun mail**
-5. Rapport d'import affiché : X mis à jour, Y créés, Z erreurs
+2. `ImportService` lit le fichier via PhpSpreadsheet, `ImportLayoutResolver` choisit le layout
+3. Le layout mappe la ligne vers `ImportRowData` — **rien d'autre** : aucune décision d'import
+4. `ImportService` écarte la ligne si son `Statut` ne permet pas l'import (cf. ci-dessus)
+5. `DataSanitizer` normalise : nom en MAJUSCULES, prénom en Capitalize, téléphone en +33,
+   email en trim + lowercase
+6. Pour chaque ligne : `upsert` sur `num_licence` (`Numéro personne`)
+   - Si la fiche existe : mise à jour des données FFF uniquement. Les données club (DossierClub, Transaction) ne sont jamais touchées.
+   - Si nouvelle : création + génération UUID, **sans aucun mail**
+7. Rapport d'import affiché : X créés, Y mis à jour, Z écartés (par statut), erreurs
 
 **Aucun mail ne part de lui-même — ni pour un licencié, ni pour un dirigeant.** Un fichier
 déposé par erreur écrirait à tout un effectif avant que le rapport soit lu. Le départ des liens
@@ -589,6 +653,31 @@ Action depuis le tableau :
   ⚠️ L'UUID n'est **pas** régénéré, volontairement : le régénérer invaliderait les liens déjà
   distribués, ce qui casserait les licenciés en cours de saisie.
 - Clic sur une ligne → fiche détail du licencié
+
+#### Mode édition — retirer une fiche entrée par erreur
+
+Les listes `/admin/effectif/joueurs` et `/admin/effectif/dirigeants` ont une bascule
+**Mode édition** (`?edition=1`), réservée à `ACCES_DIAGNOSTIC` : cases à cocher, écran de
+confirmation nominatif, suppression. C'est la sortie de secours d'un import mal filtré, pas un
+outil de gestion courante — un joueur qui quitte le club se gère par la saison suivante.
+
+`SuppressionFicheService` porte la règle, **une seule fois pour les deux populations** : une fiche
+ne se supprime que si **rien ne s'y est passé** — aucun lien envoyé (`linkSentAt`), aucune annonce
+boutique, aucun formulaire rempli, dossier resté à `IMPORTED`, aucun paiement engagé ou encaissé,
+aucune signature, aucune sortie de stock, aucune dotation affectée nominativement. Dupliquer ces
+tests dans `LicencieService` et `DirigeantService` les ferait diverger, et c'est justement le
+côté qui aurait dérivé qui supprimerait une signature.
+
+Ce qui ne doit pas se défaire :
+
+- **L'analyse est rejouée juste avant la suppression.** L'écran de confirmation dit ce qui était
+  vrai à son affichage ; entre les deux, un lien a pu partir.
+- **Le lot n'est pas tout-ou-rien** : une fiche redevenue intouchable est épargnée, les autres
+  partent, et le message de retour nomme les épargnées avec leur motif.
+- **`DossierClub` part explicitement avec le licencié** (FK `NO ACTION`). Les besoins et
+  affectations de dotation tombent en cascade côté base.
+- **Le mode édition n'est jamais mémorisé** par `ListFilterMemory` : ce n'est pas un filtre, et
+  une liste qui rouvre ses cases de suppression toute seule est un piège.
 
 ### D. Archivage Drive
 

@@ -217,12 +217,36 @@ final class DotationBesoinSynchronizer
         $besoin
             ->setStockItem($ligne['stockItem'])
             ->setQuantite($ligne['quantite'])
-            ->setGroupeChoix($ligne['groupeChoix'])
-            ->setPersonnalisation($ligne['personnalisation']);
+            ->setGroupeChoix($ligne['groupeChoix']);
 
         // La taille saisie à la main par l'admin prime sur celle déduite du dossier.
         if (!$besoin->isTailleManuelle()) {
             $besoin->setTaille($ligne['taille']);
+        }
+
+        $this->realignerPersonnalisation($besoin, $ligne);
+    }
+
+    /**
+     * Le texte de flocage suit le dossier, pour qu'une faute de frappe corrigée se propage tant
+     * que l'article n'est pas remis — sauf quand l'admin l'a saisi lui-même, cas du licencié qui
+     * n'a jamais pu répondre au formulaire.
+     *
+     * Le kit garde le dernier mot : une option qui ne se floque plus n'emporte aucun texte, pas
+     * même un texte manuel, et le verrou tombe avec lui.
+     *
+     * @param array<string, mixed> $ligne
+     */
+    private function realignerPersonnalisation(DotationBesoin $besoin, array $ligne): void
+    {
+        if (!$ligne['personnalisationRequise']) {
+            $besoin->setPersonnalisation(null)->setPersonnalisationManuelle(false);
+
+            return;
+        }
+
+        if (!$besoin->isPersonnalisationManuelle()) {
+            $besoin->setPersonnalisation($ligne['personnalisation']);
         }
     }
 

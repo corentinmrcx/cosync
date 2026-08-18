@@ -18,6 +18,12 @@ use App\Service\Stock\StockTailleResolver;
  */
 final class DotationSuiviPresenter
 {
+    /** L'encadrement forme son propre groupe, quelle que soit l'équipe dont il s'occupe. */
+    private const GROUPE_DIRIGEANTS = 'Dirigeants';
+
+    /** Des joueurs qu'aucune équipe n'a encore accueillis — un oubli d'affectation à traiter. */
+    private const GROUPE_SANS_EQUIPE = 'Sans équipe';
+
     public function __construct(
         private readonly DotationBesoinRepository $besoinRepository,
         private readonly DotationResolver $resolver,
@@ -65,10 +71,10 @@ final class DotationSuiviPresenter
     }
 
     /**
-     * Besoins de la saison regroupés par équipe. Dans chaque équipe, les personnes sont triées
-     * par nom (tri du repository), mais celles entièrement servies passent en fin de liste, et
-     * chez une personne partiellement servie les lignes déjà remises passent sous les autres :
-     * l'écran sert à préparer ce qui reste à remettre.
+     * Besoins de la saison regroupés par équipe, l'encadrement à part. Dans chaque groupe, les
+     * personnes sont triées par nom (tri du repository), mais celles entièrement servies passent
+     * en fin de liste, et chez une personne partiellement servie les lignes déjà remises passent
+     * sous les autres : l'écran sert à préparer ce qui reste à remettre.
      *
      * @return list<DotationSuiviGroupe>
      */
@@ -76,7 +82,7 @@ final class DotationSuiviPresenter
     {
         $groupes = [];
 
-        foreach ($this->besoinsParEquipeEtPersonne($season) as $equipe => $personnes) {
+        foreach ($this->besoinsParGroupeEtPersonne($season) as $equipe => $personnes) {
             $ordonnes = $this->aplatir($this->personnesNonServiesDAbord(
                 array_map($this->remisesEnFin(...), $personnes),
             ));
@@ -115,20 +121,54 @@ final class DotationSuiviPresenter
         return $out;
     }
 
-    /** @return array<string, array<string, list<DotationBesoin>>> */
-    private function besoinsParEquipeEtPersonne(Season $season): array
+    /**
+     * Regroupement de l'écran : une équipe de joueurs, ou l'encadrement.
+     *
+     * L'équipe d'un dirigeant est une indication interne — « il s'occupe des Séniors » — qui ne
+     * dit rien de son kit : la mêler aux joueurs de cette équipe donnait deux dotations sans
+     * rapport dans le même tableau, et renvoyait le reste de l'encadrement dans un « Sans équipe »
+     * qu'on lisait comme un oubli d'affectation. Une personne qui est à la fois joueuse et
+     * dirigeante tient donc deux blocs de lignes, un par titre — c'est bien deux kits qu'elle reçoit.
+     *
+     * @return array<string, array<string, list<DotationBesoin>>>
+     */
+    private function besoinsParGroupeEtPersonne(Season $season): array
     {
-        $parEquipe = [];
+        $parGroupe = [];
 
         foreach ($this->besoinRepository->findBySeason($season) as $besoin) {
-            $equipe = $besoin->getTeamName() ?? 'Sans équipe';
             $personne = $besoin->getLicencie() ?? $besoin->getDirigeant();
-            $parEquipe[$equipe][$personne !== null ? (string) $personne->getUuid() : 'inconnu'][] = $besoin;
+            $groupe = $besoin->getDirigeant() !== null
+                ? self::GROUPE_DIRIGEANTS
+                : $besoin->getTeamName() ?? self::GROUPE_SANS_EQUIPE;
+
+            $parGroupe[$groupe][$personne !== null ? (string) $personne->getUuid() : 'inconnu'][] = $besoin;
         }
 
-        ksort($parEquipe);
+        return $this->ordonnerGroupes($parGroupe);
+    }
 
-        return $parEquipe;
+    /**
+     * Équipes par ordre alphabétique, puis les deux groupes fourre-tout en fin de liste : ce
+     * sont les seuls que l'admin ne prépare pas équipe par équipe.
+     *
+     * @param  array<string, array<string, list<DotationBesoin>>> $parGroupe
+     * @return array<string, array<string, list<DotationBesoin>>>
+     */
+    private function ordonnerGroupes(array $parGroupe): array
+    {
+        $fin = [];
+
+        foreach ([self::GROUPE_SANS_EQUIPE, self::GROUPE_DIRIGEANTS] as $nom) {
+            if (isset($parGroupe[$nom])) {
+                $fin[$nom] = $parGroupe[$nom];
+                unset($parGroupe[$nom]);
+            }
+        }
+
+        ksort($parGroupe);
+
+        return [...$parGroupe, ...$fin];
     }
 
     /**

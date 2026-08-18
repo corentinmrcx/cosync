@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
 use App\DTO\DirigeantData;
+use App\DTO\Effectif\ResultatSuppression;
 use App\DTO\EnvoiGroupeResultat;
 use App\DTO\FiltreListe;
 use App\Entity\Dirigeant;
@@ -16,11 +17,13 @@ use App\Repository\DirigeantRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
+use App\Security\Voter\SuperAdminVoter;
 use App\Service\Cle\CleRegistrePresenter;
 use App\Service\Dirigeant\DirigeantDossierCompletion;
 use App\Service\Dirigeant\DirigeantFormPrefill;
 use App\Service\Dirigeant\DirigeantService;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Mail\DirigeantLinkService;
 use App\Service\Ui\ListFilterMemory;
@@ -29,6 +32,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/effectif/dirigeants', name: 'admin_dirigeants_')]
 class DirigeantController extends AbstractController
@@ -46,6 +50,7 @@ class DirigeantController extends AbstractController
         private readonly HistoriqueFicheService $historiqueService,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DirigeantDossierCompletion $dossierCompletion,
+        private readonly SuppressionFicheService $suppressionService,
     ) {}
 
     #[Route('', name: 'list')]
@@ -53,9 +58,13 @@ class DirigeantController extends AbstractController
         Request $request,
         #[CurrentSeason] Season $season,
     ): Response {
+        // Le mode édition n'est pas un filtre : jamais mémorisé, seulement reporté sur la
+        // redirection de restauration. Cf. la même règle côté joueurs.
+        $edition = $request->query->getBoolean('edition') && $this->isGranted(SuperAdminVoter::ACCES_DIAGNOSTIC);
+
         $restored = $this->filterMemory->restoreOrRemember('dirigeants', $request, ['team', 'role', 'search']);
         if ($restored !== null) {
-            return $this->redirectToRoute('admin_dirigeants_list', $restored);
+            return $this->redirectToRoute('admin_dirigeants_list', $edition ? $restored + ['edition' => 1] : $restored);
         }
 
         $search = trim((string) $request->query->get('search', ''));
@@ -95,6 +104,7 @@ class DirigeantController extends AbstractController
             'filterGroups' => $filterGroups,
             'activeFilterCount' => FiltreListe::compterActifs($filterGroups),
             'liensEnAttente' => $this->dirigeantRepo->countLienJamaisEnvoye($season),
+            'edition' => $edition,
         ]);
     }
 
@@ -162,6 +172,79 @@ class DirigeantController extends AbstractController
         }
 
         return implode(', ', $parties) . '.';
+    }
+
+    /**
+     * Mode édition : mêmes règles et même écran de confirmation que côté joueurs
+     * (cf. `SuppressionFicheService`). Déclaré avant `/{uuid}`.
+     */
+    #[Route('/supprimer', name: 'delete_confirm', methods: ['POST'])]
+    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    public function deleteConfirm(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $this->csrf->valider('supprimer_dirigeants', $request);
+
+        $fiches = $this->dirigeantRepo->findByUuidsInSeason(
+            array_map(strval(...), $request->request->all('dirigeants')),
+            $season,
+        );
+
+        if ($fiches === []) {
+            $this->addFlash('info', 'Aucune fiche sélectionnée.');
+
+            return $this->redirectToRoute('admin_dirigeants_list', ['edition' => 1]);
+        }
+
+        return $this->render('admin/dirigeants/supprimer.html.twig', [
+            'analyses' => $this->suppressionService->analyserLot($fiches),
+        ]);
+    }
+
+    #[Route('/supprimer/confirmer', name: 'delete', methods: ['POST'])]
+    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    public function delete(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $this->csrf->valider('supprimer_dirigeants_confirmer', $request);
+
+        $fiches = $this->dirigeantRepo->findByUuidsInSeason(
+            array_map(strval(...), $request->request->all('dirigeants')),
+            $season,
+        );
+
+        try {
+            $resultat = $this->suppressionService->supprimerLot($fiches);
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+
+            return $this->redirectToRoute('admin_dirigeants_list', ['edition' => 1]);
+        }
+
+        $this->addFlash(
+            $resultat->supprimees > 0 ? 'success' : 'info',
+            $this->resumeSuppression($resultat),
+        );
+
+        return $this->redirectToRoute('admin_dirigeants_list');
+    }
+
+    private function resumeSuppression(ResultatSuppression $resultat): string
+    {
+        $resume = sprintf(
+            '%d fiche%s supprimée%s.',
+            $resultat->supprimees,
+            $resultat->supprimees > 1 ? 's' : '',
+            $resultat->supprimees > 1 ? 's' : '',
+        );
+
+        if ($resultat->refusees !== []) {
+            $resume .= ' Épargnée(s) : ' . implode(' ; ', $resultat->refusees) . '.';
+        }
+
+        return $resume;
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
