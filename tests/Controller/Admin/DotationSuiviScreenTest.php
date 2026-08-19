@@ -17,6 +17,9 @@ use App\Entity\User;
 use App\Enum\DirigeantRole;
 use App\Enum\LicenceStatus;
 use App\Enum\StockItemVetementType;
+use App\Enum\StockMovementSource;
+use App\Enum\StockMovementType;
+use App\Service\Stock\StockMovementService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -130,6 +133,44 @@ final class DotationSuiviScreenTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertStringNotContainsString('Flocage', $crawler->html());
+    }
+
+    /**
+     * Celui qui prépare une remise doit savoir s'il va chercher l'article ou s'il attend un
+     * colis — et, quand un stock en cours d'écoulement reprend la ligne, quelle paire prendre.
+     * L'écran disait « à remettre » sans jamais le dire.
+     */
+    public function testLaLigneAnnonceSaProvenanceEtLArticleAPrendre(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $erima = $this->makeItem('Chaussettes');
+        $erima->setMarque('Erima')->setCouleur('Noir');
+        $nike = $this->makeItem('Chaussettes');
+        $nike->setMarque('Nike')->setCouleur('Noir')->setRemplaceArticle($erima);
+
+        // Deux personnes, une seule paire d'ancien stock : la première est servie, la
+        // seconde retombe sur l'article du kit, que rien ne couvre.
+        $this->makeBesoin($erima)->setLicencie($this->makeLicencie(null));
+        $this->makeBesoin($erima)->setLicencie($this->makeLicencie(null));
+        $this->em->flush();
+
+        self::getContainer()->get(StockMovementService::class)->recordMovement(
+            $nike, 1, StockMovementType::ENTREE, StockMovementSource::MANUEL, null, null, taille: 'L',
+        );
+
+        $crawler = $client->request('GET', '/admin/dotations/suivi');
+
+        self::assertResponseIsSuccessful();
+
+        $pastilles = $crawler->filter('.dot-provenance');
+        self::assertSame(['Stock', 'À commander'], $pastilles->each(static fn ($n): string => $n->text()));
+        self::assertSame(
+            'À prendre dans le stock : Chaussettes · Nike · Noir — taille L',
+            $pastilles->eq(0)->attr('title'),
+            'L\'infobulle désigne l\'article servi, pas celui du kit.',
+        );
     }
 
     private function makeItem(string $nom): StockItem
