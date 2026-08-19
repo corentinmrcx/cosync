@@ -97,17 +97,23 @@ final class GrillesTaillesEcranTest extends WebTestCase
         self::assertCount(1, $this->em->getRepository(GrilleTaille::class)->find($grille->getId())->getValeurs());
     }
 
-    public function testLEcranSignaleLesTaillesQueLaGrilleNeTraduitPasEncore(): void
+    /**
+     * Ne rien traduire est le cas normal — un fournisseur ne relabellise souvent qu'une partie
+     * de sa gamme. L'écran le dit sans en faire une alerte : c'est une information, sans quoi
+     * on croit devoir écrire « L couvre L » pour tout le référentiel.
+     */
+    public function testLEcranDitCeQuiPasseSansTraduction(): void
     {
         $client = $this->loginAdmin();
         $grille = $this->creerGrille('Chaussettes Nike', TailleType::POINTURE);
         $this->ajouterLigne($client, $grille, '43-46', ['43', '44']);
 
-        $html = $client->request('GET', '/admin/club/grilles-tailles/' . $grille->getId())->html();
+        $crawler = $client->request('GET', '/admin/club/grilles-tailles/' . $grille->getId());
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('Non traduites pour l\'instant', $html);
-        self::assertStringContainsString('à renseigner', $html, 'L\'écran doit dire ce que le trou produira dans le suivi.');
+        self::assertStringContainsString('Servies telles quelles', $crawler->html());
+        self::assertCount(1, $crawler->filter('.grille-info'), 'Registre de l\'information, pas de l\'alerte.');
+        self::assertCount(0, $crawler->filter('.grille-alerte'));
     }
 
     public function testUneGrilleVideNeSignaleRien(): void
@@ -118,9 +124,9 @@ final class GrillesTaillesEcranTest extends WebTestCase
         $html = $client->request('GET', '/admin/club/grilles-tailles/' . $grille->getId())->html();
 
         self::assertStringNotContainsString(
-            'Non traduites pour l\'instant',
+            'Servies telles quelles',
             $html,
-            'Sur une grille vide, tout est non traduit par construction : lister l\'échelle entière serait du bruit.',
+            'Sur une grille vide, tout passe tel quel par construction : lister l\'échelle entière serait du bruit.',
         );
     }
 

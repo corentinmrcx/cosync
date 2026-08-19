@@ -50,16 +50,18 @@
         </div>
     </div>
 
-    {# Rien à signaler sur une grille encore vide : tout y est non traduit par construction, et
-       lister l'échelle entière noierait l'écran au moment où il n'a rien à dire. L'alerte n'a
-       de sens qu'une fois la grille commencée — c'est là qu'un oubli devient possible. #}
+    {# Information, pas alerte : ne rien traduire est le cas normal. Un fournisseur qui vend
+       ses vestes enfant en « 140 » et ses vestes adulte en « L » n'a besoin d'une grille que
+       pour la moitié enfant — le reste passe tel quel, et c'est correct. Le dire quand même
+       évite la question « pourquoi le L n'est pas dans la liste ? ».
+
+       Rien à afficher sur une grille encore vide : tout y passerait tel quel par construction,
+       et lister l'échelle entière noierait l'écran au moment où il n'a rien à dire. #}
     {% if nonCouvertes is not empty and grille.valeurs is not empty %}
-        {# Non bloquant : une grille se remplit en plusieurs fois. Mais il faut dire ce que
-           cela produit, sinon l'admin découvre le trou au moment de préparer les dotations. #}
-        <p class="grille-alerte">
-            Non traduites pour l'instant : <strong>{{ nonCouvertes|join(', ') }}</strong>.
-            Une personne qui déclare l'une d'elles verra son besoin rester « à renseigner »
-            dans le suivi des dotations, à compléter à la main.
+        <p class="grille-info">
+            Servies telles quelles : <strong>{{ nonCouvertes|join(', ') }}</strong>.
+            Le fournisseur les vend sous ce nom-là — n'ajoutez une ligne que s'il les étiquette
+            autrement.
         </p>
     {% endif %}
 

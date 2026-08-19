@@ -41,6 +41,18 @@
     font-size: var(--font-size-sm);
 }
 
+/* Ce qui passe sans traduction est le cas normal : registre de l'information, pas de
+   l'alerte. En orange, l'écran réclamait une ligne « L couvre L » qui n'apprend rien. */
+.grille-info {
+    margin: 0 0 1rem;
+    padding: 0.65rem 0.85rem;
+    border-left: 3px solid var(--color-info);
+    border-radius: var(--radius-sm);
+    background: var(--color-info-bg);
+    color: var(--color-text-body);
+    font-size: var(--font-size-sm);
+}
+
 .grille-add-form,
 .grille-rename-form,
 .grille-valeur-form {

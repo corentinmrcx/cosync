@@ -291,9 +291,17 @@ StockItem          // grilleTaille: ?GrilleTaille
   propre barème.
 - **Une taille déclarée mène à un seul libellé.** `GrilleTailleService` refuse le
   chevauchement : deux plages pour une même pointure rendraient la traduction indécidable.
-- **Une taille non couverte donne `null`**, jamais une valeur approchante. Le besoin reste
-  « à renseigner » dans le suivi, et l'admin tranche. Mieux vaut un trou visible qu'une
-  déclinaison inventée. L'écran de la grille annonce ces trous avant qu'ils ne se voient.
+- **Une grille ne traduit que ce qu'elle mentionne** : une taille qu'aucune ligne ne couvre
+  passe **telle quelle**, jamais une valeur approchante. C'est le cas courant d'un fournisseur
+  qui ne relabellise qu'une partie de sa gamme — les vestes enfant en `140`, les adultes en
+  `L`. Rendre `null` (la V1) obligeait à écrire « L couvre L », « M couvre M »… pour tout le
+  reste du référentiel : une cérémonie que personne ne comprend, qu'on oublie, et dont l'oubli
+  envoyait **chaque adulte** en « à renseigner ». Le prix assumé : une taille que le
+  fournisseur ne vend réellement pas ressort telle quelle au lieu de signaler un trou — c'est
+  au bon de commande qu'on le voit, et l'écran de la grille liste ce qui passe sans traduction.
+- **`options()` suit la même règle** que `traduire()`, et il le faut : une taille que la
+  dotation sert doit pouvoir se saisir en mouvement de stock. La grille écarte les tailles
+  qu'elle **traduit** (le `10 ans` se range en `140`), pas celles qu'elle ignore.
 - Le point d'insertion unique est **`StockTailleResolver`** : `traduire()` pour la dotation
   (appelé par `DotationResolver::sizeFor()`), `options()` pour restreindre la saisie d'un
   mouvement aux déclinaisons réellement vendues. En aval, remise, ventilation, achat et bon de
