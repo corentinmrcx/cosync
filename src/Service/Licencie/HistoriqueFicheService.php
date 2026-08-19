@@ -52,12 +52,15 @@ final class HistoriqueFicheService
             );
         }
 
+        // Affiché à sa date de paiement (celle du chèque), rangé à son heure de saisie :
+        // sans quoi minuit le ferait passer devant le formulaire qui l'a déclenché.
         foreach ($transactions as $transaction) {
             $evenements[] = new EvenementHistorique(
                 $transaction->getDatePaiement(),
                 sprintf('Paiement enregistré — %s %s €', $transaction->getMode()->label(), $transaction->getMontant()),
                 $this->auteurDuPaiement($transaction),
                 'd/m/Y',
+                $transaction->getCreatedAt(),
             );
         }
 
@@ -130,7 +133,7 @@ final class HistoriqueFicheService
      */
     private function parOrdreChronologique(array $evenements): array
     {
-        usort($evenements, static fn (EvenementHistorique $a, EvenementHistorique $b): int => $a->date <=> $b->date);
+        usort($evenements, static fn (EvenementHistorique $a, EvenementHistorique $b): int => $a->triDate <=> $b->triDate);
 
         return $evenements;
     }

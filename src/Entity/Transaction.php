@@ -41,8 +41,27 @@ class Transaction
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $externalPaymentId = null;
 
+    /**
+     * Date **métier** de l'encaissement : celle du chèque, du virement, de la remise en main
+     * propre. L'admin la choisit, elle peut donc être antérieure au jour de la saisie — et
+     * elle n'a pas d'heure, personne ne note l'heure d'un chèque.
+     */
     #[ORM\Column(type: 'date_immutable')]
     private \DateTimeImmutable $datePaiement;
+
+    /**
+     * Moment où CoSync a appris l'encaissement. C'est ce que la chronologie d'une fiche
+     * ordonne : `datePaiement` étant une date sans heure, elle vaut minuit et faisait
+     * remonter tout paiement avant les événements horodatés du même jour — un paiement
+     * s'affichait donc avant l'envoi du lien et avant le formulaire qui l'a déclenché.
+     */
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $createdAt;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
 
     /** Null pour les paiements encaissés automatiquement en ligne (HelloAsso) : aucun dirigeant ne les saisit */
     #[ORM\ManyToOne]
@@ -140,6 +159,11 @@ class Transaction
         $this->datePaiement = $datePaiement;
 
         return $this;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 
     public function getConfirmedBy(): ?User

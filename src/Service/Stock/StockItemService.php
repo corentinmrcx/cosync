@@ -200,10 +200,7 @@ final class StockItemService
         $engage = $item->getRemplaceArticle() !== null || $this->itemRepository->countSubstituts($item) > 0;
 
         if ($engage) {
-            throw new \DomainException(
-                'Cet article fait partie d\'une correspondance d\'écoulement : retirez-la depuis '
-                . '« Stock → Écoulement » avant de changer son type de vêtement.',
-            );
+            throw new \DomainException('Cet article fait partie d\'une correspondance d\'écoulement : retirez-la depuis « Stock → Écoulement » avant de changer son type de vêtement.');
         }
     }
 
