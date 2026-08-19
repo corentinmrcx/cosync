@@ -17,6 +17,9 @@
         table.lignes td { padding: 7px 9px; border-bottom: 1px solid #e5e7eb; }
         .qty { text-align: center; font-weight: bold; width: 60px; }
         .taille { text-align: center; width: 70px; }
+        /* La référence se recopie chez le fournisseur : lisible, mais elle ne prend pas
+           le pas sur la désignation, qui reste ce qui identifie l'article. */
+        .ref { width: 95px; color: #6b7280; font-size: 11px; }
         .footer { margin-top: 24px; font-size: 10px; color: #9aa1aa; }
     </style>
 </head>
@@ -49,18 +52,20 @@
         <thead>
             <tr>
                 <th>Article</th>
+                <th class="ref">Référence</th>
                 <th class="taille">Taille</th>
                 <th class="qty">Qté</th>
             </tr>
         </thead>
         <tbody>
+            {# Même désignation qu'à l'écran — nom · marque · couleur (§7.6 ter) : c'est ce
+               document qu'on a sous les yeux au moment de commander, et le club a six articles
+               nommés « Chaussettes ». La référence catalogue a sa colonne : c'est elle qu'on
+               recopie chez le fournisseur. #}
             {% for ligne in commande.lignes %}
                 <tr>
-                    <td>
-                        {{ ligne.stockItem.nom }}
-                        {% if ligne.stockItem.marque %} — {{ ligne.stockItem.marque }}{% endif %}
-                        {% if ligne.stockItem.couleur %} — {{ ligne.stockItem.couleur }}{% endif %}
-                    </td>
+                    <td>{{ ligne.stockItem.designation }}</td>
+                    <td class="ref">{{ ligne.stockItem.refCatalogue ?: '—' }}</td>
                     <td class="taille">{{ ligne.taille ?: '—' }}</td>
                     <td class="qty">{{ ligne.quantite }}</td>
                 </tr>
