@@ -157,6 +157,8 @@ final class StockItemService
         ?StockItemVetementType $typeVetement,
         ?GrilleTaille $grille = null,
     ): void {
+        $this->typeChangeableSansCasserLEcoulement($item, $kind, $typeVetement);
+
         $item->setKind($kind);
         $item->setMarque($marque ?: null);
 
@@ -170,6 +172,38 @@ final class StockItemService
             $item->setCouleur(null);
             $item->setTypeVetement(null);
             $item->setGrilleTaille(null);
+        }
+    }
+
+    /**
+     * Un article engagé dans une correspondance d'écoulement ne change pas de type de
+     * vêtement — ni ne quitte l'équipement — sans qu'on retire d'abord la règle.
+     *
+     * C'est l'invariant du §4 : les deux côtés doivent porter le même type, faute de quoi la
+     * dotation lit la taille du bas pour servir un haut. Le laisser filer serait silencieux
+     * et invisible — la fiche article ne montre plus la règle qu'en lecture — alors que le
+     * refus dit exactement quoi faire, et où.
+     *
+     * @throws \DomainException
+     */
+    private function typeChangeableSansCasserLEcoulement(
+        StockItem $item,
+        ?StockItemKind $kind,
+        ?StockItemVetementType $typeVetement,
+    ): void {
+        $nouveau = $kind === StockItemKind::EQUIPEMENT ? $typeVetement : null;
+
+        if ($nouveau === $item->getTypeVetement()) {
+            return;
+        }
+
+        $engage = $item->getRemplaceArticle() !== null || $this->itemRepository->countSubstituts($item) > 0;
+
+        if ($engage) {
+            throw new \DomainException(
+                'Cet article fait partie d\'une correspondance d\'écoulement : retirez-la depuis '
+                . '« Stock → Écoulement » avant de changer son type de vêtement.',
+            );
         }
     }
 

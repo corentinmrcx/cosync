@@ -20,6 +20,7 @@ import { dirigeantPrefill } from './js/dirigeant-prefill.js';
 import { selectListe } from './js/select-liste.js';
 import { listeTriable } from './js/liste-triable.js';
 import { dotationCibles } from './js/dotation-cibles.js';
+import { ecoulementForm } from './js/ecoulement-form.js';
 
 Alpine.data('inscriptionForm', inscriptionForm);
 Alpine.data('completionForm', completionForm);
@@ -36,6 +37,7 @@ Alpine.data('multiSelect', multiSelect);
 Alpine.data('selectListe', selectListe);
 Alpine.data('listeTriable', listeTriable);
 Alpine.data('dotationCibles', dotationCibles);
+Alpine.data('ecoulementForm', ecoulementForm);
 
 Alpine.plugin(collapse);
 

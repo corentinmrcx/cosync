@@ -118,6 +118,21 @@ class StockItem
         return $this;
     }
 
+    /**
+     * Désignation complète : nom · marque · couleur, comme
+     * `components/_stock_item_label.html.twig` du côté des templates.
+     *
+     * Le club crée un article par déclinaison : plusieurs portent le même nom et ne se
+     * distinguent que par leur marque et leur couleur (§7.6 ter). Un message qui n'annonce
+     * que le nom ne dit donc rien — « Chaussettes sera servi avant de commander Chaussettes ».
+     */
+    public function getDesignation(): string
+    {
+        $details = array_filter([$this->marque, $this->couleur]);
+
+        return $details === [] ? $this->nom : $this->nom . ' · ' . implode(' · ', $details);
+    }
+
     public function getTaille(): ?string
     {
         return $this->taille;

@@ -57,6 +57,70 @@ class StockItemRepository extends ServiceEntityRepository
     }
 
     /**
+     * Tous les articles principaux qui ont au moins un ancien stock à écouler — l'index de
+     * l'écran de correspondances. Les archivés en font partie : le club peut sortir du
+     * catalogue un article qu'il continue d'écouler.
+     *
+     * @return list<StockItem>
+     */
+    public function findArticlesAvecSubstituts(): array
+    {
+        return $this->createQueryBuilder('i')
+            ->where('EXISTS (SELECT 1 FROM ' . StockItem::class . ' s WHERE s.remplaceArticle = i)')
+            ->orderBy('i.nom', 'ASC')
+            ->addOrderBy('i.marque', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Articles qu'on peut écouler à la place de celui-ci.
+     *
+     * Miroir de {@see findCiblesEcoulementPossibles()}, qui répond à la même question depuis
+     * l'autre bout. Les exclusions traduisent les règles de
+     * {@see \App\Service\Stock\StockItemService::appliquerEcoulement()} : pas soi-même, pas
+     * une cible d'écoulement (un article ne peut pas être remplacé et remplaçant), et le même
+     * type de vêtement — sans quoi la dotation lirait la taille du bas pour servir un haut.
+     *
+     * Un article déjà écoulé ailleurs est écarté : il figure dans sa propre correspondance,
+     * où on le retire d'abord. Le laisser proposé le déplacerait en silence d'une transition
+     * à l'autre.
+     *
+     * `$principal` à null rend le vivier complet, tous types confondus — le formulaire de
+     * création, qui ne connaît pas encore son principal, restreint côté client et le serveur
+     * refait le contrôle.
+     *
+     * @return list<StockItem>
+     */
+    public function findArticlesEcoulablesVers(?StockItem $principal): array
+    {
+        $qb = $this->createQueryBuilder('i')
+            ->where('i.actif = true')
+            ->andWhere('i.kind = :equipement')
+            ->andWhere('i.remplaceArticle IS NULL')
+            ->andWhere('NOT EXISTS (SELECT 1 FROM ' . StockItem::class . ' s WHERE s.remplaceArticle = i)')
+            ->setParameter('equipement', StockItemKind::EQUIPEMENT)
+            ->orderBy('i.nom', 'ASC')
+            ->addOrderBy('i.marque', 'ASC');
+
+        if ($principal === null) {
+            return $qb->getQuery()->getResult();
+        }
+
+        $qb->andWhere('i.id != :principal')->setParameter('principal', $principal->getId());
+
+        // « Aucun type » est un type comme un autre — un bonnet s'écoule à la place d'un
+        // bonnet. Comparer avec `=` ne l'aurait jamais rendu : en SQL, NULL n'égale rien.
+        if (($type = $principal->getTypeVetement()) === null) {
+            $qb->andWhere('i.typeVetement IS NULL');
+        } else {
+            $qb->andWhere('i.typeVetement = :type')->setParameter('type', $type);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
      * Articles que celui-ci peut déclarer remplacer. On écarte l'article lui-même, les
      * articles d'écoulement (pas de chaîne : Nike → Adidas → ERIMA) et, si l'article est
      * déjà remplacé par d'autres, tous les candidats — il est une cible, il ne peut pas

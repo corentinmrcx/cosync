@@ -314,9 +314,18 @@ DotationBesoin.articleEcoulement: ?StockItem  // l'article réellement servi (nu
 DotationBesoin.articleManuel: bool             // l'admin a épinglé, l'arbitrage ne touche plus
 ```
 
-- **La règle se déclare sur l'article à écouler**, et une seule fois pour le club — pas kit par
+- **La règle est portée par l'article à écouler**, et une seule fois pour le club — pas kit par
   kit. Un club change de fournisseur une fois ; la déclarer dans chaque `DotationModele` ferait
   oublier l'un des cinq et l'écoulement ne se ferait qu'à moitié.
+- **Mais elle se déclare dans l'autre sens**, sur `/admin/stock/ecoulement` : l'article
+  principal — celui qu'on commande désormais — en tête, les anciens stocks fléchés en dessous.
+  C'est ainsi que la décision se prend (« je passe à l'ERIMA, il me reste des Nike »), et la
+  poser depuis la fiche du Nike se lisait à l'envers : la règle existait, personne ne la
+  retrouvait, et elle a été saisie à l'envers en prod. `EcoulementPresenter` retourne la
+  lecture, `StockItemService::appliquerEcoulement()` reste seul à écrire. La fiche article
+  n'en garde qu'une **mention en lecture seule** — la rebrancher au formulaire effacerait la
+  règle à chaque enregistrement, le champ n'y étant plus. Corollaire : un article engagé dans
+  une correspondance refuse de changer de `typeVetement` tant qu'elle n'est pas retirée.
 - **`DotationBesoin.stockItem` reste l'article du kit.** C'est lui que `realigner()` réaligne et
   que `emplacementDe()` identifie ; changer sa valeur ferait purger et recréer le besoin à chaque
   bascule, en perdant le statut « donné », la taille manuelle et l'historique. Le point de
