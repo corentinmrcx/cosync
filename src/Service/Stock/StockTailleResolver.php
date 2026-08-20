@@ -53,13 +53,22 @@ final class StockTailleResolver
 
         // Une grille dit dans quelles déclinaisons ce fournisseur-là vend l'article : proposer
         // le référentiel entier ferait ranger un réassort de chaussettes « 43-46 » sous « 44 ».
+        //
+        // Elle n'écarte que ce qu'elle traduit : le « 10 ans » disparaît parce qu'il se range
+        // en « 140 », mais le « L », qu'aucune ligne ne mentionne, reste une déclinaison
+        // valable — c'est bien sous ce nom-là que le fournisseur le vend. Même règle que
+        // `traduire()`, et il le faut : une taille servie par la dotation doit pouvoir se
+        // saisir en mouvement de stock.
+        //
         // Le filtre préserve l'ordre du référentiel, qui est celui de tous les sélecteurs.
         $grille = $item->getGrilleTaille();
         if ($grille !== null) {
+            $traduites = $grille->libellesCouverts();
             $cibles = $grille->libellesCibles();
             $referentiel = array_values(array_filter(
                 $referentiel,
-                static fn (string $libelle): bool => in_array($libelle, $cibles, true),
+                static fn (string $libelle): bool => in_array($libelle, $cibles, true)
+                    || !in_array($libelle, $traduites, true),
             ));
         }
 
@@ -73,8 +82,12 @@ final class StockTailleResolver
      * lui-même. Avec grille, la pointure 44 devient le « 43-46 » du carton — sans quoi la
      * dotation sortirait du stock une taille qui n'existe chez aucun fournisseur.
      *
-     * Rend null pour une taille qu'aucune valeur ne couvre : le besoin reste sans taille et le
-     * suivi affiche « à renseigner », ce que l'admin corrige à la main.
+     * **Une grille ne traduit que ce qu'elle mentionne.** Une taille qu'aucune ligne ne couvre
+     * passe telle quelle : c'est le cas courant d'un fournisseur qui vend ses vestes enfant en
+     * « 140 » et ses vestes adulte en « L » — seule la moitié enfant demande une traduction.
+     * La version précédente rendait null, ce qui obligeait à écrire « L couvre L », « M couvre
+     * M »… pour tout le reste du référentiel : une cérémonie qui n'apprenait rien à personne
+     * et qu'on oubliait, envoyant alors chaque adulte en « à renseigner ».
      */
     public function traduire(StockItem $item, ?string $tailleDeclaree): ?string
     {
@@ -84,7 +97,7 @@ final class StockTailleResolver
 
         $grille = $item->getGrilleTaille();
 
-        return $grille === null ? $tailleDeclaree : $grille->cibleQuiCouvre($tailleDeclaree);
+        return $grille?->cibleQuiCouvre($tailleDeclaree) ?? $tailleDeclaree;
     }
 
     /**

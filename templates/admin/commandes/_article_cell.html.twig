@@ -1,0 +1,24 @@
+{% import 'components/_stock_item_label.html.twig' as article %}
+{# Désignation d'un article dans un contexte de commande.
+
+   Le nom seul ne suffit à personne devant un catalogue fournisseur : le club a six articles
+   nommés « Chaussettes », et celui qui passe la commande doit savoir lequel (§7.6 ter). La
+   référence et le lien, quand ils sont renseignés, épargnent la recherche dans le catalogue —
+   c'est le geste concret que cet écran sert.
+
+   Deuxième ligne discrète, à dessein : elle aide à commander, elle n'est pas ce qu'on lit
+   pour reconnaître l'article.
+
+   `item` = App\Entity\StockItem. #}
+<span class="cmd-article-nom">{{ article.label(item) }}</span>
+
+{% if item.refCatalogue or item.lienAchat %}
+    <span class="cmd-article-meta">
+        {%- if item.refCatalogue %}réf. {{ item.refCatalogue }}{% endif -%}
+        {%- if item.refCatalogue and item.lienAchat %} · {% endif -%}
+        {%- if item.lienAchat -%}
+            <a href="{{ item.lienAchat }}" target="_blank" rel="noopener noreferrer"
+               class="cmd-article-lien">Fiche produit ↗</a>
+        {%- endif -%}
+    </span>
+{% endif %}

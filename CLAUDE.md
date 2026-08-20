@@ -291,9 +291,17 @@ StockItem          // grilleTaille: ?GrilleTaille
   propre barème.
 - **Une taille déclarée mène à un seul libellé.** `GrilleTailleService` refuse le
   chevauchement : deux plages pour une même pointure rendraient la traduction indécidable.
-- **Une taille non couverte donne `null`**, jamais une valeur approchante. Le besoin reste
-  « à renseigner » dans le suivi, et l'admin tranche. Mieux vaut un trou visible qu'une
-  déclinaison inventée. L'écran de la grille annonce ces trous avant qu'ils ne se voient.
+- **Une grille ne traduit que ce qu'elle mentionne** : une taille qu'aucune ligne ne couvre
+  passe **telle quelle**, jamais une valeur approchante. C'est le cas courant d'un fournisseur
+  qui ne relabellise qu'une partie de sa gamme — les vestes enfant en `140`, les adultes en
+  `L`. Rendre `null` (la V1) obligeait à écrire « L couvre L », « M couvre M »… pour tout le
+  reste du référentiel : une cérémonie que personne ne comprend, qu'on oublie, et dont l'oubli
+  envoyait **chaque adulte** en « à renseigner ». Le prix assumé : une taille que le
+  fournisseur ne vend réellement pas ressort telle quelle au lieu de signaler un trou — c'est
+  au bon de commande qu'on le voit, et l'écran de la grille liste ce qui passe sans traduction.
+- **`options()` suit la même règle** que `traduire()`, et il le faut : une taille que la
+  dotation sert doit pouvoir se saisir en mouvement de stock. La grille écarte les tailles
+  qu'elle **traduit** (le `10 ans` se range en `140`), pas celles qu'elle ignore.
 - Le point d'insertion unique est **`StockTailleResolver`** : `traduire()` pour la dotation
   (appelé par `DotationResolver::sizeFor()`), `options()` pour restreindre la saisie d'un
   mouvement aux déclinaisons réellement vendues. En aval, remise, ventilation, achat et bon de
@@ -314,9 +322,18 @@ DotationBesoin.articleEcoulement: ?StockItem  // l'article réellement servi (nu
 DotationBesoin.articleManuel: bool             // l'admin a épinglé, l'arbitrage ne touche plus
 ```
 
-- **La règle se déclare sur l'article à écouler**, et une seule fois pour le club — pas kit par
+- **La règle est portée par l'article à écouler**, et une seule fois pour le club — pas kit par
   kit. Un club change de fournisseur une fois ; la déclarer dans chaque `DotationModele` ferait
   oublier l'un des cinq et l'écoulement ne se ferait qu'à moitié.
+- **Mais elle se déclare dans l'autre sens**, sur `/admin/stock/ecoulement` : l'article
+  principal — celui qu'on commande désormais — en tête, les anciens stocks fléchés en dessous.
+  C'est ainsi que la décision se prend (« je passe à l'ERIMA, il me reste des Nike »), et la
+  poser depuis la fiche du Nike se lisait à l'envers : la règle existait, personne ne la
+  retrouvait, et elle a été saisie à l'envers en prod. `EcoulementPresenter` retourne la
+  lecture, `StockItemService::appliquerEcoulement()` reste seul à écrire. La fiche article
+  n'en garde qu'une **mention en lecture seule** — la rebrancher au formulaire effacerait la
+  règle à chaque enregistrement, le champ n'y étant plus. Corollaire : un article engagé dans
+  une correspondance refuse de changer de `typeVetement` tant qu'elle n'est pas retirée.
 - **`DotationBesoin.stockItem` reste l'article du kit.** C'est lui que `realigner()` réaligne et
   que `emplacementDe()` identifie ; changer sa valeur ferait purger et recréer le besoin à chaque
   bascule, en perdant le statut « donné », la taille manuelle et l'historique. Le point de

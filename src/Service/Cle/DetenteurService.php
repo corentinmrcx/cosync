@@ -97,7 +97,7 @@ final class DetenteurService
         ?string $email,
         ?string $telephone,
     ): Detenteur {
-        if ($this->detenteurRepo->findByNomPrenom($nom, $prenom) !== null) {
+        if ($this->effectifResolver->detenteurParNom($nom, $prenom) !== null) {
             throw new \DomainException(sprintf('%s %s figure déjà au registre des clés.', $nom, $prenom));
         }
 

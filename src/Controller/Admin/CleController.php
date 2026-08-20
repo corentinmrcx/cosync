@@ -14,6 +14,7 @@ use App\Security\CsrfGuard;
 use App\Service\Cle\AttestationCleService;
 use App\Service\Cle\CleRegistrePresenter;
 use App\Service\Cle\CleRegistreService;
+use App\Service\Cle\DetenteurLicenceSynchronizer;
 use App\Service\Cle\DetenteurService;
 use App\Service\Ui\ListFilterMemory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,6 +34,7 @@ class CleController extends AbstractController
         private readonly CleRegistreService $registre,
         private readonly CleRegistrePresenter $presenter,
         private readonly DetenteurService $detenteurService,
+        private readonly DetenteurLicenceSynchronizer $licenceSync,
         private readonly AttestationCleService $attestations,
         private readonly DetenteurRepository $detenteurRepo,
         private readonly ListFilterMemory $filterMemory,
@@ -51,6 +53,8 @@ class CleController extends AbstractController
 
         $search = trim((string) $request->query->get('search', ''));
         $statut = CleDetentionStatut::tryFrom((string) $request->query->get('statut', ''));
+
+        $this->licenceSync->pourSaison($season);
 
         $lignes = $this->presenter->lignes($season);
 

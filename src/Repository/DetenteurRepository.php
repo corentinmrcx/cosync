@@ -28,20 +28,4 @@ class DetenteurRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['numLicence' => $numLicence]);
     }
-
-    /**
-     * Repli quand la personne n'a pas de numéro de licence. Comparaison insensible
-     * à la casse : l'import FootClubs et la saisie manuelle ne capitalisent pas pareil.
-     */
-    public function findByNomPrenom(string $nom, string $prenom): ?Detenteur
-    {
-        return $this->createQueryBuilder('d')
-            ->where('LOWER(d.nom) = :nom')
-            ->andWhere('LOWER(d.prenom) = :prenom')
-            ->setParameter('nom', mb_strtolower($nom))
-            ->setParameter('prenom', mb_strtolower($prenom))
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
 }

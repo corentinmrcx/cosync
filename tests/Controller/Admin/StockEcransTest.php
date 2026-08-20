@@ -88,7 +88,11 @@ final class StockEcransTest extends WebTestCase
         self::assertSame([], $options($boisson), 'L\'épicerie porte sa contenance, pas une taille.');
     }
 
-    public function testUnArticleAGrilleNExposeQueLesDeclinaisonsDeSonFournisseur(): void
+    /**
+     * Une grille remplace les tailles qu'elle traduit, et laisse le reste tranquille : le 44
+     * se range en « 43-46 », le 42 — qu'aucune ligne ne mentionne — reste lui-même.
+     */
+    public function testUnArticleAGrilleExposeSesPlagesEtCeQuiPasseTelQuel(): void
     {
         $client = $this->loginAdmin();
 
@@ -96,6 +100,10 @@ final class StockEcransTest extends WebTestCase
         $this->em->persist($plage);
 
         $valeur = (new GrilleTailleValeur())->setCible($plage);
+        foreach (['43', '44', '45', '46'] as $libelle) {
+            $valeur->addCouverture($this->taillePointure($libelle));
+        }
+
         $grille = (new GrilleTaille())->setNom('Chaussettes Nike')->setType(TailleType::POINTURE);
         $grille->addValeur($valeur);
         $this->em->persist($grille);
@@ -110,9 +118,28 @@ final class StockEcransTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/stock/gestion');
         self::assertResponseIsSuccessful();
 
-        $expose = json_decode($crawler->filter('#tailles-' . $chaussettes->getId())->attr('value') ?? '', true);
+        $options = json_decode($crawler->filter('#tailles-' . $chaussettes->getId())->attr('value') ?? '', true)['options'];
 
-        self::assertSame(['43-46'], $expose['options'], 'Un réassort ne se range que sous ce que le fournisseur vend.');
+        self::assertContains('43-46', $options, 'La plage du fournisseur est une déclinaison.');
+        foreach (['43', '44', '45', '46'] as $traduite) {
+            self::assertNotContains($traduite, $options, 'Une taille traduite ne se range plus sous son propre nom.');
+        }
+        self::assertContains('42', $options, 'Aucune ligne ne le traduit : il reste lui-même.');
+    }
+
+    private function taillePointure(string $libelle): Taille
+    {
+        $existante = $this->em->getRepository(Taille::class)
+            ->findOneBy(['libelle' => $libelle, 'type' => TailleType::POINTURE]);
+
+        if ($existante !== null) {
+            return $existante;
+        }
+
+        $taille = (new Taille())->setLibelle($libelle)->setType(TailleType::POINTURE);
+        $this->em->persist($taille);
+
+        return $taille;
     }
 
     public function testUnArticleSansMouvementEstSignaleEnRupture(): void

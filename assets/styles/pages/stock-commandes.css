@@ -11,6 +11,32 @@
     color: var(--color-primary-dark);
 }
 
+/* — Désignation d'un article à commander —
+     Deux niveaux : ce qui sert à reconnaître l'article, puis ce qui sert à le retrouver au
+     catalogue. Mettre la référence au même poids que le nom ferait chercher au mauvais
+     endroit — on lit d'abord « Chaussettes · Erima · Noir », la réf ne vient qu'après. */
+.cmd-article-nom {
+    display: block;
+    font-weight: 600;
+    color: var(--color-text-body);
+}
+
+.cmd-article-meta {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.cmd-article-lien {
+    color: var(--color-text-muted);
+    text-decoration: underline;
+}
+
+.cmd-article-lien:hover {
+    color: var(--color-primary-dark);
+}
+
 .cmd-inline {
     display: inline-flex;
     align-items: center;

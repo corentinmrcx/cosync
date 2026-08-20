@@ -26,6 +26,7 @@ use App\Service\Dotation\DotationFlocageService;
 use App\Service\Dotation\DotationGroupeReglagesFactory;
 use App\Service\Dotation\DotationModeleFormContext;
 use App\Service\Dotation\DotationModeleService;
+use App\Service\Dotation\DotationProvenanceResolver;
 use App\Service\Dotation\DotationRemiseService;
 use App\Service\Dotation\DotationSuiviPresenter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -47,6 +48,7 @@ class DotationController extends AbstractController
         private readonly DotationEcoulementAllocator $ecoulementAllocator,
         private readonly DotationEcoulementService $ecoulementService,
         private readonly DotationFlocageService $flocageService,
+        private readonly DotationProvenanceResolver $provenance,
         private readonly DotationSuiviPresenter $suivi,
         private readonly DotationRemiseService $remiseService,
         private readonly DotationModeleService $modeleService,
@@ -344,6 +346,8 @@ class DotationController extends AbstractController
             'articlesParBesoin' => $this->ecoulementService->articlesParBesoin($groupes),
             'taillesParBesoin' => $this->suivi->taillesParBesoin($groupes),
             'flocagesParBesoin' => $this->flocageService->reglagesParBesoin($groupes),
+            // Après l'arbitrage : la provenance se lit sur l'article servi, pas sur celui du kit.
+            'provenanceParBesoin' => $this->provenance->parBesoin($season),
         ]);
     }
 

@@ -61,7 +61,9 @@
                 <tbody>
                     {% for ligne in commande.lignes %}
                         <tr>
-                            <td><span class="dot-item-nom">{{ ligne.stockItem.nom }}</span></td>
+                            <td>
+                                {% include 'admin/commandes/_article_cell.html.twig' with { item: ligne.stockItem } only %}
+                            </td>
                             <td>{% if ligne.taille %}<span class="dot-item-taille">{{ ligne.taille }}</span>{% else %}—{% endif %}</td>
                             <td>{{ ligne.quantite }}</td>
                             <td>{{ ligne.quantiteRecue }}</td>

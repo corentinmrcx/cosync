@@ -133,11 +133,17 @@
                                 </td>
                                 <td>{{ besoin.quantite }}</td>
                                 <td>
-                                    {% if besoin.statut.value == 'donne' %}
-                                        <span class="dot-badge dot-badge-done">{{ besoin.statut.label }}</span>
-                                    {% else %}
-                                        <span class="dot-badge dot-badge-todo">{{ besoin.statut.label }}</span>
-                                    {% endif %}
+                                    <div class="dot-statut-cell">
+                                        {% if besoin.statut.value == 'donne' %}
+                                            <span class="dot-badge dot-badge-done">{{ besoin.statut.label }}</span>
+                                        {% else %}
+                                            <span class="dot-badge dot-badge-todo">{{ besoin.statut.label }}</span>
+                                            {% include 'admin/dotations/_provenance_cell.html.twig' with {
+                                                besoin: besoin,
+                                                provenance: provenanceParBesoin[besoin.id] ?? null,
+                                            } only %}
+                                        {% endif %}
+                                    </div>
                                 </td>
                                 <td class="dot-table-action">
                                     {% if besoin.statut.value == 'donne' %}
