@@ -797,6 +797,41 @@
     color: var(--color-text-muted);
 }
 
+/* — Provenance : d'où sort l'article d'une ligne encore à remettre — */
+.dot-statut-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+.dot-provenance {
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    /* « À commander » se coupait en deux et doublait la hauteur de la ligne : la pastille
+       se lit d'un coup d'œil ou ne sert à rien. Le tableau défile déjà horizontalement. */
+    white-space: nowrap;
+    /* L'infobulle porte la désignation de l'article : le curseur doit l'annoncer. */
+    cursor: help;
+}
+
+.dot-provenance-en_stock {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.dot-provenance-commande {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+.dot-provenance-a_commander {
+    background: var(--color-bg-muted);
+    color: var(--color-text-muted);
+}
+
 @media (max-width: 640px) {
     .dot-page { padding: 1rem; }
 

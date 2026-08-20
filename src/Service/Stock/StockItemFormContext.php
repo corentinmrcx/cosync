@@ -38,36 +38,11 @@ final class StockItemFormContext
             // Toutes les grilles : le formulaire ne garde que celles de l'échelle choisie,
             // qui se décide dans le même écran.
             'grilles' => $this->grilleRepository->findAllOrdered(),
-            'ciblesEcoulement' => $this->ciblesEcoulement($item),
-            // Ce que cet article-ci écoule déjà : affiché en lecture seule côté article de
-            // kit, pour que l'admin voie la transition depuis les deux bouts.
+            // L'écoulement ne se déclare plus ici — il a son écran, où la règle se lit dans
+            // le sens de la décision. La fiche en garde la mention, des deux bouts : savoir
+            // qu'un stock part en dotation à la place d'un autre change ce qu'on en fait.
             'substituts' => $item !== null ? $this->itemRepository->findSubstituts($item) : [],
         ];
-    }
-
-    /**
-     * Articles de kit que celui-ci peut déclarer écouler. La cible déjà enregistrée y est
-     * réinjectée même archivée : sans elle, rouvrir la fiche pour changer une couleur
-     * effacerait silencieusement la règle d'écoulement.
-     *
-     * @return list<StockItem>
-     */
-    private function ciblesEcoulement(?StockItem $item): array
-    {
-        $cibles = $this->itemRepository->findCiblesEcoulementPossibles($item);
-        $actuelle = $item?->getRemplaceArticle();
-
-        if ($actuelle === null) {
-            return $cibles;
-        }
-
-        foreach ($cibles as $cible) {
-            if ($cible->getId() === $actuelle->getId()) {
-                return $cibles;
-            }
-        }
-
-        return [$actuelle, ...$cibles];
     }
 
     /**

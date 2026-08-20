@@ -68,6 +68,7 @@ final class AccesAdminTest extends WebTestCase
             '/admin/stock/mouvements',
             '/admin/stock/categories',
             '/admin/stock/fournisseurs',
+            '/admin/stock/ecoulement',
             '/admin/commandes',
             '/admin/dotations',
             '/admin/dotations/modeles',

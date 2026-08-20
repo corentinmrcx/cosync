@@ -1,0 +1,195 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_stock_item_label.html.twig' as article %}
+
+{% block title %}CoSync — Écoulement de stock{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Stock', route: 'admin_stock_dashboard' },
+    { label: 'Écoulement' }
+] } %}
+
+{# Le second sélecteur se construit côté client à partir du principal choisi : le type de
+   vêtement dit quel champ du dossier lire, deux types différents feraient servir la taille
+   du bas sur un haut. Les désignations sont rendues ici et non en JS — le nom seul ne
+   distingue pas deux déclinaisons du même article (§7.6 ter). Le serveur refait le contrôle. #}
+{# Deux listes, jamais une table indexée par id : `merge` renumérote les clés numériques,
+   si bien qu'un article se retrouvait avec le type de vêtement d'un autre — choisir des
+   chaussettes proposait des shorts en face. #}
+{% set principauxJs = [] %}
+{% for item in principauxPossibles %}
+    {% set principauxJs = principauxJs|merge([{
+        id: item.id,
+        type: item.typeVetement ? item.typeVetement.value : '',
+    }]) %}
+{% endfor %}
+{# La désignation vient de `getDesignation()`, pas de la macro : celle-ci rend du HTML déjà
+   échappé, que l'attribut `x-data` échapperait une seconde fois — « Veste d&#039;entrainement »
+   s'affichait tel quel dans le sélecteur. Les deux disent la même chose, nom · marque · couleur. #}
+{% set candidatsJs = [] %}
+{% for item in candidatsPossibles %}
+    {% set candidatsJs = candidatsJs|merge([{
+        id: item.id,
+        label: item.designation,
+        type: item.typeVetement ? item.typeVetement.value : '',
+    }]) %}
+{% endfor %}
+
+<div class="dot-page" x-data="ecoulementForm({{ {principaux: principauxJs, candidats: candidatsJs}|json_encode }})">
+
+    <div class="dot-header">
+        <div>
+            <h1 class="dot-title">Écoulement de stock</h1>
+        </div>
+        {% if principauxPossibles is not empty %}
+            {# Le bouton s'efface quand le formulaire s'ouvre : sa bascule « Annuler » ferait
+               doublon avec celui du pied, qui referme la même chose à deux centimètres du
+               bouton d'enregistrement. #}
+            <div class="dot-header-actions" x-show="!ouverture">
+                <button type="button" class="btn btn-primary" @click="ouverture = true">
+                    + Nouvelle correspondance
+                </button>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if principauxPossibles is not empty %}
+        <div class="dot-card" x-show="ouverture" x-cloak>
+            <div class="dot-card-header">
+                <h2 class="dot-card-title">Nouvelle correspondance</h2>
+            </div>
+
+            <form method="post" action="{{ path('admin_stock_ecoulement_lier') }}" class="ecl-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('stock_ecoulement_lier') }}">
+
+                <div class="ecl-form-champs">
+                    <div class="field">
+                        <label class="field-label" for="ecl-principal">On commande ça désormais</label>
+                        <select name="principal" id="ecl-principal" class="field-input" required x-model="principal">
+                            <option value="">— Choisir l'article —</option>
+                            {% for item in principauxPossibles %}
+                                <option value="{{ item.id }}">{{ article.label(item) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="ecl-a-ecouler">À écouler d'abord</label>
+                        <select name="a_ecouler" id="ecl-a-ecouler" class="field-input" required
+                                x-model="aEcouler" :disabled="principal === ''">
+                            <option value="" x-text="principal === '' ? '— Choisir l\'article principal d\'abord —' : '— Choisir l\'ancien stock —'"></option>
+                            <template x-for="candidat in candidatsFiltres" :key="candidat.id">
+                                <option :value="candidat.id" x-text="candidat.label"></option>
+                            </template>
+                        </select>
+                        <p class="ecl-aide" x-show="principal !== '' && candidatsFiltres.length === 0" x-cloak>
+                            Aucun autre article ne se mesure comme celui-ci : il n'y a rien à
+                            écouler à sa place.
+                        </p>
+                    </div>
+                </div>
+
+                {# Pied de formulaire centré : c'est une page, pas une modale (§7.6 bis). #}
+                <div class="ecl-form-actions">
+                    <button type="submit" class="btn btn-primary">Créer la correspondance</button>
+                    <button type="button" class="btn btn-ghost" @click="ouverture = false">Annuler</button>
+                </div>
+            </form>
+        </div>
+    {% endif %}
+
+    {% if correspondances is empty %}
+        <div class="dot-card">
+            <p class="dot-empty">Aucune correspondance.</p>
+        </div>
+    {% endif %}
+
+    {% for correspondance in correspondances %}
+        {% set principal = correspondance.principal %}
+        {% set candidats = candidatsParPrincipal[principal.id] ?? [] %}
+
+        <div class="dot-card" x-data="{ ajout: false }">
+
+            <div class="ecl-principal">
+                <span class="ecl-tag">On commande ça</span>
+                <span class="ecl-principal-nom">{{ article.label(principal) }}</span>
+                {% if not principal.actif %}
+                    <span class="dot-badge dot-badge-off">Archivé</span>
+                {% endif %}
+                <span class="ecl-principal-stock">{{ correspondance.stockPrincipal }} en stock</span>
+            </div>
+
+            <div class="ecl-substituts">
+                <p class="ecl-substituts-titre">À écouler d'abord</p>
+
+                {% for substitut in correspondance.substituts %}
+                    <div class="ecl-substitut{{ substitut.estEpuise ? ' ecl-substitut-epuise' }}">
+                        <span class="ecl-fleche" aria-hidden="true">↳</span>
+                        <span class="ecl-substitut-nom">{{ article.label(substitut.item) }}</span>
+
+                        {% if substitut.estEpuise %}
+                            <span class="ecl-pastille ecl-pastille-epuise"
+                                  title="Plus rien à servir : les dotations repartent sur l'article principal, qui se commande de nouveau. La règle peut rester en place.">Épuisé</span>
+                        {% else %}
+                            <span class="ecl-pastille ecl-pastille-restant">{{ substitut.restant }} restant{{ substitut.restant > 1 ? 's' : '' }}</span>
+                        {% endif %}
+
+                        <span class="ecl-substitut-meta">
+                            {{ substitut.dotationsServies }} dotation{{ substitut.dotationsServies > 1 ? 's' : '' }} servie{{ substitut.dotationsServies > 1 ? 's' : '' }}
+                        </span>
+
+                        <div class="ecl-substitut-actions">
+                            {# Inverser n'a de sens qu'à un seul ancien stock : au-delà, on ne
+                               saurait pas lequel prend la tête. #}
+                            {% if correspondance.substituts|length == 1 %}
+                                <form method="post" action="{{ path('admin_stock_ecoulement_inverser', {id: substitut.item.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('stock_ecoulement_inverser_' ~ substitut.item.id) }}">
+                                    <button type="submit" class="btn btn-secondary btn-sm"
+                                            title="Retourner le sens : c'est cet article-ci qu'on commandera désormais">⇅ Inverser</button>
+                                </form>
+                            {% endif %}
+
+                            {# Retirer la règle ne détruit aucune donnée : l'article redevient
+                               ordinaire et se commande. Registre du retrait, pas de la perte. #}
+                            <form method="post" action="{{ path('admin_stock_ecoulement_delier', {id: substitut.item.id}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('stock_ecoulement_delier_' ~ substitut.item.id) }}">
+                                <button type="submit" class="btn btn-ghost btn-sm"
+                                        title="Retirer : cet article se commandera de nouveau normalement">Retirer</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                {% if candidats is empty %}
+                    <p class="ecl-aide ecl-aide-vide">
+                        Aucun autre article du même type de vêtement à écouler ici.
+                    </p>
+                {% else %}
+                    <div class="ecl-ajout">
+                        <button type="button" class="btn btn-secondary btn-sm" x-show="!ajout" @click="ajout = true">
+                            + Ajouter un article à écouler
+                        </button>
+
+                        <form method="post" action="{{ path('admin_stock_ecoulement_lier') }}"
+                              class="ecl-ajout-form" x-show="ajout" x-cloak>
+                            <input type="hidden" name="_token" value="{{ csrf_token('stock_ecoulement_lier') }}">
+                            <input type="hidden" name="principal" value="{{ principal.id }}">
+                            <select name="a_ecouler" class="field-input field-input-compact" required
+                                    x-init="$watch('ajout', v => v && $nextTick(() => $el.focus()))">
+                                <option value="">— Choisir l'ancien stock —</option>
+                                {% for candidat in candidats %}
+                                    <option value="{{ candidat.id }}">{{ article.label(candidat) }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm">Ajouter</button>
+                            <button type="button" class="btn btn-ghost btn-sm" @click="ajout = false">Annuler</button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

@@ -5,7 +5,8 @@
    leur couleur. Partout où l'on demande à un admin de reconnaître un article — un
    sélecteur, une ligne de kit — la désignation doit les porter.
 
-   Même ordre que les écrans de stock : nom · marque · couleur.
+   Même ordre que les écrans de stock : nom · marque · couleur. `StockItem::getDesignation()`
+   en est le pendant côté PHP, pour les messages que les templates ne rendent pas (flashes).
 
    {% import 'components/_stock_item_label.html.twig' as article %}
    {{ article.label(item) }}      → « Maillot · Nike · Rouge »

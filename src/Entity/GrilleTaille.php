@@ -119,8 +119,27 @@ class GrilleTaille
     }
 
     /**
-     * Libellé fournisseur qui couvre cette taille déclarée, ou null si aucun ne la couvre —
-     * auquel cas le besoin de dotation reste sans taille et le suivi affiche « à renseigner ».
+     * Tailles déclarées que cette grille traduit — celles qui, pour un article rattaché, ne
+     * sont donc plus des déclinaisons de stock : le « 10 ans » se range en « 140 ».
+     *
+     * @return list<string>
+     */
+    public function libellesCouverts(): array
+    {
+        $libelles = [];
+        foreach ($this->valeurs as $valeur) {
+            foreach ($valeur->libellesCouverts() as $libelle) {
+                $libelles[] = $libelle;
+            }
+        }
+
+        return array_values(array_unique($libelles));
+    }
+
+    /**
+     * Libellé fournisseur qui couvre cette taille déclarée, ou null si la grille ne la
+     * mentionne pas — le fournisseur la vend alors sous son propre nom, et
+     * {@see \App\Service\Stock\StockTailleResolver::traduire()} la laisse passer telle quelle.
      */
     public function cibleQuiCouvre(string $tailleDeclaree): ?string
     {

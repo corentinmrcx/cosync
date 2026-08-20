@@ -144,12 +144,6 @@ class Detenteur
         return $this->createdAt;
     }
 
-    /** Clé de rapprochement avec l'effectif quand le numéro de licence manque. */
-    public function cleNomPrenom(): string
-    {
-        return mb_strtolower($this->nom) . '|' . mb_strtolower($this->prenom);
-    }
-
     public function __toString(): string
     {
         return $this->getNomPrenom();

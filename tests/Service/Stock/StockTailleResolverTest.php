@@ -80,15 +80,22 @@ final class StockTailleResolverTest extends TestCase
         );
     }
 
-    public function testUneGrilleRestreintLesDeclinaisonsACellesQueLeFournisseurVend(): void
+    /**
+     * Une grille écarte ce qu'elle traduit, et rien d'autre : le « 44 » disparaît parce qu'il
+     * se range en « 43-46 », mais le « 42 », qu'aucune ligne ne mentionne, reste une
+     * déclinaison valable — c'est bien sous ce nom-là que le fournisseur le vend.
+     *
+     * Même règle que `traduire()`, et il le faut : une taille que la dotation sert doit
+     * pouvoir se saisir en mouvement de stock.
+     */
+    public function testUneGrilleEcarteCeQuElleTraduitEtLaissePasserLeReste(): void
     {
         $chaussettes = $this->chaussettesAvecGrille();
+        $options = $this->resolver->options($chaussettes);
 
-        self::assertSame(
-            ['43-46'],
-            $this->resolver->options($chaussettes),
-            'Un article vendu en plages ne se range que sous ses plages, pas sous tout le référentiel.',
-        );
+        self::assertContains('43-46', $options, 'Le libellé du fournisseur est une déclinaison.');
+        self::assertNotContains('44', $options, 'Le 44 se range en 43-46 : il n\'en est plus une.');
+        self::assertContains('42', $options, 'Aucune ligne ne le traduit : il passe tel quel.');
     }
 
     public function testUneGrilleTraduitLaTailleDeclareeVersLeLibelleDuFournisseur(): void
@@ -99,10 +106,22 @@ final class StockTailleResolverTest extends TestCase
         self::assertSame('43-46', $this->resolver->traduire($chaussettes, '43'));
     }
 
-    public function testUneTailleQueLaGrilleNeCouvrePasNeSeTraduitPas(): void
+    /**
+     * Une grille ne traduit que ce qu'elle mentionne : le reste passe tel quel.
+     *
+     * C'est le cas courant d'un fournisseur qui ne relabellise qu'une partie de sa gamme —
+     * les vestes enfant en « 140 », les adultes en « L ». Exiger que la grille couvre le
+     * référentiel entier obligeait à écrire « L couvre L », « M couvre M »… : une cérémonie
+     * qui n'apprend rien, qu'on oublie, et dont l'oubli envoyait chaque adulte en
+     * « à renseigner ».
+     *
+     * Le prix assumé : une taille que le fournisseur ne vend réellement pas — ici le 42 d'un
+     * catalogue en plages — ressort telle quelle au lieu de signaler un trou. L'écran de la
+     * grille liste ce qui passe sans traduction, c'est là qu'on le voit.
+     */
+    public function testUneTailleQueLaGrilleNeMentionnePasPasseTelleQuelle(): void
     {
-        // Mieux vaut pas de taille qu'une taille fausse : le suivi affichera « à renseigner ».
-        self::assertNull($this->resolver->traduire($this->chaussettesAvecGrille(), '42'));
+        self::assertSame('42', $this->resolver->traduire($this->chaussettesAvecGrille(), '42'));
     }
 
     public function testSansGrilleLaTailleDeclareePasseTelleQuelle(): void

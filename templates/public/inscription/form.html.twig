@@ -88,13 +88,22 @@
                 {% if dotationGroupes|default([]) is not empty or dotationAutos|default([]) is not empty %}
                     <hr class="inscription-question-divider">
                     <p class="inscription-section-title">Votre dotation</p>
-                    <p class="inscription-section-hint">Les équipements que le club vous remet cette saison.</p>
+                    {# L'intitulé doit annoncer qu'on attend une sélection, pas seulement ce que
+                       le club remet : un groupe de choix non répondu fait rejeter la soumission
+                       entière (DotationChoixRequestFactory). Deux options alignées sous « les
+                       équipements que le club vous remet » se lisaient comme un inventaire — on
+                       comprenait qu'on recevait les deux, et on passait à l'étape suivante sans
+                       rien cocher. #}
+                    <p class="inscription-section-hint">
+                        Les équipements que le club vous remet cette saison.
+                        {%- if dotationGroupes|default([]) is not empty %} Choisissez le modèle que vous préférez{{ dotationGroupes|length > 1 ? ' dans chaque liste' : '' }}.{% endif %}
+                    </p>
                 {% endif %}
 
                 {% for grp in dotationGroupes|default([]) %}
                     <div class="inscription-question-block">
-                        {# Un seul choix : « Votre dotation » au-dessus suffit, répéter un intitulé
-                           n'ajoute rien. Plusieurs choix : il faut bien les distinguer. #}
+                        {# Un seul choix : la consigne au-dessus porte déjà la demande, répéter un
+                           intitulé n'ajoute rien. Plusieurs choix : il faut bien les distinguer. #}
                         {% if dotationGroupes|length > 1 %}
                             <span class="inscription-question-label">{{ grp.groupe }} *</span>
                         {% endif %}

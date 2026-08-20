@@ -1,0 +1,177 @@
+/* — Écoulement de stock (/admin/stock/ecoulement) —
+     La page reprend la mise en page commune des référentiels (`dot-page`, `dot-card`,
+     `dot-header`) ; seuls les éléments propres aux correspondances sont définis ici. En
+     redéfinir une copie locale, comme la première version le faisait, redonnait une largeur
+     et des marges qui n'étaient celles d'aucun autre écran. */
+
+/* — Formulaire de nouvelle correspondance —
+     Deux champs de même largeur, côte à côte au-delà de 34rem, empilés en dessous. La grille
+     est ce qui les tient à la même taille : en flex, deux `flex-basis` identiques divergent
+     dès que le contenu d'un `<select>` est plus long que l'autre. */
+.ecl-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ecl-form-champs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: 1rem;
+}
+
+/* Pied de formulaire de page : centré. Seules les modales alignent à droite (§7.6 bis). */
+.ecl-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-border);
+}
+
+/* — Article principal — */
+.ecl-principal {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.ecl-tag {
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ecl-principal-nom {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.ecl-principal-stock {
+    margin-left: auto;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* — Anciens stocks, en retrait derrière un filet : la hiérarchie est ce qui dit lequel des
+     deux se commande. Les mettre au même niveau ramènerait la confusion que la page corrige. */
+.ecl-substituts {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--color-border);
+    padding-left: 0.75rem;
+    margin-left: 0.35rem;
+}
+
+.ecl-substituts-titre {
+    margin: 0 0 0.35rem 1.5rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.ecl-substitut {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-left: 0.75rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--color-border);
+}
+
+/* Épuisé n'est pas une erreur : la règle tient toujours, elle n'a plus rien à servir. */
+.ecl-substitut-epuise .ecl-substitut-nom {
+    color: var(--color-text-muted);
+}
+
+.ecl-fleche {
+    color: var(--color-text-disabled);
+    font-size: var(--font-size-lg);
+    line-height: 1;
+}
+
+.ecl-substitut-nom {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+}
+
+.ecl-substitut-meta {
+    margin-left: auto;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* Même taille pour les boutons d'une même rangée (§7.6 bis). */
+.ecl-substitut-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ecl-pastille {
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.ecl-pastille-restant {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.ecl-pastille-epuise {
+    background: var(--color-bg-muted);
+    color: var(--color-text-muted);
+    cursor: help;
+}
+
+/* — Ajout d'un ancien stock à une correspondance existante — */
+.ecl-ajout {
+    margin-left: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.ecl-ajout-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.ecl-ajout-form .field-input { flex: 1 1 14rem; min-width: 0; width: auto; }
+
+.ecl-aide {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.ecl-aide-vide {
+    margin-left: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 640px) {
+    /* Le méta passe sous le nom : le garder collé à droite écrasait la désignation de
+       l'article, qui est ce qu'on vient lire. */
+    .ecl-substitut-meta,
+    .ecl-principal-stock { margin-left: 0; width: 100%; }
+
+    .ecl-substitut-actions { width: 100%; }
+    .ecl-substitut-actions form { flex: 1 1 0; }
+    .ecl-substitut-actions .btn { width: 100%; }
+
+    .ecl-form-actions > .btn { width: 100%; }
+}

@@ -61,13 +61,17 @@ final class DotationGrilleTailleTest extends StockIntegrationTestCase
         self::assertSame('XL', $this->besoinUnique()->getTaille(), 'Sans grille, il n\'y a rien à traduire.');
     }
 
-    public function testUnePointureQueLaGrilleNeCouvrePasLaisseLeBesoinARenseigner(): void
+    /**
+     * Une grille ne traduit que ce qu'elle mentionne. Le 48, qu'aucune plage ne couvre, sort
+     * tel quel — comme si l'article n'avait pas de grille du tout, ce qui est exactement ce
+     * que « la grille ne dit rien de cette taille » veut dire.
+     */
+    public function testUnePointureQueLaGrilleNeMentionnePasSortTelleQuelle(): void
     {
-        // La grille du fournisseur s'arrête à 46 : le licencié en 48 se règle à la main.
         $besoin = $this->besoinDeChaussettes('48');
 
-        self::assertNull($besoin->getTaille(), 'Une taille non couverte ne doit pas produire de déclinaison inventée.');
-        self::assertFalse($besoin->isTailleManuelle(), 'Le besoin reste en déduction automatique : couvrir la taille suffira à le remplir.');
+        self::assertSame('48', $besoin->getTaille());
+        self::assertFalse($besoin->isTailleManuelle(), 'Rien n\'a été fixé à la main : ajouter la plage remplacera la valeur.');
     }
 
     public function testAnnulerLaRemiseRestitueLaDeclinaisonDuFournisseur(): void
@@ -134,9 +138,13 @@ final class DotationGrilleTailleTest extends StockIntegrationTestCase
         self::assertFalse($besoin->isTailleManuelle());
     }
 
-    public function testUnBesoinNonTraduitNeSeCommandeSousAucuneTaille(): void
+    /**
+     * Une pointure hors des plages saisies se commande sous son propre nom. C'est ce que
+     * l'admin voit sur le bon de commande — « Chaussettes · 48 » — et c'est de là qu'il sait
+     * qu'une plage manque à la grille, sans qu'une ligne sans taille lui reste sur les bras.
+     */
+    public function testUnBesoinNonTraduitSeCommandeSousSaTailleDeclaree(): void
     {
-        // Pointure hors des plages saisies : rien ne doit être commandé sous une taille inventée.
         $besoin = $this->besoinDeChaussettes('48');
         $item = $besoin->getStockItem();
 
@@ -149,7 +157,7 @@ final class DotationGrilleTailleTest extends StockIntegrationTestCase
             }
         }
 
-        self::assertSame([null], $lignes, 'La ligne existe — le besoin est réel — mais sans taille : elle réclame une décision, pas une plage devinée.');
+        self::assertSame(['48'], $lignes, 'La taille déclarée, pas une plage devinée ni un trou.');
     }
 
     /** Un licencié à la pointure donnée, doté de chaussettes vendues en plages. */

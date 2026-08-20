@@ -138,12 +138,16 @@ class StockController extends AbstractController
     /**
      * Lit les champs conditionnels du formulaire article et délègue l'application au service.
      *
-     * @throws \DomainException si la grille de tailles ne convient pas à l'article
+     * L'écoulement ne s'écrit plus ici : il se déclare sur son propre écran, dans le sens où
+     * la décision se prend. Le rebrancher sur ce formulaire effacerait la règle à chaque
+     * enregistrement — le champ n'y est plus, un `remplaceArticle` absent vaudrait « aucun ».
+     *
+     * @throws \DomainException si la grille de tailles ne convient pas à l'article, ou si son
+     *                          type de vêtement change alors qu'une correspondance en dépend
      */
     private function applyEditableFields(StockItem $item, Request $request): void
     {
         $grilleId = (string) $request->request->get('grilleTaille', '');
-        $remplaceId = (string) $request->request->get('remplaceArticle', '');
 
         $this->itemService->applyEditableFields(
             $item,
@@ -153,12 +157,6 @@ class StockController extends AbstractController
             trim((string) $request->request->get('taille', '')) ?: null,
             StockItemVetementType::tryFrom((string) $request->request->get('typeVetement', '')),
             $grilleId === '' ? null : $this->grilleRepository->find((int) $grilleId),
-        );
-
-        // Après le type de vêtement : c'est lui qui décide si l'écoulement est admissible.
-        $this->itemService->appliquerEcoulement(
-            $item,
-            $remplaceId === '' ? null : $this->itemRepository->find((int) $remplaceId),
         );
     }
 

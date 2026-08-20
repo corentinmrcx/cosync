@@ -1,0 +1,21 @@
+{% import 'components/_stock_item_label.html.twig' as article %}
+{# D'où sort l'article de cette ligne : de l'armoire, d'une commande en route, ou de rien.
+
+   Le suivi disait quoi remettre, jamais si c'est déjà là. Celui qui prépare une remise
+   ouvrait donc les cartons pour le découvrir, et rien ne distinguait une ligne servie par
+   l'ancien stock d'une ligne qui attend un colis.
+
+   L'infobulle porte la désignation complète de l'article **servi** — marque, couleur,
+   taille : quand un stock en cours d'écoulement remplace celui du kit, c'est cette
+   paire-là qu'il faut aller chercher, pas celle qui est écrite dans le modèle.
+
+   `besoin` = App\Entity\DotationBesoin, `provenance` = App\Enum\DotationProvenance ou null. #}
+{% if provenance is not null %}
+    {% set servi = besoin.articleServi %}
+    {% set designation = article.label(servi) ~ (besoin.taille ? ' — taille ' ~ besoin.taille : '') %}
+
+    <span class="dot-provenance dot-provenance-{{ provenance.value }}"
+          title="{{ provenance.explication }} : {{ designation }}">
+        {{ provenance.label }}
+    </span>
+{% endif %}

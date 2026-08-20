@@ -6,7 +6,6 @@
 {% set initialKind = item and item.kind ? item.kind.value : 'equipement' %}
 {% set initialTypeVetement = item and item.typeVetement ? item.typeVetement.value : '' %}
 {% set initialGrille = item and item.grilleTaille ? item.grilleTaille.id : '' %}
-{% set initialRemplace = item and item.remplaceArticle ? item.remplaceArticle.id : '' %}
 
 {# Échelle de tailles impliquée par le type de vêtement : elle décide des grilles proposées.
    Le serveur refait le contrôle — un onglet resté ouvert pendant qu'une grille changeait
@@ -15,7 +14,6 @@
     kind: initialKind,
     typeVetement: initialTypeVetement,
     grille: initialGrille,
-    remplace: initialRemplace,
 }|json_encode %}
 
 {% block content %}
@@ -128,42 +126,29 @@
                 </div>
             </template>
 
-            {# ── Écoulement ──
-               La règle se déclare ici, sur le stock qui reste, et pas kit par kit : le club
-               change de fournisseur une fois. Réservée à l'équipement — l'épicerie ne se dote
-               pas. Les cibles proposées sont restreintes au même type de vêtement, sans quoi
-               la dotation irait lire la taille du bas pour servir un haut ; le serveur refait
-               le contrôle. #}
-            <template x-if="kind === 'equipement'">
+            {# ── Écoulement, en lecture seule ──
+               La règle ne se déclare plus ici. Vue depuis la fiche de l'ancien stock, elle se
+               lit à l'envers de la décision qu'elle traduit — on ne se dit pas « ces Nike
+               remplacent les ERIMA », on se dit « je commande de l'ERIMA, il me reste des
+               Nike ». Elle se pose donc sur /admin/stock/ecoulement, dans ce sens-là, et un
+               seul écran la porte. La mention reste : consulter un article sans savoir que
+               son stock part en dotation à la place d'un autre serait pire que le silence. #}
+            {% if item and (item.remplaceArticle or substituts is not empty) %}
                 <div class="field">
                     <div class="stock-items-section-title">Écoulement de stock</div>
-                    <label class="field-label">Cet article en remplace un autre</label>
-                    <select name="remplaceArticle" class="field-input" x-model="remplace">
-                        <option value="">— Non : cet article se commande normalement —</option>
-                        {% for cible in ciblesEcoulement %}
-                            <option value="{{ cible.id }}"
-                                    :hidden="typeVetement !== '{{ cible.typeVetement ? cible.typeVetement.value : '' }}'">
-                                {{ article.label(cible) }}
-                            </option>
-                        {% endfor %}
-                    </select>
                     <p class="stock-items-help">
-                        Pour un reste de stock qu'on écoule avant de commander du neuf — les
-                        chaussettes de l'ancien fournisseur, servies tant qu'il y en a dans la
-                        bonne taille. Les dotations qui attendent l'article choisi ici piochent
-                        d'abord dans celui-ci, et cet article-là n'est jamais commandé.
+                        {% if item.remplaceArticle %}
+                            Cet article est <strong>écoulé avant de commander</strong>
+                            {{ article.label(item.remplaceArticle) }}.
+                        {% endif %}
+                        {% if substituts is not empty %}
+                            Écoulé d'abord à sa place :
+                            {% for substitut in substituts %}{{ article.label(substitut) }}{{ not loop.last ? ', ' }}{% endfor %}.
+                        {% endif %}
+                        <a href="{{ path('admin_stock_ecoulement_index') }}">Gérer les correspondances ↗</a>
                     </p>
-
-                    {% if substituts is not empty %}
-                        <p class="stock-items-help">
-                            <strong>Écoulé d'abord à la place de cet article :</strong>
-                            {% for substitut in substituts %}
-                                {{ article.label(substitut) }}{{ not loop.last ? ',' }}
-                            {% endfor %}
-                        </p>
-                    {% endif %}
                 </div>
-            </template>
+            {% endif %}
 
             {# ── Catégorisation ── #}
             <div class="stock-items-section-title">Catégorisation</div>
