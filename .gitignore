@@ -54,3 +54,5 @@ google-service-account.json
 /phpstan.neon
 /.phpstan.cache
 ###< phpstan/phpstan ###
+
+/prepa_epic
