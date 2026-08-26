@@ -12,13 +12,35 @@
 
 <div class="licencies-page">
 
-    {% if liensEnAttente > 0 %}
-        <div class="licencies-liens-attente">
-            <p class="licencies-liens-attente-texte">
-                <strong>{{ liensEnAttente }}</strong> licencié{{ liensEnAttente > 1 ? 's' }} n'{{ liensEnAttente > 1 ? 'ont' : 'a' }}
-                jamais reçu {{ liensEnAttente > 1 ? 'leur' : 'son' }} lien d'inscription.
-            </p>
-            <a href="{{ path('admin_licencies_send_links') }}" class="btn btn-primary btn-sm">Envoyer les liens</a>
+    {% if liensEnAttente > 0 or signaturesEnAttente > 0 %}
+        <div class="effectif-alertes">
+
+            {% if liensEnAttente > 0 %}
+                {% embed 'components/_effectif_alerte.html.twig' with {
+                    nb: liensEnAttente,
+                    url: path('admin_licencies_send_links'),
+                    libelle: 'Envoyer les liens',
+                } only %}
+                    {% block texte %}
+                        <strong>{{ nb }}</strong> licencié{{ nb > 1 ? 's' }} n'{{ nb > 1 ? 'ont' : 'a' }}
+                        jamais reçu {{ nb > 1 ? 'leur' : 'son' }} lien d'inscription.
+                    {% endblock %}
+                {% endembed %}
+            {% endif %}
+
+            {% if signaturesEnAttente > 0 %}
+                {% embed 'components/_effectif_alerte.html.twig' with {
+                    nb: signaturesEnAttente,
+                    url: path('admin_licencies_request_signatures'),
+                    libelle: 'Demander les signatures',
+                } only %}
+                    {% block texte %}
+                        <strong>{{ nb }}</strong> licencié{{ nb > 1 ? 's' }} {{ nb > 1 ? 'ont' : 'a' }}
+                        un document à signer — ajouté après {{ nb > 1 ? 'leur' : 'son' }} inscription.
+                    {% endblock %}
+                {% endembed %}
+            {% endif %}
+
         </div>
     {% endif %}
 

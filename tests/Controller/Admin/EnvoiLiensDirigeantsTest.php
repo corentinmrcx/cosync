@@ -158,7 +158,7 @@ final class EnvoiLiensDirigeantsTest extends WebTestCase
 
         $crawler = $client->request('GET', '/admin/effectif/dirigeants');
 
-        self::assertStringContainsString('jamais reçu', $crawler->filter('.dirigeants-liens-attente')->text());
+        self::assertStringContainsString('jamais reçu', $crawler->filter('.effectif-alerte')->first()->text());
     }
 
     private function relire(Dirigeant $dirigeant): Dirigeant

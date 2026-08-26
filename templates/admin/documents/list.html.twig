@@ -77,8 +77,15 @@
                             <a href="{{ path('admin_documents_edit', {id: doc.id}) }}" class="btn btn-secondary">Modifier</a>
                             <a href="{{ path('admin_documents_apercu', {id: doc.id}) }}" target="_blank" class="btn btn-secondary">Aperçu PDF</a>
 
-                            {% if doc.cible.value == 'dirigeant' and doc.actif and stats[doc.id].enAttente > 0 %}
-                                <a href="{{ path('admin_documents_relancer', {id: doc.id}) }}" class="btn btn-secondary">Relancer</a>
+                            {# Simple raccourci de navigation, pas une action : relancer les gens se
+                               fait dans l'effectif, cet écran sert à préparer les documents.
+                               `relancables`, pas `enAttente` : côté joueurs, celui qui n'a pas fini
+                               son inscription n'a pas signé mais ne se relance pas. #}
+                            {% if doc.actif and stats[doc.id].relancables > 0 %}
+                                <a href="{{ doc.cible.value == 'dirigeant'
+                                        ? path('admin_dirigeants_request_signatures')
+                                        : path('admin_licencies_request_signatures') }}"
+                                   class="btn btn-secondary">Demander les signatures</a>
                             {% endif %}
 
                             <form method="post" action="{{ path('admin_documents_toggle', {id: doc.id}) }}">

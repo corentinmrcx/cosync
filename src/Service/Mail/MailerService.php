@@ -52,6 +52,23 @@ final class MailerService
     }
 
     /**
+     * Demande de signature d'un document ajouté après l'inscription. Distinct du lien
+     * de complétion : celui-là ne redemande aucune autorisation, il ne fait signer.
+     */
+    public function sendSignatureLink(Licencie $licencie): void
+    {
+        $this->clubMailer->envoyer(
+            $this->adresseDe($licencie),
+            'Un document à signer',
+            'email/signature_link.html.twig',
+            [
+                'licencie' => $licencie,
+                'url' => $this->lienPublic('public_inscription_signer', $licencie->getUuid()),
+            ],
+        );
+    }
+
+    /**
      * Accusé de réception du formulaire, avec les instructions de paiement correspondant
      * au(x) mode(s) déclaré(s) et les documents signés en pièces jointes.
      *

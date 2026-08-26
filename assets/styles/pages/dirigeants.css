@@ -5,25 +5,6 @@
     padding: 1.5rem;
     gap: 1.25rem;
 }
-/* Bandeau d'appel vers l'envoi groupé : sans lui, l'écran d'envoi n'a aucun chemin
-   visible depuis la liste, et les liens ne partiraient jamais. */
-.dirigeants-liens-attente {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    padding: 0.75rem 0.875rem;
-    border: 1px solid var(--color-info);
-    border-radius: var(--radius-md);
-    background: var(--color-info-bg);
-}
-
-.dirigeants-liens-attente-texte {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-body);
-    margin: 0;
-}
 
 /* — Vide — */
 .dirigeants-empty {

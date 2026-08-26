@@ -10,6 +10,7 @@ use App\DTO\FiltreListe;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
 use App\DTO\PaiementManuelData;
+use App\DTO\RelanceResultat;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\Team;
@@ -29,6 +30,8 @@ use App\Repository\TransactionRepository;
 use App\Security\CsrfGuard;
 use App\Security\Voter\SuperAdminVoter;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Document\SignatureCompletionService;
+use App\Service\Document\SignatureRelanceService;
 use App\Service\Dotation\DotationSuiviPresenter;
 use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Inscription\AutorisationCompletionService;
@@ -64,6 +67,8 @@ class LicencieController extends AbstractController
         private readonly PaiementService $paiementService,
         private readonly HistoriqueFicheService $historiqueService,
         private readonly DocumentRequirementResolver $documentResolver,
+        private readonly SignatureCompletionService $signatureCompletion,
+        private readonly SignatureRelanceService $relanceService,
         private readonly SuppressionFicheService $suppressionService,
     ) {}
 
@@ -128,6 +133,9 @@ class LicencieController extends AbstractController
             'page' => $page,
             'pages' => $pages,
             'liensEnAttente' => $this->licencieRepo->countLienJamaisEnvoye($season),
+            // Signalé au même endroit que les liens jamais envoyés : c'est la même
+            // question — qui reste-t-il à relancer avant que la saison démarre ?
+            'signaturesEnAttente' => count($this->relanceService->licencies($season)),
             'edition' => $edition,
         ]);
     }
@@ -183,6 +191,18 @@ class LicencieController extends AbstractController
         ]);
     }
 
+    /** Le compte rendu nomme ce qui reste à faire à la main : sans email, aucun lien ne part. */
+    private function resumeRelance(RelanceResultat $resultat, string $population): string
+    {
+        $resume = sprintf('%d lien%s envoyé%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '');
+
+        if ($resultat->sansEmail > 0) {
+            $resume .= sprintf(', %d %s%s sans adresse email à prévenir autrement', $resultat->sansEmail, $population, $resultat->sansEmail > 1 ? 's' : '');
+        }
+
+        return $resume . '.';
+    }
+
     private function resumeEnvoi(EnvoiGroupeResultat $resultat): string
     {
         $parties = [sprintf('%d lien%s envoyé%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '')];
@@ -205,6 +225,48 @@ class LicencieController extends AbstractController
      * et ce qui est refusé avec son motif. Déclaré avant `/{uuid}` : sans cela, « supprimer »
      * serait lu comme l'uuid d'une fiche.
      */
+    /**
+     * Relance groupée des signatures manquantes. Déclaré avant la route `/{uuid}` :
+     * sans cela, « demander-signatures » serait lu comme un uuid.
+     *
+     * Cet écran vit ici, avec la population, et non dans « Documents à signer » : ce
+     * dernier sert à préparer les documents, pas à relancer les gens. Frère de
+     * « Envoyer les liens », dont il reprend le vocabulaire — cases à cocher comprises.
+     */
+    #[Route('/demander-signatures', name: 'request_signatures', methods: ['GET', 'POST'])]
+    public function requestSignatures(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('demander_signatures_licencies', $request);
+
+            $resultat = $this->relanceService->relancerLicencies(
+                $season,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $resultat->envoyes > 0 ? 'success' : 'info',
+                $this->resumeRelance($resultat, 'joueur'),
+            );
+
+            return $this->redirectToRoute('admin_licencies_list');
+        }
+
+        $lignes = $this->relanceService->licencies($season);
+
+        return $this->render('admin/effectif/demander_signatures.html.twig', [
+            'lignes' => $lignes,
+            'joignables' => $this->relanceService->uuidsJoignables($lignes),
+            'population' => 'joueur',
+            'tokenId' => 'demander_signatures_licencies',
+            'actionUrl' => $this->generateUrl('admin_licencies_request_signatures'),
+            'retourUrl' => $this->generateUrl('admin_licencies_list'),
+            'intro' => 'Un joueur dont le dossier était déjà complet n\'a plus de lien valide : ajouter un document ne le prévient pas. Chaque personne cochée reçoit un lien rouvert pour 30 jours vers un parcours réduit à la signature — ni tailles, ni autorisations, ni paiement ne lui sont redemandés. Ceux qui n\'ont pas terminé leur inscription ne sont pas listés : leur formulaire leur présentera ces documents avec le reste.',
+        ]);
+    }
+
     #[Route('/supprimer', name: 'delete_confirm', methods: ['POST'])]
     #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
     public function deleteConfirm(
@@ -426,6 +488,9 @@ class LicencieController extends AbstractController
             // une liste figée, elle suit ce que la saison demande.
             'documents' => $this->documentResolver->attendusPourLicencie($licencie),
             'signatures' => $this->documentResolver->signaturesParDocumentPourLicencie($licencie),
+            // Un document ajouté depuis l'inscription : le dossier est complet, son lien
+            // est consommé, rien ne le lui redemanderait sans ce bouton.
+            'signatureManquante' => $this->signatureCompletion->hasMissing($licencie),
         ]);
     }
 
@@ -537,6 +602,35 @@ class LicencieController extends AbstractController
         $this->paiementService->validerManuellement($licencie);
 
         $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' validée manuellement.');
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+    }
+
+    #[Route('/{uuid}/demander-signature', name: 'request_signature', methods: ['POST'])]
+    public function requestSignature(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('request_signature_' . $licencie->getUuid(), $request);
+
+        if ($licencie->getEmail() === null) {
+            $this->addFlash('error', 'Ce licencié n\'a pas d\'adresse email renseignée.');
+
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+        }
+
+        if (!$this->signatureCompletion->hasMissing($licencie)) {
+            $this->addFlash('error', 'Aucun document en attente de signature pour ce licencié.');
+
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+        }
+
+        try {
+            $this->inscriptionLinkService->sendSignature($licencie);
+            $this->addFlash('success', 'Demande de signature envoyée à ' . $licencie->getEmail() . '.');
+        } catch (\Throwable) {
+            $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
+        }
 
         return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
     }

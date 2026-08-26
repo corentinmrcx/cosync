@@ -20,13 +20,13 @@ Ils sont dérivés des documents de `prepa_epic/`, qui sont le compte-rendu de l
 | [08](08-cagnotte-equipe.md) | Cagnotte collective par équipe | S | — | rien n'existe |
 | [09](09-actions-reunion.md) | Suivi des décisions de réunion | **XS** | — | rien n'existe |
 | [10](10-delta-dotation-budget.md) | *Delta* — Dotation : le volet budgétaire | M | — | ✅ fonctionnel déjà livré |
-| [11](11-delta-blocage-licence.md) | *Delta* — Bloquer la validation sans signature | **S** | — | ✅ signature déjà livrée |
+| [11](11-delta-blocage-licence.md) | *Delta* — Bloquer la validation sans signature | **S** | — | ✅ **traitée** — voir ci-dessous |
 
 ---
 
 ## Ordre de construction recommandé
 
-**Commencer par 11, 09 et 06.** Ce sont les trois plus petites, et chacune est autonome. La 11 en particulier ferme un trou réel en production : aujourd'hui une licence peut être validée — et un kit de dotation préparé — sans qu'aucun règlement ait été signé.
+**La 11 est traitée** (cf. « Ce qui a été traité » ci-dessous). **Commencer par 09 et 06** : ce sont les deux plus petites restantes, et chacune est autonome.
 
 Ensuite **01 puis 02**, dans cet ordre : le référentiel tarifaire est le socle du budget, et il se remplit en une soirée. Attaquer Finance sans lui revient à ressaisir les mêmes montants dans deux endroits.
 
@@ -37,15 +37,64 @@ Ensuite **01 puis 02**, dans cet ordre : le référentiel tarifaire est le socle
 **05 en dernier des chantiers structurants** : c'est la seule qui touche un champ (`Dirigeant.role`) dont dépendent la dotation et les documents signés. Elle mérite d'être faite quand le reste est stable.
 
 ```
-11 ─ 09 ─ 06        (petites, autonomes, tout de suite)
-        │
-01 ─────┴─ 02       (le socle, puis le budget)
-   04 ──────┘       (l'effectif réel avant les recettes)
+11                  ✅ traitée
+
+09   06             (petites, autonomes, tout de suite)
+
+01 ──┐
+     ├── 02         (le socle et l'effectif réel, puis le budget)
+04 ──┘
 
 03   07   08   10   (indépendantes, au fil du besoin)
 
 05                  (en dernier : touche un existant très branché)
 ```
+
+---
+
+## Ce qui a été traité
+
+### 11 — Delta blocage de licence ✅ *(août 2026)*
+
+**Le verrou de validation a été écarté, sa prémisse ne tenait pas.** Le §3 de l'epic décrit une
+fiche créée à la main dont l'admin confirmerait le paiement sans aucune signature. Vérification
+faite dans le code : le bouton « Gérer les paiements » n'apparaît que si `DossierClub.formCompletedAt`
+est renseigné, et « Valider quand même » vit **dans** cette modale. Une fiche qui n'a jamais été
+remplie ne peut donc pas recevoir de paiement par l'interface, et le parcours public exige déjà
+toutes les signatures avant de soumettre. Le scénario n'est pas atteignable.
+
+Sont écartés en conséquence — et ne doivent pas être repris sans nouvelle raison :
+
+| Lot de l'epic | Décision |
+|---|---|
+| 1 — Écran de contrôle en mode aperçu | Écarté : construit, puis supprimé. Il comptait les licences validées sans signature ; le décompte est nul par construction |
+| 2 — Verrou dans `PaiementService` + `Season.signatureBloqueValidation` | Écarté : l'interface interdit déjà le scénario. **Aucune migration n'a été créée** |
+| 3 — Revalidation automatique à la signature | Sans objet : sans verrou, aucun dossier ne se bloque |
+| 4 — Forçage administratif motivé | Sans objet : rien à forcer |
+
+**Ce qui a été livré à la place**, c'est le second trou que le §3 mentionnait — le seul réel : un
+document ajouté **en cours de saison** n'est jamais signé par ceux dont le dossier était déjà
+complet, leur lien étant consommé et leur formulaire ne repassant plus.
+
+- `SignatureCompletionService` — les documents qu'il reste à signer, **une fois le dossier terminé
+  seulement** : tant qu'il ne l'est pas, c'est le lien d'inscription qui s'impose, et deux liens
+  vivants sur la même personne la feraient signer deux fois
+- `SignatureRelanceService` — la règle d'éligibilité, tenue une seule fois pour les deux
+  populations et dans les deux sens (ce que l'écran affiche, ce que l'envoi accepte)
+- Parcours public `/inscription/{uuid}/signer` — lecture et signature, rien d'autre redemandé
+  (ni tailles, ni autorisations, ni paiement) ; lien à usage unique
+- Bouton **« Demander la signature »** sur la fiche joueur, et écrans groupés
+  **« Demander les signatures »** sous Joueurs et sous Dirigeants — cases à cocher, sur le modèle
+  d'« Envoyer les liens »
+
+**Deux points d'ergonomie à ne pas défaire.** La relance vit dans l'**effectif**, avec la
+population, et non dans « Documents à signer » qui sert à *préparer* les documents — mélanger les
+deux avait produit le second défaut : le regroupement est **par personne**, jamais par document,
+car les parcours publics présentent tous les documents manquants d'un coup et une relance par
+document enverrait deux mails à qui en doit deux.
+
+**Si un jour un chemin de validation contourne le formulaire** — import de paiements, API, saisie
+en masse — la question du verrou se reposera. Elle ne se pose pas avant.
 
 ---
 
@@ -55,7 +104,7 @@ Deux des huit documents de `prepa_epic/` décrivent des besoins que CoSync **cou
 
 **Dotation** — les six besoins listés au §3.3 du document source existent tous en production : le choix par licencié avec la règle « nouveau → veste imposée / renouvellement → choix libre » (`DotationEligibilite`), la personnalisation, les paliers dirigeants par rôle sans cumul (`DotationCibleType::ROLE` + `DotationAffectation::priorite()`), la configuration par saison, la liste de commande fournisseur, l'historique des choix. Le module va au-delà : grilles de tailles fournisseur, écoulement de l'ancien stock, corrections tracées. **Seul le chiffrage manque.**
 
-**Règlement intérieur** — la signature électronique multi-documents, ciblée par population, avec PDF horodaté archivé sur Drive et suivi de qui a signé, est en place (`DocumentSignable`, `DocumentCible`, `DocumentRequirementResolver`). **Seul le verrou de validation manque.**
+**Règlement intérieur** — la signature électronique multi-documents, ciblée par population, avec PDF horodaté archivé sur Drive et suivi de qui a signé, est en place (`DocumentSignable`, `DocumentCible`, `DocumentRequirementResolver`). Le rattrapage d'un document ajouté en cours de saison l'a complétée depuis (cf. « Ce qui a été traité »). **Le verrou de validation, lui, a été écarté — sa prémisse ne tenait pas.**
 
 Avant d'ouvrir une session sur une epic, lire son §2 : il dit ce qui existe déjà.
 

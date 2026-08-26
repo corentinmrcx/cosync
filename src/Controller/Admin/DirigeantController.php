@@ -7,6 +7,7 @@ use App\DTO\DirigeantData;
 use App\DTO\Effectif\ResultatSuppression;
 use App\DTO\EnvoiGroupeResultat;
 use App\DTO\FiltreListe;
+use App\DTO\RelanceResultat;
 use App\Entity\Dirigeant;
 use App\Entity\Season;
 use App\Entity\Team;
@@ -23,6 +24,7 @@ use App\Service\Dirigeant\DirigeantDossierCompletion;
 use App\Service\Dirigeant\DirigeantFormPrefill;
 use App\Service\Dirigeant\DirigeantService;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Document\SignatureRelanceService;
 use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Mail\DirigeantLinkService;
@@ -45,6 +47,7 @@ class DirigeantController extends AbstractController
         private readonly StockMovementRepository $stockMovementRepo,
         private readonly CleRegistrePresenter $clePresenter,
         private readonly DirigeantLinkService $linkService,
+        private readonly SignatureRelanceService $relanceService,
         private readonly CsrfGuard $csrf,
         private readonly DirigeantFormPrefill $formPrefill,
         private readonly HistoriqueFicheService $historiqueService,
@@ -104,6 +107,9 @@ class DirigeantController extends AbstractController
             'filterGroups' => $filterGroups,
             'activeFilterCount' => FiltreListe::compterActifs($filterGroups),
             'liensEnAttente' => $this->dirigeantRepo->countLienJamaisEnvoye($season),
+            // Signalé au même endroit que les liens jamais envoyés : c'est la même
+            // question — qui reste-t-il à relancer avant que la saison démarre ?
+            'signaturesEnAttente' => count($this->relanceService->dirigeants($season)),
             'edition' => $edition,
         ]);
     }
@@ -178,6 +184,56 @@ class DirigeantController extends AbstractController
      * Mode édition : mêmes règles et même écran de confirmation que côté joueurs
      * (cf. `SuppressionFicheService`). Déclaré avant `/{uuid}`.
      */
+    /**
+     * Relance groupée des signatures manquantes. Déclaré avant la route `/{uuid}`, et
+     * jumeau exact de l'écran des joueurs : c'est le même geste, seul le mail diffère.
+     */
+    #[Route('/demander-signatures', name: 'request_signatures', methods: ['GET', 'POST'])]
+    public function requestSignatures(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('demander_signatures_dirigeants', $request);
+
+            $resultat = $this->relanceService->relancerDirigeants(
+                $season,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $resultat->envoyes > 0 ? 'success' : 'info',
+                $this->resumeRelance($resultat),
+            );
+
+            return $this->redirectToRoute('admin_dirigeants_list');
+        }
+
+        $lignes = $this->relanceService->dirigeants($season);
+
+        return $this->render('admin/effectif/demander_signatures.html.twig', [
+            'lignes' => $lignes,
+            'joignables' => $this->relanceService->uuidsJoignables($lignes),
+            'population' => 'dirigeant',
+            'tokenId' => 'demander_signatures_dirigeants',
+            'actionUrl' => $this->generateUrl('admin_dirigeants_request_signatures'),
+            'retourUrl' => $this->generateUrl('admin_dirigeants_list'),
+            'intro' => 'Un dirigeant dont le dossier était déjà complet n\'a plus de lien valide : ajouter un document ne le prévient pas. Chaque personne cochée reçoit son lien de formulaire, rouvert pour 30 jours — elle ne refera que ce qui manque.',
+        ]);
+    }
+
+    /** Le compte rendu nomme ce qui reste à faire à la main : sans email, aucun lien ne part. */
+    private function resumeRelance(RelanceResultat $resultat): string
+    {
+        $resume = sprintf('%d lien%s envoyé%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '');
+
+        if ($resultat->sansEmail > 0) {
+            $resume .= sprintf(', %d dirigeant%s sans adresse email à prévenir autrement', $resultat->sansEmail, $resultat->sansEmail > 1 ? 's' : '');
+        }
+
+        return $resume . '.';
+    }
+
     #[Route('/supprimer', name: 'delete_confirm', methods: ['POST'])]
     #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
     public function deleteConfirm(

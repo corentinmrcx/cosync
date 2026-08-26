@@ -1,7 +1,8 @@
 /* ============================================================
-   Écrans d'envoi groupé : liens d'inscription (joueurs, dirigeants)
-   et annonce de la boutique. Même geste — relire une liste, décocher,
-   envoyer — donc même habillage.
+   Écrans d'envoi groupé : liens d'inscription (joueurs, dirigeants),
+   demande de signatures et annonce de la boutique. Même geste — relire
+   une liste, décocher, envoyer — donc même habillage, et un composant
+   plutôt qu'un fichier de page : quatre écrans le partagent.
    ============================================================ */
 
 .envoi-liens-page {
@@ -61,6 +62,7 @@
 
 .envoi-liens-item {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
     padding: 0.5rem 0.625rem;
@@ -160,4 +162,22 @@
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* Chapô de l'écran : dit pourquoi ces personnes sont listées, et ce que
+   l'envoi va réellement leur demander. */
+.envoi-liens-intro {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
+/* Les documents manquants passent à la ligne : les mettre en colonne écraserait
+   le nom et l'email, qui sont ce qu'on relit d'abord. */
+.envoi-liens-documents {
+    flex-basis: 100%;
+    padding-left: 1.75rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
 }

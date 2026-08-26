@@ -170,7 +170,7 @@ final class EnvoiLiensEnMasseTest extends WebTestCase
 
         $crawler = $client->request('GET', '/admin/effectif/joueurs');
 
-        self::assertStringContainsString('jamais reçu', $crawler->filter('.licencies-liens-attente')->text());
+        self::assertStringContainsString('jamais reçu', $crawler->filter('.effectif-alerte')->first()->text());
     }
 
     private function relire(Licencie $licencie): Licencie

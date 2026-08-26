@@ -9,6 +9,7 @@ use App\Enum\DocumentCible;
 use App\Repository\DirigeantRepository;
 use App\Repository\DocumentSignableRepository;
 use App\Repository\DocumentSignatureRepository;
+use App\Repository\LicencieRepository;
 
 /**
  * Quels documents restent à signer par une personne donnée ?
@@ -23,6 +24,7 @@ final class DocumentRequirementResolver
         private readonly DocumentSignableRepository $documentRepo,
         private readonly DocumentSignatureRepository $signatureRepo,
         private readonly DirigeantRepository $dirigeantRepo,
+        private readonly LicencieRepository $licencieRepo,
     ) {}
 
     /**
@@ -100,6 +102,32 @@ final class DocumentRequirementResolver
             static fn (Dirigeant $dirigeant): bool => !$dirigeant->isLicenceAdministrative()
                 && $document->concerne($dirigeant)
                 && !in_array((string) $dirigeant->getUuid(), $signataires, true),
+        ));
+    }
+
+    /**
+     * Licenciés de la saison à qui ce document est demandé et qui ne l'ont pas signé,
+     * **et qu'on peut encore relancer** — c'est-à-dire ceux dont le dossier est déjà
+     * complet. Pendant du {@see self::dirigeantsEnAttente()}, avec un filtre en plus.
+     *
+     * Un licencié qui n'a pas terminé son inscription est volontairement écarté : le
+     * parcours d'inscription lui présentera ce document avec le reste. Le relancer
+     * ferait vivre deux liens en même temps sur la même personne.
+     *
+     * @return Licencie[]
+     */
+    public function licenciesEnAttente(DocumentSignable $document): array
+    {
+        if ($document->getCible() !== DocumentCible::LICENCIE || !$document->isActif()) {
+            return [];
+        }
+
+        $signataires = $this->signatureRepo->licencieUuidsByDocument($document);
+
+        return array_values(array_filter(
+            $this->licencieRepo->findBySeason($document->getSeason()),
+            static fn (Licencie $licencie): bool => $licencie->getDossierClub()?->getFormCompletedAt() !== null
+                && !in_array((string) $licencie->getUuid(), $signataires, true),
         ));
     }
 

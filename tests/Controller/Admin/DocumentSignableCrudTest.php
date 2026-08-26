@@ -259,72 +259,7 @@ final class DocumentSignableCrudTest extends WebTestCase
         self::assertNotNull($em->find(DocumentSignable::class, $id), 'Supprimer emporterait la signature recueillie.');
     }
 
-    /**
-     * Relance groupée : c'est elle qui rend le système non manuel. Un document ajouté
-     * en cours de saison ne se voit pas — les dossiers concernés étaient complets, donc
-     * leurs liens consommés.
-     */
-    public function testLaRelanceRenvoieUnLienAuxSeulsDirigeantsEnAttente(): void
-    {
-        $client = static::createClient();
-        $this->loginAdmin($client);
-        $em = self::getContainer()->get(EntityManagerInterface::class);
-
-        $fixtures = new DocumentFixtures($em);
-        $document = $fixtures->documentDirigeant($this->season);
-
-        $aRelancer = $this->makeDirigeant('MARTIN', 'kevin@example.com');
-        $dejaSigne = $this->makeDirigeant('DUPONT', 'marie@example.com');
-        $sansEmail = $this->makeDirigeant('LAGRANGE', null);
-        $em->flush();
-
-        $fixtures->signerParDirigeant($document, $dejaSigne);
-        $em->flush();
-
-        $url = '/admin/effectif/documents/' . $document->getId() . '/relancer';
-        $crawler = $client->request('GET', $url);
-        $html = (string) $client->getResponse()->getContent();
-
-        self::assertResponseIsSuccessful();
-        self::assertStringContainsString('MARTIN', $html);
-        self::assertStringContainsString('LAGRANGE', $html);
-        self::assertStringNotContainsString('DUPONT', $html, 'Qui a signé n\'est pas relancé.');
-
-        $uuidRelance = $aRelancer->getUuid();
-        $uuidSansEmail = $sansEmail->getUuid();
-        $token = $crawler->filter('form#relance-form input[name="_token"]')->attr('value');
-
-        $client->request('POST', $url, ['_token' => $token]);
-
-        self::assertResponseRedirects('/admin/effectif/documents');
-
-        $em->clear();
-
-        self::assertNotNull(
-            $em->find(Dirigeant::class, $uuidRelance)->getFormTokenExpiresAt(),
-            'Le lien est régénéré pour 30 jours.',
-        );
-        self::assertNull(
-            $em->find(Dirigeant::class, $uuidSansEmail)->getFormTokenExpiresAt(),
-            'Sans email, aucun lien ne part.',
-        );
-    }
-
-    public function testLaRelanceRefuseUnDocumentDestineAuxLicencies(): void
-    {
-        $client = static::createClient();
-        $this->loginAdmin($client);
-        $em = self::getContainer()->get(EntityManagerInterface::class);
-
-        $document = (new DocumentFixtures($em))->documentLicencie($this->season);
-        $em->flush();
-
-        $client->request('GET', '/admin/effectif/documents/' . $document->getId() . '/relancer');
-
-        self::assertResponseRedirects('/admin/effectif/documents');
-    }
-
-    private function makeLicencie(string $nom): \App\Entity\Licencie
+    private function makeLicencie(string $nom, bool $formCompletee = false): \App\Entity\Licencie
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
@@ -336,28 +271,19 @@ final class DocumentSignableCrudTest extends WebTestCase
             ->setNom($nom)
             ->setPrenom('Thomas')
             ->setDateNaissance(new \DateTimeImmutable('1990-01-01'))
+            ->setEmail(strtolower($nom) . '@example.com')
             ->setCategory($category)
             ->setSeason($this->season);
 
+        $dossier = (new \App\Entity\DossierClub())
+            ->setLicencie($licencie)
+            ->setFormCompletedAt($formCompletee ? new \DateTimeImmutable('-2 months') : null);
+
         $em->persist($category);
         $em->persist($licencie);
+        $em->persist($dossier);
 
         return $licencie;
-    }
-
-    private function makeDirigeant(string $nom, ?string $email): Dirigeant
-    {
-        $em = self::getContainer()->get(EntityManagerInterface::class);
-
-        $dirigeant = (new Dirigeant())
-            ->setNom($nom)
-            ->setPrenom('Kevin')
-            ->setSeason($this->season)
-            ->setEmail($email);
-
-        $em->persist($dirigeant);
-
-        return $dirigeant;
     }
 
     public function testLEcranExigeUneAuthentification(): void
