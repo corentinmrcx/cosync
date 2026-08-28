@@ -32,6 +32,7 @@ final class ThemeFormulaireTest extends WebTestCase
             '/admin/saisons/nouvelle',
             '/admin/club/utilisateurs/nouveau',
             '/admin/club/coordonnees-bancaires',
+            '/admin/club/identite',
             '/admin/profil',
         ] as $url) {
             yield $url => [$url];

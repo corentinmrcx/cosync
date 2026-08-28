@@ -441,6 +441,62 @@ local, sa fiche continue donc d'afficher le registre et son attestation.
 Ne pas remplacer ce drapeau par trois réglages indépendants : c'est justement ce qui faisait
 oublier l'un des trois.
 
+### AttestationPaiement — attester un encaissement, sans jamais le réécrire
+
+Un employeur ou un CE rembourse tout ou partie d'une licence sur présentation d'une
+attestation. `AttestationPaiement` est le document remis, et il obéit à deux règles qui
+tiennent tout le reste :
+
+**1. On n'atteste qu'une licence soldée, et le verrou porte sur l'encaissement.**
+`AttestationPaiementService::motifBlocage()` compare la cotisation due au total réellement
+encaissé — **jamais** au statut du dossier. « Valider quand même » passe une licence en
+`VALIDATED` sans qu'un centime soit entré : un verrou posé sur le statut aurait émis un
+document affirmant un versement qui n'a pas eu lieu. Le motif est *rendu*, pas réduit à un
+booléen : l'écran doit pouvoir dire ce qui manque.
+
+**2. Le montant, la date et le mode ne se saisissent pas.** Ils sont dérivés des
+`Transaction` de la saison — total, date du dernier versement, modes dédoublonnés — puis
+**figés** sur l'attestation. Le formulaire ne porte que ce qu'aucune donnée du club ne sait
+dire : **qui a payé**. FootClubs ne connaît qu'un parent, le payeur peut être l'autre, et
+`Licencie` n'a ni sexe ni civilité — d'où `LienParente`, choisi à chaque fois.
+
+Tout ce que le document affirme est recopié à l'émission, **signataire compris** : le club
+change de trésorier, une attestation déjà remise continue de nommer celui qui l'a signée.
+Le lien vers les `Transaction` (`ON DELETE CASCADE`) n'est qu'une trace de rapprochement —
+un paiement supprimé plus tard retire la jointure sans rien changer à ce qui est écrit.
+La table est append-only : une réémission ajoute une ligne, le fichier Drive est daté.
+
+Le retéléchargement **régénère** le PDF depuis ces valeurs figées plutôt que de rapatrier
+le fichier de Drive : `DriveUploader` n'expose qu'`uploadToPath()`, et un document doit
+rester récupérable Drive en panne. Prix assumé : l'identité de l'association et le paraphe
+scanné sont relus en direct — l'exemplaire qui fait foi reste celui archivé.
+
+⚠️ Le montant en toutes lettres est produit par `MontantEnLettresFormatter`, écrit à la
+main. `NumberFormatter::SPELLOUT` **ne convient pas** : l'image PHP embarque un ICU aux
+données réduites au seul anglais et rendait « one hundred twenty » **sans lever d'erreur**.
+Ne pas y revenir.
+
+### ClubSettings — l'identité de l'association
+
+`ClubSettings` porte désormais, à côté du RIB et de la boutique, ce qu'une attestation
+engage juridiquement : raison sociale, adresse, SIRET, email, et le **signataire**
+(civilité, nom, qualité libre). Ces valeurs étaient écrites en dur dans une trentaine de
+templates ; les autres peuvent migrer plus tard, sans urgence.
+
+Rien n'impose que le signataire soit le trésorier — président, secrétaire ou toute personne
+ayant délégation peuvent engager l'association. Le **nom**, lui, doit figurer : un document
+signé sans nom n'engage personne. Ne pas tenter de dériver le signataire de `Dirigeant`, dont
+les rôles ne distinguent plus le bureau depuis `Version20260807220000`.
+
+La signature scannée est **facultative** — sans elle, le PDF imprime un cadre à signer à la
+main, et la fonctionnalité reste utilisable dès le premier jour. Elle vit dans
+`var/signatures/` (volume `cosync_signatures`), **hors de `public/`** : c'est un paraphe, il
+ne doit jamais être servi par le serveur web. Elle n'est pas dans `ClubSettings` en base
+parce que `ClubSettingsService::get()` est appelé à chaque rendu de page par `AppExtension` —
+y loger 100 Ko de base64 les chargerait sur toutes les requêtes. Contrepartie à connaître :
+le volume n'est pas couvert par `app:db:backup`, l'image est à re-téléverser après une
+reconstruction du VPS.
+
 ### Detenteur, CleMouvement, AttestationCle — deux échelles de temps
 
 Les clés du local sont le seul domaine où **le fait et l'engagement ne vivent pas dans la
@@ -705,6 +761,8 @@ Drive/
     │   ├── Documents signés/
     │   │   └── Règlement intérieur/
     │   │       └── RI_DUPONT_Thomas.pdf
+    │   ├── Attestations de paiement/
+    │   │   └── attestation_paiement_MARCOUX_Maxence_2026-08-28.pdf
     │   ├── Attestations Transport/
     │   └── Club house/Clés/Attestations de remise/
     └── Sauvegardes/

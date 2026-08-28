@@ -203,6 +203,16 @@
                 </form>
             {% endif %}
 
+
+            {% if attestationBlocage is null %}
+                {# Le libellé suit l'état : la carte plus bas liste celles déjà émises, le
+                   bouton n'a donc plus à les annoncer — il crée la suivante. #}
+                <a href="{{ path('admin_attestation_paiement_new', {uuid: licencie.uuid}) }}" class="btn btn-secondary">
+                    {{ ui.icon('file-text', 14) }}
+                    {{ attestations is empty ? 'Attestation de paiement' : 'Nouvelle attestation' }}
+                </a>
+            {% endif %}
+
             {% if autorisationsManquantes and licencie.email %}
                 <form method="post" action="{{ path('admin_licencies_send_completion', {uuid: licencie.uuid}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('send_completion_' ~ licencie.uuid) }}">
@@ -479,6 +489,72 @@
             </table>
             {% else %}
             <p class="licencie-show-empty">Aucun paiement enregistré.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {# — Attestations de paiement — #}
+        {% if attestations is not empty or attestationBlocage is null %}
+        <div class="licencie-show-card licencie-show-card-full">
+            <h2 class="licencie-show-card-title">Attestations de paiement</h2>
+
+            {% if attestations is not empty %}
+            <table class="table attestations-table">
+                <thead>
+                    <tr>
+                        <th>Émise le</th>
+                        <th>Destinataire</th>
+                        <th>Montant</th>
+                        <th>Envoi</th>
+                        <th>Archivage</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in attestations %}
+                    <tr>
+                        <td class="licencie-show-dd">{{ a.generatedAt|date('d/m/Y') }}</td>
+                        <td class="licencie-show-dd">
+                            {{ a.destinataireComplet }}
+                            <span class="attestations-lien">({{ a.lienParente.label }})</span>
+                        </td>
+                        <td class="licencie-show-dd">{{ a.montant|number_format(2, ',', ' ') }} €</td>
+                        <td class="licencie-show-dd-empty">
+                            {{ a.estEnvoyee ? 'le ' ~ a.envoyeeLe|date('d/m/Y') : '—' }}
+                        </td>
+                        <td class="licencie-show-dd-empty">
+                            {{ a.estArchivee ? 'Sur Drive' : 'Upload en attente' }}
+                        </td>
+                        <td class="attestations-actions">
+                            {# Régénéré depuis les valeurs figées : le fichier local disparaît
+                               une fois l'archivage Drive réussi. #}
+                            <a href="{{ path('admin_attestation_paiement_download', {uuid: a.uuid}) }}"
+                               class="btn btn-secondary btn-sm" target="_blank">
+                                {{ ui.icon('download', 13) }}
+                                Télécharger
+                            </a>
+                            <form method="post"
+                                  action="{{ path('admin_attestation_paiement_resend', {uuid: a.uuid}) }}"
+                                  class="attestations-resend"
+                                  onsubmit="return confirm('Renvoyer cette attestation ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('attestation_paiement_resend_' ~ a.uuid) }}">
+                                <input type="email" name="email" class="field-input attestations-resend-email"
+                                       value="{{ a.envoyeeA ?? licencie.email }}" placeholder="adresse@exemple.fr" required>
+                                <button type="submit" class="btn btn-secondary btn-sm">
+                                    {{ ui.icon('send', 13) }}
+                                    Envoyer
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="licencie-show-empty">
+                Aucune attestation émise. Le club peut en générer une à remettre à un employeur
+                ou à un comité d'entreprise.
+            </p>
             {% endif %}
         </div>
         {% endif %}

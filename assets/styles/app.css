@@ -51,6 +51,8 @@
 @import './pages/error.css';
 @import './pages/legal.css';
 @import './pages/cles.css';
+@import './pages/attestation-paiement.css';
+@import './pages/club-identite.css';
 
 :root {
     /* — Identité club — */

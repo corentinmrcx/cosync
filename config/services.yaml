@@ -9,6 +9,7 @@ parameters:
     club_email_reponse_defaut: 'soudron.fr@marne.lgef.fr'
 
     app.pdf_dir: '%kernel.project_dir%/var/pdfs'
+    app.signature_dir: '%kernel.project_dir%/var/signatures'
 
 services:
     _defaults:

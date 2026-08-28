@@ -1,0 +1,117 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Attestation de paiement{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: 'Joueurs', route: 'admin_licencies_list' },
+    { label: licencie.nomPrenom, route: 'admin_licencies_show', params: { uuid: licencie.uuid } },
+    { label: 'Attestation de paiement' }
+] } %}
+
+<div class="attestation-page">
+
+    <h1 class="attestation-titre">Attestation de paiement</h1>
+
+    {{ form_start(form, { attr: { class: 'attestation-grid' } }) }}
+
+        {# — Ce que le club sait déjà — #}
+        <section class="attestation-card attestation-card-recap">
+            <h2 class="attestation-card-titre">Ce que l'attestation dira</h2>
+
+            <dl class="attestation-dl">
+                <div class="attestation-dl-row">
+                    <dt>Licencié</dt>
+                    <dd>{{ licencie.nomPrenom }}</dd>
+                </div>
+                <div class="attestation-dl-row">
+                    <dt>Saison</dt>
+                    <dd>{{ licencie.season.label }}</dd>
+                </div>
+                <div class="attestation-dl-row">
+                    <dt>Montant</dt>
+                    <dd class="attestation-montant">
+                        {{ transactions|reduce((somme, t) => somme + t.montant, 0)|number_format(2, ',', ' ') }} €
+                    </dd>
+                </div>
+            </dl>
+
+            <div class="attestation-bloc">
+                <h3 class="attestation-sous-titre">Paiements repris</h3>
+                <ul class="attestation-paiements">
+                    {% for t in transactions %}
+                        <li class="attestation-paiement">
+                            <span class="attestation-paiement-date">{{ t.datePaiement|date('d/m/Y') }}</span>
+                            <span class="attestation-paiement-mode">{{ t.mode.label() }}</span>
+                            <span class="attestation-paiement-montant">{{ t.montant|number_format(2, ',', ' ') }} €</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <p class="attestation-note">
+                {{ ui.icon('shield', 14) }}
+                <span>Le montant, la date et le mode sont repris des paiements enregistrés : ils ne se saisissent pas.</span>
+            </p>
+        </section>
+
+        {# — Ce que l'admin précise — #}
+        <section class="attestation-card">
+            <h2 class="attestation-card-titre">Destinataire</h2>
+
+            {# Civilité · Nom · Prénom sur une ligne : l'ordre d'état civil, celui des
+               autres formulaires de l'application. #}
+            <div class="season-form-row attestation-row-identite">
+                <div class="field attestation-field-civilite">
+                    {{ form_label(form.destinataireCivilite) }}
+                    {{ form_widget(form.destinataireCivilite) }}
+                    {{ form_errors(form.destinataireCivilite) }}
+                </div>
+                <div class="field">
+                    {{ form_label(form.destinataireNom) }}
+                    {{ form_widget(form.destinataireNom) }}
+                    {{ form_errors(form.destinataireNom) }}
+                </div>
+                <div class="field">
+                    {{ form_label(form.destinatairePrenom) }}
+                    {{ form_widget(form.destinatairePrenom) }}
+                    {{ form_errors(form.destinatairePrenom) }}
+                </div>
+            </div>
+
+            {% for champ in [form.lienParente, form.email] %}
+                <div class="field">
+                    {{ form_label(champ) }}
+                    {{ form_widget(champ) }}
+                    {{ form_help(champ) }}
+                    {{ form_errors(champ) }}
+                </div>
+            {% endfor %}
+
+            <div class="attestation-actions">
+                {# formtarget : l'aperçu s'ouvre à côté, la saisie en cours n'est pas perdue. #}
+                <button type="submit"
+                        class="btn btn-secondary"
+                        formaction="{{ path('admin_attestation_paiement_preview', { uuid: licencie.uuid }) }}"
+                        formtarget="_blank">
+                    {{ ui.icon('file-text', 14) }}
+                    Aperçu
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    {{ ui.icon('check', 14) }}
+                    Générer l'attestation
+                </button>
+                <a href="{{ path('admin_licencies_show', { uuid: licencie.uuid }) }}" class="btn btn-ghost">
+                    Annuler
+                </a>
+            </div>
+        </section>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

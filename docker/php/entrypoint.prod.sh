@@ -38,7 +38,7 @@ echo "[entrypoint] Assets synchronisés."
 
 # ── Répertoires var/ ─────────────────────────────────────────────────────────
 # Les volumes Docker sont montés vides en root à la première création.
-mkdir -p var/cache/prod var/log var/locks var/pdfs var/backups
+mkdir -p var/cache/prod var/log var/locks var/pdfs var/signatures var/backups
 chown -R www-data:www-data var/
 echo "[entrypoint] Répertoires var/ initialisés."
 

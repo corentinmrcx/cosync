@@ -20,6 +20,7 @@
             <li><a href="#formulaire-public" class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'formulaire-public' }">Le formulaire public</a></li>
             <li><a href="#suivi"             class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'suivi' }">Suivre les inscriptions</a></li>
             <li><a href="#paiements"         class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'paiements' }">Gérer les paiements</a></li>
+            <li><a href="#attestations"      class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'attestations' }">Attestations de paiement</a></li>
             <li><a href="#dirigeants"        class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'dirigeants' }">Les dirigeants</a></li>
             <li><a href="#stock"             class="doc-toc-link doc-toc-link-strong" :class="{ 'doc-toc-link-active': active === 'stock' }">Le stock</a></li>
             <li><a href="#dotations"         class="doc-toc-link doc-toc-link-strong" :class="{ 'doc-toc-link-active': active === 'dotations' }">Les dotations</a></li>
@@ -219,6 +220,37 @@
             <p class="doc-p">Chaque paiement de la liste a une <strong>icône corbeille</strong> : elle supprime le paiement (après confirmation). Pour corriger un montant, supprimez la ligne erronée et ré-ajoutez la bonne.</p>
             <div class="doc-tip">
                 Supprimer un paiement ne change pas le statut de la licence : une licence validée le reste, même si le total redescend sous le montant dû.
+            </div>
+        </section>
+
+        {# ─────────────────────── 6 bis. ATTESTATIONS DE PAIEMENT ─────────────────────── #}
+        <section id="attestations" class="doc-section">
+            <h2 class="doc-h2">Attestations de paiement</h2>
+
+            <p class="doc-p">Certains employeurs et comités d'entreprise remboursent tout ou partie d'une licence sportive, sur présentation d'une attestation. CoSync la génère depuis la fiche du licencié.</p>
+
+            <h3 class="doc-h3">Avant la première attestation</h3>
+            <p class="doc-p">Renseignez une fois pour toutes <em>Le club → Identité de l'association</em> : raison sociale, adresse, SIRET, et le <strong>signataire</strong> (civilité, nom, qualité). Son nom figure sur l'attestation : sans lui, un employeur peut la refuser.</p>
+            <p class="doc-p">Vous pouvez y déposer une <strong>image de votre signature et de votre cachet</strong>. Sans elle, l'attestation s'imprime avec un cadre à signer à la main : le document reste parfaitement utilisable, il faut simplement le signer avant de le remettre.</p>
+
+            <h3 class="doc-h3">Générer une attestation</h3>
+            <ol class="doc-ol">
+                <li>Ouvrez la fiche du licencié, puis <strong>« Attestation de paiement »</strong>.</li>
+                <li>Renseignez le <strong>destinataire</strong> : c'est la personne qui a payé, et ce n'est pas toujours celle que connaît FootClubs. Pour un enfant dont les deux parents cotisent chacun de leur côté, faites une attestation par parent.</li>
+                <li>Précisez le lien : « son fils », « sa fille », « lui-même »…</li>
+                <li><strong>Aperçu</strong> ouvre le document dans un onglet sans rien enregistrer.</li>
+                <li><strong>Générer l'attestation</strong> l'enregistre, l'archive sur le Drive et l'envoie par mail si vous avez indiqué une adresse.</li>
+            </ol>
+
+            <div class="doc-tip">
+                Le montant, la date et le mode de paiement ne se saisissent pas : ils sont repris des paiements enregistrés. Une attestation ne peut donc jamais annoncer autre chose que ce que montre la comptabilité du club.
+            </div>
+
+            <h3 class="doc-h3">Retrouver ou renvoyer une attestation</h3>
+            <p class="doc-p">Toutes les attestations émises sont listées sur la fiche du licencié : date, destinataire, montant, envoi et archivage. <strong>Télécharger</strong> régénère le PDF à l'identique, et le champ d'adresse permet de le <strong>renvoyer</strong> à quelqu'un d'autre — un parent qui a changé de mail, par exemple.</p>
+
+            <div class="doc-tip">
+                Le bouton n'apparaît que sur une <strong>licence soldée</strong>. Tant qu'il reste un impayé, il n'y a rien à attester — et une licence validée à la main sans paiement n'y donne pas droit non plus.
             </div>
         </section>
 

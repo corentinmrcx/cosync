@@ -7,6 +7,7 @@ use App\DTO\Effectif\SuppressionFiche;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
 use App\Enum\LicenceStatus;
+use App\Repository\AttestationPaiementRepository;
 use App\Repository\DocumentSignatureRepository;
 use App\Repository\DotationAffectationRepository;
 use App\Repository\StockMovementRepository;
@@ -38,6 +39,7 @@ final class SuppressionFicheService
         private readonly TransactionRepository $transactionRepo,
         private readonly StockMovementRepository $mouvementRepo,
         private readonly DotationAffectationRepository $affectationRepo,
+        private readonly AttestationPaiementRepository $attestationRepo,
     ) {}
 
     /**
@@ -147,6 +149,10 @@ final class SuppressionFicheService
             '%d paiement%s est enregistré à son nom' => $this->transactionRepo->count(['licencie' => $licencie]),
             'du matériel lui a été remis (%d mouvement%s de stock)' => $this->mouvementRepo->count(['licencie' => $licencie]),
             'une dotation lui est affectée nominativement (%d affectation%s)' => $this->affectationRepo->count(['licencie' => $licencie]),
+            // Une attestation suppose un paiement, mais celui-ci a pu être supprimé depuis :
+            // sans ce compte, la fiche paraissait vierge et la suppression butait sur la
+            // clé étrangère, avec le message générique du rattrapage pour toute explication.
+            '%d attestation%s de paiement a été émise à son nom' => $this->attestationRepo->count(['licencie' => $licencie]),
         ]);
     }
 

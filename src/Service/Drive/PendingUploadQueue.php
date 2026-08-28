@@ -25,6 +25,9 @@ final class PendingUploadQueue
     /** @var int[] ids des attestations de remise de clés dont le PDF doit être uploadé */
     private array $attestationCleIds = [];
 
+    /** @var int[] ids des attestations de paiement dont le PDF doit être uploadé */
+    private array $attestationPaiementIds = [];
+
     /** @var int[] ids des saisons dont le récapitulatif des détenteurs doit être régénéré */
     private array $attestationCleRecapSeasonIds = [];
 
@@ -46,6 +49,11 @@ final class PendingUploadQueue
     public function enqueueAttestationCle(int $attestationId): void
     {
         $this->attestationCleIds[] = $attestationId;
+    }
+
+    public function enqueueAttestationPaiement(int $attestationId): void
+    {
+        $this->attestationPaiementIds[] = $attestationId;
     }
 
     /** Dédupliqué : plusieurs signatures dans une même requête ne régénèrent qu'un récapitulatif. */
@@ -98,6 +106,17 @@ final class PendingUploadQueue
     {
         $ids = $this->attestationCleIds;
         $this->attestationCleIds = [];
+
+        return $ids;
+    }
+
+    /**
+     * @return int[]
+     */
+    public function flushAttestationsPaiement(): array
+    {
+        $ids = $this->attestationPaiementIds;
+        $this->attestationPaiementIds = [];
 
         return $ids;
     }

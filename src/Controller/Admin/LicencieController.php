@@ -23,6 +23,7 @@ use App\Form\ContactType;
 use App\Form\LicencieCreateType;
 use App\Form\LicencieEditType;
 use App\Form\LicencieIdentityType;
+use App\Repository\AttestationPaiementRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
@@ -39,6 +40,7 @@ use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Licencie\LicencieService;
 use App\Service\Licencie\PaiementService;
 use App\Service\Mail\InscriptionLinkService;
+use App\Service\Payment\AttestationPaiementService;
 use App\Service\Payment\CotisationResolver;
 use App\Service\Ui\ListFilterMemory;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -70,6 +72,8 @@ class LicencieController extends AbstractController
         private readonly SignatureCompletionService $signatureCompletion,
         private readonly SignatureRelanceService $relanceService,
         private readonly SuppressionFicheService $suppressionService,
+        private readonly AttestationPaiementService $attestationPaiement,
+        private readonly AttestationPaiementRepository $attestationPaiementRepo,
     ) {}
 
     #[Route('', name: 'list')]
@@ -491,6 +495,11 @@ class LicencieController extends AbstractController
             // Un document ajouté depuis l'inscription : le dossier est complet, son lien
             // est consommé, rien ne le lui redemanderait sans ce bouton.
             'signatureManquante' => $this->signatureCompletion->hasMissing($licencie),
+            // Attestations de paiement déjà émises, et ce qui empêche d'en émettre une
+            // nouvelle — le motif est affiché plutôt que le bouton simplement masqué :
+            // « rien ne s'affiche » n'apprend rien à l'admin qui cherche le bouton.
+            'attestations' => $this->attestationPaiementRepo->findByLicencie($licencie),
+            'attestationBlocage' => $this->attestationPaiement->motifBlocage($licencie),
         ]);
     }
 

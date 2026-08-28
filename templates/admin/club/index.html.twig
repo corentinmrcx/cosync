@@ -13,6 +13,12 @@
     <div class="dashboard-hub">
 
         {% include 'components/hub-card.html.twig' with {
+            icon: 'shield',
+            label: 'Identité de l\'association',
+            route: 'admin_club_identite_edit'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
             icon: 'bank',
             label: 'Coordonnées bancaires',
             route: 'admin_club_rib'

@@ -3,6 +3,7 @@
 namespace App\Service\Mail;
 
 use App\Entity\AttestationCle;
+use App\Entity\AttestationPaiement;
 use App\Entity\Detenteur;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
@@ -170,6 +171,29 @@ final class MailerService
                 'season' => $attestation->getSeason(),
                 'url' => $this->lienPublic('public_attestation_cle_show', $attestation->getUuid()),
             ],
+        );
+    }
+
+    /**
+     * Envoie une attestation de paiement à qui a réglé la licence.
+     *
+     * Le destinataire est passé explicitement plutôt que lu sur le licencié : le payeur
+     * peut être un parent que FootClubs ne connaît pas, avec sa propre adresse mail.
+     */
+    public function sendAttestationPaiement(
+        AttestationPaiement $attestation,
+        string $email,
+        string $cheminPdf,
+        string $nomFichier,
+    ): void {
+        $this->clubMailer->envoyer(
+            new Address($email, trim($attestation->getDestinatairePrenom() . ' ' . $attestation->getDestinataireNom())),
+            'Votre attestation de paiement',
+            'email/attestation_paiement.html.twig',
+            [
+                'attestation' => $attestation,
+            ],
+            [$cheminPdf => $nomFichier],
         );
     }
 

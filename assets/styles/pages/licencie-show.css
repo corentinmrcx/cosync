@@ -618,3 +618,40 @@
 .licencie-show-card-note a:hover {
     color: var(--color-primary-dark);
 }
+
+/* ── Attestations de paiement ──
+   Le renvoi se fait depuis la ligne elle-même : l'adresse du payeur n'est pas
+   toujours celle du licencié, elle doit rester corrigeable au moment de l'envoi. */
+.attestations-table {
+    margin-top: 0.5rem;
+}
+
+.attestations-lien {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.attestations-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.attestations-resend {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* Calé sur .btn-sm — mêmes padding, police et hauteur de ligne. Un champ plus haut
+   que les boutons de sa rangée se voit immédiatement, et la règle du projet veut
+   qu'une même rangée partage sa taille. Sélecteur typé pour l'emporter sur la
+   hauteur fixe de `input.field-input`. */
+input.attestations-resend-email {
+    width: 12.5rem;
+    height: auto;
+    padding: 0.35rem 0.625rem;
+    font-size: var(--font-size-xs);
+    line-height: 1.2;
+}

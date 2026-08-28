@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\Civilite;
 use App\Repository\ClubSettingsRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -45,6 +46,48 @@ class ClubSettings
      */
     #[ORM\Column(options: ['default' => false])]
     private bool $boutiqueOuverte = false;
+
+    /* ── Identité de l'association ──
+       Jusqu'ici écrite en dur dans une trentaine de templates. Elle vit ici parce qu'elle
+       est ce qu'une attestation de paiement engage juridiquement, et parce qu'elle est le
+       premier bloc à devoir changer si l'outil sert un jour un autre club. */
+
+    #[ORM\Column(length: 150, nullable: true)]
+    private ?string $associationNom = null;
+
+    #[ORM\Column(length: 200, nullable: true)]
+    private ?string $associationAdresse = null;
+
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $associationCodePostal = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $associationVille = null;
+
+    /** 14 chiffres, espaces de lisibilité tolérés — jamais deviné : un SIRET faux sur une attestation la disqualifie. */
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $associationSiret = null;
+
+    #[ORM\Column(length: 180, nullable: true)]
+    private ?string $associationEmail = null;
+
+    #[ORM\Column(length: 10, nullable: true, enumType: Civilite::class)]
+    private ?Civilite $signataireCivilite = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $signataireNom = null;
+
+    /** Texte libre : « trésorière », « président », « secrétaire général »… aucune liste fermée ne tient. */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $signataireQualite = null;
+
+    /**
+     * Nom du fichier de la signature scannée, rangée hors de `public/` : c'est un
+     * paraphe, il ne doit pas être servi par le serveur web. Facultatif — sans lui,
+     * l'attestation imprime un cadre vide à signer à la main.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $signatureCachetFichier = null;
 
     public function getId(): int
     {
@@ -140,6 +183,152 @@ class ClubSettings
     public function boutiqueOuvrable(): bool
     {
         return $this->boutiqueUrl !== null && !$this->boutiqueOuverte;
+    }
+
+    public function getAssociationNom(): ?string
+    {
+        return $this->associationNom;
+    }
+
+    public function setAssociationNom(?string $associationNom): static
+    {
+        $this->associationNom = $this->normaliser($associationNom);
+
+        return $this;
+    }
+
+    public function getAssociationAdresse(): ?string
+    {
+        return $this->associationAdresse;
+    }
+
+    public function setAssociationAdresse(?string $associationAdresse): static
+    {
+        $this->associationAdresse = $this->normaliser($associationAdresse);
+
+        return $this;
+    }
+
+    public function getAssociationCodePostal(): ?string
+    {
+        return $this->associationCodePostal;
+    }
+
+    public function setAssociationCodePostal(?string $associationCodePostal): static
+    {
+        $this->associationCodePostal = $this->normaliser($associationCodePostal);
+
+        return $this;
+    }
+
+    public function getAssociationVille(): ?string
+    {
+        return $this->associationVille;
+    }
+
+    public function setAssociationVille(?string $associationVille): static
+    {
+        $this->associationVille = $this->normaliser($associationVille);
+
+        return $this;
+    }
+
+    public function getAssociationSiret(): ?string
+    {
+        return $this->associationSiret;
+    }
+
+    public function setAssociationSiret(?string $associationSiret): static
+    {
+        $this->associationSiret = $this->normaliser($associationSiret);
+
+        return $this;
+    }
+
+    public function getAssociationEmail(): ?string
+    {
+        return $this->associationEmail;
+    }
+
+    public function setAssociationEmail(?string $associationEmail): static
+    {
+        $this->associationEmail = $this->normaliser($associationEmail);
+
+        return $this;
+    }
+
+    public function getSignataireCivilite(): ?Civilite
+    {
+        return $this->signataireCivilite;
+    }
+
+    public function setSignataireCivilite(?Civilite $signataireCivilite): static
+    {
+        $this->signataireCivilite = $signataireCivilite;
+
+        return $this;
+    }
+
+    public function getSignataireNom(): ?string
+    {
+        return $this->signataireNom;
+    }
+
+    public function setSignataireNom(?string $signataireNom): static
+    {
+        $this->signataireNom = $this->normaliser($signataireNom);
+
+        return $this;
+    }
+
+    public function getSignataireQualite(): ?string
+    {
+        return $this->signataireQualite;
+    }
+
+    public function setSignataireQualite(?string $signataireQualite): static
+    {
+        $this->signataireQualite = $this->normaliser($signataireQualite);
+
+        return $this;
+    }
+
+    public function getSignatureCachetFichier(): ?string
+    {
+        return $this->signatureCachetFichier;
+    }
+
+    public function setSignatureCachetFichier(?string $signatureCachetFichier): static
+    {
+        $this->signatureCachetFichier = $this->normaliser($signatureCachetFichier);
+
+        return $this;
+    }
+
+    /**
+     * « 51320 Soudron » — la ligne telle qu'elle s'imprime sous l'adresse.
+     * Rend null plutôt qu'une ligne à moitié vide quand rien n'est renseigné.
+     */
+    public function getAssociationVilleComplete(): ?string
+    {
+        $ligne = trim(($this->associationCodePostal ?? '') . ' ' . ($this->associationVille ?? ''));
+
+        return $ligne === '' ? null : $ligne;
+    }
+
+    /**
+     * Le club peut-il émettre une attestation de paiement ?
+     *
+     * Sans identité d'association ni signataire nommé, le document n'engagerait
+     * personne : mieux vaut un écran qui renvoie vers la configuration qu'une
+     * attestation qu'un employeur refusera.
+     */
+    public function peutAttesterUnPaiement(): bool
+    {
+        return $this->associationNom !== null
+            && $this->signataireNom !== null
+            && $this->signataireQualite !== null
+            && $this->signataireCivilite !== null;
     }
 
     private function normaliser(?string $valeur): ?string
