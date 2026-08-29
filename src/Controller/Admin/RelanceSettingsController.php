@@ -2,15 +2,18 @@
 
 namespace App\Controller\Admin;
 
+use App\Enum\Permission;
 use App\Form\RelanceSettingsType;
 use App\Service\Referentiel\ClubSettingsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** Réglages de la relance automatique — l'interrupteur du robot et ses deux bornes. */
 #[Route('/admin/club/relances', name: 'admin_club_relances')]
+#[IsGranted(Permission::CLUB_CONFIGURER->value)]
 class RelanceSettingsController extends AbstractController
 {
     public function __construct(

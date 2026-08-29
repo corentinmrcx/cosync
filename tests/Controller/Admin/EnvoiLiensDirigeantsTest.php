@@ -208,7 +208,7 @@ final class EnvoiLiensDirigeantsTest extends WebTestCase
         $em = $this->em();
 
         $this->courante = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-liens-dirigeants@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-liens-dirigeants@example.test')->setPassword('x');
         $user->setSelectedSeason($this->courante);
 
         $em->persist($this->courante);

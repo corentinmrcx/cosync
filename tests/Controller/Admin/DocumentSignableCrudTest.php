@@ -322,7 +322,7 @@ final class DocumentSignableCrudTest extends WebTestCase
     private function loginAdmin(KernelBrowser $client): void
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-documents@example.com')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-documents@example.com')->setPassword('x');
 
         $this->makeSeason();
         $em->persist($user);

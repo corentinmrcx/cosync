@@ -8,6 +8,7 @@ use App\Enum\FicheAction;
 use App\Enum\LicenceStatus;
 use App\Service\Licencie\FicheActionsResolver;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * Quelle action la fiche met-elle en avant ?
@@ -22,7 +23,12 @@ final class FicheActionsResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->resolver = new FicheActionsResolver();
+        // Compte tout-puissant : ces tests portent sur l'ordre du parcours, pas sur les droits
+        // — ceux-là sont tenus par PermissionsAccesTest et par le contrôle CI des contrôleurs.
+        $security = $this->createStub(Security::class);
+        $security->method('isGranted')->willReturn(true);
+
+        $this->resolver = new FicheActionsResolver($security);
     }
 
     public function testUnDossierImporteMetEnAvantLEnvoiDuLien(): void

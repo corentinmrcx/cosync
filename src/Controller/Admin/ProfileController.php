@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\User;
 use App\Form\ProfileType;
+use App\Security\Attribute\AccesLibre;
 use App\Service\Compte\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,6 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/admin/profil', name: 'admin_profile')]
+#[AccesLibre('Ne parle que du compte connecté : son email et son mot de passe.')]
 class ProfileController extends AbstractController
 {
     public function __construct(

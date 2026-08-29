@@ -6,6 +6,7 @@ use App\DTO\Licencie\FicheActions;
 use App\Entity\Licencie;
 use App\Enum\FicheAction;
 use App\Enum\LicenceStatus;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * Quelle action la fiche d'un licencié met-elle en avant, et lesquelles range-t-elle ?
@@ -19,6 +20,10 @@ use App\Enum\LicenceStatus;
  */
 final class FicheActionsResolver
 {
+    public function __construct(
+        private readonly Security $security,
+    ) {}
+
     /**
      * L'ordre du parcours, qui est aussi l'ordre de priorité : on met en avant ce qui bloque
      * le plus tôt. Une relance qui part par mail passe donc avant la validation FootClubs,
@@ -52,6 +57,13 @@ final class FicheActionsResolver
     ): FicheActions {
         $applicables = $this->applicables($licencie, $autorisationsManquantes, $signatureManquante, $attestationPossible);
         $joignable = $licencie->getEmail() !== null;
+
+        // Un geste que le compte n'a pas le droit de jouer disparaît, sans motif : ce n'est pas
+        // une étape bloquée, c'est un pan de l'application qu'il ne possède pas (§7.6 quater).
+        $applicables = array_values(array_filter(
+            $applicables,
+            fn (FicheAction $action): bool => $this->security->isGranted($action->permission()->value),
+        ));
 
         $principale = null;
         $blocage = null;

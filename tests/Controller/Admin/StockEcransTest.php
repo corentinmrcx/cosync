@@ -411,7 +411,7 @@ final class StockEcransTest extends WebTestCase
 
     private function loginAdmin(): KernelBrowser
     {
-        $user = (new User())->setEmail('admin@example.test')->setRoles(['ROLE_ADMIN']);
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin@example.test')->setRoles(['ROLE_ADMIN']);
         $user->setPassword('x');
         $user->setSelectedSeason($this->season);
 
@@ -429,7 +429,7 @@ final class StockEcransTest extends WebTestCase
      */
     private function loginAdminSansAucuneSaison(): KernelBrowser
     {
-        $user = (new User())->setEmail('admin-sans-saison@example.test')->setRoles(['ROLE_ADMIN']);
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-sans-saison@example.test')->setRoles(['ROLE_ADMIN']);
         $user->setPassword('x');
 
         $this->em->persist($user);

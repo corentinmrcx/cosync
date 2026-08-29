@@ -8,6 +8,7 @@ use App\Entity\DocumentSignable;
 use App\Entity\Season;
 use App\Enum\DirigeantRole;
 use App\Enum\DocumentCible;
+use App\Enum\Permission;
 use App\Repository\DirigeantRepository;
 use App\Repository\DocumentSignableRepository;
 use App\Security\CsrfGuard;
@@ -17,6 +18,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Administration des documents que le club fait signer.
@@ -25,6 +27,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * documents n'est plus une constante du code, donc l'écran non plus.
  */
 #[Route('/admin/effectif/documents', name: 'admin_documents_')]
+#[IsGranted(Permission::SAISON_LIRE->value)]
 class DocumentSignableController extends AbstractController
 {
     public function __construct(
@@ -47,6 +50,7 @@ class DocumentSignableController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function new(Request $request, #[CurrentSeason] Season $season): Response
     {
         if ($request->isMethod('POST')) {
@@ -74,6 +78,7 @@ class DocumentSignableController extends AbstractController
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function edit(DocumentSignable $document, Request $request): Response
     {
         $csrfId = 'document_edit_' . $document->getId();
@@ -112,6 +117,7 @@ class DocumentSignableController extends AbstractController
     }
 
     #[Route('/{id}/activation', name: 'toggle', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function toggle(DocumentSignable $document, Request $request): Response
     {
         $this->csrf->valider('document_toggle_' . $document->getId(), $request);
@@ -127,6 +133,7 @@ class DocumentSignableController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function delete(DocumentSignable $document, Request $request): Response
     {
         $this->csrf->valider('document_delete_' . $document->getId(), $request);

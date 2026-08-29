@@ -190,7 +190,7 @@ final class RelanceEcransTest extends WebTestCase
 
     private function loginAdmin(): KernelBrowser
     {
-        $user = (new User())->setEmail('admin@example.test')->setRoles(['ROLE_ADMIN']);
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin@example.test')->setRoles(['ROLE_ADMIN']);
         $user->setPassword('x');
         $user->setSelectedSeason($this->season);
 

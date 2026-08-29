@@ -237,7 +237,7 @@ final class EnvoiLiensEnMasseTest extends WebTestCase
 
         $this->courante = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
         $this->category = (new Category())->setCode('U15')->setLabel('U15')->setIsEcoleFoot(false);
-        $user = (new User())->setEmail('admin-liens@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-liens@example.test')->setPassword('x');
         $user->setSelectedSeason($this->courante);
 
         $em->persist($this->courante);

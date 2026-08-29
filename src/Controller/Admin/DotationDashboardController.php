@@ -4,18 +4,21 @@ namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
 use App\Entity\Season;
+use App\Enum\Permission;
 use App\Service\Dotation\DotationEcoulementAllocator;
 use App\Service\Stock\AchatService;
 use App\Service\Stock\CommandeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Point d'entrée des dotations de la saison : ce que le club doit remettre à ses licenciés,
  * et ce qu'il reste à acheter pour y arriver. Le stock physique, lui, se gère au niveau club.
  */
 #[Route('/admin/dotations', name: 'admin_dotations_')]
+#[IsGranted(Permission::DOTATION_LIRE->value)]
 class DotationDashboardController extends AbstractController
 {
     public function __construct(

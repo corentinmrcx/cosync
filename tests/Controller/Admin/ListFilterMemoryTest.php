@@ -59,7 +59,7 @@ final class ListFilterMemoryTest extends WebTestCase
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
         $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-filtres@example.com')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-filtres@example.com')->setPassword('x');
 
         $em->persist($season);
         $em->persist($user);

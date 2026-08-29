@@ -20,6 +20,7 @@ use App\Enum\ChampContact;
 use App\Enum\LicenceStatus;
 use App\Enum\NatureLicence;
 use App\Enum\PaymentMode;
+use App\Enum\Permission;
 use App\Form\ContactType;
 use App\Form\LicencieCreateType;
 use App\Form\LicencieEditType;
@@ -30,7 +31,6 @@ use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
 use App\Security\CsrfGuard;
-use App\Security\Voter\SuperAdminVoter;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Document\SignatureCompletionService;
 use App\Service\Document\SignatureRelanceService;
@@ -58,6 +58,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/effectif/joueurs', name: 'admin_licencies_')]
+#[IsGranted(Permission::EFFECTIF_LIRE->value)]
 class LicencieController extends AbstractController
 {
     public function __construct(
@@ -95,7 +96,7 @@ class LicencieController extends AbstractController
         // Le mode édition n'est pas un filtre : il n'est jamais mémorisé, sinon la liste
         // rouvrirait ses cases à cocher de suppression à la prochaine visite. Il est seulement
         // reporté sur la redirection de restauration des filtres, pour ne pas se perdre en route.
-        $edition = $request->query->getBoolean('edition') && $this->isGranted(SuperAdminVoter::ACCES_DIAGNOSTIC);
+        $edition = $request->query->getBoolean('edition') && $this->isGranted(Permission::EFFECTIF_SUPPRIMER->value);
 
         $restored = $this->filterMemory->restoreOrRemember('licencies', $request, ['team', 'status', 'nature', 'search']);
         if ($restored !== null) {
@@ -170,6 +171,7 @@ class LicencieController extends AbstractController
      * dotation faux. L'envoi est donc une décision, prise sur cet écran, après relecture.
      */
     #[Route('/envoyer-liens', name: 'send_links', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendLinks(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -255,6 +257,7 @@ class LicencieController extends AbstractController
      * « Envoyer les liens », dont il reprend le vocabulaire — cases à cocher comprises.
      */
     #[Route('/demander-signatures', name: 'request_signatures', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function requestSignatures(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -298,6 +301,7 @@ class LicencieController extends AbstractController
      * voir ce qu'il ferait avant de le laisser faire.
      */
     #[Route('/relancer', name: 'relancer', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function relancer(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -351,6 +355,7 @@ class LicencieController extends AbstractController
      * n'était pas proposée.
      */
     #[Route('/valider-footclubs', name: 'validate_fff_bulk', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
     public function validateFffBulk(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -390,7 +395,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/supprimer', name: 'delete_confirm', methods: ['POST'])]
-    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    #[IsGranted(Permission::EFFECTIF_SUPPRIMER->value)]
     public function deleteConfirm(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -414,7 +419,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/supprimer/confirmer', name: 'delete', methods: ['POST'])]
-    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    #[IsGranted(Permission::EFFECTIF_SUPPRIMER->value)]
     public function delete(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -459,6 +464,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function new(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -494,6 +500,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/identite', name: 'edit_identity', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function editIdentity(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -540,6 +547,7 @@ class LicencieController extends AbstractController
      * en dépend, et l'export ne se corrige parfois qu'après validation du dossier à la ligue.
      */
     #[Route('/{uuid}/coordonnees', name: 'edit_contact', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function editContact(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -565,6 +573,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/coordonnees/{champ}/reprendre-import', name: 'contact_reprendre_import', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function reprendreImportContact(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         ChampContact $champ,
@@ -637,6 +646,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function edit(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -675,6 +685,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/ajouter-paiement', name: 'add_payment', methods: ['POST'])]
+    #[IsGranted(Permission::PAIEMENT_ENCAISSER->value)]
     public function addPayment(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -716,6 +727,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/paiements/{id}/supprimer', name: 'delete_payment', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted(Permission::PAIEMENT_ENCAISSER->value)]
     public function deletePayment(
         string $uuid,
         int $id,
@@ -735,6 +747,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/valider-manuellement', name: 'validate_manually', methods: ['POST'])]
+    #[IsGranted(Permission::PAIEMENT_ENCAISSER->value)]
     public function validateManually(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -750,6 +763,7 @@ class LicencieController extends AbstractController
 
     /** Le club a signé la licence dans FootClubs : dernier statut du parcours. */
     #[Route('/{uuid}/valider-footclubs', name: 'validate_fff', methods: ['POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
     public function validateFff(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -768,6 +782,7 @@ class LicencieController extends AbstractController
 
     /** Sortie de secours d'un clic malheureux : la licence redevient « à valider ». */
     #[Route('/{uuid}/annuler-validation-footclubs', name: 'cancel_validate_fff', methods: ['POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
     public function cancelValidateFff(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -785,6 +800,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/demander-signature', name: 'request_signature', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function requestSignature(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -814,6 +830,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/send-link', name: 'send_link', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendLink(#[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie, Request $request): Response
     {
         $this->csrf->valider('send_link_' . $licencie->getUuid(), $request);
@@ -842,6 +859,7 @@ class LicencieController extends AbstractController
      * repousse donc la relance automatique suivante.
      */
     #[Route('/{uuid}/relancer', name: 'relance_unitaire', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function relancerUnLicencie(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -861,6 +879,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/send-completion', name: 'send_completion', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendCompletion(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,

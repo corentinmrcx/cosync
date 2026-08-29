@@ -77,12 +77,18 @@ lint-js:
 
 lint: lint-php lint-css lint-js
 
+# Garde-fous du CI qui relisent le code source plutôt que de l'exécuter.
+gardes:
+	$(COMPOSE) exec -T php php bin/check-permissions.php
+	$(COMPOSE) exec -T php php bin/check-tables-scroll.php
+	$(COMPOSE) exec -T php php bin/check-csp.php
+
 fix:
 	$(COMPOSE) exec -T php vendor/bin/php-cs-fixer fix --show-progress=none
 	npm run fix:css
 	npm run fix:js
 
-check: test stan lint
+check: test stan lint gardes
 
 # ── Production (VPS) ─────────────────────────────────────────────────────────
 

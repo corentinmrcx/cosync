@@ -257,7 +257,7 @@ final class AttestationPaiementEcranTest extends WebTestCase
             ->setSignataireNom('Claudine Moreaux')
             ->setSignataireQualite('trésorière');
 
-        $user = (new User())->setEmail('admin-attestation@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-attestation@example.test')->setPassword('x');
         $em->persist($user);
         $em->flush();
 

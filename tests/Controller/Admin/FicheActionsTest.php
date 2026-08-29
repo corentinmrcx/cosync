@@ -54,7 +54,7 @@ final class FicheActionsTest extends WebTestCase
     private function loginAdmin(KernelBrowser $client): void
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-actions@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-actions@example.test')->setPassword('x');
         $em->persist($user);
         $em->flush();
 

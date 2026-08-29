@@ -144,7 +144,7 @@ final class ThemeFormulaireTest extends WebTestCase
 
         $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
 
-        $user = (new User())->setEmail('admin-theme-form@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-theme-form@example.test')->setPassword('x');
         $user->setSelectedSeason($season);
         $user->setRoles(['ROLE_SUPER_ADMIN']);
 

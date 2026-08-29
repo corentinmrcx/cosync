@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Enum\Permission;
 use App\Form\ClubIdentiteType;
 use App\Security\CsrfGuard;
 use App\Service\Referentiel\ClubSettingsService;
@@ -11,8 +12,10 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/club/identite', name: 'admin_club_identite_')]
+#[IsGranted(Permission::CLUB_CONFIGURER->value)]
 class ClubIdentiteController extends AbstractController
 {
     public function __construct(

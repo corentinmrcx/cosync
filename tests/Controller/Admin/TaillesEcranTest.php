@@ -202,7 +202,7 @@ final class TaillesEcranTest extends WebTestCase
     private function loginAdmin(): KernelBrowser
     {
         $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-tailles@example.test')->setRoles(['ROLE_ADMIN']);
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-tailles@example.test')->setRoles(['ROLE_ADMIN']);
         $user->setPassword('x');
         $user->setSelectedSeason($season);
 

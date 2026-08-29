@@ -210,7 +210,7 @@ final class StockCorrectionMouvementTest extends WebTestCase
 
     private function loginAdmin(): KernelBrowser
     {
-        $user = (new User())->setEmail('admin-correction@example.test')->setRoles(['ROLE_ADMIN']);
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-correction@example.test')->setRoles(['ROLE_ADMIN']);
         $user->setPassword('x');
         $user->setSelectedSeason($this->season);
 

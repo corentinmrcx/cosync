@@ -38,7 +38,7 @@ final class DashboardTest extends WebTestCase
         $client = static::createClient();
 
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-dashboard@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-dashboard@example.test')->setPassword('x');
         $em->persist($user);
         $em->flush();
         $client->loginUser($user);
@@ -62,7 +62,7 @@ final class DashboardTest extends WebTestCase
         // Les grilles de tailles ne sont pas une entrée de plus : elles traduisent le
         // référentiel des tailles et se rejoignent depuis son écran.
         self::assertSame(
-            ['Identité de l\'association', 'Coordonnées bancaires', 'Relances automatiques', 'Catégories FFF', 'Tailles', 'Utilisateurs'],
+            ['Identité de l\'association', 'Coordonnées bancaires', 'Relances automatiques', 'Catégories FFF', 'Tailles', 'Utilisateurs', 'Rôles'],
             $labels,
         );
     }
@@ -108,7 +108,7 @@ final class DashboardTest extends WebTestCase
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
         $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-dashboard@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-dashboard@example.test')->setPassword('x');
         $user->setSelectedSeason($season);
 
         $em->persist($season);

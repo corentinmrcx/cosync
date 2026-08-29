@@ -308,7 +308,7 @@ final class PaiementAdminTest extends WebTestCase
     private function loginAdmin(KernelBrowser $client, ?string $saisonSelectionnee = null): User
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-paiement@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-paiement@example.test')->setPassword('x');
 
         if ($saisonSelectionnee !== null) {
             $season = $em->getRepository(Season::class)->findOneBy(['label' => $saisonSelectionnee])

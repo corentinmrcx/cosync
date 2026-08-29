@@ -196,7 +196,7 @@ final class ClubIdentiteTest extends WebTestCase
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $user = (new User())->setEmail('admin-identite@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-identite@example.test')->setPassword('x');
         $em->persist($user);
         $em->flush();
 

@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\AttestationPaiement;
 use App\Entity\Licencie;
+use App\Enum\Permission;
 use App\Form\AttestationPaiementType;
 use App\Security\CsrfGuard;
 use App\Service\Payment\AttestationPaiementService;
@@ -12,8 +13,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/attestations-paiement', name: 'admin_attestation_paiement_')]
+#[IsGranted(Permission::PAIEMENT_ATTESTER->value)]
 class AttestationPaiementController extends AbstractController
 {
     public function __construct(

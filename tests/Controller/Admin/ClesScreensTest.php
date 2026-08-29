@@ -302,7 +302,7 @@ final class ClesScreensTest extends WebTestCase
         $em = $this->em();
 
         $this->season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-cles@example.com')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-cles@example.com')->setPassword('x');
 
         $em->persist($this->season);
         $em->persist($user);

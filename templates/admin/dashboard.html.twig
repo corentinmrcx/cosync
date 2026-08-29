@@ -27,26 +27,33 @@
         {% include 'components/hub-card.html.twig' with {
             icon: 'box',
             label: 'Stock',
-            route: 'admin_stock_dashboard'
+            route: 'admin_stock_dashboard',
+            permission: 'stock.lire'
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
             icon: 'key',
             label: 'Clés',
-            route: 'admin_cles_index'
+            route: 'admin_cles_index',
+            permission: 'cle.lire'
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
             icon: 'cart',
             label: 'Boutique',
-            route: 'admin_boutique_index'
+            route: 'admin_boutique_index',
+            permission: 'boutique.lire'
         } only %}
 
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'gear',
-            label: 'Le club',
-            route: 'admin_club_index'
-        } only %}
+        {# Le hub du club rassemble deux domaines distincts : la configuration et les comptes.
+           Une carte ne prend qu'une permission, d'où la condition ici. #}
+        {% if is_granted('club.configurer') or is_granted('utilisateur.gerer') %}
+            {% include 'components/hub-card.html.twig' with {
+                icon: 'gear',
+                label: 'Le club',
+                route: 'admin_club_index'
+            } only %}
+        {% endif %}
 
     </div>
 

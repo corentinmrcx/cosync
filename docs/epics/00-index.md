@@ -22,6 +22,7 @@ Ils sont dérivés des documents de `prepa_epic/`, qui sont le compte-rendu de l
 | [10](10-delta-dotation-budget.md) | *Delta* — Dotation : le volet budgétaire | M | — | ✅ fonctionnel déjà livré |
 | [11](11-delta-blocage-licence.md) | *Delta* — Bloquer la validation sans signature | **S** | — | ✅ **traitée** — voir ci-dessous |
 | [12](12-journal-encaissements-reversements.md) | Journal des encaissements et reversements | M | — | ⚠️ `Transaction` existe, **aucun écran global** |
+| [13](13-roles-permissions.md) | Rôles et permissions | L | — | ✅ **livrée** — voir ci-dessous |
 
 ---
 
@@ -35,12 +36,14 @@ Ensuite **01 puis 02**, dans cet ordre : le référentiel tarifaire est le socle
 
 **12 avant 07**, et son lot 1 dès que possible : le journal des encaissements ne demande aucune migration et rend enfin lisible ce que `Transaction` contient déjà. Surtout, c'est lui qui rattache un encaissement au reversement HelloAsso qui l'a porté — construit **après** la boutique, il faudrait démêler un historique où cotisations et commandes sont déjà mélangées dans les mêmes lots.
 
+**La 13 est livrée.** Conséquence pour les epics qui ajoutent des écrans (02, 03, 07) : toute nouvelle action d'administration doit déclarer son droit, sans quoi le job CI `csp` échoue (cf. §8 du CLAUDE.md). Prévoir ses permissions au moment de la concevoir, pas après.
+
 **03, 07, 08, 10** sont indépendantes et se prennent quand le besoin se présente.
 
 **05 en dernier des chantiers structurants** : c'est la seule qui touche un champ (`Dirigeant.role`) dont dépendent la dotation et les documents signés. Elle mérite d'être faite quand le reste est stable.
 
 ```
-11                  ✅ traitée
+11   13             ✅ traitées
 
 09   06   12        (petites ou à lot 1 sans risque, tout de suite)
 
@@ -58,6 +61,31 @@ Ensuite **01 puis 02**, dans cet ordre : le référentiel tarifaire est le socle
 ---
 
 ## Ce qui a été traité
+
+### 13 — Rôles et permissions ✅ *(29/08/2026)*
+
+**Jusque-là, tout compte connecté pouvait tout faire** : `security.yaml` ne portait qu'une règle
+(`^/ → ROLE_USER`), et le seul cloisonnement — `ACCES_DIAGNOSTIC` — était adossé à l'email de
+redirection du mode bêta. Ouvrir un accès à la trésorière revenait à lui confier la purge des
+données.
+
+La règle qui porte tout : **les permissions sont du code (`Permission`), les rôles sont de la
+donnée (`RoleAcces`)**. Un écran qui inventerait des permissions produirait des rôles qui ne
+protègent rien.
+
+Ce qui a été livré : le catalogue de 27 permissions et son voter unique, les rôles composables
+depuis `/admin/club/roles`, le cumul de rôles sur un compte, l'application sur les 36 contrôleurs
+d'administration, le masquage des entrées inaccessibles, et le découplage du super-admin d'avec
+`DIAG_EMAIL`. La migration a attribué « Responsable foot » à tous les comptes existants : personne
+n'a perdu d'accès au déploiement.
+
+Deux garde-fous, tous deux nécessaires : **`bin/check-permissions.php`** (job CI `csp`) refuse une
+action qui ne déclare ni permission ni `#[AccesLibre]`, et **`PermissionsAccesTest`** vérifie que
+les écrans consultent réellement ce droit. Le premier dit qu'un droit est écrit, le second qu'il
+est appliqué.
+
+**Détail des écarts avec la spec et des arbitrages tranchés** : §13 du fichier de l'epic. La
+référence à jour du dispositif est le **§8 du CLAUDE.md**.
 
 ### 11 — Delta blocage de licence ✅ *(août 2026)*
 

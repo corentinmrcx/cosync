@@ -2,8 +2,8 @@
 
 namespace App\Controller\Admin;
 
+use App\Enum\Permission;
 use App\Security\CsrfGuard;
-use App\Security\Voter\SuperAdminVoter;
 use App\Service\Mail\DiagMailerService;
 use App\Service\Ops\BetaModeService;
 use App\Service\Ops\PurgeService;
@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/diagnostic', name: 'admin_diag_')]
-#[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+#[IsGranted(Permission::DIAGNOSTIC_ACCEDER->value)]
 class DiagController extends AbstractController
 {
     public function __construct(

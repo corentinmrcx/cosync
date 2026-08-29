@@ -13,7 +13,7 @@
 ] } %}
 
 {# Form caché pour "Valider quand même" — hors de la modale pour éviter l'imbrication <form> #}
-{% if licencie.dossierClub and not licencie.dossierClub.estSoldee %}
+{% if licencie.dossierClub and not licencie.dossierClub.estSoldee and is_granted('paiement.encaisser') %}
 <form id="validate-manually-form-{{ licencie.uuid }}"
       method="post"
       action="{{ path('admin_licencies_validate_manually', {uuid: licencie.uuid}) }}"
@@ -34,6 +34,7 @@
      }">
 
     {# — Modale gestion des paiements — #}
+    {% if is_granted('paiement.encaisser') %}
     <div x-show="paymentsModal" class="modal-voile" @click.self="paymentsModal = false" x-cloak>
         <div class="modal licencie-modal-wide">
             <div class="modal-header">
@@ -151,6 +152,7 @@
             </form>
         </div>
     </div>
+    {% endif %}
 
     <div class="licencie-show-header">
         {# Le nom d'abord, les badges sur leur propre ligne. Mêlés au titre, ils se
@@ -445,8 +447,9 @@
 
                 </ul>
 
-                {# Bouton gérer les paiements #}
-                {% if d.formCompletedAt %}
+                {# Bouton gérer les paiements — encaisser est un droit à part : la présidente
+                   consulte les règlements, elle n'en saisit pas. #}
+                {% if d.formCompletedAt and is_granted('paiement.encaisser') %}
                     <button type="button" @click="paymentsModal = true" class="licencie-show-confirm-full">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>

@@ -131,6 +131,12 @@ jobs:
       - name: Vérifier que chaque tableau porte son défilement
         run: php bin/check-tables-scroll.php
 
+      # Une route d'administration sans droit déclaré est ouverte à tout compte connecté.
+      # C'est le seul garde-fou du dispositif de permissions : le modèle est facile, c'est
+      # la route qu'on oublie qui coûte cher — une lecture seule qui supprime une fiche.
+      - name: Vérifier que chaque action d'administration déclare un droit
+        run: php bin/check-permissions.php
+
   front:
     name: Front — CSS et JavaScript
     runs-on: ubuntu-latest

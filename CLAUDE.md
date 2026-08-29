@@ -615,6 +615,89 @@ y loger 100 Ko de base64 les chargerait sur toutes les requêtes. Contrepartie �
 le volume n'est pas couvert par `app:db:backup`, l'image est à re-téléverser après une
 reconstruction du VPS.
 
+`ClubSettings` porte enfin le rattachement du club à la FFF pour le planning des matchs —
+`fffClubNo`, `fffSyncActive` (cf. ci-dessous). Au niveau du club : le numéro d'un club à la
+fédération ne change pas à la rentrée. ⚠️ Quand un troisième outil aura besoin de réglages,
+il faudra les sortir d'ici : `ClubSettings` ne doit pas devenir le fourre-tout de tous les
+outils.
+
+### MatchDomicile — un planning distribué, pas un miroir du calendrier fédéral
+
+Le club imprime chaque mois la liste de ses matchs à domicile, pour **deux publics qui n'ont
+pas le même besoin** : la mairie, qui planifie la tonte du terrain, et les boîtes aux lettres
+du village. D'où trois tirages d'une même donnée (`PlanningFormat`) — A4 mairie, A5 flyer, et
+surtout **A4 « duo »**, deux A5 côte à côte à couper au massicot : c'est le tirage réel,
+imprimer les flyers un par un gâche la moitié du papier.
+
+```php
+MatchDomicile  // season, date, heure (?string 'HH:MM'), categorie, adversaire, note,
+               // source: MatchSource (MANUEL|FFF), fffMaNo, fffCompetition, fffTerrain, masque
+```
+
+**Qui possède quoi — la règle qui tient tout le reste.** Sur une ligne venue de la FFF, le
+district fait foi : date, heure, catégorie et adversaire sont **réécrits à chaque
+synchronisation**, sinon un report de match ne remonterait jamais sur le planning distribué.
+Le club possède la **note** et le **masque**. Pour corriger un horaire fédéral faux, on
+**détache** la ligne (`detacherDeLaFff()`, et son inverse `reprendreLaFff()`) — même doctrine
+que `reprendreImport()` pour les coordonnées. Sans cette sortie explicite, la correction
+serait effacée à la sync suivante sans que personne le voie ; et le `fffMaNo` est **conservé**
+au détachement, faute de quoi la sync recréerait le match en double.
+
+Ce qui ne doit pas se défaire :
+
+- **`heure` est une chaîne, pas un `time`.** C'est un libellé qu'on imprime, jamais un instant
+  qu'on calcule. En `DateTimeImmutable`, un fuseau entrerait dans un document papier et un
+  match de 15h00 s'imprimerait à 14h00.
+- **Un match fédéral ne se supprime pas** : la sync le recréerait. Le **masque** est la seule
+  façon de l'écarter durablement des documents. L'écran le dit plutôt que de laisser
+  l'admin recommencer trois fois.
+- **Un match disparu du flux n'est supprimé que s'il est resté intact** (ni note, ni masque).
+  Annoté, il est conservé et **signalé** : le club y a mis du travail, l'automate n'a pas à
+  l'effacer en silence.
+- **Les dates françaises passent par `DateFrancaiseFormatter`**, écrit à la main.
+  `IntlDateFormatter('fr_FR')` rend « Sunday 20 September » **sans lever d'erreur** — l'ICU de
+  l'image est réduit au seul anglais, exactement comme pour `NumberFormatter::SPELLOUT`. Et
+  dans les templates PDF, `|capitalize` de Twig, jamais `text-transform: capitalize` : DomPDF
+  l'applique à chaque mot et rend « Dimanche 20 Septembre ».
+- **Le tirage duo est en positionnement absolu**, pas en `<table>` : DomPDF ajoutait marges et
+  rembourrages à la hauteur de ligne, le tableau dépassait la page et sortait rejeté sur une
+  deuxième feuille, la première blanche. Le défaut est invisible à l'écran, il ne se voit
+  qu'à l'impression.
+
+#### Récupérer le calendrier depuis la FFF
+
+L'API publique DOFA (`https://api-dofa.fff.fr/api/clubs/{cl_no}/matchs`) est **ouverte, sans
+jeton**, et rend exactement la donnée utile. `cl_no` n'est **pas** le numéro d'affiliation :
+c'est l'identifiant interne DOFA, réglé dans `/admin/outils/planning-matchs/reglages`, où un
+bouton **vérifie** le numéro en réaffichant le nom du club — un numéro faux ramènerait le
+calendrier d'un autre club sans que rien ne le signale.
+
+⚠️ **Ce n'est pas une API contractuelle** : elle a déjà changé d'hôte deux fois, n'a plus de
+documentation publique, et la FFF sert son calendrier derrière une protection anti-robot qui
+**refuse les clients non navigateurs**. Un serveur peut donc recevoir un **403 permanent** là
+où le même appel passe depuis un poste de travail. `app:planning:sync-fff --dry-run` répond à
+la question sur l'hébergement visé ; `FffApiException::estRefusParProtection()` fait dire à
+l'écran « la FFF refuse les appels venant du serveur » plutôt que « réessayez », car il n'y a
+rien à réessayer. **La saisie à la main et l'import par collage ne sont donc pas un repli
+mais un mode de plein exercice** — d'autant que les **plateaux U7/U9 n'existent pas** dans ce
+flux.
+
+Trois pièges tenus par `FffMatchMapper`, tous vus dans les données réelles :
+
+| Donnée FFF | Traitement |
+|---|---|
+| `away: null` | **équipe exempte** : personne ne joue. La ligne est écartée — l'inscrire ferait tondre la mairie pour rien |
+| `terrain: null` | affecté après parution du calendrier : le match a bien lieu. C'est `home.club.cl_no` qui décide du domicile, jamais le terrain |
+| `time: "15H30"` | traduit en `15:30` ; `date` ISO à minuit UTC dont on prend la **partie date**, sans conversion de fuseau |
+
+La catégorie imprimée vient de la **compétition** (`U16 DISTRICT` → « U16 ») et non du code
+fédéral, qui classe cette même équipe en `U17` : c'est « U16 » que le village reconnaît. Le
+numéro d'équipe n'est pas ajouté — sa signification varie d'un club à l'autre, et un
+« Séniors 2 » faux sur un tract vaut moins qu'un « Séniors » un peu large.
+
+L'interrupteur `fffSyncActive` est **éteint à la migration**, comme `relanceActive` : un
+automate démarre d'une décision, pas d'un déploiement.
+
 ### Detenteur, CleMouvement, AttestationCle — deux échelles de temps
 
 Les clés du local sont le seul domaine où **le fait et l'engagement ne vivent pas dans la
@@ -675,6 +758,17 @@ enum StockMovementType: string {
     case ENTREE = 'entree';
     case SORTIE = 'sortie';
     case REBUT = 'rebut';
+}
+
+enum MatchSource: string {
+    case MANUEL = 'manuel';   // le club décide ; rien ne l'écrase
+    case FFF = 'fff';         // le district décide ; réécrit à chaque synchronisation
+}
+
+enum PlanningFormat: string {
+    case A4_MAIRIE = 'a4_mairie';  // feuille de service pour la tonte du terrain
+    case A5_FLYER  = 'a5_flyer';   // un flyer par page A5
+    case A4_DUO    = 'a4_duo';     // deux A5 côte à côte sur une A4 paysage, à couper
 }
 ```
 
@@ -884,6 +978,8 @@ Drive/
     │   ├── Attestations de paiement/
     │   │   └── attestation_paiement_MARCOUX_Maxence_2026-08-28.pdf
     │   ├── Attestations Transport/
+    │   ├── Plannings/
+    │   │   └── planning_matchs_2026-09-01_2026-09-30_flyer-duo.pdf
     │   └── Club house/Clés/Attestations de remise/
     └── Sauvegardes/
         └── 2026-08/
@@ -907,12 +1003,21 @@ encore en local ». La commande `app:drive-retry-upload` (cron toutes les 15 min
 échecs. Le fichier local n'est supprimé qu'après un upload réussi : tant que Drive est
 injoignable, c'est la seule copie de la signature.
 
+**Le planning des matchs échappe à ce dispositif, volontairement.** File d'attente, colonne
+`drivePath` et reprise cron existent parce qu'une signature perdue l'est pour toujours ; un
+planning se **régénère intégralement depuis la base**. `PlanningDriveSync` archive donc de
+façon **synchrone et à la demande**, via `replaceAtPath` — régénérer la même période remplace
+le fichier au lieu d'empiler des copies — et un échec est **rendu à l'admin** plutôt qu'entré
+dans une file. Ne pas l'y faire rentrer « par cohérence » : ce serait trois mécanismes de plus
+pour protéger un document reproductible en un clic.
+
 ### E. Tâches planifiées (conteneur `cosync_cron`)
 
 | Fréquence | Commande | Pourquoi |
 |---|---|---|
 | toutes les 15 min | `app:drive-retry-upload` | rattrape les PDF restés en local |
 | toutes les 30 min | `app:helloasso:sync-paiements` | rattrape un encaissement dont la notification n'est jamais arrivée — sans lui, le club encaisse sans que la licence passe en validée |
+| 07h00 | `app:planning:sync-fff` | aligne le planning des matchs sur le calendrier du district ; ne fait rien tant que `fffSyncActive` est faux |
 | 09h00 | `app:relances:envoyer` | relance les licences non soldées ; ne fait rien tant que `relanceActive` est faux. Heure ouvrable : un mail du club horodaté à 3 h part en indésirable |
 | 02h30 | `app:db:backup` | dump PostgreSQL + copie sur le Drive |
 
@@ -1264,6 +1369,88 @@ Convention : **tirets simples uniquement**. Pas de `__` ni de `--` BEM. Le préf
 
 ## 8. Sécurité & RGPD
 
+### Rôles et permissions — les droits sont du code, les rôles sont de la donnée
+
+C'est la règle qui porte tout le dispositif, et celle qui décide de ce qui peut être
+configurable.
+
+Une **permission** existe parce qu'une ligne de code la vérifie. La créer depuis un écran
+d'administration ne donnerait aucun droit, puisque personne ne la lit — un tel écran
+produirait des rôles qui ne protègent rien, et c'est pire qu'une absence de flexibilité
+parce que ça rassure. Le catalogue est donc l'enum **`Permission`**, versionnée avec le code
+qui l'applique.
+
+Un **rôle** est un paquet de permissions que le club compose lui-même : « Trésorerie » ne
+veut pas dire la même chose d'un club à l'autre. C'est l'entité **`RoleAcces`** (`role_acces`),
+un `json` de valeurs d'enum, éditable depuis `/admin/club/roles`.
+
+```php
+Permission          // enum : domaine, libellé, description, estEcriture(), implique()
+DomainePermission   // enum : le groupage d'affichage de l'écran d'un rôle
+RoleAcces           // entité : nom, permissions (json), systeme
+User.rolesAcces     // ManyToMany — plusieurs rôles, droits cumulés
+User.superAdmin     // passe-partout
+```
+
+Ce qui ne doit pas se défaire :
+
+- **Pas d'héritage entre rôles.** `role_hierarchy` rend les droits illisibles (« pourquoi la
+  présidente peut-elle modifier le stock ? — parce que X hérite de Y qui… »), et un droit
+  qu'on ne sait pas expliquer est un droit qu'on n'ose plus retirer. La seule hiérarchie est
+  **verticale et interne à un domaine** : `stock.gerer` implique `stock.lire`, déclaré sur
+  `Permission::implique()`, déplié **transitivement** par `PermissionCollector`. Un rôle
+  reste un ensemble plat.
+- **Une écriture entraîne sa lecture, et c'est impossible à produire autrement.**
+  `PermissionCollector::completer()` est appelé à chaque enregistrement d'un rôle. Sans ça,
+  on compose un rôle qui encaisse un paiement sur une fiche qu'il n'a pas le droit d'ouvrir —
+  d'où les rares passerelles inter-domaines (`paiement.lire` → `effectif.lire`,
+  `commande.lire` → `stock.lire`).
+- **Refus par défaut, et c'est le CI qui le tient.** Toute action de `src/Controller/Admin/`
+  déclare `#[IsGranted(Permission::X->value)]` ou, pour une exception assumée,
+  `#[AccesLibre('raison')]`. `bin/check-permissions.php` (job CI `csp`) refuse une action qui
+  ne déclare ni l'un ni l'autre. Le modèle est facile ; ce qui échoue, c'est la route qu'on
+  oublie — et une route oubliée, ici, c'est une lecture seule qui supprime une fiche signée.
+  `AccesLibre` ne vaut que pour un **point de navigation** (un hub, la bascule de saison) ou
+  un écran qui ne parle **que du compte connecté** (profil, documentation).
+- **Le motif : lecture du domaine sur la classe, écriture sur la méthode.** L'oubli le plus
+  probable — une nouvelle action d'écriture — tombe alors du côté restrictif.
+- **`User.roles` (json) n'est pas `User.rolesAcces`.** Le premier est le tableau de rôles de
+  Symfony exigé par `UserInterface` ; il ne porte que `ROLE_USER` et ne sert qu'à la règle
+  `^/ → ROLE_USER` de `security.yaml`, qui reste la porte d'entrée. Les droits métier sont
+  dans le second.
+- **Le super-admin passe partout sans porter aucun rôle**, et il doit toujours en rester au
+  moins un (`UserService::definirSuperAdmin`). C'est la sortie de secours qui empêche de se
+  verrouiller dehors : un club sans accès à ses propres signatures n'a aucun recours.
+  ⚠️ Ce statut était auparavant **déduit** de `DIAG_EMAIL`, l'email de redirection du mode
+  bêta : un réglage d'exploitation décidait de qui administrait l'application. Ne pas revenir
+  à une dérivation.
+- **On masque ce qu'on ne possède pas, on explique ce qu'on ne peut pas jouer.** Les cartes
+  de hub (`permission:` sur `hub-card.html.twig`), les quicklinks et les entrées de navbar
+  disparaissent — sinon on clique sur six cartes pour six 403. À l'intérieur d'un écran qu'on
+  utilise, en revanche, une action bloquée affiche son motif (§7.6 quater) :
+  `FicheActionsResolver` filtre sur `FicheAction::permission()`.
+- **Les rôles sont au niveau du club, pas de la saison.** La trésorière l'est toutes les
+  saisons ; les cloisonner obligerait à les réaffecter chaque 1ᵉʳ juillet, et le premier oubli
+  fermerait l'outil en pleine campagne d'inscriptions.
+- **`RolesSysteme` livre deux rôles seulement** — Responsable foot et Trésorerie —, créés par
+  `Version20260829200000` puis maintenus par `app:seed-referential`. Ce sont les deux fonctions
+  qui existent dans tous les clubs ; en livrer davantage reviendrait à deviner l'organigramme
+  du club à sa place, et un rôle livré inutilisé encombre l'écran sans pouvoir être supprimé.
+  Ils se renomment et se modifient librement, mais **ne se suppriment pas** : il reste toujours
+  de quoi rouvrir un accès. Le seed est idempotent **au sens strict** — un rôle déjà présent
+  n'est pas remis à ses permissions d'origine, sinon chaque déploiement effacerait les
+  ajustements du club. Les noms désignent des **fonctions**, pas des personnes.
+- **Un rôle ne porte pas de description** : les permissions cochées disent déjà ce qu'il fait,
+  et mieux qu'une phrase que personne ne relit quand les cases changent.
+- **Hors périmètre, et pas par oubli** : le périmètre par équipe (« l'éducateur des U15 ne
+  voit que ses U15 ») n'est pas une permission mais un jugement porté sur un **sujet**, donc
+  un autre voter et un filtrage de chaque requête de liste — où l'oubli d'un filtre est
+  invisible. Rien dans ce modèle ne l'empêche plus tard.
+
+La migration a attribué « Responsable foot » à **tous les comptes existants** : jusque-là,
+tout compte connecté pouvait tout faire, et un déploiement de sécurité qui commence par
+bloquer les gens en place se fait annuler dans l'heure.
+
 ### Accès public
 - Le lien `/inscription/{uuid}` est valide **30 jours** après génération.
 - Après soumission, le lien devient invalide (token consommé).
@@ -1325,8 +1512,8 @@ de l'ouvrir.
 
 Un dossier = un domaine métier, pas une couche technique. `Licencie/`, `Dirigeant/`,
 `Inscription/`, `Dotation/`, `Stock/`, `Cle/`, `Saison/`, `Referentiel/`, `Compte/`,
-`Document/`, `Payment/`, `Import/`, `Mail/`, `Pdf/`, `Drive/`, `Ops/` (exploitation),
-`Ui/` (état d'affichage).
+`Document/`, `Payment/`, `Import/`, `Planning/` (matchs à domicile), `Relance/`, `Boutique/`,
+`Effectif/`, `Mail/`, `Pdf/`, `Drive/`, `Ops/` (exploitation), `Ui/` (état d'affichage).
 
 **Aucun service à la racine de `src/Service/`.** Si le domaine d'une nouvelle classe
 n'est pas évident, c'est le signe qu'elle en fait trop.
@@ -1349,6 +1536,13 @@ n'est pas évident, c'est le signe qu'elle en fait trop.
   prod installe `--no-dev`, la classe manque et le code casse **en production uniquement**.
   Tout paquet utilisé par `src/`, `bin/`, `config/` ou `public/` va dans `require`.
   Garde-fou : `bin/check-prod-deps.php`, joué par le job CI `dependances-prod`.
+- ❌ Ajouter une action à `src/Controller/Admin/` sans `#[IsGranted(Permission::…)]` ni
+  `#[AccesLibre('raison')]` : elle serait ouverte à tout compte connecté. Garde-fou :
+  `bin/check-permissions.php`, joué par le job CI `csp`.
+- ❌ Créer une table `permission` en base, ou un écran qui inventerait des permissions : une
+  permission n'existe que parce qu'une ligne de code la vérifie (§8).
+- ❌ Redériver le statut de super-admin d'un réglage d'exploitation (`DIAG_EMAIL` ou autre) :
+  c'est un fait porté par le compte.
 
 ### Schéma & données (la prod contient des données réelles — cf. bandeau en tête et §13)
 

@@ -39,4 +39,19 @@ enum FicheAction: string
     {
         return $this === self::ANNULER_VALIDATION_FFF;
     }
+
+    /**
+     * Le droit qu'exige ce geste — le même que la route qu'il déclenche.
+     *
+     * Sans ce lien, la fiche proposerait à la trésorière un bouton « Envoyer le lien » qui
+     * répond 403 : le contrôleur refuse déjà, mais l'écran ne le sait pas.
+     */
+    public function permission(): Permission
+    {
+        return match ($this) {
+            self::VALIDER_FFF, self::ANNULER_VALIDATION_FFF => Permission::LICENCE_VALIDER_FFF,
+            self::ATTESTATION_PAIEMENT => Permission::PAIEMENT_ATTESTER,
+            default => Permission::EFFECTIF_GERER,
+        };
+    }
 }

@@ -34,6 +34,9 @@
         </div>
 
         <div class="licencie-show-header-actions">
+            {# Un geste que le compte ne peut pas jouer disparaît : ce n'est pas une étape
+               bloquée, c'est un pan de l'application qu'il ne possède pas (§7.6 quater). #}
+            {% if is_granted('effectif.gerer') %}
             <a href="{{ path('admin_dirigeants_edit', {uuid: dirigeant.uuid}) }}" class="btn btn-secondary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -41,16 +44,17 @@
                 </svg>
                 Modifier
             </a>
+            {% endif %}
 
             {# Le badge de l'en-tête dit déjà l'état : ici, seulement ce qu'il y a à faire.
                Une licence administrative n'attend ni lien ni document — mais elle existe à la
                FFF, elle se valide donc comme les autres. #}
-            {% if statut.value == 'a_valider_fff' or statut.value == 'licence_administrative' %}
+            {% if (statut.value == 'a_valider_fff' or statut.value == 'licence_administrative') and is_granted('licence.valider_fff') %}
                 <form method="post" action="{{ path('admin_dirigeants_validate_fff', {uuid: dirigeant.uuid}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_valider_fff_' ~ dirigeant.uuid) }}">
                     <button type="submit" class="btn btn-primary">Valider sur FootClubs</button>
                 </form>
-            {% elseif statut.value == 'valide' %}
+            {% elseif statut.value == 'valide' and is_granted('licence.valider_fff') %}
                 {# Défait un état enregistré, d'où le registre rouge (§7.6 bis). #}
                 <form method="post" action="{{ path('admin_dirigeants_cancel_validate_fff', {uuid: dirigeant.uuid}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_annuler_valider_fff_' ~ dirigeant.uuid) }}">
@@ -59,7 +63,7 @@
                         Annuler la validation
                     </button>
                 </form>
-            {% elseif not dossierComplet %}
+            {% elseif not dossierComplet and is_granted('effectif.gerer') %}
                 {% if dirigeant.email %}
                     <form method="post" action="{{ path('admin_dirigeants_send_link', {uuid: dirigeant.uuid}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_send_link_' ~ dirigeant.uuid) }}">

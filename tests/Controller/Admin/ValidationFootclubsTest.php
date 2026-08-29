@@ -212,7 +212,7 @@ final class ValidationFootclubsTest extends WebTestCase
     private function loginAdmin(KernelBrowser $client): User
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-fff@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-fff@example.test')->setPassword('x');
 
         $em->persist($user);
         $em->flush();

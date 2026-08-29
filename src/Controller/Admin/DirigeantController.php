@@ -14,12 +14,12 @@ use App\Entity\Team;
 use App\Enum\ChampContact;
 use App\Enum\DirigeantRole;
 use App\Enum\DirigeantStatut;
+use App\Enum\Permission;
 use App\Form\DirigeantType;
 use App\Repository\DirigeantRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
-use App\Security\Voter\SuperAdminVoter;
 use App\Service\Cle\CleRegistrePresenter;
 use App\Service\Dirigeant\DirigeantDossierCompletion;
 use App\Service\Dirigeant\DirigeantFormPrefill;
@@ -40,6 +40,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/effectif/dirigeants', name: 'admin_dirigeants_')]
+#[IsGranted(Permission::EFFECTIF_LIRE->value)]
 class DirigeantController extends AbstractController
 {
     public function __construct(
@@ -68,7 +69,7 @@ class DirigeantController extends AbstractController
     ): Response {
         // Le mode édition n'est pas un filtre : jamais mémorisé, seulement reporté sur la
         // redirection de restauration. Cf. la même règle côté joueurs.
-        $edition = $request->query->getBoolean('edition') && $this->isGranted(SuperAdminVoter::ACCES_DIAGNOSTIC);
+        $edition = $request->query->getBoolean('edition') && $this->isGranted(Permission::EFFECTIF_SUPPRIMER->value);
 
         $restored = $this->filterMemory->restoreOrRemember('dirigeants', $request, ['team', 'role', 'search']);
         if ($restored !== null) {
@@ -136,6 +137,7 @@ class DirigeantController extends AbstractController
      * Déclaré avant la route `/{uuid}` : sans cela, « envoyer-liens » serait lu comme un uuid.
      */
     #[Route('/envoyer-liens', name: 'send_links', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendLinks(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -201,6 +203,7 @@ class DirigeantController extends AbstractController
      * jumeau exact de l'écran des joueurs : c'est le même geste, seul le mail diffère.
      */
     #[Route('/demander-signatures', name: 'request_signatures', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function requestSignatures(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -251,6 +254,7 @@ class DirigeantController extends AbstractController
      * « valider-footclubs » serait lu comme un uuid. Frère de l'écran joueurs.
      */
     #[Route('/valider-footclubs', name: 'validate_fff_bulk', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
     public function validateFffBulk(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -310,7 +314,7 @@ class DirigeantController extends AbstractController
     }
 
     #[Route('/supprimer', name: 'delete_confirm', methods: ['POST'])]
-    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    #[IsGranted(Permission::EFFECTIF_SUPPRIMER->value)]
     public function deleteConfirm(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -334,7 +338,7 @@ class DirigeantController extends AbstractController
     }
 
     #[Route('/supprimer/confirmer', name: 'delete', methods: ['POST'])]
-    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    #[IsGranted(Permission::EFFECTIF_SUPPRIMER->value)]
     public function delete(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -379,6 +383,7 @@ class DirigeantController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function new(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -452,6 +457,7 @@ class DirigeantController extends AbstractController
     }
 
     #[Route('/{uuid}/envoyer-lien', name: 'send_link', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendLink(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         Request $request,
@@ -470,6 +476,7 @@ class DirigeantController extends AbstractController
 
     /** Le club a signé la licence dans FootClubs : dernier état du parcours. */
     #[Route('/{uuid}/valider-footclubs', name: 'validate_fff', methods: ['POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
     public function validateFff(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         Request $request,
@@ -484,6 +491,7 @@ class DirigeantController extends AbstractController
 
     /** Sortie de secours d'un clic malheureux : la licence redevient à valider. */
     #[Route('/{uuid}/annuler-validation-footclubs', name: 'cancel_validate_fff', methods: ['POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
     public function cancelValidateFff(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         Request $request,
@@ -497,6 +505,7 @@ class DirigeantController extends AbstractController
     }
 
     #[Route('/{uuid}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function edit(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         Request $request,
@@ -544,6 +553,7 @@ class DirigeantController extends AbstractController
     }
 
     #[Route('/{uuid}/coordonnees/{champ}/reprendre-import', name: 'contact_reprendre_import', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function reprendreImportContact(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         ChampContact $champ,

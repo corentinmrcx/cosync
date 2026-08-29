@@ -2,7 +2,10 @@
 
 namespace App\Form;
 
+use App\Entity\RoleAcces;
 use App\Entity\User;
+use App\Repository\RoleAccesRepository;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -33,6 +36,21 @@ class UserType extends AbstractType
                 'attr' => ['placeholder' => $options['is_new'] ? '' : 'Laisser vide pour ne pas changer'],
             ]);
         }
+
+        // Non mappé : la collection de l'entité s'écrit par ajouterRoleAcces()/retirerRoleAcces(),
+        // que l'accesseur de Symfony ne sait pas deviner. C'est UserService::remplacerRoles()
+        // qui applique la sélection — un seul endroit qui touche à la collection.
+        $builder->add('rolesAcces', EntityType::class, [
+            'label' => 'Rôles',
+            'class' => RoleAcces::class,
+            'choice_label' => 'nom',
+            'multiple' => true,
+            'expanded' => true,
+            'mapped' => false,
+            'required' => false,
+            'data' => $options['roles_actuels'],
+            'query_builder' => static fn (RoleAccesRepository $repo) => $repo->createQueryBuilder('r')->orderBy('r.nom', 'ASC'),
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -41,8 +59,10 @@ class UserType extends AbstractType
             'data_class' => User::class,
             'is_new' => true,
             'can_change_password' => true,
+            'roles_actuels' => [],
         ]);
 
         $resolver->setAllowedTypes('can_change_password', 'bool');
+        $resolver->setAllowedTypes('roles_actuels', 'array');
     }
 }

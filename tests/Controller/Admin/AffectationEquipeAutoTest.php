@@ -174,7 +174,7 @@ final class AffectationEquipeAutoTest extends WebTestCase
 
         $this->precedente = (new Season())->setLabel('2024-2025')->setCotisationDefaut(80);
         $this->courante = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-affectation@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-affectation@example.test')->setPassword('x');
         $user->setSelectedSeason($this->courante);
 
         $em->persist($this->precedente);

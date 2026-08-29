@@ -1,0 +1,79 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Rôles{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Rôles' }
+] } %}
+
+<div class="roles-page">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-titre">Rôles</h1>
+        </div>
+        <div class="page-actions">
+            <a href="{{ path('admin_roles_new') }}" class="btn btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Nouveau rôle
+            </a>
+        </div>
+    </div>
+
+    <div class="table-wrapper table-cartes">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Rôle</th>
+                    <th>Droits</th>
+                    <th>Comptes</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligne in lignes %}
+                    {% set role = ligne.role %}
+                    <tr class="roles-row">
+                        <td class="carte-titre">{{ role.nom }}</td>
+                        <td data-label="Droits">{{ role.permissions|length }}</td>
+                        <td data-label="Comptes">{{ ligne.comptes }}</td>
+                        <td>
+                            <div class="roles-actions-cell">
+                                <a href="{{ path('admin_roles_edit', {id: role.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
+                                {% if ligne.estSupprimable %}
+                                    <form method="post" action="{{ path('admin_roles_delete', {id: role.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('role_acces_delete_' ~ role.id) }}">
+                                        <button type="submit" class="btn btn-danger btn-sm"
+                                                onclick="return confirm('Supprimer le rôle « {{ role.nom|e('js') }} » ?')">
+                                            Supprimer
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    {# Le bouton reste, cadenassé : le faire disparaître laisserait
+                                       chercher ce qu'on a mal fait. Le motif tient dans l'infobulle. #}
+                                    <button type="button" disabled
+                                            class="btn btn-danger btn-sm roles-supprimer-verrouille"
+                                            title="{{ ligne.motifBlocageSuppression }}"
+                                            aria-label="Suppression impossible : {{ ligne.motifBlocageSuppression }}">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="4" y="11" width="16" height="10" rx="2"/>
+                                            <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                                        </svg>
+                                        Supprimer
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}
