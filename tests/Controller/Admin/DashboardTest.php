@@ -5,6 +5,7 @@ namespace App\Tests\Controller\Admin;
 use App\Entity\Season;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -64,6 +65,40 @@ final class DashboardTest extends WebTestCase
             ['Identité de l\'association', 'Coordonnées bancaires', 'Relances automatiques', 'Catégories FFF', 'Tailles', 'Utilisateurs'],
             $labels,
         );
+    }
+
+    /**
+     * Une carte dont l'icône est inconnue de `hub-card.html.twig` rend un cadre vide, sans
+     * la moindre erreur : le composant porte son propre jeu d'icônes, distinct de
+     * `_icon.html.twig`, et un nom pris dans le mauvais des deux passe inaperçu jusqu'à ce
+     * que quelqu'un ouvre la page. C'est arrivé en ajoutant « Relances automatiques ».
+     */
+    #[DataProvider('pagesAvecDesCartes')]
+    public function testChaqueCarteDUnHubPorteSonIcone(string $url): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $crawler = $client->request('GET', $url);
+        self::assertResponseIsSuccessful();
+
+        $cartes = $crawler->filter('.hub-card');
+        self::assertGreaterThan(0, $cartes->count(), 'La page doit présenter au moins une carte.');
+
+        $sansIcone = $cartes->reduce(
+            static fn ($carte): bool => $carte->filter('.hub-card-icon svg')->count() === 0,
+        )->each(static fn ($carte): string => trim($carte->filter('.hub-card-label')->text()));
+
+        self::assertSame([], $sansIcone, 'Ces cartes n\'ont pas d\'icône : le nom passé est inconnu de hub-card.html.twig.');
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function pagesAvecDesCartes(): iterable
+    {
+        yield 'racine' => ['/admin/'];
+        yield 'club' => ['/admin/club'];
+        yield 'saison' => ['/admin/saison'];
+        yield 'saisons' => ['/admin/saisons'];
     }
 
     /* ── Outils ── */
