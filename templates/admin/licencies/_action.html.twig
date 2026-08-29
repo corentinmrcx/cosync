@@ -57,6 +57,16 @@
         </button>
     </form>
 
+{% elseif action == 'relancer_paiement' %}
+    {# Le dossier est complet, la cotisation n'est pas enregistrée : le mail rappelle le
+       montant et les instructions du mode déclaré, il ne redemande pas le formulaire. #}
+    <form method="post" action="{{ path('admin_licencies_relance_unitaire', {uuid: licencie.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('relance_unitaire_' ~ licencie.uuid) }}">
+        <button type="submit" class="{{ classe }}">
+            {{ ui.icon('send', 14) }} Relancer le paiement
+        </button>
+    </form>
+
 {% elseif action == 'valider_fff' %}
     <form method="post" action="{{ path('admin_licencies_validate_fff', {uuid: licencie.uuid}) }}">
         <input type="hidden" name="_token" value="{{ csrf_token('valider_fff_' ~ licencie.uuid) }}">

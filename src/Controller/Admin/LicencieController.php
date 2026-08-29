@@ -10,6 +10,7 @@ use App\DTO\FiltreListe;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
 use App\DTO\PaiementManuelData;
+use App\DTO\RelanceDue;
 use App\DTO\RelanceResultat;
 use App\Entity\Licencie;
 use App\Entity\Season;
@@ -44,6 +45,9 @@ use App\Service\Mail\DernierContactResolver;
 use App\Service\Mail\InscriptionLinkService;
 use App\Service\Payment\AttestationPaiementService;
 use App\Service\Payment\CotisationResolver;
+use App\Service\Referentiel\ClubSettingsService;
+use App\Service\Relance\RelanceResolver;
+use App\Service\Relance\RelanceService;
 use App\Service\Ui\ListFilterMemory;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -71,6 +75,9 @@ class LicencieController extends AbstractController
         private readonly PaiementService $paiementService,
         private readonly HistoriqueFicheService $historiqueService,
         private readonly DernierContactResolver $dernierContact,
+        private readonly ClubSettingsService $clubSettings,
+        private readonly RelanceResolver $relanceResolver,
+        private readonly RelanceService $relanceLicences,
         private readonly FicheActionsResolver $ficheActions,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly SignatureCompletionService $signatureCompletion,
@@ -144,6 +151,9 @@ class LicencieController extends AbstractController
             // Signalé au même endroit que les liens jamais envoyés : c'est la même
             // question — qui reste-t-il à relancer avant que la saison démarre ?
             'signaturesEnAttente' => count($this->relanceService->licencies($season)),
+            // Ceux dont la licence n'est pas soldée et dont le dernier mail remonte au
+            // délai configuré : exactement la liste que le cron enverrait cette nuit.
+            'relancesEnAttente' => count($this->relanceResolver->dues($season)),
             // Troisième relance du même écran, mais celle-ci ne s'adresse à personne :
             // c'est le club qui a une démarche à faire dans FootClubs.
             'aValiderFff' => $this->licencieRepo->countAValiderFff($season),
@@ -276,6 +286,59 @@ class LicencieController extends AbstractController
             'retourUrl' => $this->generateUrl('admin_licencies_list'),
             'intro' => 'Un joueur dont le dossier était déjà complet n\'a plus de lien valide : ajouter un document ne le prévient pas. Chaque personne cochée reçoit un lien rouvert pour 30 jours vers un parcours réduit à la signature — ni tailles, ni autorisations, ni paiement ne lui sont redemandés. Ceux qui n\'ont pas terminé leur inscription ne sont pas listés : leur formulaire leur présentera ces documents avec le reste.',
         ]);
+    }
+
+    /**
+     * Relance groupée des licences non soldées. Déclaré avant la route `/{uuid}` : sans
+     * cela, « relancer » serait lu comme un uuid.
+     *
+     * Le même écran qu'utilise le cron, sous les yeux d'un admin : la liste affichée est
+     * exactement celle que le robot enverrait cette nuit. Il reste utilisable robot éteint —
+     * c'est même la seule façon de relancer tant qu'on ne l'a pas allumé, et le moyen de
+     * voir ce qu'il ferait avant de le laisser faire.
+     */
+    #[Route('/relancer', name: 'relancer', methods: ['GET', 'POST'])]
+    public function relancer(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('relancer_licencies', $request);
+
+            $resultat = $this->relanceLicences->envoyerEnMasse(
+                $season,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $resultat->envoyes > 0 ? 'success' : 'info',
+                $this->resumeEnvoiRelances($resultat),
+            );
+
+            return $this->redirectToRoute('admin_licencies_list');
+        }
+
+        $dues = $this->relanceResolver->dues($season);
+
+        return $this->render('admin/effectif/relancer.html.twig', [
+            'dues' => $dues,
+            'uuids' => array_map(static fn (RelanceDue $due): string => $due->uuid(), $dues),
+            'settings' => $this->clubSettings->get(),
+        ]);
+    }
+
+    private function resumeEnvoiRelances(EnvoiGroupeResultat $resultat): string
+    {
+        $parties = [sprintf('%d relance%s envoyée%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '')];
+
+        if ($resultat->nonRetenus > 0) {
+            $parties[] = sprintf('%d décoché%s', $resultat->nonRetenus, $resultat->nonRetenus > 1 ? 's' : '');
+        }
+        if ($resultat->echecs > 0) {
+            $parties[] = sprintf('%d échec%s d\'envoi', $resultat->echecs, $resultat->echecs > 1 ? 's' : '');
+        }
+
+        return implode(', ', $parties) . '.';
     }
 
     /**
@@ -764,6 +827,32 @@ class LicencieController extends AbstractController
         try {
             $this->inscriptionLinkService->send($licencie);
             $this->addFlash('success', 'Lien d\'inscription envoyé à ' . $licencie->getEmail() . '.');
+        } catch (\Throwable) {
+            $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
+        }
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+    }
+
+    /**
+     * Relance à l'unité depuis une fiche : le rappel de cotisation d'un dossier complet.
+     *
+     * Ni délai ni plafond ici — c'est un acte délibéré, et l'en-tête de la fiche affiche le
+     * dernier contact juste au-dessus du bouton. Elle est journalisée comme les autres, et
+     * repousse donc la relance automatique suivante.
+     */
+    #[Route('/{uuid}/relancer', name: 'relance_unitaire', methods: ['POST'])]
+    public function relancerUnLicencie(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('relance_unitaire_' . $licencie->getUuid(), $request);
+
+        try {
+            $this->relanceLicences->relancerUnLicencie($licencie);
+            $this->addFlash('success', 'Relance envoyée à ' . $licencie->getEmail() . '.');
+        } catch (\LogicException $e) {
+            $this->addFlash('error', $e->getMessage());
         } catch (\Throwable) {
             $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
         }

@@ -28,6 +28,7 @@ final class FicheActionsResolver
         FicheAction::ENVOYER_LIEN,
         FicheAction::COMPLETER_AUTORISATIONS,
         FicheAction::DEMANDER_SIGNATURE,
+        FicheAction::RELANCER_PAIEMENT,
         FicheAction::VALIDER_FFF,
     ];
 
@@ -37,6 +38,7 @@ final class FicheActionsResolver
         FicheAction::ENVOYER_LIEN,
         FicheAction::COMPLETER_AUTORISATIONS,
         FicheAction::DEMANDER_SIGNATURE,
+        FicheAction::RELANCER_PAIEMENT,
         FicheAction::VALIDER_FFF,
         FicheAction::ATTESTATION_PAIEMENT,
         FicheAction::ANNULER_VALIDATION_FFF,
@@ -109,6 +111,14 @@ final class FicheActionsResolver
         }
         if ($signatureManquante) {
             $actions[] = FicheAction::DEMANDER_SIGNATURE;
+        }
+        // Dossier complet, cotisation pas encore enregistrée : le seul geste qui reste,
+        // et le seul cas où « relancer » veut dire autre chose que renvoyer le lien.
+        // Volontairement **pas** conditionné au délai de la relance automatique : c'est un
+        // acte délibéré d'admin, et l'en-tête de la fiche affiche le dernier contact juste
+        // au-dessus — on montre l'information, on ne bloque pas la personne.
+        if ($statut === LicenceStatus::FORM_COMPLETED) {
+            $actions[] = FicheAction::RELANCER_PAIEMENT;
         }
         if ($statut === LicenceStatus::A_VALIDER_FFF) {
             $actions[] = FicheAction::VALIDER_FFF;

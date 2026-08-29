@@ -22,6 +22,12 @@ enum TypeMail: string
     case ATTESTATION_CLE = 'attestation_cle';
     case ATTESTATION_PAIEMENT = 'attestation_paiement';
 
+    /* — Relances — Deux types distincts, parce que ce ne sont pas deux versions du même
+       message : l'un redonne un lien à remplir, l'autre rappelle un montant à régler. Les
+       compter ensemble reste juste — c'est le plafond de relances qui les additionne. */
+    case RELANCE_DOSSIER = 'relance_dossier';
+    case RELANCE_PAIEMENT = 'relance_paiement';
+
     /** Libellé affiché dans l'historique d'une fiche, au passé : c'est un fait daté. */
     public function label(): string
     {
@@ -35,6 +41,8 @@ enum TypeMail: string
             self::DIRIGEANT_LINK => 'Lien de formulaire dirigeant envoyé par email',
             self::ATTESTATION_CLE => 'Attestation de remise de clés à signer envoyée',
             self::ATTESTATION_PAIEMENT => 'Attestation de paiement envoyée',
+            self::RELANCE_DOSSIER => 'Relance — dossier à compléter',
+            self::RELANCE_PAIEMENT => 'Relance — paiement en attente',
         };
     }
 
@@ -56,5 +64,15 @@ enum TypeMail: string
             self::VALIDATION => OrigineEnvoi::AUTOMATIQUE,
             default => OrigineEnvoi::ADMIN,
         };
+    }
+
+    /**
+     * Les types qui comptent pour le plafond de relances.
+     *
+     * @return self[]
+     */
+    public static function relances(): array
+    {
+        return [self::RELANCE_DOSSIER, self::RELANCE_PAIEMENT];
     }
 }

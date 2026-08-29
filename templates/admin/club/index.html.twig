@@ -25,6 +25,12 @@
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
+            icon: 'send',
+            label: 'Relances automatiques',
+            route: 'admin_club_relances'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
             icon: 'tag',
             label: 'Catégories FFF',
             route: 'admin_categories_index'

@@ -7,6 +7,8 @@ use App\Entity\AttestationPaiement;
 use App\Entity\Detenteur;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
+use App\Enum\EtapeRelance;
+use App\Enum\OrigineEnvoi;
 use App\Enum\TypeMail;
 use App\Service\Payment\CotisationResolver;
 use App\Service\Referentiel\ClubSettingsService;
@@ -141,6 +143,49 @@ final class MailerService
                 'licencie' => $licencie,
                 'url' => $url,
             ],
+        );
+    }
+
+    /**
+     * Relance d'une licence non soldée.
+     *
+     * Deux messages, choisis par l'étape : redonner un lien à qui n'a rien rempli, rappeler
+     * un montant à qui a rempli mais pas payé. Un message unique demanderait à moitié la
+     * mauvaise chose à chacune des deux moitiés de la liste.
+     *
+     * L'origine est explicite ici, et nulle part ailleurs : c'est le seul mail du club qui
+     * part tantôt du cron, tantôt d'un admin sur son écran — et l'historique doit dire
+     * lequel des deux a écrit.
+     */
+    public function sendRelance(Licencie $licencie, EtapeRelance $etape, OrigineEnvoi $origine): void
+    {
+        if ($licencie->getEmail() === null) {
+            return;
+        }
+
+        $dossier = $licencie->getDossierClub();
+
+        $this->clubMailer->envoyer(
+            $etape->typeMail(),
+            $licencie,
+            $this->adresseDe($licencie),
+            $etape === EtapeRelance::DOSSIER ? 'Votre inscription n\'est pas terminée' : 'Votre cotisation reste à régler',
+            $etape === EtapeRelance::DOSSIER ? 'email/relance_dossier.html.twig' : 'email/relance_paiement.html.twig',
+            [
+                'licencie' => $licencie,
+                'montant' => $this->cotisationResolver->resolve($licencie),
+                'intentions' => $dossier?->getPaymentIntentions() ?? [],
+                'precisionAutre' => $dossier?->getPaymentAutrePrecision(),
+                'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
+                // Le dossier renvoie vers le formulaire, dont le lien vient d'être rouvert ;
+                // le paiement vers la page de confirmation, qui porte le bouton HelloAsso et
+                // n'est protégée par aucun jeton — elle reste donc atteignable indéfiniment.
+                'url' => $this->lienPublic(
+                    $etape === EtapeRelance::DOSSIER ? 'public_inscription_show' : 'public_inscription_confirmation',
+                    $licencie->getUuid(),
+                ),
+            ],
+            origine: $origine,
         );
     }
 

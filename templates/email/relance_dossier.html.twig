@@ -1,0 +1,46 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block sujet %}Votre inscription n'est pas terminée — {{ club_nom }}{% endblock %}
+
+{% block corps %}
+    <tr>
+        <td style="padding: 44px 40px 8px;" class="px">
+            <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: {{ c.primaire }};">
+                Inscription · Saison {{ licencie.season.label }}
+            </p>
+            <h1 class="h1" style="margin: 0 0 18px; font-size: 30px; line-height: 1.2; font-weight: 800; color: {{ c.texteFort }};">
+                Il reste une étape
+            </h1>
+            <p style="margin: 0 0 14px; font-size: 16px; line-height: 1.65; color: {{ c.texteCourant }};">
+                {% if licencie.category.isJeune %}
+                    Le dossier d'inscription de <strong style="color: {{ c.texteFort }};">{{ licencie.prenom }}</strong>
+                    n'a pas encore été complété.
+                {% else %}
+                    Votre dossier d'inscription n'a pas encore été complété.
+                {% endif %}
+                Quelques minutes suffisent : tailles d'équipement, autorisations et signature des documents.
+            </p>
+            <p style="margin: 0 0 14px; font-size: 16px; line-height: 1.65; color: {{ c.texteCourant }};">
+                La cotisation s'élève à <strong style="color: {{ c.texteFort }};">{{ montant }} €</strong> ;
+                le mode de règlement se choisit à la dernière étape du formulaire.
+            </p>
+        </td>
+    </tr>
+
+    {% include 'email/_bouton.html.twig' with {
+        url: url,
+        libelle: 'Compléter mon dossier →',
+        note: 'Lien personnel — valable 30 jours, ne le partagez pas.',
+    } %}
+
+    {# Sortie de secours : un mail automatique doit toujours dire quoi faire s'il se trompe. #}
+    <tr>
+        <td style="padding: 24px 40px 36px;" class="px">
+            <p style="margin: 0; font-size: 15px; line-height: 1.7; color: {{ c.texteCourant }};">
+                Si vous avez déjà tout rempli, ce message a pu se croiser avec votre envoi :
+                merci de ne pas en tenir compte, ou de nous répondre pour qu'on vérifie.<br>
+                <strong style="color: {{ c.texteFort }};">L'équipe du {{ club_nom }}</strong>
+            </p>
+        </td>
+    </tr>
+{% endblock %}

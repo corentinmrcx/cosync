@@ -20,6 +20,7 @@ enum FicheAction: string
     case ENVOYER_LIEN = 'envoyer_lien';
     case COMPLETER_AUTORISATIONS = 'completer_autorisations';
     case DEMANDER_SIGNATURE = 'demander_signature';
+    case RELANCER_PAIEMENT = 'relancer_paiement';
     case VALIDER_FFF = 'valider_fff';
     case ANNULER_VALIDATION_FFF = 'annuler_validation_fff';
     case ATTESTATION_PAIEMENT = 'attestation_paiement';
@@ -28,7 +29,7 @@ enum FicheAction: string
     public function exigeUnEmail(): bool
     {
         return match ($this) {
-            self::ENVOYER_LIEN, self::COMPLETER_AUTORISATIONS, self::DEMANDER_SIGNATURE => true,
+            self::ENVOYER_LIEN, self::COMPLETER_AUTORISATIONS, self::DEMANDER_SIGNATURE, self::RELANCER_PAIEMENT => true,
             default => false,
         };
     }

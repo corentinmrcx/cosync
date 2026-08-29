@@ -1,0 +1,20 @@
+/* — Réglages des relances automatiques (/admin/club/relances) —
+   La page réutilise le gabarit de formulaire `season-form-*` comme les autres écrans
+   de réglages du club ; seul le rappel de la commande de simulation lui est propre. */
+
+/* On veut pouvoir voir qui partirait avant d'allumer un automate qui écrit à tout
+   l'effectif : la commande de simulation est rappelée sous le formulaire. */
+.relance-settings-astuce {
+    margin: 0.5rem 0 0;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    color: var(--color-text-muted);
+}
+
+.relance-settings-astuce code {
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-muted);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-body);
+}

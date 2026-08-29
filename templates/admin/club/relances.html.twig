@@ -1,0 +1,58 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Relances automatiques{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Relances automatiques' }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+
+        <h1 class="season-form-header">Relances automatiques</h1>
+        <p class="config-teams-intro">
+            Le club relance de lui-même les licences non soldées : celles dont le formulaire
+            n'est pas rempli, et celles qui le sont mais dont la cotisation n'est pas
+            enregistrée. Le délai part du <strong>dernier mail reçu par la personne</strong> —
+            une relance passée à la main repousse donc d'autant celle du robot, et personne
+            ne reçoit deux messages le même jour.
+        </p>
+        <hr class="season-form-divider">
+
+        <div class="field">
+            {{ form_widget(form.relanceActive) }}
+            {{ form_label(form.relanceActive) }}
+            {{ form_help(form.relanceActive) }}
+            {{ form_errors(form.relanceActive) }}
+        </div>
+
+        {% for champ in [form.relanceDelaiJours, form.relanceMax] %}
+            <div class="field">
+                {{ form_label(champ) }}
+                {{ form_widget(champ) }}
+                {{ form_help(champ) }}
+                {{ form_errors(champ) }}
+            </div>
+        {% endfor %}
+
+        {# Avant d'allumer : voir qui partirait. La commande n'envoie rien en --dry-run. #}
+        <p class="relance-settings-astuce">
+            Avant d'activer, on peut voir qui serait relancé sans envoyer aucun mail :
+            <code>php bin/console app:relances:envoyer --dry-run</code>.
+            L'écran <a href="{{ path('admin_licencies_relancer') }}">Relancer les licences en attente</a>
+            affiche la même liste, et permet d'envoyer au cas par cas.
+        </p>
+
+        <div class="season-form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+            <a href="{{ path('admin_club_index') }}" class="btn btn-ghost btn-lg">Annuler</a>
+        </div>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

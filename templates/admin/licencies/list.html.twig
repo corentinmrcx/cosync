@@ -12,7 +12,7 @@
 
 <div class="licencies-page">
 
-    {% if liensEnAttente > 0 or signaturesEnAttente > 0 or aValiderFff > 0 %}
+    {% if liensEnAttente > 0 or signaturesEnAttente > 0 or relancesEnAttente > 0 or aValiderFff > 0 %}
         <div class="effectif-alertes">
 
             {% if liensEnAttente > 0 %}
@@ -37,6 +37,21 @@
                     {% block texte %}
                         <strong>{{ nb }}</strong> licencié{{ nb > 1 ? 's' }} {{ nb > 1 ? 'ont' : 'a' }}
                         un document à signer — ajouté après {{ nb > 1 ? 'leur' : 'son' }} inscription.
+                    {% endblock %}
+                {% endembed %}
+            {% endif %}
+
+            {% if relancesEnAttente > 0 %}
+                {# Le robot enverra la même liste cette nuit s'il est allumé ; l'alerte
+                   reste utile dans les deux cas : allumé, elle dit ce qui va partir. #}
+                {% embed 'components/_effectif_alerte.html.twig' with {
+                    nb: relancesEnAttente,
+                    url: path('admin_licencies_relancer'),
+                    libelle: 'Relancer',
+                } only %}
+                    {% block texte %}
+                        <strong>{{ nb }}</strong> licence{{ nb > 1 ? 's' }} non soldée{{ nb > 1 ? 's' }}
+                        {{ nb > 1 ? 'attendent' : 'attend' }} une relance.
                     {% endblock %}
                 {% endembed %}
             {% endif %}

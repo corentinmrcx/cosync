@@ -19,6 +19,11 @@ crontab - <<EOF
 # licence passe en validée.
 */30 * * * * $CONSOLE app:helloasso:sync-paiements 2>&1
 
+# Relance des licences non soldées, une fois par jour à heure ouvrable — un mail du
+# club horodaté à 3 h du matin part en indésirable. Ne fait rien tant que l'admin n'a
+# pas allumé l'interrupteur dans /admin/club/relances.
+0 9 * * * $CONSOLE app:relances:envoyer 2>&1
+
 # Sauvegarde nightly de la base (locale + copie sur le Drive du club)
 30 2 * * * $CONSOLE app:db:backup 2>&1
 EOF

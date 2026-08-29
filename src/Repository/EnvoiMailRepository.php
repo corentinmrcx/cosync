@@ -82,6 +82,42 @@ class EnvoiMailRepository extends ServiceEntityRepository
     }
 
     /**
+     * Relances déjà envoyées à tout un lot, en une requête.
+     *
+     * Jumelle de {@see dernierEnvoiParLicencie()} et pour la même raison : la liste des
+     * joueurs affiche un compteur de relances en attente, et deux `findOneBy` par ligne
+     * feraient trois cents requêtes sur un effectif de cent cinquante.
+     *
+     * @param Licencie[] $licencies
+     * @param TypeMail[] $types
+     *
+     * @return array<string, int> uuid du licencié => nombre d'envois
+     */
+    public function compterEnvoisParLicencie(array $licencies, array $types): array
+    {
+        if ($licencies === [] || $types === []) {
+            return [];
+        }
+
+        $lignes = $this->createQueryBuilder('e')
+            ->select('IDENTITY(e.licencie) AS uuid', 'COUNT(e.id) AS total')
+            ->where('e.licencie IN (:licencies)')
+            ->andWhere('e.type IN (:types)')
+            ->setParameter('licencies', $licencies)
+            ->setParameter('types', $types)
+            ->groupBy('e.licencie')
+            ->getQuery()
+            ->getArrayResult();
+
+        $parUuid = [];
+        foreach ($lignes as $ligne) {
+            $parUuid[(string) $ligne['uuid']] = (int) $ligne['total'];
+        }
+
+        return $parUuid;
+    }
+
+    /**
      * Combien de mails d'un type donné cette personne a déjà reçus.
      *
      * Sert le plafond de relances : passé ce nombre, on cesse d'écrire et la personne se

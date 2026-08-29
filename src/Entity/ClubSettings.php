@@ -47,6 +47,37 @@ class ClubSettings
     #[ORM\Column(options: ['default' => false])]
     private bool $boutiqueOuverte = false;
 
+    /* ── Relance automatique des licences non soldées ──
+       Trois réglages qui vont ensemble : l'interrupteur, le délai, le plafond. Ils vivent
+       au niveau du club et non de la saison — c'est une politique de relance, elle ne se
+       redécide pas chaque rentrée. */
+
+    /**
+     * Interrupteur du robot de relance, **éteint par défaut**.
+     *
+     * On n'allume pas sans décision explicite un automate qui écrit à tout un effectif ;
+     * et il faut pouvoir l'éteindre d'un clic si un envoi part de travers.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $relanceActive = false;
+
+    /**
+     * Jours à laisser passer **depuis le dernier mail reçu par la personne**, quel qu'il
+     * soit — pas depuis son inscription. C'est ce qui fait qu'une relance passée à la main
+     * repousse mécaniquement celle du robot, au lieu de la doubler quelques heures après.
+     */
+    #[ORM\Column(options: ['default' => 10])]
+    private int $relanceDelaiJours = 10;
+
+    /**
+     * Nombre maximum de relances automatiques par personne et par saison.
+     *
+     * Sans plafond, le robot écrirait tous les dix jours jusqu'en juin à quelqu'un qui ne
+     * paiera pas. Au-delà, la relance n'est plus un mail : c'est un coup de téléphone.
+     */
+    #[ORM\Column(options: ['default' => 3])]
+    private int $relanceMax = 3;
+
     /* ── Identité de l'association ──
        Jusqu'ici écrite en dur dans une trentaine de templates. Elle vit ici parce qu'elle
        est ce qu'une attestation de paiement engage juridiquement, et parce qu'elle est le
@@ -183,6 +214,42 @@ class ClubSettings
     public function boutiqueOuvrable(): bool
     {
         return $this->boutiqueUrl !== null && !$this->boutiqueOuverte;
+    }
+
+    public function isRelanceActive(): bool
+    {
+        return $this->relanceActive;
+    }
+
+    public function setRelanceActive(bool $relanceActive): static
+    {
+        $this->relanceActive = $relanceActive;
+
+        return $this;
+    }
+
+    public function getRelanceDelaiJours(): int
+    {
+        return $this->relanceDelaiJours;
+    }
+
+    public function setRelanceDelaiJours(int $relanceDelaiJours): static
+    {
+        $this->relanceDelaiJours = $relanceDelaiJours;
+
+        return $this;
+    }
+
+    public function getRelanceMax(): int
+    {
+        return $this->relanceMax;
+    }
+
+    public function setRelanceMax(int $relanceMax): static
+    {
+        $this->relanceMax = $relanceMax;
+
+        return $this;
     }
 
     public function getAssociationNom(): ?string

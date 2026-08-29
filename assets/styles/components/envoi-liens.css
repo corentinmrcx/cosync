@@ -181,3 +181,35 @@
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
 }
+
+/* Ligne de détail sur toute la largeur, alignée sous le nom — jumelle de
+   `.envoi-liens-documents`, pour une liste dont le détail n'est pas un document. */
+.envoi-liens-detail {
+    flex-basis: 100%;
+    padding-left: 1.75rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* — Étape de relance —
+   Ce qui manque à la licence, et donc quel mail partira. Deux étapes qui ne se
+   confondent pas : redonner un lien à qui n'a rien rempli n'est pas rappeler un
+   montant à qui a rempli. La couleur reprend celle du statut correspondant. */
+.relance-etape {
+    flex: none;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-xl);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.relance-etape-dossier {
+    background: var(--color-status-sent-bg);
+    color: var(--color-status-sent);
+}
+
+.relance-etape-paiement {
+    background: var(--color-status-completed-bg);
+    color: var(--color-status-completed);
+}

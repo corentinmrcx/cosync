@@ -512,12 +512,94 @@ main. `NumberFormatter::SPELLOUT` **ne convient pas** : l'image PHP embarque un 
 données réduites au seul anglais et rendait « one hundred twenty » **sans lever d'erreur**.
 Ne pas y revenir.
 
+### EnvoiMail — un mail parti laisse une trace, toujours
+
+`Licencie.linkSentAt` atteste que la personne a été contactée **un jour**. C'est ce qu'il
+faut aux écrans d'envoi groupé, et rien d'autre : la colonne est écrasée à chaque renvoi.
+Une relance ne se voyait donc nulle part — et un admin pouvait réécrire à quelqu'un que le
+club venait de relancer. Les mails qui ne passent par aucun lien (signature, complément,
+boutique, validation, attestation) ne laissaient, eux, aucune trace du tout.
+
+`EnvoiMail` est un journal **append-only**, une ligne par envoi, rattaché à un `Licencie`,
+un `Dirigeant` ou un `Detenteur`. Quatre règles le tiennent :
+
+- **Une seule plume : `ClubMailer::envoyer()`.** Le `TypeMail` y est obligatoire à l'appel,
+  aucun mail ne peut plus partir en silence. Confier le traçage aux services appelants les
+  ferait diverger, et c'est le côté oublié qui enverrait le mail invisible.
+- **Après l'envoi, jamais avant.** Une ligne posée sur un envoi qui a échoué ferait croire
+  la personne relancée et empêcherait la vraie relance de partir — pire que pas de trace.
+  Symétriquement, un échec d'écriture du journal ne fait pas échouer un mail déjà parti :
+  il est journalisé en erreur.
+- **L'adresse enregistrée est celle réellement visée**, pas la redirection du mode bêta.
+- **Pas de colonne `season`** : `Licencie` et `Dirigeant` sont déjà cloisonnés par saison,
+  toute question sur les envois d'une saison passe par eux. Seul un `Detenteur` vit hors
+  saison, délibérément — une colonne saison serait le seul endroit à prétendre l'inverse.
+
+`linkSentAt` et `boutiqueAnnonceeAt` **restent** : ils continuent de faire foi pour les
+écrans d'envoi groupé. La migration `Version20260829090000` les a repris dans le journal —
+sans ce backfill, l'historique des fiches, qui lit désormais le journal, aurait perdu la
+ligne « lien envoyé » de chaque personne déjà contactée.
+
+Les fiches licencié et dirigeant affichent en tête un **dernier contact**
+(`DernierContactResolver`) : c'est le repère à lire avant de relancer à la main.
+
+### Relance automatique — le délai part du dernier mail, pas de l'inscription
+
+Le club relance de lui-même les licences non soldées : une passe par jour à 9 h
+(`app:relances:envoyer`, cron du conteneur `cosync_cron`). Heure ouvrable et non 2 h du
+matin — un mail horodaté à 3 h part en indésirable.
+
+**La règle qui tient tout le dispositif : le délai est compté depuis le dernier mail reçu
+par la personne, quel qu'il soit.** Une relance passée à la main hier repousse donc
+mécaniquement celle du robot de dix jours. Sans cette ancre, un envoi automatique serait
+suivi d'une relance manuelle quelques heures plus tard, et le club harcèlerait ceux qu'il
+vient de relancer. C'est précisément ce que le journal rend possible.
+
+`RelanceResolver` énonce la règle **une seule fois**, et les trois chemins la lisent :
+le cron, l'écran groupé `/admin/effectif/joueurs/relancer`, le bouton d'une fiche. Six
+conditions, toutes nécessaires :
+
+| Condition | Pourquoi |
+|---|---|
+| dossier **non** `estSoldee()` | `estSolde()`, jamais `=== VALIDATED` : c'est l'encaissement qui intéresse le licencié |
+| `linkSentAt !== null` | relancer qui n'a jamais été contacté n'est pas une relance : c'est l'envoi initial, décidé par un admin |
+| une adresse email existe | sans elle, la relance se fait au téléphone ; ces personnes ne sont donc **pas** listées |
+| relances déjà envoyées `< relanceMax` | sans plafond, on écrirait tous les dix jours jusqu'en juin à qui ne paiera pas |
+| dernier mail plus vieux que `relanceDelaiJours` | l'ancre ci-dessus |
+| `relanceActive` | vérifié par `RelanceService`, **pas** par le resolver : l'écran groupé doit rester utilisable robot éteint |
+
+**Deux étapes, deux mails** (`EtapeRelance`) : `DOSSIER` redonne un lien à qui n'a rien
+rempli — en **rouvrant le jeton** de 30 jours, sans quoi le mail renverrait vers un lien
+expiré ; `PAIEMENT` rappelle le montant et les instructions du mode déclaré à qui a rempli.
+La page de confirmation n'étant protégée par aucun jeton, ce second lien reste valide.
+
+Ce qui ne doit pas se défaire :
+
+- **L'interrupteur est éteint à la migration.** Un automate qui écrit à tout un effectif ne
+  démarre jamais d'un déploiement : il démarre d'une décision, prise dans
+  `/admin/club/relances` après un `app:relances:envoyer --dry-run`.
+- **La relance à l'unité depuis une fiche ignore délai et plafond**, volontairement : c'est
+  un acte délibéré, et la fiche affiche le dernier contact juste au-dessus du bouton. On
+  montre l'information, on ne bloque pas la personne qui la lit. Elle compte en revanche
+  **dans** le plafond, et repousse la relance automatique suivante.
+- **Les lectures du resolver sont groupées** (`dernierEnvoiParLicencie`,
+  `compterEnvoisParLicencie`) : la liste des joueurs affiche son compteur à chaque
+  ouverture, deux requêtes par licencié en feraient trois cents.
+- **Il n'y a pas de module de templates de mails**, et c'est assumé : pour huit messages par
+  an, l'éditeur, la substitution de variables, l'aperçu et les envois de test ne se paient
+  pas. `TypeMail` en est l'amorce si le besoin vient — un envoi libre à une sélection
+  couvrirait l'essentiel (annonces, événements) pour une fraction du coût.
+
 ### ClubSettings — l'identité de l'association
 
 `ClubSettings` porte désormais, à côté du RIB et de la boutique, ce qu'une attestation
 engage juridiquement : raison sociale, adresse, SIRET, email, et le **signataire**
 (civilité, nom, qualité libre). Ces valeurs étaient écrites en dur dans une trentaine de
 templates ; les autres peuvent migrer plus tard, sans urgence.
+
+`ClubSettings` porte aussi les trois réglages de la **relance automatique** —
+`relanceActive`, `relanceDelaiJours` (10), `relanceMax` (3). Au niveau du club et non de la
+saison : c'est une politique de relance, elle ne se redécide pas chaque rentrée.
 
 Rien n'impose que le signataire soit le trésorier — président, secrétaire ou toute personne
 ayant délégation peuvent engager l'association. Le **nom**, lui, doit figurer : un document
@@ -831,6 +913,7 @@ injoignable, c'est la seule copie de la signature.
 |---|---|---|
 | toutes les 15 min | `app:drive-retry-upload` | rattrape les PDF restés en local |
 | toutes les 30 min | `app:helloasso:sync-paiements` | rattrape un encaissement dont la notification n'est jamais arrivée — sans lui, le club encaisse sans que la licence passe en validée |
+| 09h00 | `app:relances:envoyer` | relance les licences non soldées ; ne fait rien tant que `relanceActive` est faux. Heure ouvrable : un mail du club horodaté à 3 h part en indésirable |
 | 02h30 | `app:db:backup` | dump PostgreSQL + copie sur le Drive |
 
 ⚠️ Toute commande console rend potentiellement du Twig (mails), et `AppExtension` expose la
