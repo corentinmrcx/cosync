@@ -23,11 +23,15 @@
         </p>
         <hr class="season-form-divider">
 
-        <div class="field">
+        {# Case et libellé sur la même ligne, l'explication dessous et alignée sur le
+           libellé : empilés, la case flottait seule au-dessus de son propre intitulé. #}
+        <div class="relance-reglages-bascule">
             {{ form_widget(form.relanceActive) }}
-            {{ form_label(form.relanceActive) }}
-            {{ form_help(form.relanceActive) }}
-            {{ form_errors(form.relanceActive) }}
+            <div class="relance-reglages-bascule-texte">
+                {{ form_label(form.relanceActive) }}
+                {{ form_help(form.relanceActive) }}
+                {{ form_errors(form.relanceActive) }}
+            </div>
         </div>
 
         {% for champ in [form.relanceDelaiJours, form.relanceMax] %}
@@ -39,12 +43,13 @@
             </div>
         {% endfor %}
 
-        {# Avant d'allumer : voir qui partirait. La commande n'envoie rien en --dry-run. #}
-        <p class="relance-settings-astuce">
-            Avant d'activer, on peut voir qui serait relancé sans envoyer aucun mail :
-            <code>php bin/console app:relances:envoyer --dry-run</code>.
+        {# Voir la liste avant d'allumer. L'écran groupé la montre sans rien envoyer :
+           c'est la seule façon de vérifier qui serait concerné, aucune ligne de
+           commande n'a sa place dans une interface d'administration. #}
+        <p class="relance-reglages-astuce">
             L'écran <a href="{{ path('admin_licencies_relancer') }}">Relancer les licences en attente</a>
-            affiche la même liste, et permet d'envoyer au cas par cas.
+            affiche la liste des personnes concernées sans rien envoyer, et permet de
+            relancer au cas par cas.
         </p>
 
         <div class="season-form-actions">

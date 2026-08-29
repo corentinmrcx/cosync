@@ -89,25 +89,21 @@
 
     {# CTA vers la page de confirmation, qui porte le bouton de paiement en ligne.
        Jamais vers checkout_start : cette route GET crée une intention chez HelloAsso,
-       qu'un client mail préchargeant les liens déclencherait à vide. #}
-    <tr>
-        <td style="padding: 28px 40px 0;" class="px">
-            <table role="presentation" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td style="background: {{ c.primaire }}; border-radius: 8px;">
-                        <a href="{{ url }}" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 700; color: {{ c.texteInverse }};">
-                            Régler ma cotisation
-                        </a>
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
+       qu'un client mail préchargeant les liens déclencherait à vide.
+
+       Le libellé annonce ce que le clic fait vraiment — un paiement par carte — et non
+       l'intention générale : qui règle par chèque n'a rien à faire de ce bouton, il a ses
+       instructions au-dessus. #}
+    {% include 'email/_bouton.html.twig' with {
+        url: url,
+        libelle: 'Payer en ligne →',
+        note: 'Paiement par carte, traité par HelloAsso. Aucune donnée bancaire ne transite par le club.',
+    } %}
 
     {# Un paiement remis au local peut n'avoir pas encore été saisi : le mail ne doit jamais
        accuser quelqu'un d'avoir oublié de payer. #}
     <tr>
-        <td style="padding: 24px 40px 36px;" class="px">
+        <td style="padding: 8px 40px 36px;" class="px">
             <p style="margin: 0; font-size: 15px; line-height: 1.7; color: {{ c.texteCourant }};">
                 Si vous avez déjà réglé, ce message a pu se croiser avec l'enregistrement de
                 votre paiement : merci de ne pas en tenir compte, ou de nous répondre pour

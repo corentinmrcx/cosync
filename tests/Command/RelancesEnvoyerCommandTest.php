@@ -18,6 +18,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\FrameworkBundle\Test\MailerAssertionsTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Mime\Email;
 
 /**
  * La passe quotidienne de relance.
@@ -80,6 +81,29 @@ final class RelancesEnvoyerCommandTest extends KernelTestCase
     }
 
     /**
+     * Le mail de paiement rend un gabarit différent de celui du dossier — et le seul que
+     * la passe automatique ne rend jamais sur un effectif où personne n'a rempli. Il porte
+     * le montant, les instructions du mode déclaré et un bouton qui dit ce qu'il fait :
+     * payer en ligne, pas « régler sa cotisation » — qui règle par chèque n'a rien à y faire.
+     */
+    public function testLaRelanceDePaiementPorteLeMontantEtLeBoutonDePaiementEnLigne(): void
+    {
+        $this->reglerRelances(active: true);
+        $this->passerLeDossierEnComplete();
+
+        $this->lancer();
+
+        $messages = self::getMailerMessages();
+        self::assertCount(1, $messages);
+        self::assertInstanceOf(Email::class, $messages[0]);
+
+        $corps = (string) $messages[0]->getHtmlBody();
+        self::assertStringContainsString('85 €', $corps);
+        self::assertStringContainsString('Payer en ligne', $corps);
+        self::assertStringNotContainsString('Compléter mon dossier', $corps);
+    }
+
+    /**
      * `--dry-run` sert à regarder la liste avant d'allumer : il court-circuite donc
      * l'interrupteur, mais jamais l'envoi.
      */
@@ -125,6 +149,16 @@ final class RelancesEnvoyerCommandTest extends KernelTestCase
         $tester->execute($options + ['--saison' => $this->season->getLabel()]);
 
         return $tester;
+    }
+
+    /** Dossier rempli mais cotisation non enregistrée : l'autre moitié de la population. */
+    private function passerLeDossierEnComplete(): void
+    {
+        $dossier = $this->em->getRepository(DossierClub::class)->findOneBy([]);
+        self::assertNotNull($dossier);
+
+        $dossier->setStatus(LicenceStatus::FORM_COMPLETED)->setFormCompletedAt(new \DateTimeImmutable('-35 days'));
+        $this->em->flush();
     }
 
     private function reglerRelances(bool $active): void
