@@ -40,6 +40,7 @@ use App\Service\Licencie\FicheActionsResolver;
 use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Licencie\LicencieService;
 use App\Service\Licencie\PaiementService;
+use App\Service\Mail\DernierContactResolver;
 use App\Service\Mail\InscriptionLinkService;
 use App\Service\Payment\AttestationPaiementService;
 use App\Service\Payment\CotisationResolver;
@@ -69,6 +70,7 @@ class LicencieController extends AbstractController
         private readonly CsrfGuard $csrf,
         private readonly PaiementService $paiementService,
         private readonly HistoriqueFicheService $historiqueService,
+        private readonly DernierContactResolver $dernierContact,
         private readonly FicheActionsResolver $ficheActions,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly SignatureCompletionService $signatureCompletion,
@@ -544,6 +546,9 @@ class LicencieController extends AbstractController
             'dotations' => $this->stockMovementRepo->findDotationsByLicencie($licencie),
             'dotationStatut' => $this->dotationSuivi->avancementDe($licencie),
             'history' => $this->historiqueService->pourLicencie($licencie, $transactions),
+            // Affiché en tête : avant de relancer à la main, l'admin doit voir si le club
+            // vient d'écrire — sans quoi le licencié reçoit deux mails le même jour.
+            'dernierContact' => $this->dernierContact->pour($licencie),
             'autorisationsManquantes' => $autorisationsManquantes,
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande.

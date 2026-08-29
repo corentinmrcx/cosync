@@ -7,6 +7,7 @@ use App\Entity\AttestationPaiement;
 use App\Entity\Detenteur;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
+use App\Enum\TypeMail;
 use App\Service\Payment\CotisationResolver;
 use App\Service\Referentiel\ClubSettingsService;
 use Symfony\Component\Mime\Address;
@@ -29,6 +30,8 @@ final class MailerService
     public function sendInscriptionLink(Licencie $licencie): void
     {
         $this->clubMailer->envoyer(
+            TypeMail::INSCRIPTION_LINK,
+            $licencie,
             $this->adresseDe($licencie),
             'Finalisez votre dossier',
             'email/inscription_link.html.twig',
@@ -42,6 +45,8 @@ final class MailerService
     public function sendCompletionLink(Licencie $licencie): void
     {
         $this->clubMailer->envoyer(
+            TypeMail::COMPLETION_LINK,
+            $licencie,
             $this->adresseDe($licencie),
             'Une précision à apporter à votre dossier',
             'email/completion_link.html.twig',
@@ -59,6 +64,8 @@ final class MailerService
     public function sendSignatureLink(Licencie $licencie): void
     {
         $this->clubMailer->envoyer(
+            TypeMail::SIGNATURE_LINK,
+            $licencie,
             $this->adresseDe($licencie),
             'Un document à signer',
             'email/signature_link.html.twig',
@@ -87,6 +94,8 @@ final class MailerService
         $retenus = $this->piecesJointes->retenir($pdfsJoints);
 
         $this->clubMailer->envoyer(
+            TypeMail::CONFIRMATION,
+            $licencie,
             $this->adresseDe($licencie),
             'Inscription bien reçue',
             'email/inscription_confirmation.html.twig',
@@ -123,6 +132,8 @@ final class MailerService
         }
 
         $this->clubMailer->envoyer(
+            TypeMail::BOUTIQUE,
+            $licencie,
             $this->adresseDe($licencie),
             'La boutique du club',
             'email/boutique.html.twig',
@@ -136,6 +147,8 @@ final class MailerService
     public function sendValidation(Licencie $licencie): void
     {
         $this->clubMailer->envoyer(
+            TypeMail::VALIDATION,
+            $licencie,
             $this->adresseDe($licencie),
             $licencie->getCategory()->isJeune()
                 ? 'Licence de ' . $licencie->getPrenom() . ' validée'
@@ -148,6 +161,8 @@ final class MailerService
     public function sendDirigeantLink(Dirigeant $dirigeant): void
     {
         $this->clubMailer->envoyer(
+            TypeMail::DIRIGEANT_LINK,
+            $dirigeant,
             $this->adresseDe($dirigeant),
             'Finalisez votre dossier dirigeant',
             'email/dirigeant_link.html.twig',
@@ -163,6 +178,8 @@ final class MailerService
         $detenteur = $attestation->getDetenteur();
 
         $this->clubMailer->envoyer(
+            TypeMail::ATTESTATION_CLE,
+            $detenteur,
             $this->adresseDe($detenteur),
             'Attestation de remise de clés à signer',
             'email/attestation_cle_link.html.twig',
@@ -186,7 +203,12 @@ final class MailerService
         string $cheminPdf,
         string $nomFichier,
     ): void {
+        // Rattaché au licencié, pas au destinataire : c'est son dossier que l'attestation
+        // concerne, et c'est sur sa fiche que l'envoi doit se lire. Le payeur peut être un
+        // parent que CoSync ne connaît que par cette adresse.
         $this->clubMailer->envoyer(
+            TypeMail::ATTESTATION_PAIEMENT,
+            $attestation->getLicencie(),
             new Address($email, trim($attestation->getDestinatairePrenom() . ' ' . $attestation->getDestinataireNom())),
             'Votre attestation de paiement',
             'email/attestation_paiement.html.twig',

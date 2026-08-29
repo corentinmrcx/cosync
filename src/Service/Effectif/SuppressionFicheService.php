@@ -10,6 +10,7 @@ use App\Enum\LicenceStatus;
 use App\Repository\AttestationPaiementRepository;
 use App\Repository\DocumentSignatureRepository;
 use App\Repository\DotationAffectationRepository;
+use App\Repository\EnvoiMailRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TransactionRepository;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
@@ -40,6 +41,7 @@ final class SuppressionFicheService
         private readonly StockMovementRepository $mouvementRepo,
         private readonly DotationAffectationRepository $affectationRepo,
         private readonly AttestationPaiementRepository $attestationRepo,
+        private readonly EnvoiMailRepository $envoiMailRepo,
     ) {}
 
     /**
@@ -117,6 +119,13 @@ final class SuppressionFicheService
     /** Premier motif rencontré, du plus parlant au plus technique — null si la fiche est vierge. */
     private function motifRefusLicencie(Licencie $licencie): ?string
     {
+        // Le journal d'abord : il connaît tous les mails, y compris ceux qui ne passent
+        // par aucun lien, et il donne la date du dernier plutôt que celle du premier.
+        $dernierMail = $this->envoiMailRepo->dernierEnvoi($licencie);
+        if ($dernierMail !== null) {
+            return sprintf('un mail lui a été envoyé le %s', $dernierMail->format('d/m/Y'));
+        }
+
         $lienEnvoyeLe = $licencie->getLinkSentAt();
         if ($lienEnvoyeLe !== null) {
             return sprintf('son lien d\'inscription lui a été envoyé le %s', $lienEnvoyeLe->format('d/m/Y'));
@@ -158,6 +167,11 @@ final class SuppressionFicheService
 
     private function motifRefusDirigeant(Dirigeant $dirigeant): ?string
     {
+        $dernierMail = $this->envoiMailRepo->dernierEnvoi($dirigeant);
+        if ($dernierMail !== null) {
+            return sprintf('un mail lui a été envoyé le %s', $dernierMail->format('d/m/Y'));
+        }
+
         $lienEnvoyeLe = $dirigeant->getLinkSentAt();
         if ($lienEnvoyeLe !== null) {
             return sprintf('son lien lui a été envoyé le %s', $lienEnvoyeLe->format('d/m/Y'));

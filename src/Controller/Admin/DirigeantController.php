@@ -29,6 +29,7 @@ use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Document\SignatureRelanceService;
 use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Licencie\HistoriqueFicheService;
+use App\Service\Mail\DernierContactResolver;
 use App\Service\Mail\DirigeantLinkService;
 use App\Service\Ui\ListFilterMemory;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -53,6 +54,7 @@ class DirigeantController extends AbstractController
         private readonly CsrfGuard $csrf,
         private readonly DirigeantFormPrefill $formPrefill,
         private readonly HistoriqueFicheService $historiqueService,
+        private readonly DernierContactResolver $dernierContact,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DirigeantDossierCompletion $dossierCompletion,
         private readonly SuppressionFicheService $suppressionService,
@@ -435,6 +437,8 @@ class DirigeantController extends AbstractController
             'dirigeant' => $dirigeant,
             'dotations' => $this->stockMovementRepo->findDotationsByDirigeant($dirigeant),
             'history' => $this->historiqueService->pourDirigeant($dirigeant),
+            // Cf. la fiche licencié : voir la date du dernier mail évite la relance en double.
+            'dernierContact' => $this->dernierContact->pour($dirigeant),
             // Détention et engagement de la saison en une lecture : la fiche affiche
             // ce que le registre des clés sait de cette personne, ou rien.
             'cleRow' => $this->clePresenter->pourDirigeant($dirigeant),

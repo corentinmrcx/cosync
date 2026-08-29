@@ -170,6 +170,17 @@
                     manuelle: licencie.natureManuelle,
                 } only %}
             </div>
+
+            {# Dernier mail réellement parti, relances comprises. Sous les badges parce que
+               ce n'est pas un état du dossier mais un fait de contact — et c'est lui qu'on
+               lit avant de relancer à la main. #}
+            <p class="fiche-dernier-contact">
+                {% if dernierContact %}
+                    Dernier contact : <strong>{{ dernierContact.resume }}</strong>
+                {% else %}
+                    Aucun mail ne lui a encore été envoyé
+                {% endif %}
+            </p>
         </div>
 
         {#

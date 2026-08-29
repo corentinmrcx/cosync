@@ -12,6 +12,7 @@
 @import './components/breadcrumb.css';
 @import './components/badge-status.css';
 @import './components/fiche-menu.css';
+@import './components/fiche-dernier-contact.css';
 @import './components/text-combobox.css';
 @import './components/list-toolbar.css';
 @import './components/loader.css';
