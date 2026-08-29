@@ -1,0 +1,77 @@
+{#
+  Un geste de la fiche licencié, rendu soit en bouton d'en-tête, soit en ligne de menu.
+
+  Le même balisage sert les deux contextes : dupliquer chaque action une fois en bouton et
+  une fois en ligne de menu ferait diverger les deux au premier changement d'intitulé ou de
+  jeton CSRF. C'est `FicheActionsResolver` qui décide laquelle passe où, jamais ce fichier.
+
+  Paramètres attendus :
+    action (string)    — valeur de l'enum FicheAction
+    licencie (Licencie)
+    contexte (string)  — 'principale' (bouton d'en-tête) | 'menu' (ligne de menu)
+    attestations       — requis pour l'action attestation_paiement, dont le libellé en dépend
+#}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% set enMenu = contexte == 'menu' %}
+{% set classe = enMenu
+    ? 'fiche-menu-item' ~ (action == 'annuler_validation_fff' ? ' fiche-menu-item-danger')
+    : 'btn btn-primary' %}
+
+{% if action == 'modifier' %}
+    <a href="{{ path('admin_licencies_edit', {uuid: licencie.uuid}) }}"
+       class="{{ enMenu ? 'fiche-menu-item' : 'btn btn-secondary' }}">
+        {{ ui.icon('edit', 14) }} Modifier
+    </a>
+
+{% elseif action == 'attestation_paiement' %}
+    {# Le libellé suit l'état : la carte plus bas liste celles déjà émises, le bouton n'a
+       donc plus à les annoncer — il crée la suivante. #}
+    <a href="{{ path('admin_attestation_paiement_new', {uuid: licencie.uuid}) }}"
+       class="{{ enMenu ? 'fiche-menu-item' : 'btn btn-secondary' }}">
+        {{ ui.icon('file-text', 14) }}
+        {{ attestations is empty ? 'Attestation de paiement' : 'Nouvelle attestation' }}
+    </a>
+
+{% elseif action == 'envoyer_lien' %}
+    <form method="post" action="{{ path('admin_licencies_send_link', {uuid: licencie.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('send_link_' ~ licencie.uuid) }}">
+        <button type="submit" class="{{ classe }}">
+            {{ ui.icon('send', 14) }} Envoyer le lien
+        </button>
+    </form>
+
+{% elseif action == 'completer_autorisations' %}
+    <form method="post" action="{{ path('admin_licencies_send_completion', {uuid: licencie.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('send_completion_' ~ licencie.uuid) }}">
+        <button type="submit" class="{{ classe }}">
+            {{ ui.icon('send', 14) }} Compléter les autorisations
+        </button>
+    </form>
+
+{% elseif action == 'demander_signature' %}
+    <form method="post" action="{{ path('admin_licencies_request_signature', {uuid: licencie.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('request_signature_' ~ licencie.uuid) }}">
+        <button type="submit" class="{{ classe }}">
+            {{ ui.icon('file-text', 14) }} Demander la signature
+        </button>
+    </form>
+
+{% elseif action == 'valider_fff' %}
+    <form method="post" action="{{ path('admin_licencies_validate_fff', {uuid: licencie.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('valider_fff_' ~ licencie.uuid) }}">
+        <button type="submit" class="{{ classe }}">
+            {{ ui.icon('check', 14) }} Valider sur FootClubs
+        </button>
+    </form>
+
+{% elseif action == 'annuler_validation_fff' %}
+    {# Défait un état enregistré, d'où le registre rouge (§7.6 bis). #}
+    <form method="post" action="{{ path('admin_licencies_cancel_validate_fff', {uuid: licencie.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('annuler_valider_fff_' ~ licencie.uuid) }}">
+        <button type="submit" class="{{ enMenu ? 'fiche-menu-item fiche-menu-item-danger' : 'btn btn-danger' }}"
+                onclick="return confirm('Annuler la validation FootClubs de {{ licencie.nomPrenom }} ?')">
+            {{ ui.icon('x-circle', 14) }} Annuler la validation
+        </button>
+    </form>
+{% endif %}

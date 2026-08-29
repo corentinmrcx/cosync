@@ -208,8 +208,42 @@ dotation_personnalisation: json           // textes de flocage par groupe
 helloasso_checkout_intent_id: ?string
 helloasso_checkout_started_at: ?datetime  // borne la réconciliation des paiements
 form_completed_at: ?datetime
-status: LicenceStatus  // IMPORTED | LINK_SENT | FORM_COMPLETED | VALIDATED
+status: LicenceStatus  // IMPORTED | LINK_SENT | FORM_COMPLETED | A_VALIDER_FFF | VALIDATED
 ```
+
+### « Payé » et « validé » sont deux faits, et deux statuts
+
+Une licence soldée dans CoSync n'est pas une licence validée : le club doit encore la
+**signer dans FootClubs**, et rien ne peut faire ce geste à sa place — les deux outils ne se
+parlent pas. Tant qu'un seul statut portait les deux, le club n'avait aucun moyen de savoir
+ce qu'il lui restait à faire côté fédéral.
+
+| Fait | Statut | Qui le pose |
+|---|---|---|
+| Le total encaissé atteint la cotisation due | `A_VALIDER_FFF` | `PaiementService`, automatiquement (saisie manuelle, HelloAsso vérifié, ou « Valider quand même ») |
+| Le club a signé la licence dans FootClubs | `VALIDATED` | un admin, depuis la fiche ou l'écran groupé `/admin/effectif/joueurs/valider-footclubs` |
+
+Ce qui ne doit pas se défaire :
+
+- **Tout ce qui demandait « la licence est-elle validée ? » demandait en réalité « a-t-elle
+  payé ? »** — droit à la dotation, sortie de stock, réconciliation HelloAsso, compteurs du
+  hub Effectif. Le point de lecture unique est **`LicenceStatus::estSolde()`** (et
+  `DossierClub::estSoldee()`, `LicenceStatus::soldes()` pour les requêtes). Tester
+  `=== VALIDATED` en aval suspendrait le kit d'un licencié payé à un clic administratif sans
+  rapport.
+- **Le mail « votre licence est validée » part au solde**, pas à la validation FootClubs :
+  c'est l'encaissement qui intéresse le licencié, la démarche fédérale est interne au club.
+- **La validation se défait** (`annulerValidationFootclubs`). Sans cette sortie, un clic de
+  trop ferait disparaître pour toujours une licence qu'il reste réellement à signer.
+- **Aucune donnée n'a été rétro-migrée** : les dossiers déjà en `validated` avant la bascule
+  le restent. Ce n'est pas un backfill oublié (cf. `Version20260828211444`).
+
+Côté **dirigeant**, le même dernier geste existe (`Dirigeant.validatedFffAt`, un fait daté),
+mais son avancement n'est **pas stocké** : tout ce qui le compose est déjà en base — lien
+parti, formulaire soumis, documents signés, licence validée. `DirigeantStatutResolver` le
+calcule (`DirigeantStatut`), `pourLot()` pour les listes. L'ordre des règles est la règle :
+`VALIDE` passe avant `LICENCE_ADMINISTRATIVE`, qui n'attend ni lien ni document mais existe
+bien à la FFF et se signe comme les autres.
 
 ### Transaction
 ```php
@@ -436,7 +470,9 @@ district » — d'où découlent **trois** conséquences, réglées ensemble et 
   `DirigeantLinkService::send()` refuse l'envoi à l'unité.
 
 Les **clés font exception** : un président sans dossier club détient souvent le trousseau du
-local, sa fiche continue donc d'afficher le registre et son attestation.
+local, sa fiche continue donc d'afficher le registre et son attestation. La **validation
+FootClubs** aussi : la licence existe à la FFF, le club la signe comme les autres (cf. « Payé »
+et « validé »).
 
 Ne pas remplacer ce drapeau par trois réglages indépendants : c'est justement ce qui faisait
 oublier l'un des trois.
@@ -450,7 +486,7 @@ tiennent tout le reste :
 **1. On n'atteste qu'une licence soldée, et le verrou porte sur l'encaissement.**
 `AttestationPaiementService::motifBlocage()` compare la cotisation due au total réellement
 encaissé — **jamais** au statut du dossier. « Valider quand même » passe une licence en
-`VALIDATED` sans qu'un centime soit entré : un verrou posé sur le statut aurait émis un
+`A_VALIDER_FFF` sans qu'un centime soit entré : un verrou posé sur le statut aurait émis un
 document affirmant un versement qui n'a pas eu lieu. Le motif est *rendu*, pas réduit à un
 booléen : l'écran doit pouvoir dire ce qui manque.
 
@@ -539,7 +575,8 @@ enum LicenceStatus: string {
     case IMPORTED = 'imported';           // créé à l'import, lien pas encore envoyé
     case LINK_SENT = 'link_sent';
     case FORM_COMPLETED = 'form_completed';
-    case VALIDATED = 'validated';         // paiement soldé (ou validation manuelle)
+    case A_VALIDER_FFF = 'a_valider_fff'; // paiement soldé (ou validation manuelle) — cf. §4
+    case VALIDATED = 'validated';         // licence signée dans FootClubs, sur décision d'un admin
 }
 
 enum PaymentMode: string {
@@ -718,10 +755,11 @@ Tableau filtrable (CSS natif, pas de lib externe) :
   - ⚪ `IMPORTED` — Importé, lien pas encore envoyé
   - 🔵 `LINK_SENT` — Lien envoyé
   - 🟡 `FORM_COMPLETED` — Formulaire complété, paiement en attente
+  - 🟣 `A_VALIDER_FFF` — Payé, à valider sur FootClubs
   - 🟢 `VALIDATED` — Validé
 
 Action depuis le tableau :
-- "Confirmer paiement" → modal rapide (mode, montant, référence) → crée `Transaction` + passe statut à `VALIDATED`
+- "Confirmer paiement" → modal rapide (mode, montant, référence) → crée `Transaction` + passe statut à `A_VALIDER_FFF`
 - "Renvoyer le lien" → rouvre la fenêtre de 30 jours et renvoie le mail.
   ⚠️ L'UUID n'est **pas** régénéré, volontairement : le régénérer invaliderait les liens déjà
   distribués, ce qui casserait les licenciés en cours de saisie.
@@ -942,6 +980,59 @@ pas une page.
 **Annuler mène là où mène Enregistrer.** Si le contrôleur redirige vers `admin_stock_gestion`
 après enregistrement, le lien Annuler pointe sur `admin_stock_gestion`, pas sur un écran
 voisin : quitter un formulaire ne doit pas déplacer l'utilisateur.
+
+### 7.6 quinquies Le mobile : la page ne défile jamais horizontalement
+
+L'outil se consulte au local, téléphone en main. La règle tient en une phrase : **rien ne
+dépasse de la largeur de l'écran**, et ce qui est trop large porte son propre défilement.
+
+- **`.main-content` est en `overflow-x: hidden`**, garde-fou et non solution. Sans lui,
+  `overflow-y: auto` forçait l'autre axe à `auto` : le moindre débordement, n'importe où,
+  sortait une barre horizontale au niveau de **la page**. Ne pas s'en servir pour masquer un
+  contenu large : il deviendrait inatteignable, faute de barre pour l'atteindre.
+- **Un `<table class="table">` vit toujours dans un `.table-wrapper`.** C'est lui qui porte
+  le cadre et le défilement, avec des ombres de bord qui signalent qu'il reste du contenu.
+  `bin/check-tables-scroll.php` (job CI `csp`) refuse un tableau posé sans conteneur.
+  Deux variantes : `table-wrapper-nu` quand le tableau est déjà dans une carte (pas de
+  second cadre), `table-cartes` pour le passage en cartes ci-dessous.
+- **Les listes qu'on consulte passent en cartes sous 640 px** (`.table-cartes`) : joueurs,
+  dirigeants, suivi des dotations, clés, flocage, paiements et attestations d'une fiche.
+  Marqueurs sur les `<td>` : `data-label="Équipe"` affiche l'intitulé devant la valeur,
+  `carte-titre` fait la tête de carte, `carte-meta` une ligne discrète.
+- **Les tableaux denses gardent leur défilement** — mouvements de stock, commandes. Empilés,
+  ils perdent ce qui fait leur intérêt : la comparaison d'une ligne à l'autre.
+- **`body` est en `overflow-wrap: break-word`** : une adresse email un peu longue revient à
+  la ligne au lieu d'élargir sa carte, puis la page.
+- **Un enfant de grille ou de flex vaut `min-width: auto`** — « jamais plus étroit que mon
+  contenu ». C'est la cause n°1 des débordements : une rangée non sécable élargit la colonne
+  `1fr`, la carte dépasse l'écran, et son bord droit disparaît sous la coupe. D'où deux
+  réflexes : `minmax(0, 1fr)` plutôt que `1fr` dans une grille, `min-width: 0` sur les
+  conteneurs qui doivent pouvoir rétrécir, et `flex-wrap: wrap` sur toute rangée
+  `space-between` qui met un titre en face d'un bouton.
+- **Deux points de rupture**, à respecter pour toute nouvelle règle : **640 px** (téléphone)
+  et **1024 px** (tablette). L'existant en compte une dizaine, hérités ; ne pas en ajouter.
+
+### 7.6 quater Une fiche met en avant **une** action, et range les autres
+
+Une fiche accumule les gestes au fil des fonctionnalités. Celle du licencié en alignait cinq
+côte à côte, dont trois en `btn-primary` : l'écran ne disait plus lequel comptait, et le
+registre du §7.6 bis ne voulait plus rien dire.
+
+Le motif retenu, à reprendre partout où une zone d'actions déborde :
+
+- **Un bouton mis en avant**, et un seul : la **première étape non franchie du parcours**.
+  Le choix est fait côté serveur — c'est du métier (l'ordre des étapes, les conditions de
+  chaque geste), pas de la mise en forme. Pour la fiche licencié : `FicheActionsResolver`,
+  qui rend un `FicheActions` (principale + secondaires + motif de blocage).
+- **Le reste dans un menu « ⋯ »** (`components/fiche-menu.css`, ouverture Alpine avec
+  `@click.outside` et `x-transition`). Une action destructive n'y est jamais mise en avant :
+  elle vit en bas du menu, séparée d'un filet (`fiche-menu-item-danger`).
+- **Un seul balisage pour les deux contextes.** `admin/licencies/_action.html.twig` rend le
+  même geste en bouton d'en-tête ou en ligne de menu selon `contexte` : dupliquer les deux
+  formes ferait diverger un intitulé ou un jeton CSRF au premier changement.
+- **Une action injouable ne se cache pas en silence** : si la seule étape du moment part par
+  mail et que la personne n'a pas d'adresse, le motif s'affiche à la place du bouton. « Rien
+  ne s'affiche » n'apprend rien à l'admin qui cherche le bouton.
 
 ### 7.6 ter Un article du stock se désigne par nom · marque · couleur
 

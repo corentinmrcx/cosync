@@ -56,7 +56,9 @@
                 <span class="dot-card-count">{{ groupe.total }}</span>
             </button>
 
-            <div class="table-wrapper" x-show="open" x-collapse x-cloak>
+            {# Écran tenu à la main devant les cartons : sur téléphone chaque besoin devient
+               une carte, avec son bouton « Marquer remis » en pleine largeur. #}
+            <div class="table-wrapper table-cartes" x-show="open" x-collapse x-cloak>
                 <table class="table resp-table">
                     <thead>
                         <tr>
@@ -71,11 +73,11 @@
                     <tbody>
                         {% for besoin in groupe.besoins %}
                             <tr>
-                                <td>
+                                <td class="carte-titre">
                                     <span class="dot-person-name">{{ besoin.nomPrenom }}</span>
                                     <span class="dot-person-role">{{ besoin.roleLabel }}</span>
                                 </td>
-                                <td>
+                                <td data-label="Article">
                                     {% include 'admin/dotations/_option_cell.html.twig' with {
                                         besoin: besoin,
                                         options: optionsParBesoin[besoin.id] ?? [],
@@ -89,7 +91,7 @@
                                         reglages: flocagesParBesoin[besoin.id] ?? null,
                                     } only %}
                                 </td>
-                                <td>
+                                <td data-label="Taille">
                                     {% set options = taillesParBesoin[besoin.id] ?? [] %}
                                     {% set estDonne = besoin.statut.value == 'donne' %}
                                     <div x-data="{ editing: false }" class="dot-taille-edit">
@@ -131,8 +133,8 @@
                                         </form>
                                     </div>
                                 </td>
-                                <td>{{ besoin.quantite }}</td>
-                                <td>
+                                <td data-label="Qté">{{ besoin.quantite }}</td>
+                                <td data-label="Statut">
                                     <div class="dot-statut-cell">
                                         {% if besoin.statut.value == 'donne' %}
                                             <span class="dot-badge dot-badge-done">{{ besoin.statut.label }}</span>
@@ -145,7 +147,7 @@
                                         {% endif %}
                                     </div>
                                 </td>
-                                <td class="dot-table-action">
+                                <td class="dot-table-action table-actions">
                                     {% if besoin.statut.value == 'donne' %}
                                         <form method="post" action="{{ path('admin_dotations_besoin_annuler', {id: besoin.id}) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_annuler_' ~ besoin.id) }}">

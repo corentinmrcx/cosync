@@ -36,6 +36,7 @@ use App\Service\Document\SignatureRelanceService;
 use App\Service\Dotation\DotationSuiviPresenter;
 use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Inscription\AutorisationCompletionService;
+use App\Service\Licencie\FicheActionsResolver;
 use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Licencie\LicencieService;
 use App\Service\Licencie\PaiementService;
@@ -68,6 +69,7 @@ class LicencieController extends AbstractController
         private readonly CsrfGuard $csrf,
         private readonly PaiementService $paiementService,
         private readonly HistoriqueFicheService $historiqueService,
+        private readonly FicheActionsResolver $ficheActions,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly SignatureCompletionService $signatureCompletion,
         private readonly SignatureRelanceService $relanceService,
@@ -140,6 +142,9 @@ class LicencieController extends AbstractController
             // Signalé au même endroit que les liens jamais envoyés : c'est la même
             // question — qui reste-t-il à relancer avant que la saison démarre ?
             'signaturesEnAttente' => count($this->relanceService->licencies($season)),
+            // Troisième relance du même écran, mais celle-ci ne s'adresse à personne :
+            // c'est le club qui a une démarche à faire dans FootClubs.
+            'aValiderFff' => $this->licencieRepo->countAValiderFff($season),
             'edition' => $edition,
         ]);
     }
@@ -268,6 +273,54 @@ class LicencieController extends AbstractController
             'actionUrl' => $this->generateUrl('admin_licencies_request_signatures'),
             'retourUrl' => $this->generateUrl('admin_licencies_list'),
             'intro' => 'Un joueur dont le dossier était déjà complet n\'a plus de lien valide : ajouter un document ne le prévient pas. Chaque personne cochée reçoit un lien rouvert pour 30 jours vers un parcours réduit à la signature — ni tailles, ni autorisations, ni paiement ne lui sont redemandés. Ceux qui n\'ont pas terminé leur inscription ne sont pas listés : leur formulaire leur présentera ces documents avec le reste.',
+        ]);
+    }
+
+    /**
+     * Validation groupée dans FootClubs. Déclaré avant la route `/{uuid}` : sans cela,
+     * « valider-footclubs » serait lu comme un uuid.
+     *
+     * Le club signe ses licences dans FootClubs par paquets, puis vient le déclarer ici :
+     * fiche par fiche, il faudrait rouvrir quarante écrans. La liste est repassée au crible
+     * par le service — un uuid ajouté au formulaire ne peut pas valider une licence qui
+     * n'était pas proposée.
+     */
+    #[Route('/valider-footclubs', name: 'validate_fff_bulk', methods: ['GET', 'POST'])]
+    public function validateFffBulk(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $eligibles = $this->licencieRepo->findAValiderFff($season);
+
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('valider_footclubs_licencies', $request);
+
+            $valides = $this->paiementService->validerSurFootclubsEnMasse(
+                $eligibles,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $valides > 0 ? 'success' : 'info',
+                sprintf('%d licence%s validée%s.', $valides, $valides > 1 ? 's' : '', $valides > 1 ? 's' : ''),
+            );
+
+            return $this->redirectToRoute('admin_licencies_list');
+        }
+
+        return $this->render('admin/effectif/valider_footclubs.html.twig', [
+            'personnes' => array_map(
+                static fn (Licencie $l): array => [
+                    'uuid' => (string) $l->getUuid(),
+                    'nom' => $l->getNomPrenom(),
+                    'detail' => $l->getTeam()?->getName() ?? $l->getCategory()->getLabel(),
+                ],
+                $eligibles,
+            ),
+            'population' => 'joueur',
+            'tokenId' => 'valider_footclubs_licencies',
+            'actionUrl' => $this->generateUrl('admin_licencies_validate_fff_bulk'),
+            'retourUrl' => $this->generateUrl('admin_licencies_list'),
         ]);
     }
 
@@ -475,6 +528,10 @@ class LicencieController extends AbstractController
         $montant = $this->cotisationResolver->resolve($licencie);
         $remainingAmount = max(0, (float) $montant - $totalPaid);
 
+        $autorisationsManquantes = $this->completionService->hasMissing($licencie);
+        $signatureManquante = $this->signatureCompletion->hasMissing($licencie);
+        $attestationBlocage = $this->attestationPaiement->motifBlocage($licencie);
+
         return $this->render('admin/licencies/show.html.twig', [
             'licencie' => $licencie,
             'transactions' => $transactions,
@@ -487,19 +544,27 @@ class LicencieController extends AbstractController
             'dotations' => $this->stockMovementRepo->findDotationsByLicencie($licencie),
             'dotationStatut' => $this->dotationSuivi->avancementDe($licencie),
             'history' => $this->historiqueService->pourLicencie($licencie, $transactions),
-            'autorisationsManquantes' => $this->completionService->hasMissing($licencie),
+            'autorisationsManquantes' => $autorisationsManquantes,
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande.
             'documents' => $this->documentResolver->attendusPourLicencie($licencie),
             'signatures' => $this->documentResolver->signaturesParDocumentPourLicencie($licencie),
             // Un document ajouté depuis l'inscription : le dossier est complet, son lien
             // est consommé, rien ne le lui redemanderait sans ce bouton.
-            'signatureManquante' => $this->signatureCompletion->hasMissing($licencie),
+            'signatureManquante' => $signatureManquante,
             // Attestations de paiement déjà émises, et ce qui empêche d'en émettre une
             // nouvelle — le motif est affiché plutôt que le bouton simplement masqué :
             // « rien ne s'affiche » n'apprend rien à l'admin qui cherche le bouton.
             'attestations' => $this->attestationPaiementRepo->findByLicencie($licencie),
-            'attestationBlocage' => $this->attestationPaiement->motifBlocage($licencie),
+            'attestationBlocage' => $attestationBlocage,
+            // Une action mise en avant, les autres dans un menu : l'en-tête en alignait
+            // jusqu'à cinq, dont trois en « bouton principal ».
+            'actions' => $this->ficheActions->pour(
+                $licencie,
+                autorisationsManquantes: $autorisationsManquantes,
+                signatureManquante: $signatureManquante,
+                attestationPossible: $attestationBlocage === null,
+            ),
         ]);
     }
 
@@ -573,9 +638,9 @@ class LicencieController extends AbstractController
 
         $this->addFlash('success', 'Paiement de ' . $licencie->getNomPrenom() . ' enregistré.');
 
-        $isValidated = $licencie->getDossierClub()?->getStatus() === LicenceStatus::VALIDATED;
+        $estSolde = $licencie->getDossierClub()?->estSoldee() === true;
         $params = ['uuid' => $licencie->getUuid()];
-        if (!$isValidated) {
+        if (!$estSolde) {
             $params['paymentsModal'] = '1';
         }
 
@@ -610,7 +675,43 @@ class LicencieController extends AbstractController
 
         $this->paiementService->validerManuellement($licencie);
 
-        $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' validée manuellement.');
+        $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' considérée comme payée.');
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+    }
+
+    /** Le club a signé la licence dans FootClubs : dernier statut du parcours. */
+    #[Route('/{uuid}/valider-footclubs', name: 'validate_fff', methods: ['POST'])]
+    public function validateFff(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('valider_fff_' . $licencie->getUuid(), $request);
+
+        try {
+            $this->paiementService->validerSurFootclubs($licencie);
+            $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' validée.');
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+    }
+
+    /** Sortie de secours d'un clic malheureux : la licence redevient « à valider ». */
+    #[Route('/{uuid}/annuler-validation-footclubs', name: 'cancel_validate_fff', methods: ['POST'])]
+    public function cancelValidateFff(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('annuler_valider_fff_' . $licencie->getUuid(), $request);
+
+        try {
+            $this->paiementService->annulerValidationFootclubs($licencie);
+            $this->addFlash('success', 'Validation annulée : la licence est de nouveau à valider sur FootClubs.');
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
 
         return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
     }

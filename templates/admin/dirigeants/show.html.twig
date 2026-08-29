@@ -15,7 +15,12 @@
 
     <div class="licencie-show-header">
         <div>
-            <h1 class="licencie-show-title">{{ dirigeant.nomPrenom }}</h1>
+            <div class="licencie-show-header-main">
+                <h1 class="licencie-show-title">{{ dirigeant.nomPrenom }}</h1>
+                <div class="licencie-show-badges">
+                    {% include 'components/_badge_status.html.twig' with { status: statut.value } %}
+                </div>
+            </div>
             <p class="dirigeant-show-role">{{ dirigeant.role.label() }}</p>
         </div>
 
@@ -28,11 +33,23 @@
                 Modifier
             </a>
 
-            {% if dirigeant.licenceAdministrative %}
-                {# Ni retard ni alerte : un état normal et définitif, d'où le registre neutre. #}
-                <span class="badge-status badge-status-imported" title="Licence déclarée au district : aucun document, aucun lien, aucune dotation.">
-                    <span class="badge-status-dot"></span>Licence administrative
-                </span>
+            {# Le badge de l'en-tête dit déjà l'état : ici, seulement ce qu'il y a à faire.
+               Une licence administrative n'attend ni lien ni document — mais elle existe à la
+               FFF, elle se valide donc comme les autres. #}
+            {% if statut.value == 'a_valider_fff' or statut.value == 'licence_administrative' %}
+                <form method="post" action="{{ path('admin_dirigeants_validate_fff', {uuid: dirigeant.uuid}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_valider_fff_' ~ dirigeant.uuid) }}">
+                    <button type="submit" class="btn btn-primary">Valider sur FootClubs</button>
+                </form>
+            {% elseif statut.value == 'valide' %}
+                {# Défait un état enregistré, d'où le registre rouge (§7.6 bis). #}
+                <form method="post" action="{{ path('admin_dirigeants_cancel_validate_fff', {uuid: dirigeant.uuid}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_annuler_valider_fff_' ~ dirigeant.uuid) }}">
+                    <button type="submit" class="btn btn-danger"
+                            onclick="return confirm('Annuler la validation FootClubs de {{ dirigeant.nomPrenom }} ?')">
+                        Annuler la validation
+                    </button>
+                </form>
             {% elseif not dossierComplet %}
                 {% if dirigeant.email %}
                     <form method="post" action="{{ path('admin_dirigeants_send_link', {uuid: dirigeant.uuid}) }}">
@@ -235,6 +252,8 @@
         {% if dotations is not empty %}
         <div class="licencie-show-card licencie-show-card-full">
             <h2 class="licencie-show-card-title">Équipements attribués</h2>
+            {# Conteneur défilant, sans second cadre : la carte porte déjà le sien. #}
+            <div class="table-wrapper table-wrapper-nu table-cartes">
             <table class="table">
                 <thead>
                     <tr><th>Article</th><th>Quantité</th><th>Date</th></tr>
@@ -242,16 +261,17 @@
                 <tbody>
                     {% for d in dotations %}
                         <tr>
-                            <td>
+                            <td class="carte-titre">
                                 <span class="licencie-show-dd">{{ d.item.nom }}</span>
                                 {% if d.item.couleur %}<span class="licencie-show-dd-empty" style="font-size:var(--font-size-xs)"> — {{ d.item.couleur }}</span>{% endif %}
                             </td>
-                            <td class="licencie-show-dd">{{ d.quantite }}</td>
-                            <td class="licencie-show-dd-empty">{{ d.createdAt|date('d/m/Y') }}</td>
+                            <td class="licencie-show-dd" data-label="Quantité">{{ d.quantite }}</td>
+                            <td class="licencie-show-dd-empty" data-label="Date">{{ d.createdAt|date('d/m/Y') }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
         {% endif %}
 

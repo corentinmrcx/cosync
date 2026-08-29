@@ -74,7 +74,7 @@ class StockController extends AbstractController
         return $this->render('admin/stock/gestion.html.twig', [
             'summary' => $this->rapports->getStockSummary($showArchived),
             'showArchived' => $showArchived,
-            'licenciesValides' => $season !== null ? $this->licencieRepository->findValidatedBySeason($season) : [],
+            'licenciesSoldes' => $season !== null ? $this->licencieRepository->findSoldesBySeason($season) : [],
             'types' => StockMovementType::cases(),
             'sources' => StockMovementSource::cases(),
         ]);

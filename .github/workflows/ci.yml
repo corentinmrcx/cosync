@@ -102,6 +102,9 @@ jobs:
       - name: Vérifier que rien ne manque à l'appel
         run: php bin/check-prod-deps.php
 
+  # Ce job porte les garde-fous qui relisent les *templates* — le CSP d'abord, le
+  # défilement des tableaux ensuite. Son identifiant et son nom ne bougent pas : ils
+  # servent de contrôle requis à la protection de branche.
   csp:
     name: CSP — la politique de prod couvre ce que les pages chargent
     runs-on: ubuntu-latest
@@ -121,6 +124,12 @@ jobs:
       # l'en-tête réel aux origines que les pages atteignent.
       - name: Confronter le CSP aux origines externes du front
         run: php bin/check-csp.php
+
+      # Un tableau posé sans conteneur défilant fait déborder la page entière : la barre
+      # horizontale n'apparaît pas sous le tableau, mais sous toute l'application. Trois
+      # écrans avaient oublié la règle avant que ce contrôle existe.
+      - name: Vérifier que chaque tableau porte son défilement
+        run: php bin/check-tables-scroll.php
 
   front:
     name: Front — CSS et JavaScript

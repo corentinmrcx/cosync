@@ -1,0 +1,134 @@
+/*
+  Menu « ⋯ » d'une fiche : l'action du moment reste en clair dans l'en-tête, les autres se
+  rangent ici. Un seul niveau, jamais de sous-menu — au-delà, c'est que la fiche en fait trop.
+*/
+
+.fiche-menu {
+    position: relative;
+    display: flex;
+}
+
+/* Carré : le bouton ne porte qu'une icône, il ne doit pas s'étirer comme un bouton à libellé. */
+.fiche-menu-declencheur {
+    padding: 0.5rem;
+    aspect-ratio: 1;
+}
+
+.fiche-menu-panneau {
+    position: absolute;
+    top: calc(100% + 0.375rem);
+    right: 0;
+    z-index: 20;
+    min-width: 15rem;
+    display: flex;
+    flex-direction: column;
+    padding: 0.25rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-modal);
+}
+
+/* Les actions POST arrivent enveloppées dans un <form> : sans cela, chaque ligne du menu
+   hériterait de la largeur du formulaire et non de celle du panneau. */
+.fiche-menu-panneau form {
+    display: contents;
+}
+
+.fiche-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-body);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.fiche-menu-item:hover { background: var(--color-bg-muted); }
+
+.fiche-menu-item svg { flex-shrink: 0; color: var(--color-text-muted); }
+
+/* Séparée du reste : elle défait un état enregistré, on ne la clique pas en glissant. */
+.fiche-menu-item-danger {
+    margin-top: 0.25rem;
+    padding-top: 0.625rem;
+    border-top: 1px solid var(--color-border);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    color: var(--color-danger);
+}
+
+.fiche-menu-item-danger:hover { background: var(--color-danger-bg); }
+.fiche-menu-item-danger svg { color: var(--color-danger); }
+
+/* — Ouverture — l'animation dit d'où vient le panneau, elle reste courte pour ne pas
+   retarder un geste qu'on répète toute la journée. */
+.fiche-menu-entre { transition: opacity 0.12s ease-out, transform 0.12s ease-out; }
+.fiche-menu-sort  { transition: opacity 0.09s ease-in, transform 0.09s ease-in; }
+
+.fiche-menu-cache   { opacity: 0; transform: translateY(-0.25rem) scale(0.98); }
+.fiche-menu-visible { opacity: 1; transform: translateY(0) scale(1); }
+
+
+
+/* Le voile n'existe que sur téléphone, où le panneau devient une feuille en bas d'écran. */
+.fiche-menu-voile { display: none; }
+
+/*
+ * Téléphone : feuille ancrée en bas d'écran, pas un déroulant.
+ *
+ * Un déroulant s'aligne sur son bouton (`right: 0`). Quand le « ⋯ » est le seul geste de
+ * l'en-tête, il se retrouve à gauche de l'écran : le panneau partait alors vers la gauche,
+ * hors cadre, et le `overflow-x: hidden` de la page le rendait purement et simplement
+ * invisible. Ancrée aux quatre bords du bas, la feuille ne peut plus sortir nulle part —
+ * et c'est déjà la forme que prennent les modales de l'application sur téléphone.
+ */
+@media (max-width: 640px) {
+    .fiche-menu-voile {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        background: rgb(0 0 0 / 0.35);
+    }
+
+    .fiche-menu-panneau {
+        position: fixed;
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        min-width: 0;
+        padding: 0.5rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+        border-width: 1px 0 0;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        box-shadow: 0 -0.625rem 1.875rem rgb(0 0 0 / 0.18);
+    }
+
+    /* Cibles tactiles : on vise du pouce, pas à la souris. */
+    .fiche-menu-item {
+        padding: 0.875rem 0.75rem;
+        font-size: var(--font-size-base);
+    }
+
+    /* La feuille monte du bas plutôt que de se déplier vers le haut. */
+    .fiche-menu-cache { transform: translateY(100%) scale(1); }
+    .fiche-menu-visible { transform: translateY(0); }
+}
+
+/* Déclaré en dernier : neutralise aussi bien le dépliage du déroulant que la montée de la
+   feuille. */
+@media (prefers-reduced-motion: reduce) {
+    .fiche-menu-entre,
+    .fiche-menu-sort { transition: none; }
+    .fiche-menu-cache { transform: none; }
+}

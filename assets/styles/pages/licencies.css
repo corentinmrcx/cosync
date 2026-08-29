@@ -64,19 +64,24 @@
     text-align: right;
 }
 
-@media (max-width: 640px) {
-    .licencies-page { padding: 1rem; gap: 1rem; }
-}
-
+/* Tablette : les colonnes secondaires s'effacent, le tableau tient sans glisser. */
 @media (max-width: 768px) {
     .licencies-col-category { display: none; }
     .licencies-col-team     { display: none; }
     .licencies-col-email    { display: none; }
 }
 
-@media (max-width: 480px) {
-    .licencies-table th,
-    .licencies-table td { padding: 0.75rem; }
+/* Téléphone : la ligne devient une carte (cf. `.table-cartes`). Les colonnes masquées
+   ci-dessus reviennent — une carte a la place de les montrer, et c'est justement l'équipe
+   et l'adresse qu'on vient vérifier au local. L'ordre du tableau (statut en bout de ligne)
+   n'est plus le bon : dans une carte, le statut se lit juste sous le nom. */
+@media (max-width: 640px) {
+    .licencies-page { padding: 1rem; gap: 1rem; }
+
+    .licencies-td-name    { order: 1; }
+    .licencies-col-status { order: 2; text-align: left; }
+    .licencies-col-team   { order: 3; }
+    .licencies-col-email  { order: 4; }
 }
 
 /* — Footer : count + pagination — */

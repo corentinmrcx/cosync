@@ -70,6 +70,7 @@
 .attestation-dl-row {
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
     align-items: baseline;
     gap: 1rem;
     padding: 0.5rem 0;

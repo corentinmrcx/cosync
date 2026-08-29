@@ -12,7 +12,7 @@
 
 <div class="dirigeants-page">
 
-    {% if liensEnAttente > 0 or signaturesEnAttente > 0 %}
+    {% if liensEnAttente > 0 or signaturesEnAttente > 0 or aValiderFff > 0 %}
         <div class="effectif-alertes">
 
             {% if liensEnAttente > 0 %}
@@ -37,6 +37,20 @@
                     {% block texte %}
                         <strong>{{ nb }}</strong> dirigeant{{ nb > 1 ? 's' }} {{ nb > 1 ? 'ont' : 'a' }}
                         un document à signer — ajouté après {{ nb > 1 ? 'leur' : 'son' }} inscription.
+                    {% endblock %}
+                {% endembed %}
+            {% endif %}
+
+            {% if aValiderFff > 0 %}
+                {# Ne s'adresse à personne : c'est le club qui a une démarche à faire. #}
+                {% embed 'components/_effectif_alerte.html.twig' with {
+                    nb: aValiderFff,
+                    url: path('admin_dirigeants_validate_fff_bulk'),
+                    libelle: 'Valider sur FootClubs',
+                } only %}
+                    {% block texte %}
+                        <strong>{{ nb }}</strong> licence{{ nb > 1 ? 's' }} dirigeant{{ nb > 1 ? 's' }}
+                        {{ nb > 1 ? 'restent' : 'reste' }} à valider sur FootClubs.
                     {% endblock %}
                 {% endembed %}
             {% endif %}
@@ -89,8 +103,9 @@
             <input type="hidden" name="_token" value="{{ csrf_token('supprimer_dirigeants') }}">
         {% endif %}
 
-            <div class="table-wrapper">
-                <table class="table">
+            {# Même passage en cartes que la liste des joueurs (cf. `.table-cartes`). #}
+            <div class="table-wrapper table-cartes">
+                <table class="table table-cliquable">
                     <thead>
                         <tr>
                             {% if edition %}<th class="edition-col-check"></th>{% endif %}
@@ -98,6 +113,7 @@
                             <th class="dirigeants-col-role">Rôle</th>
                             <th class="dirigeants-col-team">Équipe</th>
                             <th class="dirigeants-col-email">Email</th>
+                            <th class="dirigeants-col-status">Statut</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -114,15 +130,18 @@
                                                aria-label="Sélectionner {{ dirigeant.nomPrenom }}">
                                     </td>
                                 {% endif %}
-                                <td class="dirigeants-td-name">{{ dirigeant.nomPrenom }}</td>
-                                <td class="dirigeants-col-role dirigeants-td-muted">
+                                <td class="dirigeants-td-name carte-titre">{{ dirigeant.nomPrenom }}</td>
+                                <td class="dirigeants-col-role dirigeants-td-muted carte-meta">
                                     {{ dirigeant.role.label() }}
-                                    {% if dirigeant.licenceAdministrative %}
-                                        <span class="dirigeants-td-administrative">licence district</span>
-                                    {% endif %}
                                 </td>
-                                <td class="dirigeants-col-team dirigeants-td-muted">{{ dirigeant.team ? dirigeant.team.name : '—' }}</td>
-                                <td class="dirigeants-col-email dirigeants-td-muted">{{ dirigeant.email ?? '—' }}</td>
+                                <td class="dirigeants-col-team dirigeants-td-muted carte-meta">{{ dirigeant.team ? dirigeant.team.name : 'Sans équipe' }}</td>
+                                <td class="dirigeants-col-email dirigeants-td-muted carte-meta">{{ dirigeant.email ?? 'Pas d\'email' }}</td>
+                                <td class="dirigeants-col-status">
+                                    {# La licence administrative est un statut à part entière :
+                                       la mention « licence district » de la colonne Rôle faisait
+                                       double emploi, elle a disparu au profit du badge. #}
+                                    {% include 'components/_badge_status.html.twig' with { status: statuts[dirigeant.uuid].value } %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

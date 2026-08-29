@@ -12,7 +12,7 @@
 
 <div class="licencies-page">
 
-    {% if liensEnAttente > 0 or signaturesEnAttente > 0 %}
+    {% if liensEnAttente > 0 or signaturesEnAttente > 0 or aValiderFff > 0 %}
         <div class="effectif-alertes">
 
             {% if liensEnAttente > 0 %}
@@ -37,6 +37,20 @@
                     {% block texte %}
                         <strong>{{ nb }}</strong> licencié{{ nb > 1 ? 's' }} {{ nb > 1 ? 'ont' : 'a' }}
                         un document à signer — ajouté après {{ nb > 1 ? 'leur' : 'son' }} inscription.
+                    {% endblock %}
+                {% endembed %}
+            {% endif %}
+
+            {% if aValiderFff > 0 %}
+                {# Ne s'adresse à personne : c'est le club qui a une démarche à faire. #}
+                {% embed 'components/_effectif_alerte.html.twig' with {
+                    nb: aValiderFff,
+                    url: path('admin_licencies_validate_fff_bulk'),
+                    libelle: 'Valider sur FootClubs',
+                } only %}
+                    {% block texte %}
+                        <strong>{{ nb }}</strong> licence{{ nb > 1 ? 's' }} {{ nb > 1 ? 'sont' : 'est' }}
+                        payée{{ nb > 1 ? 's' }} et {{ nb > 1 ? 'restent' : 'reste' }} à valider sur FootClubs.
                     {% endblock %}
                 {% endembed %}
             {% endif %}
@@ -91,8 +105,10 @@
             <input type="hidden" name="_token" value="{{ csrf_token('supprimer_licencies') }}">
         {% endif %}
 
-            <div class="table-wrapper">
-                <table class="table">
+            {# Sur téléphone, chaque ligne devient une carte : six colonnes ne se lisent pas
+               sur 360 px. Cf. `.table-cartes` dans components/data-table.css. #}
+            <div class="table-wrapper table-cartes">
+                <table class="table table-cliquable">
                     <thead>
                         <tr>
                             {% if edition %}<th class="edition-col-check"></th>{% endif %}
@@ -116,9 +132,9 @@
                                                aria-label="Sélectionner {{ licencie.nomPrenom }}">
                                     </td>
                                 {% endif %}
-                                <td class="licencies-td-name">{{ licencie.nomPrenom }}</td>
-                                <td class="licencies-col-team">{{ licencie.team ? licencie.team.name : '—' }}</td>
-                                <td class="licencies-col-email licencies-td-muted">{{ licencie.email ?? '—' }}</td>
+                                <td class="licencies-td-name carte-titre">{{ licencie.nomPrenom }}</td>
+                                <td class="licencies-col-team carte-meta">{{ licencie.team ? licencie.team.name : 'Sans équipe' }}</td>
+                                <td class="licencies-col-email licencies-td-muted carte-meta">{{ licencie.email ?? 'Pas d\'email' }}</td>
                                 <td class="licencies-col-status">
                                     {% if licencie.dossierClub %}
                                         {% include 'components/_badge_status.html.twig' with { status: licencie.dossierClub.status.value } %}

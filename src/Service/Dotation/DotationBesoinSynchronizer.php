@@ -8,7 +8,6 @@ use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Enum\DotationBesoinStatut;
-use App\Enum\LicenceStatus;
 use App\Repository\DirigeantRepository;
 use App\Repository\DotationBesoinRepository;
 use App\Repository\LicencieRepository;
@@ -146,9 +145,12 @@ final class DotationBesoinSynchronizer
 
     /**
      * Le kit n'est dû qu'à partir du moment où la personne est entrée dans l'effectif pour de
-     * bon : licence validée (donc payée, ou validée à la main) côté licencié, dossier complet
+     * bon : cotisation soldée (encaissée, ou validée à la main) côté licencié, dossier complet
      * côté dirigeant. Avant cela, le suivi de dotation annoncerait au club des sorties de
      * stock à préparer pour des inscriptions qui ne sont pas encore acquises.
+     *
+     * Le solde suffit : la validation dans FootClubs qui suit est une démarche administrative
+     * du club, elle ne conditionne pas l'équipement du licencié.
      *
      * La licence administrative est un verrou dur, en amont de la complétude : ces licences
      * n'existent que pour le district, personne ne les équipe. Sans ce test, il suffisait
@@ -157,7 +159,7 @@ final class DotationBesoinSynchronizer
     private function aDroitALaDotation(Licencie|Dirigeant $personne): bool
     {
         if ($personne instanceof Licencie) {
-            return $personne->getDossierClub()?->getStatus() === LicenceStatus::VALIDATED;
+            return $personne->getDossierClub()?->estSoldee() === true;
         }
 
         if ($personne->isLicenceAdministrative()) {

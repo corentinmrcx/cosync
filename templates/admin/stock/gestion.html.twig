@@ -301,10 +301,10 @@
                     <label class="field-label">Licencié <span style="color:var(--color-text-muted);font-weight:400;font-size:var(--font-size-xs)">(paiement confirmé uniquement)</span></label>
                     <select name="licencie_uuid" class="field-input">
                         <option value="">— Sélectionner un licencié —</option>
-                        {% if licenciesValides is empty %}
+                        {% if licenciesSoldes is empty %}
                             <option disabled>Aucun licencié avec paiement confirmé</option>
                         {% else %}
-                            {% for licencie in licenciesValides %}
+                            {% for licencie in licenciesSoldes %}
                                 <option value="{{ licencie.uuid }}">{{ licencie.nom }} {{ licencie.prenom }}</option>
                             {% endfor %}
                         {% endif %}

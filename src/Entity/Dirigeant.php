@@ -132,6 +132,18 @@ class Dirigeant
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $formCompletedAt = null;
 
+    /**
+     * Date à laquelle le club a signé cette licence dans FootClubs — null tant qu'il ne l'a
+     * pas fait. Un fait daté plutôt qu'un booléen : c'est la seule façon de dire *quand*, et
+     * la fiche l'affiche.
+     *
+     * Pendant de {@see \App\Enum\LicenceStatus::VALIDATED} côté joueur, à ceci près que le
+     * dirigeant n'a pas de statut stocké : le sien se calcule
+     * ({@see \App\Service\Dirigeant\DirigeantStatutResolver}).
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $validatedFffAt = null;
+
     public function __construct()
     {
         $this->uuid = Uuid::v4();
@@ -425,6 +437,18 @@ class Dirigeant
     public function setFormCompletedAt(?\DateTimeImmutable $formCompletedAt): static
     {
         $this->formCompletedAt = $formCompletedAt;
+
+        return $this;
+    }
+
+    public function getValidatedFffAt(): ?\DateTimeImmutable
+    {
+        return $this->validatedFffAt;
+    }
+
+    public function setValidatedFffAt(?\DateTimeImmutable $validatedFffAt): static
+    {
+        $this->validatedFffAt = $validatedFffAt;
 
         return $this;
     }

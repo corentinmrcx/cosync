@@ -1,16 +1,28 @@
+{# Statut d'un dossier — joueur (LicenceStatus) ou dirigeant (DirigeantStatut). Les deux
+   parcours se lisent côte à côte dans les écrans d'effectif : un seul jeu de badges. #}
 {% set classes = {
-    'imported':          'badge-status badge-status-imported',
-    'link_sent':         'badge-status badge-status-sent',
-    'form_completed':    'badge-status badge-status-completed',
-    'payment_confirmed': 'badge-status badge-status-completed',
-    'validated':         'badge-status badge-status-validated',
+    'imported':               'badge-status badge-status-imported',
+    'lien_non_envoye':        'badge-status badge-status-imported',
+    'licence_administrative': 'badge-status badge-status-imported',
+    'link_sent':              'badge-status badge-status-sent',
+    'lien_envoye':            'badge-status badge-status-sent',
+    'form_completed':         'badge-status badge-status-completed',
+    'document_a_signer':      'badge-status badge-status-completed',
+    'a_valider_fff':          'badge-status badge-status-a-valider',
+    'validated':              'badge-status badge-status-validated',
+    'valide':                 'badge-status badge-status-validated',
 } %}
 {% set labels = {
-    'imported':          'Lien non envoyé',
-    'link_sent':         'Lien envoyé',
-    'form_completed':    'Formulaire complété',
-    'payment_confirmed': 'Paiement confirmé',
-    'validated':         'Validé',
+    'imported':               'Lien non envoyé',
+    'lien_non_envoye':        'Lien non envoyé',
+    'licence_administrative': 'Licence administrative',
+    'link_sent':              'Lien envoyé',
+    'lien_envoye':            'Lien envoyé',
+    'form_completed':         'Formulaire complété',
+    'document_a_signer':      'Document à signer',
+    'a_valider_fff':          'À valider sur FootClubs',
+    'validated':              'Validé',
+    'valide':                 'Validé',
 } %}
 <span class="{{ classes[status] ?? 'badge-status' }}">
     <span class="badge-status-dot"></span>

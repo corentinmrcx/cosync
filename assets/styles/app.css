@@ -11,6 +11,7 @@
 @import './components/hub-card.css';
 @import './components/breadcrumb.css';
 @import './components/badge-status.css';
+@import './components/fiche-menu.css';
 @import './components/text-combobox.css';
 @import './components/list-toolbar.css';
 @import './components/loader.css';
@@ -83,6 +84,8 @@
     --color-status-sent-bg:      #eff6ff;
     --color-status-completed:    #f59e0b;
     --color-status-completed-bg: #fffbeb;
+    --color-status-a-valider:    #8b5cf6;
+    --color-status-a-valider-bg: #f5f3ff;
     --color-status-validated:    #22c55e;
     --color-status-validated-bg: #f0fdf4;
 
@@ -148,6 +151,11 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+
+    /* Un email ou une référence sans espace ne pousse jamais la mise en page : il revient
+       à la ligne. Sans cette règle, une adresse un peu longue élargissait sa carte, qui
+       élargissait la page, qui sortait une barre de défilement horizontale. */
+    overflow-wrap: break-word;
 }
 
 .main-content {
@@ -156,4 +164,17 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+
+    /*
+     * Garde-fou : la page ne défile **jamais** horizontalement.
+     *
+     * `overflow-y: auto` seul ne suffit pas — la spec force alors l'autre axe à `auto` :
+     * le moindre dépassement, n'importe où, sortait une barre horizontale au niveau de la
+     * page, en plus de celle du tableau qui la causait.
+     *
+     * Ce n'est pas un tapis sous lequel glisser les débordements : un contenu large doit
+     * porter son propre défilement (`.table-wrapper`) ou passer en cartes
+     * (`.table-cartes`). Ici, on ne fait qu'empêcher un oubli de déformer toute l'appli.
+     */
+    overflow-x: hidden;
 }

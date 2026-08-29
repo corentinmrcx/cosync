@@ -55,6 +55,30 @@ final class StockMovementServiceTest extends StockIntegrationTestCase
         );
     }
 
+    /**
+     * La sortie de stock est ouverte dès le **solde** : la validation FootClubs qui suit est
+     * une démarche du club, elle n'a pas à retarder la remise d'un kit déjà payé.
+     */
+    public function testRecordManualMovementDotationLicencieSoldeEstAcceptee(): void
+    {
+        $season = $this->makeSeason();
+        $cat = $this->makeCategory();
+        $licencie = $this->makeLicencie($season, $cat, status: LicenceStatus::A_VALIDER_FFF);
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $this->em->flush();
+
+        $this->mouvements()->recordManualMovement($veste, new ManualMovementData(StockActionManuelle::ENTREE, 5, 'L', null, null), null);
+
+        $movement = $this->mouvements()->recordManualMovement(
+            $veste,
+            new ManualMovementData(StockActionManuelle::DOTATION, 1, 'L', null, (string) $licencie->getUuid()),
+            null,
+        );
+
+        self::assertSame(StockMovementType::SORTIE, $movement->getType());
+        self::assertSame(4, $this->mouvements()->getCurrentStock($veste));
+    }
+
     public function testRecordManualMovementSortieAuDelaDuStockEstRefusee(): void
     {
         $veste = $this->makeItem('Veste', StockItemVetementType::HAUT);

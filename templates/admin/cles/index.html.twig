@@ -115,7 +115,9 @@
     {% if lignes is empty %}
         <p class="cles-empty">Aucune personne ne correspond à cette recherche.</p>
     {% else %}
-        <div class="table-wrapper">
+        {# Registre consulté au local, téléphone en main : en cartes sur petit écran.
+           Les `data-label` des cellules deviennent les intitulés de chaque ligne de carte. #}
+        <div class="table-wrapper table-cartes">
             <table class="table resp-table">
                 <thead>
                     <tr>
@@ -132,7 +134,7 @@
                         {% set detenteur = ligne.detenteur() %}
                         {% set etat = ligne.etatAttestation() %}
                         <tr>
-                            <td data-label="Personne">
+                            <td class="carte-titre">
                                 <span class="cles-nom">{{ detenteur.nomPrenom }}</span>
                                 {% if detenteur.email %}
                                     <span class="cles-meta">{{ detenteur.email }}</span>
@@ -171,7 +173,7 @@
                                     <span class="cles-meta">Sans objet</span>
                                 {% endif %}
                             </td>
-                            <td data-label="Actions" class="cles-row-actions">
+                            <td class="cles-row-actions table-actions">
                                 {% if ligne.attendSignature() and detenteur.email %}
                                     <form method="post" action="{{ path('admin_cles_demander_signature', {id: detenteur.id}) }}">
                                         <input type="hidden" name="_token" value="{{ csrf_token('cle_demander_signature_' ~ detenteur.id) }}">
@@ -199,7 +201,7 @@
             <div class="cles-section-header">
                 <h2 class="cles-section-title">Derniers mouvements</h2>
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper table-cartes">
                 <table class="table resp-table">
                     <thead>
                         <tr>
@@ -212,7 +214,7 @@
                     <tbody>
                         {% for mouvement in recents %}
                             <tr>
-                                <td data-label="Personne">{{ mouvement.detenteur.nomPrenom }}</td>
+                                <td class="carte-titre">{{ mouvement.detenteur.nomPrenom }}</td>
                                 <td data-label="Mouvement"><span class="cles-badge-{{ mouvement.type.value }}">{{ mouvement.type.label }}</span></td>
                                 <td data-label="Quantité">{{ mouvement.quantite }}</td>
                                 <td data-label="Date">{{ mouvement.dateMouvement|date('d/m/Y') }}</td>

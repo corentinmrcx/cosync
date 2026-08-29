@@ -13,6 +13,7 @@ use App\Entity\Season;
 use App\Entity\Team;
 use App\Enum\ChampContact;
 use App\Enum\DirigeantRole;
+use App\Enum\DirigeantStatut;
 use App\Form\DirigeantType;
 use App\Repository\DirigeantRepository;
 use App\Repository\StockMovementRepository;
@@ -23,6 +24,7 @@ use App\Service\Cle\CleRegistrePresenter;
 use App\Service\Dirigeant\DirigeantDossierCompletion;
 use App\Service\Dirigeant\DirigeantFormPrefill;
 use App\Service\Dirigeant\DirigeantService;
+use App\Service\Dirigeant\DirigeantStatutResolver;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Document\SignatureRelanceService;
 use App\Service\Effectif\SuppressionFicheService;
@@ -54,6 +56,7 @@ class DirigeantController extends AbstractController
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DirigeantDossierCompletion $dossierCompletion,
         private readonly SuppressionFicheService $suppressionService,
+        private readonly DirigeantStatutResolver $statutResolver,
     ) {}
 
     #[Route('', name: 'list')]
@@ -95,13 +98,18 @@ class DirigeantController extends AbstractController
             FiltreListe::depuisEnum('role', 'Rôle', 'Tous', DirigeantRole::cases(), $currentRole),
         ];
 
+        $dirigeants = $this->dirigeantRepo->findBySeasonWithFilters(
+            $season,
+            $search ?: null,
+            $currentTeam?->getId(),
+            $currentRole,
+        );
+
         return $this->render('admin/dirigeants/list.html.twig', [
-            'dirigeants' => $this->dirigeantRepo->findBySeasonWithFilters(
-                $season,
-                $search ?: null,
-                $currentTeam?->getId(),
-                $currentRole,
-            ),
+            'dirigeants' => $dirigeants,
+            // Calculés en lot : ligne par ligne, la complétude coûterait deux requêtes
+            // par dirigeant.
+            'statuts' => $this->statutResolver->pourLot($season, $dirigeants),
             'season' => $season,
             'search' => $search,
             'filterGroups' => $filterGroups,
@@ -110,6 +118,8 @@ class DirigeantController extends AbstractController
             // Signalé au même endroit que les liens jamais envoyés : c'est la même
             // question — qui reste-t-il à relancer avant que la saison démarre ?
             'signaturesEnAttente' => count($this->relanceService->dirigeants($season)),
+            // Ne s'adresse à personne : c'est le club qui a une démarche à faire dans FootClubs.
+            'aValiderFff' => count($this->dirigeantsAValiderFff($season)),
             'edition' => $edition,
         ]);
     }
@@ -232,6 +242,69 @@ class DirigeantController extends AbstractController
         }
 
         return $resume . '.';
+    }
+
+    /**
+     * Validation groupée dans FootClubs. Déclaré avant la route `/{uuid}` : sans cela,
+     * « valider-footclubs » serait lu comme un uuid. Frère de l'écran joueurs.
+     */
+    #[Route('/valider-footclubs', name: 'validate_fff_bulk', methods: ['GET', 'POST'])]
+    public function validateFffBulk(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $eligibles = $this->dirigeantsAValiderFff($season);
+
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('valider_footclubs_dirigeants', $request);
+
+            $valides = $this->dirigeantService->validerSurFootclubsEnMasse(
+                $eligibles,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $valides > 0 ? 'success' : 'info',
+                sprintf('%d licence%s validée%s.', $valides, $valides > 1 ? 's' : '', $valides > 1 ? 's' : ''),
+            );
+
+            return $this->redirectToRoute('admin_dirigeants_list');
+        }
+
+        return $this->render('admin/effectif/valider_footclubs.html.twig', [
+            'personnes' => array_map(
+                static fn (Dirigeant $d): array => [
+                    'uuid' => (string) $d->getUuid(),
+                    'nom' => $d->getNomPrenom(),
+                    'detail' => $d->getRole()->label(),
+                ],
+                $eligibles,
+            ),
+            'population' => 'dirigeant',
+            'tokenId' => 'valider_footclubs_dirigeants',
+            'actionUrl' => $this->generateUrl('admin_dirigeants_validate_fff_bulk'),
+            'retourUrl' => $this->generateUrl('admin_dirigeants_list'),
+        ]);
+    }
+
+    /**
+     * Dirigeants dont il ne reste que la signature dans FootClubs.
+     *
+     * Le statut d'un dirigeant est calculé, jamais stocké : impossible de le filtrer en SQL
+     * comme celui d'un joueur. On passe donc par le résolveur, qui lit la saison en un nombre
+     * de requêtes fixe.
+     *
+     * @return Dirigeant[]
+     */
+    private function dirigeantsAValiderFff(Season $season): array
+    {
+        $dirigeants = $this->dirigeantRepo->findBySeason($season);
+        $statuts = $this->statutResolver->pourLot($season, $dirigeants);
+
+        return array_values(array_filter(
+            $dirigeants,
+            static fn (Dirigeant $d): bool => $statuts[(string) $d->getUuid()] === DirigeantStatut::A_VALIDER_FFF,
+        ));
     }
 
     #[Route('/supprimer', name: 'delete_confirm', methods: ['POST'])]
@@ -370,6 +443,7 @@ class DirigeantController extends AbstractController
             'documents' => $this->documentResolver->attendusPourDirigeant($dirigeant),
             'signatures' => $signatures,
             'dossierComplet' => $this->dossierCompletion->isComplete($dirigeant),
+            'statut' => $this->statutResolver->pour($dirigeant),
         ]);
     }
 
@@ -386,6 +460,34 @@ class DirigeantController extends AbstractController
         } catch (\LogicException $e) {
             $this->addFlash('error', $e->getMessage());
         }
+
+        return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
+    }
+
+    /** Le club a signé la licence dans FootClubs : dernier état du parcours. */
+    #[Route('/{uuid}/valider-footclubs', name: 'validate_fff', methods: ['POST'])]
+    public function validateFff(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('dirigeant_valider_fff_' . $dirigeant->getUuid(), $request);
+
+        $this->dirigeantService->validerSurFootclubs($dirigeant);
+        $this->addFlash('success', 'Licence de ' . $dirigeant->getNomPrenom() . ' validée.');
+
+        return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
+    }
+
+    /** Sortie de secours d'un clic malheureux : la licence redevient à valider. */
+    #[Route('/{uuid}/annuler-validation-footclubs', name: 'cancel_validate_fff', methods: ['POST'])]
+    public function cancelValidateFff(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('dirigeant_annuler_valider_fff_' . $dirigeant->getUuid(), $request);
+
+        $this->dirigeantService->annulerValidationFootclubs($dirigeant);
+        $this->addFlash('success', 'Validation annulée : la licence est de nouveau à valider sur FootClubs.');
 
         return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
     }
