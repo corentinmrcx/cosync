@@ -47,9 +47,10 @@ Rien ne porte aujourd'hui la notion de **budget**, de **dépense hors équipemen
 
 **Hors périmètre**
 
-- **Aucune comptabilité.** Pas de plan comptable, pas de journal, pas de grand livre, pas d'exercice à clôturer au sens comptable. Le club n'a pas de comptable et n'en veut pas ; ce qu'il veut est un prévisionnel fiable et un réel comparable.
+- **Aucune comptabilité.** Pas de plan comptable, pas de journal, pas de grand livre, pas d'exercice à clôturer au sens comptable. Ce n'est pas un manque à combler : **la comptabilité existe déjà, un cran au-dessus.** Le Foyer de Soudron est la personne morale, le football n'est qu'une de ses activités, et c'est la trésorière du Foyer qui tient les comptes de l'ensemble ([Epic 12 §1.1](12-journal-encaissements-reversements.md)). Ce que la section veut est un prévisionnel fiable et un réel comparable — le budget d'une activité, pas les comptes d'une association.
 - Aucun rapprochement bancaire automatique. Les relevés Ligue/District se saisissent ou se collent, ils ne s'importent pas d'une API qui n'existe pas.
 - Le paiement des licences reste géré par l'existant (`Transaction`, HelloAsso). Finance le **lit**, ne le remplace pas.
+- **Le détail des encaissements et leur rattachement aux mouvements d'argent** — le reversement HelloAsso, puis le virement au compte du Foyer — sont l'objet de l'[Epic 12](12-journal-encaissements-reversements.md). Finance en consomme les totaux ; elle ne refait ni le journal, ni le justificatif remis à la trésorière.
 
 ## 4. Règles métier
 
@@ -236,6 +237,7 @@ Trois options, à trancher avant le lot 2 :
 ### 7.2 Les autres jonctions
 
 - **`Transaction`** est la source du réel encaissé. À enrichir d'un `modeFinancement` (règle 11) — `ADD COLUMN` nullable, les transactions existantes restant `null` = non renseigné, distinct de `PLEIN_TARIF`.
+- **[Epic 12](12-journal-encaissements-reversements.md)** rend le réel encaissé **lisible** : elle porte le journal des transactions, le montant réellement débité au payeur (distinct de ce qui revient au club) et le rattachement aux reversements. C'est elle qui alimente les lignes `LICENCE_RECETTE` en fiabilité `REEL` et le `RecouvrementResolver` du lot 5. Elle n'est pas bloquante — mais faire le lot 5 sans elle revient à ressaisir à la main des totaux déjà en base.
 - **`StockItem.prixAchat` + `Commande`** alimentent la ligne `DOTATION`. Le détail du calcul de prix (remise, flocage) est dans l'**Epic 10**.
 - **Epic 03 (événementiel)** rend le total consolidé des résultats nets d'événements → une ligne `EVENEMENTIEL`.
 - **Epic 04 (ententes)** rend le nombre de licenciés **Soudron** par catégorie — c'est ce chiffre, jamais l'effectif de l'équipe, qui alimente les recettes de licence.

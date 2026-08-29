@@ -6,7 +6,7 @@ Ils sont dérivés des documents de `prepa_epic/`, qui sont le compte-rendu de l
 
 ---
 
-## Les onze fichiers
+## Les douze fichiers
 
 | # | Epic | Poids | Dépend de | Statut de l'existant |
 |---|---|---|---|---|
@@ -21,6 +21,7 @@ Ils sont dérivés des documents de `prepa_epic/`, qui sont le compte-rendu de l
 | [09](09-actions-reunion.md) | Suivi des décisions de réunion | **XS** | — | rien n'existe |
 | [10](10-delta-dotation-budget.md) | *Delta* — Dotation : le volet budgétaire | M | — | ✅ fonctionnel déjà livré |
 | [11](11-delta-blocage-licence.md) | *Delta* — Bloquer la validation sans signature | **S** | — | ✅ **traitée** — voir ci-dessous |
+| [12](12-journal-encaissements-reversements.md) | Journal des encaissements et reversements | M | — | ⚠️ `Transaction` existe, **aucun écran global** |
 
 ---
 
@@ -32,6 +33,8 @@ Ensuite **01 puis 02**, dans cet ordre : le référentiel tarifaire est le socle
 
 **04 avant la partie « recettes » de 02** : c'est l'entente qui dit combien de joueurs sont réellement licenciés à Soudron, et c'est l'ignorance de ce chiffre qui a faussé le prévisionnel 26-27.
 
+**12 avant 07**, et son lot 1 dès que possible : le journal des encaissements ne demande aucune migration et rend enfin lisible ce que `Transaction` contient déjà. Surtout, c'est lui qui rattache un encaissement au reversement HelloAsso qui l'a porté — construit **après** la boutique, il faudrait démêler un historique où cotisations et commandes sont déjà mélangées dans les mêmes lots.
+
 **03, 07, 08, 10** sont indépendantes et se prennent quand le besoin se présente.
 
 **05 en dernier des chantiers structurants** : c'est la seule qui touche un champ (`Dirigeant.role`) dont dépendent la dotation et les documents signés. Elle mérite d'être faite quand le reste est stable.
@@ -39,13 +42,15 @@ Ensuite **01 puis 02**, dans cet ordre : le référentiel tarifaire est le socle
 ```
 11                  ✅ traitée
 
-09   06             (petites, autonomes, tout de suite)
+09   06   12        (petites ou à lot 1 sans risque, tout de suite)
 
 01 ──┐
      ├── 02         (le socle et l'effectif réel, puis le budget)
 04 ──┘
 
-03   07   08   10   (indépendantes, au fil du besoin)
+12 ── 07            (le rattachement des reversements avant de mélanger les natures)
+
+03   08   10        (indépendantes, au fil du besoin)
 
 05                  (en dernier : touche un existant très branché)
 ```

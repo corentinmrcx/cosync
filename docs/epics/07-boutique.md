@@ -205,6 +205,7 @@ Le lien `ArticleBoutique.stockItem` reste **facultatif**, pour le cas réel où 
 - **La formule de prix est commune avec l'Epic 10** : `(catalogue × 0,65) + flocage forfaitaire`. **Un seul service doit la porter.** Si l'Epic 10 est livrée avant, la boutique consomme son résolveur ; sinon l'inverse. Deux implémentations de la même formule divergeraient à la première évolution de remise.
 - **`ClubSettings.boutiqueOuverte`** continue de commander l'ouverture publique et l'annonce groupée. Une boutique interne développée ici s'ouvre par le même interrupteur.
 - **Epic 02 (Finance)** : les ventes alimentent une ligne de recette, les achats une ligne de dépense. Le résultat net de la boutique est un poste du budget, pas un module financier autonome.
+- **[Epic 12](12-journal-encaissements-reversements.md) — à livrer avant celle-ci.** Passer par le même compte HelloAsso signifie qu'un même reversement mêlera des cotisations et des commandes de boutique. Tant que le rattachement encaissement → reversement n'existe pas, ces lots sont indémêlables a posteriori, et la trésorière ne peut plus dire ce que contient une ligne de son relevé. Ce n'est pas une dépendance de code — c'est une dépendance de calendrier.
 
 ## 8. Lots livrables
 
