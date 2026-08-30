@@ -11,6 +11,11 @@ parameters:
     app.pdf_dir: '%kernel.project_dir%/var/pdfs'
     app.signature_dir: '%kernel.project_dir%/var/signatures'
 
+    # Délai d'attente des appels à l'API FFF. Court volontairement : le calendrier est un
+    # confort, pas une dépendance — l'écran du planning ne doit jamais rester bloqué
+    # dessus, et la saisie à la main reste disponible.
+    app.fff_timeout: 10.0
+
 services:
     _defaults:
         autowire: true

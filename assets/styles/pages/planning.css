@@ -1,0 +1,273 @@
+/* — Planning des matchs à domicile (/admin/outils/planning-matchs) —
+   Le gros du style vient des composants du projet : `season-form-*` pour les écrans de
+   formulaire, `.field` / `.field-input` pour les champs, `.table-wrapper` + `.table` pour
+   la liste, `.table-actions-cellule` pour les actions de ligne. Ne restent ici que les
+   quelques éléments propres à cet outil. */
+
+.planning-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    /* Un enfant de flex vaut min-width: auto : sans ce 0, une rangée non sécable
+       élargirait la page au-delà de l'écran (§7.6 quinquies). */
+    min-width: 0;
+}
+
+@media (min-width: 768px) {
+    .planning-page { padding: 2rem; }
+}
+
+/* — En-tête, même gabarit que la gestion du stock — */
+
+.planning-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    /* Titre en face de boutons : sans wrap, la rangée déborde sur téléphone. */
+    flex-wrap: wrap;
+}
+
+.planning-title {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-text-base);
+    min-width: 0;
+}
+
+.planning-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* — Bandeau du calendrier officiel — */
+
+.planning-bandeau {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.875rem 1rem;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.planning-bandeau-texte {
+    min-width: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+}
+
+/* — Ajout d'un match — */
+
+.planning-ajout {
+    padding: 1.25rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
+}
+
+.planning-ajout-titre {
+    margin: 0 0 1rem;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-base);
+}
+
+/* Une grille plutôt qu'un flex : les champs s'alignent sur des colonnes communes, donc
+   les libellés et les bords des champs tombent au même endroit d'une colonne à l'autre.
+   En flex, chaque champ prenait la largeur de son contenu et rien ne s'alignait. */
+.planning-ajout-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    align-items: end;
+    gap: 1rem;
+}
+
+/* Le bouton s'aligne sur le bas des champs, pas sur leur libellé. */
+.planning-ajout-bouton {
+    display: flex;
+    align-items: flex-end;
+}
+
+.planning-ajout-bouton .btn {
+    width: 100%;
+    justify-content: center;
+    /* Même hauteur que `.field-input` : le bouton, dimensionné par son rembourrage,
+       tombait une dizaine de pixels plus bas que les champs de la même rangée. */
+    height: 2.75rem;
+}
+
+@media (max-width: 640px) {
+    .planning-ajout-form { grid-template-columns: 1fr; }
+    .planning-header-actions { width: 100%; }
+    .planning-header-actions .btn { flex: 1 1 auto; justify-content: center; }
+}
+
+/* — Liste — */
+
+.planning-col-date    { white-space: nowrap; }
+.planning-col-heure   { white-space: nowrap; }
+.planning-col-source  { white-space: nowrap; }
+.planning-col-actions { width: 1%; white-space: nowrap; }
+
+.planning-meta {
+    display: block;
+    margin-top: 0.125rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.planning-note { font-style: italic; color: var(--color-text-muted); }
+
+/* Une ligne masquée reste lisible mais visiblement mise de côté : elle est dans la liste
+   et absente des documents, et rien d'autre ne le dirait. */
+.planning-ligne-masquee { opacity: 0.55; }
+
+.planning-badge {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.planning-badge-fff    { background: var(--color-info-bg); color: var(--color-info); }
+.planning-badge-manuel { background: var(--color-bg-muted); color: var(--color-text-muted); }
+.planning-badge-masque { background: var(--color-warning-bg); color: var(--color-warning-text); }
+
+.planning-legende {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    line-height: 1.7;
+    color: var(--color-text-muted);
+}
+
+.planning-vide {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    background: var(--color-bg-subtle);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-xl);
+    color: var(--color-text-muted);
+}
+
+.planning-vide p { margin: 0; }
+
+/* — Génération — */
+
+.planning-compte {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--color-info-bg);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+}
+
+/* Le texte forme **un seul** élément de flex, sinon chaque mot devenait un item et le
+   nombre partait seul sur sa ligne au-dessus du reste de la phrase. */
+.planning-compte-texte {
+    min-width: 0;
+    line-height: 1.5;
+}
+
+.planning-compte .btn { flex-shrink: 0; }
+
+@media (max-width: 640px) {
+    .planning-compte { flex-direction: column; align-items: stretch; }
+    .planning-compte .btn { justify-content: center; }
+}
+
+/* Un document vide est un avertissement, pas une information neutre : c'est presque
+   toujours une période mal saisie. */
+.planning-compte-vide {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    font-weight: 600;
+}
+
+.planning-format {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+
+.planning-format:hover { border-color: var(--color-border-strong); background: var(--color-bg-subtle); }
+
+.planning-format input[type="radio"] {
+    margin-top: 0.1875rem;
+    accent-color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.planning-format-corps { display: flex; flex-direction: column; gap: 0.1875rem; min-width: 0; }
+.planning-format-label { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-base); }
+.planning-format-desc  { font-size: var(--font-size-xs); line-height: 1.5; color: var(--color-text-muted); }
+
+/* — Collage — */
+
+.planning-textarea {
+    height: auto;
+    resize: vertical;
+    /* Un tableau collé garde ses colonnes alignées : c'est ce qui permet de voir d'un
+       coup d'œil si les séparateurs ont survécu au copier-coller. */
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--font-size-xs);
+    line-height: 1.6;
+}
+
+.planning-apercu { margin-top: 1.5rem; }
+
+.planning-alerte {
+    margin-bottom: 1.25rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+
+.planning-alerte-ok     { background: var(--color-success-bg); color: var(--color-text-body); border-left: 3px solid var(--color-success); }
+.planning-alerte-erreur { background: var(--color-danger-bg);  color: var(--color-text-body); border-left: 3px solid var(--color-danger); }
+
+.planning-rejets {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    background: var(--color-warning-bg);
+    border-radius: var(--radius-lg);
+}
+
+.planning-rejets-titre {
+    margin: 0 0 0.25rem;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-warning-text);
+}
+
+.planning-rejets-liste {
+    margin: 0.75rem 0 0;
+    padding-left: 1.25rem;
+    font-size: var(--font-size-xs);
+    line-height: 1.8;
+    color: var(--color-text-body);
+    /* Une ligne collée peut être longue et sans espace : elle revient à la ligne au lieu
+       d'élargir la carte, puis la page. */
+    overflow-wrap: anywhere;
+}

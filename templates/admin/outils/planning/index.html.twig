@@ -1,0 +1,127 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Planning des matchs{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Outils', route: 'admin_outils_index' },
+    { label: 'Planning des matchs' }
+] } %}
+
+<div class="planning-page">
+
+    {# Même gabarit d'en-tête que la gestion du stock : titre à gauche, actions à droite. #}
+    <div class="planning-header">
+        <h1 class="planning-title">Matchs à domicile</h1>
+        <div class="planning-header-actions">
+            <a href="{{ path('admin_planning_paste') }}" class="btn btn-secondary">Import par collage</a>
+            <a href="{{ path('admin_planning_settings') }}" class="btn btn-secondary">Calendrier officiel</a>
+            <a href="{{ path('admin_planning_generate') }}" class="btn btn-primary">
+                {{ ui.icon('printer') }} Générer un planning
+            </a>
+        </div>
+    </div>
+
+    {# — Rattachement au calendrier officiel — #}
+    <div class="planning-bandeau">
+        <span class="planning-bandeau-texte">
+            {% if club.estRattacheALaFff %}
+                Calendrier officiel du club n° {{ club.fffClubNo }}.
+                {{ club.fffSyncActive ? 'Mise à jour automatique chaque jour à 7 h.' : 'Mise à jour automatique désactivée.' }}
+            {% else %}
+                Aucun club rattaché : les matchs se saisissent à la main ou par collage.
+            {% endif %}
+        </span>
+        {% if club.estRattacheALaFff %}
+            <form method="post" action="{{ path('admin_planning_sync') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('planning_sync') }}">
+                <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon('refresh') }} Mettre à jour</button>
+            </form>
+        {% else %}
+            <a href="{{ path('admin_planning_settings') }}" class="btn btn-secondary btn-sm">Rattacher le club</a>
+        {% endif %}
+    </div>
+
+    {# — Saisie d'un match — #}
+    <div class="planning-ajout">
+        <h2 class="planning-ajout-titre">Ajouter un match</h2>
+
+        {# Les champs passent par le thème de formulaire du projet (`.field` +
+           `.field-input`) : c'est lui qui aligne libellés et champs partout ailleurs. #}
+        {{ form_start(form, { attr: { class: 'planning-ajout-form' } }) }}
+            {% for champ in [form.date, form.heure, form.categorie, form.adversaire, form.note] %}
+                <div class="field">
+                    {{ form_label(champ) }}
+                    {{ form_widget(champ) }}
+                    {{ form_errors(champ) }}
+                </div>
+            {% endfor %}
+            <div class="planning-ajout-bouton">
+                <button type="submit" class="btn btn-primary">{{ ui.icon('plus') }} Ajouter</button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+
+    {# — Liste — #}
+    {% if matchs is empty %}
+        <div class="planning-vide">
+            <p>Aucun match enregistré pour cette saison.</p>
+        </div>
+    {% else %}
+        <div class="table-wrapper table-cartes">
+            <table class="table resp-table">
+                <thead>
+                    <tr>
+                        <th class="planning-col-date">Date</th>
+                        <th class="planning-col-heure">Heure</th>
+                        <th>Catégorie</th>
+                        <th>Adversaire</th>
+                        <th>Note</th>
+                        <th class="planning-col-source">Source</th>
+                        <th class="planning-col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in matchs %}
+                        <tr{{ match.masque ? ' class="planning-ligne-masquee"' : '' }}>
+                            <td class="carte-titre planning-col-date">
+                                {{ match.date|date_fr_courte|capitalize }} {{ match.date|date('Y') }}
+                                {% if match.masque %}
+                                    <span class="planning-badge planning-badge-masque">Masqué</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Heure" class="planning-col-heure">{{ match.heure ? match.heure|replace({':': 'h'}) : '—' }}</td>
+                            <td data-label="Catégorie"><strong>{{ match.categorie }}</strong></td>
+                            <td data-label="Adversaire">
+                                {{ match.adversaire ?? '—' }}
+                                {% if match.fffCompetition %}
+                                    <span class="planning-meta">{{ match.fffCompetition }}</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Note" class="planning-note">{{ match.note ?? '—' }}</td>
+                            <td data-label="Source" class="planning-col-source">
+                                <span class="planning-badge planning-badge-{{ match.source.value }}">{{ match.source.label }}</span>
+                                {% if match.fffMaNo and not match.suitLaFff %}
+                                    <span class="planning-meta">détaché</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Actions" class="planning-col-actions">
+                                {% include 'admin/outils/planning/_actions.html.twig' with { match: match } only %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <p class="planning-legende">
+            Un match <strong>masqué</strong> reste dans cette liste mais ne figure sur aucun document imprimé.
+            Un match issu du calendrier officiel voit sa date et son horaire réécrits à chaque mise à jour :
+            pour en corriger un à la main, détachez-le d'abord.
+        </p>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -78,6 +78,41 @@ class ClubSettings
     #[ORM\Column(options: ['default' => 3])]
     private int $relanceMax = 3;
 
+    /* ── Planning des matchs : rattachement au calendrier FFF ──
+       Au niveau du club et non de la saison : le numéro d'un club à la FFF ne change pas
+       à la rentrée. Quand un troisième outil aura besoin de réglages, il faudra les
+       sortir d'ici — ClubSettings ne doit pas devenir le fourre-tout de tous les outils. */
+
+    /**
+     * Numéro du club à la FFF (`cl_no` de l'API DOFA), qui n'est **pas** son numéro
+     * d'affiliation : c'est `cl_no` que `/api/clubs/{n}` attend. Null tant que le club
+     * n'a pas été rattaché — le planning se saisit alors entièrement à la main.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $fffClubNo = null;
+
+    /**
+     * Synchronisation quotidienne du calendrier, **éteinte par défaut**.
+     *
+     * Même doctrine que `relanceActive` : la migration installe l'automate, elle ne
+     * l'allume pas. On l'active après une synchronisation manuelle qui a montré ce
+     * qu'elle ramène — d'autant que l'accès à l'API depuis le serveur n'est pas garanti.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $fffSyncActive = false;
+
+    /**
+     * Les personnes à joindre au sujet des matchs, imprimées au pied du flyer distribué
+     * dans les boîtes aux lettres — une par ligne, « Nom — téléphone ».
+     *
+     * Texte libre et non une liste de `Dirigeant` : ce ne sont pas des rôles du club mais
+     * les deux ou trois personnes qui acceptent que leur numéro parte dans tout le
+     * village. Aucun rôle ne dit ça, et l'y déduire ferait publier un numéro personnel
+     * sans que personne l'ait décidé.
+     */
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $planningContacts = null;
+
     /* ── Identité de l'association ──
        Jusqu'ici écrite en dur dans une trentaine de templates. Elle vit ici parce qu'elle
        est ce qu'une attestation de paiement engage juridiquement, et parce qu'elle est le
@@ -250,6 +285,64 @@ class ClubSettings
         $this->relanceMax = $relanceMax;
 
         return $this;
+    }
+
+    public function getFffClubNo(): ?int
+    {
+        return $this->fffClubNo;
+    }
+
+    public function setFffClubNo(?int $fffClubNo): static
+    {
+        $this->fffClubNo = $fffClubNo;
+
+        return $this;
+    }
+
+    public function isFffSyncActive(): bool
+    {
+        return $this->fffSyncActive;
+    }
+
+    public function setFffSyncActive(bool $fffSyncActive): static
+    {
+        $this->fffSyncActive = $fffSyncActive;
+
+        return $this;
+    }
+
+    /** Le club est rattaché à la FFF : la synchronisation a quelque chose à interroger. */
+    public function estRattacheALaFff(): bool
+    {
+        return $this->fffClubNo !== null;
+    }
+
+    public function getPlanningContacts(): ?string
+    {
+        return $this->planningContacts;
+    }
+
+    public function setPlanningContacts(?string $planningContacts): static
+    {
+        $this->planningContacts = $this->normaliser($planningContacts);
+
+        return $this;
+    }
+
+    /**
+     * Les contacts du flyer, une entrée par ligne non vide.
+     *
+     * @return list<string>
+     */
+    public function getPlanningContactsLignes(): array
+    {
+        if ($this->planningContacts === null) {
+            return [];
+        }
+
+        $lignes = preg_split('/\r\n|\r|\n/', $this->planningContacts) ?: [];
+
+        return array_values(array_filter(array_map('trim', $lignes), static fn (string $l) => $l !== ''));
     }
 
     public function getAssociationNom(): ?string

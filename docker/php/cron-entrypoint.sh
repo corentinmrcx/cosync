@@ -24,6 +24,12 @@ crontab - <<EOF
 # pas allumé l'interrupteur dans /admin/club/relances.
 0 9 * * * $CONSOLE app:relances:envoyer 2>&1
 
+# Calendrier des matchs à domicile, aligné sur celui du district avant l'ouverture du
+# bureau : le planning consulté dans la journée est celui de la nuit. Ne fait rien tant
+# que la synchronisation n'a pas été activée dans les réglages du planning — ni si l'API
+# fédérale refuse les appels venant du serveur, ce qui peut arriver.
+0 7 * * * $CONSOLE app:planning:sync-fff 2>&1
+
 # Sauvegarde nightly de la base (locale + copie sur le Drive du club)
 30 2 * * * $CONSOLE app:db:backup 2>&1
 EOF

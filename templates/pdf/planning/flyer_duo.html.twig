@@ -1,0 +1,49 @@
+{# Deux flyers A5 identiques sur une A4 PAYSAGE, à couper en deux au massicot.
+
+   C'est le tirage réel : imprimer les flyers un par un gâcherait la moitié du papier —
+   pour une distribution dans toutes les boîtes du village, ce n'est pas un détail.
+
+   Marges de 5 px (1,3 mm) sur les quatre bords, et 10 px (2,65 mm) entre les deux
+   exemplaires : la coupe se fait dans cette gouttière, et un massicot a besoin d'un peu
+   plus de blanc qu'un simple filet pour ne pas mordre sur l'un des deux flyers. Pas de trait de coupe imprimé — le massicot suit la
+   séparation blanche, et un pointillé resterait visible sur le bord du flyer distribué.
+
+   ⚠️ La mise côte à côte est en **positionnement absolu**, pas en <table>. DomPDF calcule
+   la hauteur de ligne d'un tableau en y ajoutant marges et rembourrages : le tableau
+   dépassait la page et se retrouvait rejeté sur une deuxième feuille, la première sortant
+   blanche. Deux blocs absolus aux dimensions écrites en millimètres ne dépendent d'aucun
+   calcul de flux. Le défaut est silencieux à l'écran, il ne se voit qu'à l'impression. #}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    {# DomPDF en fait le titre du document, que le navigateur affiche dans l'onglet. #}
+    <title>Matchs à domicile — {{ club.associationNom|default('Foyer de Soudron') }} — {{ periodeLibelle }}</title>
+    <style>
+        @page { size: A4 landscape; margin: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { margin: 0; width: 297mm; height: 210mm; }
+
+        /*
+         * Largeur d'une moitié : (297 − 2 × 1,3 de bord − 2,65 de gouttière) ÷ 2 = 145,875.
+         * La hauteur reste 210 : le flyer gère lui-même ses marges verticales, et le
+         * bandeau d'appel doit pouvoir se caler sur le bas de la feuille.
+         */
+        .demi {
+            position: absolute;
+            top: 0;
+            width: 145.875mm;
+            height: 210mm;
+        }
+
+        .demi-gauche { left: 1.3mm; }
+        .demi-droite { left: 149.825mm; }
+
+        {% include 'pdf/planning/_flyer_styles.html.twig' %}
+    </style>
+</head>
+<body>
+    <div class="demi demi-gauche">{% include 'pdf/planning/_flyer_corps.html.twig' %}</div>
+    <div class="demi demi-droite">{% include 'pdf/planning/_flyer_corps.html.twig' %}</div>
+</body>
+</html>

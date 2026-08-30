@@ -87,6 +87,11 @@ final class AccesAdminTest extends WebTestCase
             '/admin/dotations/suivi',
             '/admin/dotations/flocage',
             '/admin/stock/inventaire.pdf',
+            '/admin/outils',
+            '/admin/outils/planning-matchs',
+            '/admin/outils/planning-matchs/reglages',
+            '/admin/outils/planning-matchs/coller',
+            '/admin/outils/planning-matchs/generer',
         ];
 
         foreach ($urls as $url) {

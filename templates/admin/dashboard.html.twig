@@ -45,6 +45,13 @@
             permission: 'boutique.lire'
         } only %}
 
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'tool',
+            label: 'Outils',
+            route: 'admin_outils_index',
+            permission: 'planning.lire'
+        } only %}
+
         {# Le hub du club rassemble deux domaines distincts : la configuration et les comptes.
            Une carte ne prend qu'une permission, d'où la condition ici. #}
         {% if is_granted('club.configurer') or is_granted('utilisateur.gerer') %}

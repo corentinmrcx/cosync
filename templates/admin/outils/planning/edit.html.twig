@@ -1,0 +1,49 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Modifier un match{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Outils', route: 'admin_outils_index' },
+    { label: 'Planning des matchs', route: 'admin_planning_index' },
+    { label: 'Modifier' }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+
+        <h1 class="season-form-header">Modifier le match</h1>
+
+        <hr class="season-form-divider">
+
+        <div class="season-form-row">
+            {% for champ in [form.date, form.heure] %}
+                <div class="field">
+                    {{ form_label(champ) }}
+                    {{ form_widget(champ) }}
+                    {{ form_errors(champ) }}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% for champ in [form.categorie, form.adversaire, form.note] %}
+            <div class="field">
+                {{ form_label(champ) }}
+                {{ form_widget(champ) }}
+                {{ form_help(champ) }}
+                {{ form_errors(champ) }}
+            </div>
+        {% endfor %}
+
+        {# Annuler ramène là où mène Enregistrer — la liste — et non sur un écran voisin. #}
+        <div class="season-form-actions">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <a href="{{ path('admin_planning_index') }}" class="btn btn-ghost">Annuler</a>
+        </div>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

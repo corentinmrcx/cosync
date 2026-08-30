@@ -1,0 +1,139 @@
+{# Planning remis à la mairie pour la tonte du terrain.
+
+   ⚠️ Ce document **hérite de pdf/_layout.html.twig**, comme les attestations et les
+   règlements signés : mêmes marges, même en-tête à deux logos, mêmes polices. La version
+   précédente refaisait sa propre coquille et dérivait à chaque retouche — c'est justement
+   ce qu'on ne veut pas d'un parc de documents qui doivent se ressembler.
+
+   Le corps ne contient donc que ce qui lui est propre : la période, le tableau, la
+   mention de prévisionnel. #}
+{% extends 'pdf/_layout.html.twig' %}
+
+{% block titre_document %}Matchs à domicile — {{ club.associationNom|default('Foyer de Soudron') }} — {{ periodeLibelle }}{% endblock %}
+
+{% block titre %}Planning des matchs à domicile{% endblock %}
+
+{# La période appartient à l'en-tête, pas au corps : elle qualifie le document au même
+   titre que le nom du club et la saison. Isolée au-dessus du tableau, elle flottait entre
+   deux blocs sans qu'on sache à quoi elle se rattachait. #}
+{% block sous_titre %}
+    {{ club.associationNom|default('Foyer de Soudron') }} — saison {{ season.label }}
+    <span class="entete-periode">{{ periodeLibelle }}</span>
+{% endblock %}
+
+{% block styles %}
+    /* Le gabarit partagé aère davantage sous son titre : ici, les trois lignes de
+       l'en-tête forment un bloc, elles se lisent d'un coup. */
+    .header-title h1 { margin-bottom: 0; }
+
+    /* Deuxième ligne du sous-titre : plus discrète que le nom du club, qui reste le
+       repère principal de l'en-tête. */
+    .entete-periode {
+        display: block;
+        margin-top: 2mm;
+        font-size: 12px;
+        font-weight: 400;
+        color: #555;
+    }
+
+    table.matchs { width: 100%; border-collapse: collapse; }
+
+    /* Filet gris et non rouge : l'en-tête du document en pose déjà un, juste au-dessus.
+       Deux traits rouges à quelques millimètres l'un de l'autre découpaient la feuille en
+       bandes sans que le second ajoute une information. Le rouge reste au seul endroit où
+       il sépare vraiment deux choses : sous le titre. */
+    table.matchs th {
+        padding: 0 6px 4mm;
+        text-align: left;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border-bottom: 1px solid #c9c9c9;
+    }
+
+    /* Des lignes espacées : la feuille se lit d'un coup d'œil, punaisée au local. */
+    table.matchs td {
+        padding: 4mm 6px;
+        border-bottom: 1px solid #e5e7eb;
+        page-break-inside: avoid;
+    }
+
+    .col-date  { width: 52mm; font-weight: 700; }
+    .col-heure { width: 20mm; font-weight: 700; }
+    .col-cat   { width: 32mm; }
+
+    .note { display: block; margin-top: 1mm; font-size: 10px; font-style: italic; color: #777; }
+
+    /* Le week-end est le cas courant ; un match en semaine — une coupe, un report — est
+       justement celui qu'on risque de manquer. */
+    .semaine .col-date::after {
+        content: ' (en semaine)';
+        font-weight: 400;
+        font-size: 10px;
+        color: #ff3131;
+    }
+
+    .vide { padding: 25mm 0; text-align: center; font-style: italic; color: #888; }
+
+    /* Un pied de page, pas un encart : il donne la réserve d'usage et le contact, il ne
+       doit pas attirer l'œil avant le tableau. */
+    .pied-planning {
+        margin-top: 12mm;
+        padding-top: 4mm;
+        border-top: 1px solid #ddd;
+        text-align: center;
+        font-size: 9.5px;
+        line-height: 1.5;
+        color: #666;
+    }
+
+    .pied-planning .avertissement { color: #ff3131; }
+    .pied-planning .genere { margin-top: 1.5mm; font-size: 8.5px; color: #aaa; }
+{% endblock %}
+
+{% block corps %}
+
+    {% if journees is empty %}
+        <p class="vide">Aucun match à domicile n'est prévu sur cette période.</p>
+    {% else %}
+        <table class="matchs">
+            <thead>
+                <tr>
+                    <th class="col-date">Date</th>
+                    <th class="col-heure">Heure</th>
+                    <th class="col-cat">Catégorie</th>
+                    <th>Adversaire</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for journee in journees %}
+                    {% for match in journee.matchs %}
+                        <tr class="{{ journee.estWeekend ? '' : 'semaine' }}">
+                            {# L'année figure sur chaque ligne : la feuille est punaisée au
+                               local et relue des semaines plus tard. #}
+                            <td class="col-date">{{ match.date|date_fr_jour_mois|capitalize }} {{ match.date|date('Y') }}</td>
+                            <td class="col-heure">{{ match.heure ? match.heure|replace({':': 'h'}) : '—' }}</td>
+                            <td class="col-cat">{{ match.categorie }}</td>
+                            <td>
+                                {# Même règle que le flyer : « Contre X » pour une rencontre,
+                                   « Accueil de X, Y et Z » pour un plateau. #}
+                                {{ match.libelleRencontre }}
+                                {% if match.note %}<span class="note">{{ match.note }}</span>{% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <div class="pied-planning">
+        <div class="avertissement">
+            Planning prévisionnel : les horaires peuvent être modifiés jusqu'à la veille de la rencontre.
+        </div>
+        {# Ni le nom du club ni son adresse mail : l'en-tête les porte déjà, et la mairie
+           n'a personne à contacter à la lecture de ce document. #}
+        <div class="genere">Document édité le {{ genereLe|date_fr }} à {{ genereLe|date('H\\hi') }}.</div>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Outils{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Outils' }
+] } %}
+
+{# Même gabarit que le hub du club : une grille de cartes, sans titre ni introduction.
+   Chaque nouvel outil s'y ajoute en une carte. #}
+<div class="dashboard">
+
+    <div class="dashboard-hub">
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'calendar-days',
+            label: 'Planning des matchs',
+            route: 'admin_planning_index',
+            permission: 'planning.lire'
+        } only %}
+
+    </div>
+
+</div>
+{% endblock %}

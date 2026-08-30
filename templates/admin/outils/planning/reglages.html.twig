@@ -1,0 +1,92 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Calendrier officiel{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Outils', route: 'admin_outils_index' },
+    { label: 'Planning des matchs', route: 'admin_planning_index' },
+    { label: 'Calendrier officiel' }
+] } %}
+
+<div class="season-form-page">
+
+    <form method="post" class="season-form-card">
+        <input type="hidden" name="_token" value="{{ csrf_token('planning_reglages') }}">
+
+        <h1 class="season-form-header">Calendrier officiel</h1>
+
+        <hr class="season-form-divider">
+
+        {% if erreurVerification %}
+            <div class="planning-alerte planning-alerte-erreur">{{ erreurVerification }}</div>
+        {% elseif verification %}
+            <div class="planning-alerte planning-alerte-ok">
+                <strong>{{ verification.nom }}</strong>
+                {%- if verification.ville %} — {{ verification.ville }}{% endif %}
+                {%- if verification.district %} — {{ verification.district }}{% endif %}
+                {% if verification.affiliation %}
+                    <span class="field-hint">Numéro d'affiliation : {{ verification.affiliation }}</span>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <div class="field">
+            <label for="fffClubNo" class="field-label">Numéro du club</label>
+            <input type="number" id="fffClubNo" name="fffClubNo" class="field-input"
+                   value="{{ club.fffClubNo }}" placeholder="194947" min="1">
+            <p class="field-hint">
+                Identifiant du club dans le référentiel fédéral. Ce n'est <strong>pas</strong> le
+                numéro d'affiliation qui figure sur les documents du club. Laisser vide retire
+                le rattachement : les matchs se saisissent alors à la main ou par collage.
+            </p>
+        </div>
+
+        <div class="season-form-checkbox">
+            <input type="checkbox" id="fffSyncActive" name="fffSyncActive" value="1" {{ club.fffSyncActive ? 'checked' : '' }}>
+            <label for="fffSyncActive">Mettre à jour automatiquement chaque jour à 7 h</label>
+        </div>
+        <p class="field-hint">
+            {# Même doctrine que la relance automatique : un automate démarre d'une
+               décision, pas d'un déploiement. #}
+            À laisser décoché tant qu'une mise à jour manuelle n'a pas montré ce qu'elle ramène.
+        </p>
+
+        <hr class="season-form-divider">
+
+        <h2 class="season-form-subheader">Contacts du flyer</h2>
+
+        {# Champs séparés plutôt qu'une zone de texte libre : ce bloc part dans toutes les
+           boîtes aux lettres du village, une ligne mal formée y reste imprimée. Le document
+           met lui-même le séparateur entre le nom et le numéro. #}
+        {% for i in 0..1 %}
+            {% set contact = contacts.ligne(i) %}
+            <div class="season-form-row">
+                <div class="field">
+                    <label for="contactNom{{ i }}" class="field-label">Contact {{ i + 1 }} — nom</label>
+                    <input type="text" id="contactNom{{ i }}" name="contactNom[]" class="field-input"
+                           value="{{ contact.nom }}" maxlength="60" placeholder="Corentin Marcoux">
+                </div>
+                <div class="field">
+                    <label for="contactTel{{ i }}" class="field-label">Téléphone</label>
+                    <input type="tel" id="contactTel{{ i }}" name="contactTelephone[]" class="field-input"
+                           value="{{ contact.telephone }}" maxlength="20" placeholder="06 80 67 15 48">
+                </div>
+            </div>
+        {% endfor %}
+
+        <p class="field-hint">
+            Laisser un nom vide retire le contact du flyer. Ces numéros sont distribués dans
+            tout le village : n'y mettez que des personnes qui l'ont accepté. L'adresse mail
+            imprimée est celle de l'association.
+        </p>
+
+        <div class="season-form-actions">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <a href="{{ path('admin_planning_index') }}" class="btn btn-ghost">Annuler</a>
+        </div>
+    </form>
+
+</div>
+{% endblock %}
