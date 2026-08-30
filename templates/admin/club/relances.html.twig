@@ -46,11 +46,13 @@
         {# Voir la liste avant d'allumer. L'écran groupé la montre sans rien envoyer :
            c'est la seule façon de vérifier qui serait concerné, aucune ligne de
            commande n'a sa place dans une interface d'administration. #}
-        <p class="relance-reglages-astuce">
-            L'écran <a href="{{ path('admin_licencies_relancer') }}">Relancer les licences en attente</a>
-            affiche la liste des personnes concernées sans rien envoyer, et permet de
-            relancer au cas par cas.
-        </p>
+        {% if peut_acceder('admin_licencies_relancer') %}
+            <p class="relance-reglages-astuce">
+                L'écran <a href="{{ path('admin_licencies_relancer') }}">Relancer les licences en attente</a>
+                affiche la liste des personnes concernées sans rien envoyer, et permet de
+                relancer au cas par cas.
+            </p>
+        {% endif %}
 
         <div class="season-form-actions">
             <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>

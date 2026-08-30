@@ -12,7 +12,9 @@
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <span>Aucune saison configurée. Certaines fonctionnalités sont désactivées.</span>
-            <a href="{{ path('admin_seasons_new') }}" class="dashboard-alert-link">Créer une saison →</a>
+            {% if peut_acceder('admin_seasons_new') %}
+                <a href="{{ path('admin_seasons_new') }}" class="dashboard-alert-link">Créer une saison →</a>
+            {% endif %}
         </div>
     {% endif %}
 

@@ -8,6 +8,7 @@
 
 <div class="table-actions-cellule">
 
+    {% if peut_acceder('admin_planning_edit') %}
     {% if match.estModifiable %}
         <a href="{{ path('admin_planning_edit', { id: match.id }) }}" class="btn btn-secondary btn-sm">Modifier</a>
     {% else %}
@@ -39,6 +40,7 @@
             <input type="hidden" name="_token" value="{{ csrf_token('planning_delete_' ~ match.id) }}">
             <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
         </form>
+    {% endif %}
     {% endif %}
 
 </div>

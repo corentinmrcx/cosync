@@ -21,10 +21,12 @@
         </div>
         <div class="dot-header-actions">
             <a href="{{ path('admin_dotations_flocage') }}" class="btn btn-secondary">Liste de flocage</a>
-            <form method="post" action="{{ path('admin_dotations_recalculer') }}">
-                <input type="hidden" name="_token" value="{{ csrf_token('dotation_recalculer') }}">
-                <button type="submit" class="btn btn-secondary">↻ Recalculer les besoins</button>
-            </form>
+            {% if peut_acceder('admin_dotations_recalculer') %}
+                <form method="post" action="{{ path('admin_dotations_recalculer') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('dotation_recalculer') }}">
+                    <button type="submit" class="btn btn-secondary">↻ Recalculer les besoins</button>
+                </form>
+            {% endif %}
         </div>
     </div>
 
@@ -103,17 +105,24 @@
                                             {% elseif besoin.articleServi.typeVetement %}
                                                 <span class="dot-item-taille-missing">à renseigner</span>
                                             {% elseif besoin.articleServi.kind and besoin.articleServi.kind.value == 'equipement' %}
-                                                <a href="{{ path('admin_stock_items_edit', {id: besoin.articleServi.id}) }}"
-                                                   class="dot-taille-config"
-                                                   title="Définir le type de vêtement de l'article pour récupérer automatiquement la taille du licencié">type à définir ↗</a>
+                                                {% if peut_acceder('admin_stock_items_edit') %}
+                                                    <a href="{{ path('admin_stock_items_edit', {id: besoin.articleServi.id}) }}"
+                                                       class="dot-taille-config"
+                                                       title="Définir le type de vêtement de l'article pour récupérer automatiquement la taille du licencié">type à définir ↗</a>
+                                                {% else %}
+                                                    <span class="dot-item-taille-missing">type à définir</span>
+                                                {% endif %}
                                             {% else %}
                                                 <span class="dot-taille-none">—</span>
                                             {% endif %}
+                                            {% if peut_acceder('admin_dotations_besoin_taille') %}
                                             <button type="button" class="dot-taille-pen" @click="editing = true"
                                                     title="{{ estDonne ? 'Corriger la taille remise (ajuste le stock)' : 'Modifier la taille' }}" aria-label="Modifier la taille">
                                                 {{ ui.icon('edit', 14) }}
                                             </button>
+                                            {% endif %}
                                         </div>
+                                        {% if peut_acceder('admin_dotations_besoin_taille') %}
                                         <form x-show="editing" x-cloak method="post"
                                               action="{{ path('admin_dotations_besoin_taille', {id: besoin.id}) }}"
                                               class="dot-taille-form">
@@ -131,6 +140,7 @@
                                             <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
                                             <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
                                         </form>
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td data-label="Qté">{{ besoin.quantite }}</td>
@@ -149,11 +159,13 @@
                                 </td>
                                 <td class="dot-table-action table-actions">
                                     {% if besoin.statut.value == 'donne' %}
+                                        {% if peut_acceder('admin_dotations_besoin_annuler') %}
                                         <form method="post" action="{{ path('admin_dotations_besoin_annuler', {id: besoin.id}) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_annuler_' ~ besoin.id) }}">
                                             <button type="submit" class="btn btn-danger btn-sm">Annuler</button>
                                         </form>
-                                    {% else %}
+                                        {% endif %}
+                                    {% elseif peut_acceder('admin_dotations_besoin_remise') %}
                                         <form method="post" action="{{ path('admin_dotations_besoin_remise', {id: besoin.id}) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_remise_' ~ besoin.id) }}">
                                             <button type="submit" class="btn btn-primary btn-sm">Marquer remis</button>

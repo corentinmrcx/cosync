@@ -137,6 +137,13 @@ jobs:
       - name: Vérifier que chaque action d'administration déclare un droit
         run: php bin/check-permissions.php
 
+      # Les routes sont protégées ; les écrans, eux, proposaient encore les boutons. Un rôle
+      # « consultation du stock » trouvait neuf actions qui répondaient toutes « Access Denied » :
+      # l'application était sûre, et illisible. Ce contrôle exige une garde sur tout lien qui
+      # mène à une route dont l'écran n'exige pas le droit.
+      - name: Vérifier qu'aucune action n'est proposée à qui ne peut pas la jouer
+        run: php bin/check-boutons.php
+
   front:
     name: Front — CSS et JavaScript
     runs-on: ubuntu-latest

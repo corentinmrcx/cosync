@@ -36,6 +36,7 @@
                             <div class="config-teams-info">
                                 <span class="config-teams-name">{{ team.name }}</span>
                             </div>
+                            {% if peut_acceder('admin_equipes_edit') %}
                             <div class="config-teams-btns">
                                 <button type="button" class="btn btn-secondary btn-sm" @click="editingTeam = {{ team.id }}">Modifier</button>
                                 {% include 'components/_form_suppression.html.twig' with {
@@ -44,8 +45,10 @@
                                     message: 'Supprimer cette équipe ?',
                                 } only %}
                             </div>
+                            {% endif %}
                         </div>
 
+                        {% if peut_acceder('admin_equipes_edit') %}
                         {# — Formulaire d'édition — #}
                         <form method="post" action="{{ path('admin_equipes_edit', {id: team.id}) }}"
                               class="config-teams-edit-form"
@@ -71,6 +74,7 @@
                                 <button type="button" class="btn btn-ghost btn-sm" @click="editingTeam = null">Annuler</button>
                             </div>
                         </form>
+                        {% endif %}
 
                     </li>
                 {% endfor %}
@@ -147,12 +151,14 @@
                             Seuls les licenciés <strong>sans équipe</strong> sont modifiés : une équipe déjà
                             renseignée, à l'import ou à la main, n'est jamais remplacée.
                         </p>
+                        {% if peut_acceder('admin_equipes_affectation_auto') %}
                         <form method="post" action="{{ path('admin_equipes_affectation_auto') }}"
                               class="config-affectation-actions">
                             <input type="hidden" name="_token" value="{{ csrf_token('affectation_auto_equipes') }}">
                             <button type="submit" class="btn btn-primary btn-sm">Confirmer l'affectation</button>
                             <button type="button" class="btn btn-ghost btn-sm" @click="confirmation = false">Annuler</button>
                         </form>
+                        {% endif %}
                     </div>
                 {% else %}
                     <p class="config-teams-hint">

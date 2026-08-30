@@ -42,7 +42,7 @@
             {% else %}
                 La relance automatique est <strong>désactivée</strong> : rien ne part sans un envoi depuis cet écran.
             {% endif %}
-            <a href="{{ path('admin_club_relances') }}">Modifier les réglages</a>
+            {% if peut_acceder('admin_club_relances') %}<a href="{{ path('admin_club_relances') }}">Modifier les réglages</a>{% endif %}
         </p>
 
         <hr class="envoi-liens-divider">

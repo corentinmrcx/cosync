@@ -1427,8 +1427,28 @@ Ce qui ne doit pas se défaire :
 - **On masque ce qu'on ne possède pas, on explique ce qu'on ne peut pas jouer.** Les cartes
   de hub (`permission:` sur `hub-card.html.twig`), les quicklinks et les entrées de navbar
   disparaissent — sinon on clique sur six cartes pour six 403. À l'intérieur d'un écran qu'on
-  utilise, en revanche, une action bloquée affiche son motif (§7.6 quater) :
-  `FicheActionsResolver` filtre sur `FicheAction::permission()`.
+  utilise, une action **qu'on ne possède pas** disparaît aussi ; c'est une action possédée
+  mais **injouable** (pas d'adresse email, dossier incomplet) qui affiche son motif
+  (§7.6 quater). `FicheActionsResolver` fait les deux : il filtre sur
+  `FicheAction::permission()`, puis rend le motif de ce qui reste.
+- **Un bouton se garde par sa route, jamais par une permission recopiée.**
+  `{% if peut_acceder('admin_stock_items_new') %}` — la fonction Twig lit le droit sur le
+  contrôleur de la route (`RoutePermissionResolver`, réflexion sur `#[IsGranted]`, carte mise
+  en cache). Recopier le droit dans le template (`is_granted('stock.configurer')`) le fait se
+  tromper — un « Modifier » gardé par `stock.gerer` alors que la route exige
+  `stock.configurer` — et surtout **ne suit pas** : changer la permission d'une action
+  laisserait derrière elle un bouton gardé par l'ancienne. `is_granted()` reste le bon outil
+  pour ce qui n'est pas un lien : une colonne de tableau, un bloc d'information.
+  ⚠️ Masquer n'est pas protéger : le refus reste celui du contrôleur.
+- **Le garde-fou est `bin/check-boutons.php`** (job CI `csp`), qui refuse un `path()` menant à
+  une route dont l'écran n'exige pas le droit, hors garde. Cent douze actions étaient dans ce
+  cas — un rôle « consultation du stock » ouvrait `/admin/stock/gestion` et y trouvait neuf
+  boutons qui répondaient tous « Access Denied » : l'application était sûre et illisible.
+  L'exception s'écrit pour exister — `{# droits-verifies-cote-serveur: raison #}`, en tête de
+  fichier pour tout le template, au-dessus des lignes concernées sinon. Deux angles morts
+  connus, à garder en tête plutôt qu'à découvrir : une action de formulaire posée par le
+  contrôleur (`createForm(..., ['action' => generateUrl(…)])`) et une garde portée par une
+  variable ne se voient pas dans le template — la garde s'y pose à la main.
 - **Les rôles sont au niveau du club, pas de la saison.** La trésorière l'est toutes les
   saisons ; les cloisonner obligerait à les réaffecter chaque 1ᵉʳ juillet, et le premier oubli
   fermerait l'outil en pleine campagne d'inscriptions.
@@ -1541,6 +1561,10 @@ n'est pas évident, c'est le signe qu'elle en fait trop.
   `bin/check-permissions.php`, joué par le job CI `csp`.
 - ❌ Créer une table `permission` en base, ou un écran qui inventerait des permissions : une
   permission n'existe que parce qu'une ligne de code la vérifie (§8).
+- ❌ Afficher un bouton ou un lien vers une route d'écriture sans garde : l'admin clique et
+  reçoit « Access Denied », ce qui ne lui apprend rien. Utiliser
+  `{% if peut_acceder('nom_de_la_route') %}`, et non un `is_granted()` qui recopie le droit.
+  Garde-fou : `bin/check-boutons.php`, joué par le job CI `csp`.
 - ❌ Redériver le statut de super-admin d'un réglage d'exploitation (`DIAG_EMAIL` ou autre) :
   c'est un fait porté par le compte.
 

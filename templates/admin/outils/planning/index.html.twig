@@ -16,11 +16,13 @@
     <div class="planning-header">
         <h1 class="planning-title">Matchs à domicile</h1>
         <div class="planning-header-actions">
-            <a href="{{ path('admin_planning_paste') }}" class="btn btn-secondary">Import par collage</a>
-            <a href="{{ path('admin_planning_settings') }}" class="btn btn-secondary">Calendrier officiel</a>
-            <a href="{{ path('admin_planning_generate') }}" class="btn btn-primary">
-                {{ ui.icon('printer') }} Générer un planning
-            </a>
+            {% if peut_acceder('admin_planning_paste') %}
+                <a href="{{ path('admin_planning_paste') }}" class="btn btn-secondary">Import par collage</a>
+                <a href="{{ path('admin_planning_settings') }}" class="btn btn-secondary">Calendrier officiel</a>
+                <a href="{{ path('admin_planning_generate') }}" class="btn btn-primary">
+                    {{ ui.icon('printer') }} Générer un planning
+                </a>
+            {% endif %}
         </div>
     </div>
 
@@ -34,17 +36,22 @@
                 Aucun club rattaché : les matchs se saisissent à la main ou par collage.
             {% endif %}
         </span>
-        {% if club.estRattacheALaFff %}
-            <form method="post" action="{{ path('admin_planning_sync') }}">
-                <input type="hidden" name="_token" value="{{ csrf_token('planning_sync') }}">
-                <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon('refresh') }} Mettre à jour</button>
-            </form>
-        {% else %}
-            <a href="{{ path('admin_planning_settings') }}" class="btn btn-secondary btn-sm">Rattacher le club</a>
+        {% if peut_acceder('admin_planning_sync') %}
+            {% if club.estRattacheALaFff %}
+                <form method="post" action="{{ path('admin_planning_sync') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('planning_sync') }}">
+                    <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon('refresh') }} Mettre à jour</button>
+                </form>
+            {% else %}
+                <a href="{{ path('admin_planning_settings') }}" class="btn btn-secondary btn-sm">Rattacher le club</a>
+            {% endif %}
         {% endif %}
     </div>
 
-    {# — Saisie d'un match — #}
+    {# — Saisie d'un match —
+       L'URL du formulaire est posée par le contrôleur (`generateUrl`), elle n'apparaît donc
+       pas dans le template : la garde se pose ici à la main. #}
+    {% if peut_acceder('admin_planning_new') %}
     <div class="planning-ajout">
         <h2 class="planning-ajout-titre">Ajouter un match</h2>
 
@@ -63,6 +70,7 @@
             </div>
         {{ form_end(form) }}
     </div>
+    {% endif %}
 
     {# — Liste — #}
     {% if matchs is empty %}

@@ -260,6 +260,7 @@
                 </h2>
                 {# Identité complète pour une fiche saisie à la main ; sinon les seules
                    coordonnées, l'identité FFF restant la propriété de FootClubs. #}
+                {% if peut_acceder('admin_licencies_edit_contact') %}
                 <a href="{{ licencie.createdManually
                         ? path('admin_licencies_edit_identity', {uuid: licencie.uuid})
                         : path('admin_licencies_edit_contact', {uuid: licencie.uuid}) }}"
@@ -271,6 +272,7 @@
                     </svg>
                     {{ licencie.createdManually ? 'Corriger' : 'Corriger les coordonnées' }}
                 </a>
+                {% endif %}
             </div>
 
             <dl class="licencie-show-dl">
@@ -305,7 +307,7 @@
                     <dt class="licencie-show-dt">Email</dt>
                     <dd class="{{ licencie.email ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
                         {{ licencie.email ?? '—' }}
-                        {% if licencie.emailManuel %}
+                        {% if licencie.emailManuel and peut_acceder('admin_licencies_contact_reprendre_import') %}
                             {% include 'components/_contact_verrou.html.twig' with {
                                 url: path('admin_licencies_contact_reprendre_import', { uuid: licencie.uuid, champ: 'email' }),
                                 tokenId: 'contact_reprendre_import_' ~ licencie.uuid
@@ -317,7 +319,7 @@
                     <dt class="licencie-show-dt">Téléphone</dt>
                     <dd class="{{ licencie.telephone ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
                         {{ licencie.telephone|phone_format }}
-                        {% if licencie.telephoneManuel %}
+                        {% if licencie.telephoneManuel and peut_acceder('admin_licencies_contact_reprendre_import') %}
                             {% include 'components/_contact_verrou.html.twig' with {
                                 url: path('admin_licencies_contact_reprendre_import', { uuid: licencie.uuid, champ: 'telephone' }),
                                 tokenId: 'contact_reprendre_import_' ~ licencie.uuid
@@ -520,8 +522,11 @@
         </div>
         {% endif %}
 
-        {# — Attestations de paiement — #}
-        {% if attestations is not empty or attestationBlocage is null %}
+        {# — Attestations de paiement —
+           La carte entière est réservée à qui peut attester : télécharger un document
+           l'obtient, le renvoyer l'adresse à un tiers. Sans ce droit, l'historique lui-même
+           n'a pas à s'afficher. #}
+        {% if peut_acceder('admin_attestation_paiement_download') and (attestations is not empty or attestationBlocage is null) %}
         <div class="licencie-show-card licencie-show-card-full">
             <h2 class="licencie-show-card-title">Attestations de paiement</h2>
 

@@ -11,8 +11,8 @@
 ] } %}
 
 <div class="stock-dashboard-page" x-data="stockMouvementModal({
-        urlMouvement: '{{ path('admin_stock_items_movement', {id: '__ID__'}) }}',
-        urlArticle: '{{ path('admin_stock_items_edit', {id: '__ID__'}) }}',
+        urlMouvement: '{{ peut_acceder('admin_stock_items_movement') ? path('admin_stock_items_movement', {id: '__ID__'}) : '' }}',
+        urlArticle: '{{ peut_acceder('admin_stock_items_edit') ? path('admin_stock_items_edit', {id: '__ID__'}) : '' }}',
         ordreTailles: {{ tailles_ordre()|json_encode }},
      })">
 
@@ -23,10 +23,12 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
                 {{ showArchived ? 'Masquer les archivés' : 'Voir les archivés' }}
             </a>
-            <a href="{{ path('admin_stock_items_new') }}" class="btn btn-primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Nouvel article
-            </a>
+            {% if peut_acceder('admin_stock_items_new') %}
+                <a href="{{ path('admin_stock_items_new') }}" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nouvel article
+                </a>
+            {% endif %}
         </div>
     </div>
 
@@ -83,6 +85,7 @@
                                             </span>
                                             {# Le texte vit dans la modale, pas dans la cellule : une note de
                                                trois lignes déformait la ligne de l'article. #}
+                                            {% if peut_acceder('admin_stock_items_note') %}
                                             <button type="button"
                                                     class="stock-note-btn{{ row.item.note ? ' is-remplie' : '' }}"
                                                     @click.stop="ouvrir({{ {
@@ -95,6 +98,7 @@
                                                 {{ ui.icon('file-text', 12) }}
                                                 {{ row.item.note ? 'Voir la note' : 'Ajouter une note' }}
                                             </button>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </td>
@@ -110,25 +114,31 @@
                                 <td class="stock-col-actions">
                                     <div class="table-actions-cellule">
                                         {% if row.item.actif %}
-                                            <button
-                                                type="button"
-                                                class="btn btn-primary btn-sm"
-                                                @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
-                                            >
-                                                + / − Mouvement
-                                            </button>
-                                            <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
-                                            {# Écran de confirmation plutôt qu'une boîte de dialogue : lui seul sait dire
-                                               si l'article part avec ses mouvements ou s'il sera archivé, et pourquoi. #}
-                                            <a href="{{ path('admin_stock_items_delete_confirm', {id: row.item.id}) }}" class="btn btn-danger btn-sm">Supprimer</a>
+                                            {% if peut_acceder('admin_stock_items_movement') %}
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-primary btn-sm"
+                                                    @click="openModal({{ row.item.id }}, '{{ row.item.nom|e('js') }}', {{ row.stock }})"
+                                                >
+                                                    + / − Mouvement
+                                                </button>
+                                            {% endif %}
+                                            {% if peut_acceder('admin_stock_items_edit') %}
+                                                <a href="{{ path('admin_stock_items_edit', {id: row.item.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
+                                                {# Écran de confirmation plutôt qu'une boîte de dialogue : lui seul sait dire
+                                                   si l'article part avec ses mouvements ou s'il sera archivé, et pourquoi. #}
+                                                <a href="{{ path('admin_stock_items_delete_confirm', {id: row.item.id}) }}" class="btn btn-danger btn-sm">Supprimer</a>
+                                            {% endif %}
                                         {% else %}
-                                            <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}">
-                                                <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">
-                                                <button type="submit" class="btn btn-secondary btn-sm">Désarchiver</button>
-                                            </form>
-                                            {# Un article archivé par erreur doit pouvoir partir pour de bon : l'écran
-                                               de confirmation dira, là aussi, si son historique s'y oppose. #}
-                                            <a href="{{ path('admin_stock_items_delete_confirm', {id: row.item.id}) }}" class="btn btn-danger btn-sm">Supprimer</a>
+                                            {% if peut_acceder('admin_stock_items_restore') %}
+                                                <form method="post" action="{{ path('admin_stock_items_restore', {id: row.item.id}) }}">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('restore_stock_item_' ~ row.item.id) }}">
+                                                    <button type="submit" class="btn btn-secondary btn-sm">Désarchiver</button>
+                                                </form>
+                                                {# Un article archivé par erreur doit pouvoir partir pour de bon : l'écran
+                                                   de confirmation dira, là aussi, si son historique s'y oppose. #}
+                                                <a href="{{ path('admin_stock_items_delete_confirm', {id: row.item.id}) }}" class="btn btn-danger btn-sm">Supprimer</a>
+                                            {% endif %}
                                         {% endif %}
                                     </div>
                                 </td>
@@ -151,6 +161,7 @@
                                                             {% if t.sansTaille %}
                                                                 <span class="stock-taille-note-vide">—</span>
                                                             {% else %}
+                                                                {% if peut_acceder('admin_stock_items_note_taille') %}
                                                                 <button type="button"
                                                                         class="stock-note-btn{{ t.note ? ' is-remplie' : '' }}"
                                                                         @click="ouvrir({{ {
@@ -164,6 +175,7 @@
                                                                     {{ ui.icon('file-text', 12) }}
                                                                     {{ t.note ? 'Voir la note' : 'Ajouter une note' }}
                                                                 </button>
+                                                                {% endif %}
                                                             {% endif %}
                                                         </td>
                                                     </tr>
@@ -230,7 +242,9 @@
 
     </div>{# fin du composant de note #}
 
-    {# Modale mouvement #}
+    {# Modale mouvement — inutile sans le droit de saisir, et un formulaire caché qui poste
+       vers une route interdite n'a rien à faire dans la page. #}
+    {% if peut_acceder('admin_stock_items_movement') %}
     <div class="modal-voile" x-show="modalOpen" x-transition.opacity style="display:none">
         <div class="modal" @click.outside="closeModal()">
             <div class="modal-header">
@@ -326,6 +340,7 @@
             </form>
         </div>
     </div>
+    {% endif %}
 
 </div>
 

@@ -156,6 +156,57 @@ final class PermissionsAccesTest extends WebTestCase
     }
 
     /**
+     * Le même contrôle, mais sur un écran dont **tous** les gestes sont des écritures.
+     *
+     * La gestion du stock en alignait neuf : « Nouvel article », « Modifier », « Supprimer »,
+     * « + / − Mouvement », les notes… Un rôle de consultation les voyait tous, et les neuf
+     * répondaient « Access Denied ». C'est le cas qui a motivé `peut_acceder()`.
+     */
+    public function testLaConsultationDuStockNeVoitAucunBoutonDEcriture(): void
+    {
+        $this->connecter([Permission::STOCK_LIRE]);
+
+        $html = $this->client->request('GET', '/admin/stock/gestion')->html();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringNotContainsString('Nouvel article', $html);
+        self::assertStringNotContainsString('+ / − Mouvement', $html, 'La saisie d\'un mouvement relève de stock.gerer.');
+        self::assertStringNotContainsString('Ajouter une note', $html, 'Les notes de stock aussi.');
+        self::assertStringNotContainsString('Supprimer', $html);
+    }
+
+    /**
+     * Le pendant indispensable : un droit accordé doit **rendre** le bouton. Une garde qui
+     * masque tout passerait les tests ci-dessus sans rien servir à personne.
+     */
+    public function testLaGestionDuStockRetrouveSesBoutons(): void
+    {
+        $this->connecter([Permission::STOCK_CONFIGURER, Permission::STOCK_GERER]);
+
+        $html = $this->client->request('GET', '/admin/stock/gestion')->html();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Nouvel article', $html);
+    }
+
+    /**
+     * Le planning distingue deux gestes que rien ne sépare visuellement : consulter les matchs
+     * et en ajouter. Le formulaire de saisie poste sur une route `planning.gerer` dont l'URL
+     * est posée par le contrôleur — la garde du template est la seule qui puisse le cacher.
+     */
+    public function testLaConsultationDuPlanningNeVoitNiSaisieNiGeneration(): void
+    {
+        $this->connecter([Permission::PLANNING_LIRE]);
+
+        $html = $this->client->request('GET', '/admin/outils/planning-matchs')->html();
+
+        self::assertResponseIsSuccessful();
+        self::assertStringNotContainsString('Ajouter un match', $html);
+        self::assertStringNotContainsString('Générer un planning', $html);
+        self::assertStringNotContainsString('Import par collage', $html);
+    }
+
+    /**
      * Les cases à cocher des rôles sortent du thème de formulaire, une paire par conteneur.
      * Sans ce conteneur, Symfony les aligne sans rien entre elles : « Responsable foot☐
      * Trésorerie », collé et illisible — c'est ce qu'affichait l'écran avant correction.

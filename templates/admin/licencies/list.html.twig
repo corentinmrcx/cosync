@@ -15,7 +15,7 @@
     {% if liensEnAttente > 0 or signaturesEnAttente > 0 or relancesEnAttente > 0 or aValiderFff > 0 %}
         <div class="effectif-alertes">
 
-            {% if liensEnAttente > 0 %}
+            {% if liensEnAttente > 0 and peut_acceder('admin_licencies_send_links') %}
                 {% embed 'components/_effectif_alerte.html.twig' with {
                     nb: liensEnAttente,
                     url: path('admin_licencies_send_links'),
@@ -28,7 +28,7 @@
                 {% endembed %}
             {% endif %}
 
-            {% if signaturesEnAttente > 0 %}
+            {% if signaturesEnAttente > 0 and peut_acceder('admin_licencies_request_signatures') %}
                 {% embed 'components/_effectif_alerte.html.twig' with {
                     nb: signaturesEnAttente,
                     url: path('admin_licencies_request_signatures'),
@@ -41,7 +41,7 @@
                 {% endembed %}
             {% endif %}
 
-            {% if relancesEnAttente > 0 %}
+            {% if relancesEnAttente > 0 and peut_acceder('admin_licencies_relancer') %}
                 {# Le robot enverra la même liste cette nuit s'il est allumé ; l'alerte
                    reste utile dans les deux cas : allumé, elle dit ce qui va partir. #}
                 {% embed 'components/_effectif_alerte.html.twig' with {
@@ -56,7 +56,7 @@
                 {% endembed %}
             {% endif %}
 
-            {% if aValiderFff > 0 %}
+            {% if aValiderFff > 0 and peut_acceder('admin_licencies_validate_fff_bulk') %}
                 {# Ne s'adresse à personne : c'est le club qui a une démarche à faire. #}
                 {% embed 'components/_effectif_alerte.html.twig' with {
                     nb: aValiderFff,
@@ -115,6 +115,8 @@
         {# En mode édition la ligne ne mène plus à la fiche : le seul geste possible est de
            cocher. Mélanger navigation et sélection sur le même clic ferait ouvrir une fiche
            alors qu'on croyait la désigner. #}
+        {# droits-verifies-cote-serveur: `edition` n'est vrai que si le contrôleur a déjà
+           accordé effectif.supprimer — le redemander ici serait une garde en double. #}
         {% if edition %}
         <form method="post"
               action="{{ path('admin_licencies_delete_confirm') }}"

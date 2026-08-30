@@ -24,10 +24,12 @@
             <h1 class="cles-title">Clés du local</h1>
         </div>
         <div class="cles-actions">
-            <a href="{{ path('admin_cles_attestation_edit') }}" class="btn btn-secondary">
-                {{ ui.icon('edit') }}
-                Texte de l'attestation
-            </a>
+            {% if peut_acceder('admin_cles_attestation_edit') %}
+                <a href="{{ path('admin_cles_attestation_edit') }}" class="btn btn-secondary">
+                    {{ ui.icon('edit') }}
+                    Texte de l'attestation
+                </a>
+            {% endif %}
             <a href="{{ path('admin_cles_attestation_recap') }}" class="btn btn-secondary">
                 {{ ui.icon('download') }}
                 Récapitulatif PDF
@@ -77,7 +79,7 @@
                 </span>
             {% endif %}
         </div>
-        {% if nbEnAttente > 0 %}
+        {% if nbEnAttente > 0 and peut_acceder('admin_cles_campagne') %}
             <form method="post" action="{{ path('admin_cles_campagne') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('cle_campagne_' ~ season.id) }}">
                 <button type="submit" class="btn btn-primary">
@@ -99,6 +101,7 @@
     } %}
         {% block actions %}
             {# L'import de macro du template parent ne traverse pas l'embed : SVG inline. #}
+            {% if peut_acceder('admin_cles_mouvement') %}
             <button type="button" class="btn btn-secondary" @click="modaleExterieur = true">
                 Personne extérieure
             </button>
@@ -108,6 +111,7 @@
                 </svg>
                 Remettre une clé
             </button>
+            {% endif %}
         {% endblock %}
     {% endembed %}
 
@@ -174,7 +178,7 @@
                                 {% endif %}
                             </td>
                             <td class="cles-row-actions table-actions">
-                                {% if ligne.attendSignature() and detenteur.email %}
+                                {% if ligne.attendSignature() and detenteur.email and peut_acceder('admin_cles_demander_signature') %}
                                     <form method="post" action="{{ path('admin_cles_demander_signature', {id: detenteur.id}) }}">
                                         <input type="hidden" name="_token" value="{{ csrf_token('cle_demander_signature_' ~ detenteur.id) }}">
                                         <button type="submit" class="btn btn-secondary btn-sm">
@@ -183,10 +187,12 @@
                                         </button>
                                     </form>
                                 {% endif %}
-                                <button type="button" class="btn btn-secondary btn-sm"
-                                        @click="modaleOuverte = true; personne = 'detenteur:{{ detenteur.id }}'; typeMouvement = 'remise'">
-                                    Mouvement
-                                </button>
+                                {% if peut_acceder('admin_cles_mouvement') %}
+                                    <button type="button" class="btn btn-secondary btn-sm"
+                                            @click="modaleOuverte = true; personne = 'detenteur:{{ detenteur.id }}'; typeMouvement = 'remise'">
+                                        Mouvement
+                                    </button>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -227,6 +233,7 @@
     {% endif %}
 
     {# — Modale de saisie d'un mouvement — #}
+    {% if peut_acceder('admin_cles_mouvement') %}
     <div class="modal-voile" x-show="modaleOuverte" x-cloak @click.self="modaleOuverte = false">
         <form method="post" action="{{ path('admin_cles_mouvement') }}" class="modal">
             <div class="modal-header">
@@ -296,7 +303,10 @@
         </form>
     </div>
 
+    {% endif %}
+
     {# — Modale d'ajout d'une personne extérieure à l'effectif — #}
+    {% if peut_acceder('admin_cles_detenteur_exterieur') %}
     <div class="modal-voile" x-show="modaleExterieur" x-cloak @click.self="modaleExterieur = false">
         <form method="post" action="{{ path('admin_cles_detenteur_exterieur') }}" class="modal">
             <div class="modal-header">
@@ -347,6 +357,7 @@
             </div>
         </form>
     </div>
+    {% endif %}
 
 </div>
 {% endblock %}

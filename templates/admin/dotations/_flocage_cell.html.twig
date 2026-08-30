@@ -4,7 +4,7 @@
    `besoin`   = App\Entity\DotationBesoin
    `reglages` = App\DTO\DotationFlocageReglages, ou null si l'article ne se floque pas #}
 {% set estDonne = besoin.statut.value == 'donne' %}
-{% set saisissable = reglages is not null and not estDonne %}
+{% set saisissable = reglages is not null and not estDonne and peut_acceder('admin_dotations_besoin_personnalisation') %}
 {% if besoin.personnalisation or saisissable %}
     <div class="dot-flocage" x-data="{ editing: false }">
         <div x-show="!editing" class="dot-flocage-display">
@@ -23,6 +23,7 @@
             {% endif %}
         </div>
 
+        {# droits-verifies-cote-serveur: `saisissable` porte déjà peut_acceder(), plus haut. #}
         {% if saisissable %}
             <form x-show="editing" x-cloak method="post"
                   action="{{ path('admin_dotations_besoin_personnalisation', {id: besoin.id}) }}"

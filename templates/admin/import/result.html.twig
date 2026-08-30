@@ -113,7 +113,7 @@
             <p class="import-guide-note">
                 Aucun mail n'est parti : un import ne prévient personne de lui-même. Affectez d'abord les
                 équipes, puis envoyez les liens depuis
-                <a href="{{ path('admin_licencies_send_links') }}">Joueurs → Envoyer les liens</a>.
+                {% if peut_acceder('admin_licencies_send_links') %}<a href="{{ path('admin_licencies_send_links') }}">Joueurs → Envoyer les liens</a>{% else %}Joueurs → Envoyer les liens{% endif %}.
             </p>
         {% endif %}
 

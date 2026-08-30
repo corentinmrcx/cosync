@@ -28,6 +28,7 @@
         {# Ouvrir la boutique est une bascule, pas un formulaire : le lien reste enregistré
            dans les deux sens. L'interrupteur est désactivé tant qu'aucun lien n'existe. #}
         <div class="section-home-actions">
+            {% if peut_acceder('admin_boutique_ouverture') %}
             <form method="post" action="{{ path('admin_boutique_ouverture') }}" class="boutique-switch-form">
                 <input type="hidden" name="_token" value="{{ csrf_token('boutique_ouverture') }}">
                 <input type="hidden" name="ouvrir" value="{{ settings.aBoutique ? '0' : '1' }}">
@@ -42,6 +43,7 @@
                     <span class="boutique-switch-knob"></span>
                 </button>
             </form>
+            {% endif %}
         </div>
     </div>
 
@@ -51,6 +53,7 @@
             <h2 class="section-home-section-title">Accès rapides</h2>
         </div>
         <div class="quicklink-grid">
+            {% if peut_acceder('admin_boutique_lien') %}
             <a href="{{ path('admin_boutique_lien') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('cart', 20) }}</span>
                 <span class="quicklink-body">
@@ -65,8 +68,9 @@
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
+            {% endif %}
 
-            {% if settings.aBoutique %}
+            {% if settings.aBoutique and peut_acceder('admin_boutique_annoncer') %}
                 <a href="{{ path('admin_boutique_annoncer') }}" class="quicklink">
                     <span class="quicklink-icon">{{ ui.icon('send', 20) }}</span>
                     <span class="quicklink-body">

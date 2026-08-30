@@ -42,7 +42,7 @@
                         <p class="envoi-liens-garde-fou-texte">
                             Sans équipe, le formulaire annonce la cotisation par défaut de la saison et n'affiche
                             pas la dotation propre à l'équipe. Affectez-{{ sansEquipe > 1 ? 'les' : 'le' }} depuis
-                            <a href="{{ path('admin_equipes_index') }}">Équipes</a>, ou cochez-{{ sansEquipe > 1 ? 'les' : 'le' }} quand même.
+                            {% if peut_acceder('admin_equipes_index') %}<a href="{{ path('admin_equipes_index') }}">Équipes</a>{% else %}l'écran Équipes{% endif %}, ou cochez-{{ sansEquipe > 1 ? 'les' : 'le' }} quand même.
                         </p>
                     </div>
                 {% endif %}

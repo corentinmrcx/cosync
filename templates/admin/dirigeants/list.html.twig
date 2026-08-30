@@ -15,7 +15,7 @@
     {% if liensEnAttente > 0 or signaturesEnAttente > 0 or aValiderFff > 0 %}
         <div class="effectif-alertes">
 
-            {% if liensEnAttente > 0 %}
+            {% if liensEnAttente > 0 and peut_acceder('admin_dirigeants_send_links') %}
                 {% embed 'components/_effectif_alerte.html.twig' with {
                     nb: liensEnAttente,
                     url: path('admin_dirigeants_send_links'),
@@ -28,7 +28,7 @@
                 {% endembed %}
             {% endif %}
 
-            {% if signaturesEnAttente > 0 %}
+            {% if signaturesEnAttente > 0 and peut_acceder('admin_dirigeants_request_signatures') %}
                 {% embed 'components/_effectif_alerte.html.twig' with {
                     nb: signaturesEnAttente,
                     url: path('admin_dirigeants_request_signatures'),
@@ -41,7 +41,7 @@
                 {% endembed %}
             {% endif %}
 
-            {% if aValiderFff > 0 %}
+            {% if aValiderFff > 0 and peut_acceder('admin_dirigeants_validate_fff_bulk') %}
                 {# Ne s'adresse à personne : c'est le club qui a une démarche à faire. #}
                 {% embed 'components/_effectif_alerte.html.twig' with {
                     nb: aValiderFff,
@@ -98,6 +98,7 @@
         </div>
     {% else %}
         {# Même règle que côté joueurs : en mode édition la ligne ne mène plus à la fiche. #}
+        {# droits-verifies-cote-serveur: `edition` porte déjà effectif.supprimer, posé par le contrôleur. #}
         {% if edition %}
         <form method="post"
               action="{{ path('admin_dirigeants_delete_confirm') }}"

@@ -42,6 +42,7 @@
                                 {{ f.contact ?: '' }}{% if f.contact and f.email %} · {% endif %}{{ f.email ?: '' }}
                             </span>
                         </div>
+                        {% if peut_acceder('admin_stock_fournisseurs_edit') %}
                         <div x-show="editingId !== {{ f.id }}" class="dot-list-actions">
                             <button type="button" class="btn btn-secondary btn-sm" @click="editingId = {{ f.id }}">Modifier</button>
                             {% include 'components/_form_suppression.html.twig' with {
@@ -60,11 +61,13 @@
                             <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
                             <button type="button" class="btn btn-ghost btn-sm" @click="editingId = null">Annuler</button>
                         </form>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>
         {% endif %}
 
+        {% if peut_acceder('admin_stock_fournisseurs_new') %}
         <form x-show="adding" x-cloak method="post" action="{{ path('admin_stock_fournisseurs_new') }}" class="dot-affect-form">
             <input type="hidden" name="_token" value="{{ csrf_token('fournisseur_new') }}">
             <input type="text" name="nom" class="field-input" placeholder="Nom du fournisseur" required>
@@ -72,6 +75,7 @@
             <input type="email" name="email" class="field-input" placeholder="Email (option.)">
             <button type="submit" class="btn btn-primary">Ajouter</button>
         </form>
+        {% endif %}
     </div>
 
 </div>

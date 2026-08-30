@@ -42,7 +42,7 @@
         <div>
             <h1 class="dot-title">Écoulement de stock</h1>
         </div>
-        {% if principauxPossibles is not empty %}
+        {% if principauxPossibles is not empty and peut_acceder('admin_stock_ecoulement_lier') %}
             {# Le bouton s'efface quand le formulaire s'ouvre : sa bascule « Annuler » ferait
                doublon avec celui du pied, qui referme la même chose à deux centimètres du
                bouton d'enregistrement. #}
@@ -54,7 +54,7 @@
         {% endif %}
     </div>
 
-    {% if principauxPossibles is not empty %}
+    {% if principauxPossibles is not empty and peut_acceder('admin_stock_ecoulement_lier') %}
         <div class="dot-card" x-show="ouverture" x-cloak>
             <div class="dot-card-header">
                 <h2 class="dot-card-title">Nouvelle correspondance</h2>
@@ -142,7 +142,7 @@
                         <div class="ecl-substitut-actions">
                             {# Inverser n'a de sens qu'à un seul ancien stock : au-delà, on ne
                                saurait pas lequel prend la tête. #}
-                            {% if correspondance.substituts|length == 1 %}
+                            {% if correspondance.substituts|length == 1 and peut_acceder('admin_stock_ecoulement_inverser') %}
                                 <form method="post" action="{{ path('admin_stock_ecoulement_inverser', {id: substitut.item.id}) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token('stock_ecoulement_inverser_' ~ substitut.item.id) }}">
                                     <button type="submit" class="btn btn-secondary btn-sm"
@@ -152,20 +152,22 @@
 
                             {# Retirer la règle ne détruit aucune donnée : l'article redevient
                                ordinaire et se commande. Registre du retrait, pas de la perte. #}
+                            {% if peut_acceder('admin_stock_ecoulement_delier') %}
                             <form method="post" action="{{ path('admin_stock_ecoulement_delier', {id: substitut.item.id}) }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('stock_ecoulement_delier_' ~ substitut.item.id) }}">
                                 <button type="submit" class="btn btn-ghost btn-sm"
                                         title="Retirer : cet article se commandera de nouveau normalement">Retirer</button>
                             </form>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
 
-                {% if candidats is empty %}
+                {% if candidats is empty and peut_acceder('admin_stock_ecoulement_lier') %}
                     <p class="ecl-aide ecl-aide-vide">
                         Aucun autre article du même type de vêtement à écouler ici.
                     </p>
-                {% else %}
+                {% elseif peut_acceder('admin_stock_ecoulement_lier') %}
                     <div class="ecl-ajout">
                         <button type="button" class="btn btn-secondary btn-sm" x-show="!ajout" @click="ajout = true">
                             + Ajouter un article à écouler

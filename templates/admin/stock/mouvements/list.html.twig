@@ -108,7 +108,7 @@
                             </td>
                             <td class="stock-mouvements-by">{{ m.createdBy ? m.createdBy.email : '—' }}</td>
                             <td class="stock-mouvements-action">
-                                {% if m.source.value == 'manuel' %}
+                                {% if m.source.value == 'manuel' and peut_acceder('admin_stock_mouvements_correct') %}
                                     <div class="stock-mouvements-actions-cellule">
                                         <button type="button" class="stock-mouvements-corriger"
                                                 title="Corriger la quantité ou la taille"
