@@ -1,0 +1,97 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Import par collage{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Outils', route: 'admin_outils_index' },
+    { label: 'Planning des matchs', route: 'admin_planning_index' },
+    { label: 'Import par collage' }
+] } %}
+
+<div class="season-form-page">
+
+    <form method="post" class="season-form-card">
+        <input type="hidden" name="_token" value="{{ csrf_token('planning_collage') }}">
+
+        <h1 class="season-form-header">Import par collage</h1>
+
+        <hr class="season-form-divider">
+
+        <div class="field">
+            <label for="texte" class="field-label">Texte à analyser</label>
+            <textarea id="texte" name="texte" rows="10" class="field-input planning-textarea"
+                      placeholder="14/03/2026&#9;09:30&#9;U13&#9;Sermaiziennes US&#10;14/03/2026&#9;14:30&#9;Plateau U7&#10;Dim. 15 mars 2026&#9;10:00&#9;U15&#9;vs Couvrot US">{{ texte }}</textarea>
+            <p class="field-hint">
+                Une ligne par match. Colonnes séparées par une tabulation, un point-virgule ou
+                deux espaces. La date et l'heure sont reconnues où qu'elles soient dans la ligne ;
+                ce qui reste devient la catégorie, l'adversaire, puis la note.
+            </p>
+        </div>
+
+        <div class="season-form-actions">
+            <button type="submit" name="action" value="analyser" class="btn btn-secondary">Analyser</button>
+            {# « Enregistrer » n'apparaît qu'après l'analyse : rien n'entre en base sans
+               que l'admin ait vu ce qui a été compris. #}
+            {% if apercu and not apercu.estVide %}
+                <button type="submit" name="action" value="enregistrer" class="btn btn-primary">
+                    Enregistrer {{ apercu.matchs|length }} match{{ apercu.matchs|length > 1 ? 's' : '' }}
+                </button>
+            {% endif %}
+            <a href="{{ path('admin_planning_index') }}" class="btn btn-ghost">Annuler</a>
+        </div>
+    </form>
+
+    {% if apercu %}
+        <div class="season-form-card planning-apercu">
+
+            <h2 class="season-form-subheader">Aperçu</h2>
+
+            {% if apercu.estVide %}
+                <div class="planning-alerte planning-alerte-erreur">
+                    Aucune ligne n'a été comprise. Vérifiez que chaque ligne contient une date et une catégorie.
+                </div>
+            {% else %}
+                <div class="table-wrapper table-cartes">
+                    <table class="table resp-table">
+                        <thead>
+                            <tr><th>Date</th><th>Heure</th><th>Catégorie</th><th>Adversaire</th><th>Note</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for match in apercu.matchs %}
+                                <tr>
+                                    <td class="carte-titre">{{ match.date|date_fr_courte|capitalize }} {{ match.date|date('Y') }}</td>
+                                    <td data-label="Heure">{{ match.heure ? match.heure|replace({':': 'h'}) : '—' }}</td>
+                                    <td data-label="Catégorie"><strong>{{ match.categorie }}</strong></td>
+                                    <td data-label="Adversaire">{{ match.adversaire ?? '—' }}</td>
+                                    <td data-label="Note">{{ match.note ?? '—' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+
+            {% if apercu.aDesRejets %}
+                {# Les lignes non comprises sont rendues telles quelles plutôt que comptées :
+                   l'admin doit voir ce qui manque et corriger sa source. #}
+                <div class="planning-rejets">
+                    <h3 class="planning-rejets-titre">
+                        {{ apercu.ignorees|length }} ligne{{ apercu.ignorees|length > 1 ? 's' : '' }} non reconnue{{ apercu.ignorees|length > 1 ? 's' : '' }}
+                    </h3>
+                    <p class="field-hint">
+                        Elles ne seront pas enregistrées. Un titre ou une ligne de contact, c'est normal ;
+                        un vrai match, c'est qu'il manque sa date.
+                    </p>
+                    <ul class="planning-rejets-liste">
+                        {% for ligne in apercu.ignorees %}<li>{{ ligne }}</li>{% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

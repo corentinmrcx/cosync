@@ -23,7 +23,7 @@
     <div class="dot-card">
         <div class="dot-card-header">
             <h2 class="dot-card-title">À commander</h2>
-            {% if aCommander is not empty %}
+            {% if aCommander is not empty and peut_acceder('admin_commandes_generer') %}
                 <form method="post" action="{{ path('admin_commandes_generer') }}" style="margin-left:auto">
                     <input type="hidden" name="_token" value="{{ csrf_token('commande_generer') }}">
                     <button type="submit" class="btn btn-primary">Générer les bons de commande</button>

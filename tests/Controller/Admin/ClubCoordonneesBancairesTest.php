@@ -80,7 +80,7 @@ final class ClubCoordonneesBancairesTest extends WebTestCase
         $client = static::createClient();
 
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-rib@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-rib@example.test')->setPassword('x');
         $em->persist($user);
         $em->flush();
         $client->loginUser($user);
@@ -105,7 +105,7 @@ final class ClubCoordonneesBancairesTest extends WebTestCase
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
         $season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-rib@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-rib@example.test')->setPassword('x');
         $user->setSelectedSeason($season);
 
         $em->persist($season);

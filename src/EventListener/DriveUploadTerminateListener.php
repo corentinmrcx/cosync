@@ -3,6 +3,7 @@
 namespace App\EventListener;
 
 use App\Repository\AttestationCleRepository;
+use App\Repository\AttestationPaiementRepository;
 use App\Repository\DirigeantRepository;
 use App\Repository\DocumentSignatureRepository;
 use App\Repository\DossierClubRepository;
@@ -10,6 +11,7 @@ use App\Repository\SeasonRepository;
 use App\Service\Drive\AttestationCleDriveSync;
 use App\Service\Drive\AttestationCleRecapDriveSync;
 use App\Service\Drive\AttestationDriveSync;
+use App\Service\Drive\AttestationPaiementDriveSync;
 use App\Service\Drive\DirigeantAttestationDriveSync;
 use App\Service\Drive\DocumentSignatureDriveSync;
 use App\Service\Drive\PendingUploadQueue;
@@ -43,6 +45,8 @@ final class DriveUploadTerminateListener
         private readonly AttestationCleRepository $attestationCleRepository,
         private readonly AttestationCleDriveSync $attestationCleDriveSync,
         private readonly AttestationCleRecapDriveSync $attestationCleRecapDriveSync,
+        private readonly AttestationPaiementRepository $attestationPaiementRepository,
+        private readonly AttestationPaiementDriveSync $attestationPaiementDriveSync,
         private readonly LoggerInterface $logger,
     ) {}
 
@@ -104,6 +108,21 @@ final class DriveUploadTerminateListener
                 }
             } catch (\Throwable $e) {
                 $this->logger->error('Échec sync attestation de remise de clés {id} : {message}', [
+                    'id' => $attestationId,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        foreach ($this->queue->flushAttestationsPaiement() as $attestationId) {
+            try {
+                $attestation = $this->attestationPaiementRepository->find($attestationId);
+
+                if ($attestation !== null) {
+                    $this->attestationPaiementDriveSync->sync($attestation);
+                }
+            } catch (\Throwable $e) {
+                $this->logger->error('Échec archivage de l\'attestation de paiement {id} : {message}', [
                     'id' => $attestationId,
                     'message' => $e->getMessage(),
                 ]);

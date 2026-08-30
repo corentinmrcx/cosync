@@ -6,6 +6,7 @@ use App\DTO\ManualMovementData;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
 use App\Entity\User;
+use App\Enum\Permission;
 use App\Enum\StockActionManuelle;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
@@ -29,6 +30,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Le stock physique appartient au club, pas à une saison : ni StockItem ni StockMovement ne
@@ -36,6 +38,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
  * d'une dotation a besoin de la liste des licenciés, qui est, elle, saisonnière.
  */
 #[Route('/admin/stock', name: 'admin_stock_')]
+#[IsGranted(Permission::STOCK_LIRE->value)]
 class StockController extends AbstractController
 {
     private const PER_PAGE = 25;
@@ -74,7 +77,7 @@ class StockController extends AbstractController
         return $this->render('admin/stock/gestion.html.twig', [
             'summary' => $this->rapports->getStockSummary($showArchived),
             'showArchived' => $showArchived,
-            'licenciesValides' => $season !== null ? $this->licencieRepository->findValidatedBySeason($season) : [],
+            'licenciesSoldes' => $season !== null ? $this->licencieRepository->findSoldesBySeason($season) : [],
             'types' => StockMovementType::cases(),
             'sources' => StockMovementSource::cases(),
         ]);
@@ -93,6 +96,7 @@ class StockController extends AbstractController
     }
 
     #[Route('/items/nouveau', name: 'items_new', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function itemNew(Request $request): Response
     {
         $item = new StockItem();
@@ -115,6 +119,7 @@ class StockController extends AbstractController
     }
 
     #[Route('/items/{id}/modifier', name: 'items_edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function itemEdit(StockItem $item, Request $request): Response
     {
         $form = $this->createForm(StockItemType::class, $item);
@@ -161,6 +166,7 @@ class StockController extends AbstractController
     }
 
     #[Route('/items/{id}/mouvement', name: 'items_movement', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_GERER->value)]
     public function itemMovement(StockItem $item, Request $request, #[CurrentUser] ?User $user): Response
     {
         $this->csrf->valider('stock_movement_' . $item->getId(), $request);
@@ -202,6 +208,7 @@ class StockController extends AbstractController
      * correction reste dans l'historique avec sa justification — corriger n'est pas effacer.
      */
     #[Route('/mouvements/{id}/corriger', name: 'mouvements_correct', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted(Permission::STOCK_GERER->value)]
     public function mouvementCorrect(StockMovement $movement, Request $request, #[CurrentUser] ?User $user): Response
     {
         $this->csrf->valider('correct_stock_movement_' . $movement->getId(), $request);
@@ -223,6 +230,7 @@ class StockController extends AbstractController
     }
 
     #[Route('/mouvements/{id}/supprimer', name: 'mouvements_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted(Permission::STOCK_GERER->value)]
     public function mouvementDelete(StockMovement $movement, Request $request): Response
     {
         $this->csrf->valider('delete_stock_movement_' . $movement->getId(), $request);
@@ -243,6 +251,7 @@ class StockController extends AbstractController
      * pas dire ça, et supprimer un article n'est pas un geste qu'on rattrape.
      */
     #[Route('/items/{id}/supprimer', name: 'items_delete_confirm', methods: ['GET'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function itemDeleteConfirm(StockItem $item): Response
     {
         return $this->render('admin/stock/items/supprimer.html.twig', [
@@ -253,6 +262,7 @@ class StockController extends AbstractController
     }
 
     #[Route('/items/{id}/supprimer', name: 'items_delete', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function itemDelete(StockItem $item, Request $request): Response
     {
         $this->csrf->valider('delete_stock_item_' . $item->getId(), $request);
@@ -297,6 +307,7 @@ class StockController extends AbstractController
 
     /** Note portée sur l'article, saisie depuis la modale du tableau de gestion. */
     #[Route('/items/{id}/note', name: 'items_note', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_GERER->value)]
     public function itemNote(StockItem $item, Request $request): Response
     {
         $this->csrf->valider('note_article_' . $item->getId(), $request);
@@ -309,6 +320,7 @@ class StockController extends AbstractController
 
     /** Note portée sur une déclinaison de taille, depuis le détail d'un article. */
     #[Route('/items/{id}/note-taille', name: 'items_note_taille', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_GERER->value)]
     public function itemNoteTaille(StockItem $item, Request $request, #[CurrentUser] ?User $user): Response
     {
         $this->csrf->valider('note_taille_' . $item->getId(), $request);
@@ -329,6 +341,7 @@ class StockController extends AbstractController
     }
 
     #[Route('/items/{id}/restaurer', name: 'items_restore', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function itemRestore(StockItem $item, Request $request): Response
     {
         $this->csrf->valider('restore_stock_item_' . $item->getId(), $request);

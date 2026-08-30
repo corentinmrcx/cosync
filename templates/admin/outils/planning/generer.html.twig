@@ -1,0 +1,86 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Générer un planning{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Outils', route: 'admin_outils_index' },
+    { label: 'Planning des matchs', route: 'admin_planning_index' },
+    { label: 'Générer' }
+] } %}
+
+<div class="season-form-page">
+
+    <form method="post" action="{{ path('admin_planning_generate') }}" target="_blank" class="season-form-card">
+        <input type="hidden" name="_token" value="{{ csrf_token('planning_generer') }}">
+
+        <h1 class="season-form-header">Générer un planning</h1>
+
+        <hr class="season-form-divider">
+
+        <div class="season-form-row">
+            <div class="field">
+                <label for="du" class="field-label">Du</label>
+                <input type="date" id="du" name="du" class="field-input" value="{{ periode.du|date('Y-m-d') }}" required>
+            </div>
+            <div class="field">
+                <label for="au" class="field-label">Au</label>
+                <input type="date" id="au" name="au" class="field-input" value="{{ periode.au|date('Y-m-d') }}" required>
+            </div>
+        </div>
+
+        {# Recompter sans générer : découvrir un document vide après l'avoir imprimé, puis
+           se demander si c'est la période ou le calendrier qui est en cause, est
+           l'aller-retour qu'on évite ici. #}
+        <div class="planning-compte {{ (nombre == 0 or nombre > 11) ? 'planning-compte-vide' : '' }}">
+            <span class="planning-compte-texte">
+                {% if nombre == 0 %}
+                    Aucun match à domicile sur cette période — le document sortirait vide.
+                {% elseif nombre > 11 %}
+                    {# Capacité mesurée du flyer A5 : au-delà, le tableau pousse le bloc de
+                       contacts sous le bandeau du bas. On le dit avant d'imprimer. #}
+                    {{ nombre }} matchs à domicile sur cette période. Le planning A4 les prendra
+                    tous ; le flyer A5, lui, en affichera une dizaine et annoncera le reste —
+                    pour tout y faire tenir, coupez la période en deux.
+                {% else %}
+                    {{ nombre }} match{{ nombre > 1 ? 's' : '' }} à domicile sur cette période,
+                    matchs masqués non compris.
+                {% endif %}
+            </span>
+            <button type="submit" formaction="{{ path('admin_planning_count') }}" formtarget="_self"
+                    class="btn btn-secondary btn-sm">Recompter</button>
+        </div>
+
+        <hr class="season-form-divider">
+
+        <div class="field">
+            <span class="field-label">Format d'impression</span>
+            {% for format in formats %}
+                <label class="planning-format">
+                    <input type="radio" name="format" value="{{ format.value }}" {{ loop.first ? 'checked' : '' }}>
+                    <span class="planning-format-corps">
+                        <span class="planning-format-label">{{ format.label }}</span>
+                        <span class="planning-format-desc">{{ format.description }}</span>
+                    </span>
+                </label>
+            {% endfor %}
+        </div>
+
+        <div class="season-form-checkbox">
+            <input type="checkbox" id="archiver" name="archiver" value="1">
+            <label for="archiver">Archiver une copie sur le Drive du club</label>
+        </div>
+        <p class="field-hint">
+            Rangé dans <code>{{ season.label }} / Plannings</code>. Régénérer la même période
+            dans le même format remplace le fichier au lieu d'en empiler des copies.
+        </p>
+
+        <div class="season-form-actions">
+            <button type="submit" class="btn btn-primary">Générer le PDF</button>
+            <a href="{{ path('admin_planning_index') }}" class="btn btn-ghost">Annuler</a>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

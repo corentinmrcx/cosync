@@ -16,12 +16,22 @@
     flex-wrap: wrap;
 }
 
+/* Le nom, puis les badges sur leur propre ligne. En ligne avec le titre, ils se
+   répartissaient au hasard de la place restante : un badge accroché au nom, les autres
+   renvoyés dessous — l'en-tête n'avait plus de structure lisible. */
 .licencie-show-header-main {
     display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
     min-width: 0;
+}
+
+.licencie-show-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem 0.5rem;
 }
 
 .licencie-show-title {
@@ -49,13 +59,15 @@
 /* — Grille de cartes — */
 .licencie-show-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* `minmax(0, 1fr)` et non `1fr` : une colonne `1fr` ne descend jamais sous la largeur
+       de son contenu, et c'est la grille entière qui déborde alors de la page. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 1.25rem;
 }
 
 @media (max-width: 768px) {
     .licencie-show-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -64,6 +76,12 @@
 }
 
 /* — Carte — */
+/*
+ * `min-width: 0` n'est pas décoratif : un élément de grille vaut par défaut `min-width: auto`,
+ * c'est-à-dire « jamais plus étroit que mon contenu ». Une rangée de titre non sécable
+ * élargissait donc la colonne `1fr`, la carte débordait de l'écran, et son bord droit
+ * disparaissait sous la coupe de la page.
+ */
 .licencie-show-card {
     background: var(--color-bg-page);
     border: 1px solid var(--color-border-strong);
@@ -73,12 +91,16 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-width: 0;
 }
 
+/* Le bouton passe sous le titre quand la carte est étroite, au lieu de l'élargir. */
 .licencie-show-card-title-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
     padding-bottom: 0.75rem;
     border-bottom: 2px solid var(--color-primary);
 }
@@ -132,6 +154,11 @@
     font-size: var(--font-size-sm);
 }
 
+/* Même raison que sur la carte : sans cela, une valeur longue élargit la ligne. */
+.licencie-show-dl-row > * {
+    min-width: 0;
+}
+
 .licencie-show-dt {
     width: 9rem;
     min-width: 0;
@@ -178,7 +205,7 @@
 @media (max-width: 640px) {
     .licencie-show-page { padding: 1rem; gap: 1rem; }
 
-    /* En-tête : titre + badge au-dessus, boutons en pleine largeur en dessous */
+    /* En-tête : titre + badges au-dessus, l'action du moment en pleine largeur en dessous. */
     .licencie-show-header {
         flex-direction: column;
         align-items: stretch;
@@ -186,23 +213,33 @@
 
     .licencie-show-header-actions {
         width: 100%;
+        gap: 0.5rem;
     }
 
+    /* L'action mise en avant prend toute la place restante ; le menu « ⋯ » garde sa
+       largeur de bouton carré — l'étirer en ferait une seconde action principale. */
     .licencie-show-header-actions > a,
     .licencie-show-header-actions > form,
     .licencie-show-header-actions > span {
-        flex: 1 1 0;
+        flex: 1 1 auto;
+        min-width: 0;
     }
 
     .licencie-show-header-actions form {
         display: flex;
     }
 
-    
+    .licencie-show-header-actions form > .btn {
+        width: 100%;
+    }
+
+    .licencie-show-header-actions .fiche-menu {
+        flex: 0 0 auto;
+    }
 
     /* Historique : date en pleine largeur, label + auteur en dessous */
     .licencie-show-history-item {
-        grid-template-columns: 1fr auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         row-gap: 0.125rem;
     }
 
@@ -290,7 +327,7 @@
 
 .licencie-show-history-item {
     display: grid;
-    grid-template-columns: 160px 1fr auto;
+    grid-template-columns: 10rem minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.75rem;
     padding: 0.625rem 0;
@@ -617,4 +654,46 @@
 
 .licencie-show-card-note a:hover {
     color: var(--color-primary-dark);
+}
+
+/* ── Attestations de paiement ──
+   Le renvoi se fait depuis la ligne elle-même : l'adresse du payeur n'est pas
+   toujours celle du licencié, elle doit rester corrigeable au moment de l'envoi. */
+.attestations-table {
+    margin-top: 0.5rem;
+}
+
+.attestations-lien {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.attestations-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.attestations-resend {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+/* Calé sur .btn-sm — mêmes padding, police et hauteur de ligne. Un champ plus haut
+   que les boutons de sa rangée se voit immédiatement, et la règle du projet veut
+   qu'une même rangée partage sa taille. Sélecteur typé pour l'emporter sur la
+   hauteur fixe de `input.field-input`. */
+input.attestations-resend-email {
+    /* Largeur souhaitée, pas imposée : dans une carte étroite le champ se réduit au lieu
+       de pousser le bouton hors de l'écran. */
+    flex: 1 1 12.5rem;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    padding: 0.35rem 0.625rem;
+    font-size: var(--font-size-xs);
+    line-height: 1.2;
 }

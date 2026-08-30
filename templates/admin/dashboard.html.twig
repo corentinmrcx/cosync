@@ -12,7 +12,9 @@
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <span>Aucune saison configurée. Certaines fonctionnalités sont désactivées.</span>
-            <a href="{{ path('admin_seasons_new') }}" class="dashboard-alert-link">Créer une saison →</a>
+            {% if peut_acceder('admin_seasons_new') %}
+                <a href="{{ path('admin_seasons_new') }}" class="dashboard-alert-link">Créer une saison →</a>
+            {% endif %}
         </div>
     {% endif %}
 
@@ -27,26 +29,40 @@
         {% include 'components/hub-card.html.twig' with {
             icon: 'box',
             label: 'Stock',
-            route: 'admin_stock_dashboard'
+            route: 'admin_stock_dashboard',
+            permission: 'stock.lire'
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
             icon: 'key',
             label: 'Clés',
-            route: 'admin_cles_index'
+            route: 'admin_cles_index',
+            permission: 'cle.lire'
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
             icon: 'cart',
             label: 'Boutique',
-            route: 'admin_boutique_index'
+            route: 'admin_boutique_index',
+            permission: 'boutique.lire'
         } only %}
 
         {% include 'components/hub-card.html.twig' with {
-            icon: 'gear',
-            label: 'Le club',
-            route: 'admin_club_index'
+            icon: 'tool',
+            label: 'Outils',
+            route: 'admin_outils_index',
+            permission: 'planning.lire'
         } only %}
+
+        {# Le hub du club rassemble deux domaines distincts : la configuration et les comptes.
+           Une carte ne prend qu'une permission, d'où la condition ici. #}
+        {% if is_granted('club.configurer') or is_granted('utilisateur.gerer') %}
+            {% include 'components/hub-card.html.twig' with {
+                icon: 'gear',
+                label: 'Le club',
+                route: 'admin_club_index'
+            } only %}
+        {% endif %}
 
     </div>
 

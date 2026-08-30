@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\StockCategory;
+use App\Enum\Permission;
 use App\Form\StockCategoryType;
 use App\Repository\StockCategoryRepository;
 use App\Security\CsrfGuard;
@@ -11,8 +12,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/stock/categories', name: 'admin_stock_categories_')]
+#[IsGranted(Permission::STOCK_LIRE->value)]
 class StockCategoryController extends AbstractController
 {
     public function __construct(
@@ -33,6 +36,7 @@ class StockCategoryController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function new(Request $request): Response
     {
         $category = new StockCategory();
@@ -51,6 +55,7 @@ class StockCategoryController extends AbstractController
 
     /** Nouvel ordre reçu du glisser-déposer : la liste complète des identifiants, de haut en bas. */
     #[Route('/reordonner', name: 'reorder', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function reorder(Request $request): Response
     {
         $this->csrf->valider('stock_categories_reorder', $request);
@@ -63,6 +68,7 @@ class StockCategoryController extends AbstractController
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function edit(StockCategory $category, Request $request): Response
     {
         $form = $this->createForm(StockCategoryType::class, $category);
@@ -79,6 +85,7 @@ class StockCategoryController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function delete(StockCategory $category, Request $request): Response
     {
         $this->csrf->valider('delete_category_' . $category->getId(), $request);

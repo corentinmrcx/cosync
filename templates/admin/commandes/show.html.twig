@@ -28,7 +28,7 @@
         <div class="dot-header-actions">
             <a href="{{ path('admin_commandes_pdf', {id: commande.id}) }}" class="btn btn-secondary">⬇ Télécharger le PDF</a>
 
-            {% if commande.statut.value == 'brouillon' %}
+            {% if commande.statut.value == 'brouillon' and peut_acceder('admin_commandes_commander') %}
                 <form method="post" action="{{ path('admin_commandes_commander', {id: commande.id}) }}" class="cmd-inline">
                     <input type="hidden" name="_token" value="{{ csrf_token('commande_commander_' ~ commande.id) }}">
                     <input type="date" name="date_commande" class="field-input" value="{{ 'now'|date('Y-m-d') }}" max="{{ 'now'|date('Y-m-d') }}">
@@ -71,16 +71,16 @@
                             {% if commande.statut.value != 'brouillon' %}
                                 <td class="dot-table-action">
                                     <div class="cmd-recept-actions">
-                                        {% if ligne.restant > 0 %}
+                                        {% if ligne.restant > 0 and peut_acceder('admin_commandes_ligne_recevoir') %}
                                             <form method="post" action="{{ path('admin_commandes_ligne_recevoir', {id: ligne.id}) }}" class="cmd-inline">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('commande_ligne_recevoir_' ~ ligne.id) }}">
                                                 <input type="number" name="quantite" class="field-input dot-input-qty" min="1" max="{{ ligne.restant }}" value="{{ ligne.restant }}">
                                                 <button type="submit" class="btn btn-primary btn-sm">Recevoir</button>
                                             </form>
-                                        {% else %}
+                                        {% elseif ligne.restant == 0 %}
                                             <span class="cmd-badge cmd-badge-recue">Complète</span>
                                         {% endif %}
-                                        {% if ligne.quantiteRecue > 0 %}
+                                        {% if ligne.quantiteRecue > 0 and peut_acceder('admin_commandes_ligne_annuler_reception') %}
                                             <form method="post" action="{{ path('admin_commandes_ligne_annuler_reception', {id: ligne.id}) }}"
                                                   onsubmit="return confirm('Annuler la réception de cette ligne ? Le stock sera recalculé.')">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('commande_ligne_annuler_' ~ ligne.id) }}">

@@ -19,6 +19,9 @@ services:
       - public_assets:/var/www/html/public
       - cosync_var_locks:/var/www/html/var/locks
       - cosync_pdfs:/var/www/html/var/pdfs
+      # Signature scannée du signataire des attestations : un fichier de configuration,
+      # téléversé une fois. Sans volume nommé, il disparaîtrait à chaque redéploiement.
+      - cosync_signatures:/var/www/html/var/signatures
       - cosync_backups:/var/www/html/var/backups
       - cosync_logs:/var/www/html/var/log
     depends_on:
@@ -104,6 +107,7 @@ volumes:
   public_assets:
   cosync_var_locks:
   cosync_pdfs:
+  cosync_signatures:
   cosync_backups:
   cosync_logs:
 

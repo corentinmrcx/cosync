@@ -116,7 +116,7 @@ final class SeasonsIndexTest extends WebTestCase
 
         $precedente = (new Season())->setLabel('2024-2025')->setCotisationDefaut(80);
         $courante = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-saisons-index@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-saisons-index@example.test')->setPassword('x');
         $user->setSelectedSeason($courante);
 
         $em->persist($precedente);

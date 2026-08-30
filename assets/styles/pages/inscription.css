@@ -436,6 +436,12 @@
     margin-top: 0.75rem;
 }
 
+/* Le bloc signature suit immédiatement la case « J'ai lu et j'accepte » : sans
+   respiration, le libellé « Signature » colle au texte de la case. */
+.inscription-signature-block {
+    margin-top: 1.25rem;
+}
+
 .inscription-signature-label {
     font-size: var(--font-size-sm);
     font-weight: 700;

@@ -1,0 +1,95 @@
+{% extends 'admin/layout.html.twig' %}
+
+{#
+  Relance groupée des signatures manquantes — joueurs et dirigeants.
+
+  Le même écran sert les deux populations : c'est le même geste, et le dédoubler ferait
+  diverger la règle de l'une à l'autre. Une ligne par personne, jamais par document :
+  quelqu'un à qui il en manque deux reçoit un seul mail.
+
+  Paramètres attendus :
+    lignes (RelanceSignature[]) · population ('joueur'|'dirigeant') · tokenId
+    actionUrl · retourUrl · intro
+#}
+
+{% block title %}CoSync — Demander les signatures{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: population == 'joueur' ? 'Joueurs' : 'Dirigeants', route: population == 'joueur' ? 'admin_licencies_list' : 'admin_dirigeants_list' },
+    { label: 'Demander les signatures' }
+] } %}
+
+<div class="envoi-liens-page">
+    <div class="envoi-liens-card">
+
+        <h1 class="envoi-liens-title">Demander les signatures</h1>
+        <p class="envoi-liens-intro">{{ intro }}</p>
+
+        <hr class="envoi-liens-divider">
+
+        {% if lignes is empty %}
+            <p class="envoi-liens-empty">Personne n'est en attente : tous les {{ population }}s concernés ont signé.</p>
+            <div class="envoi-liens-actions">
+                <a href="{{ retourUrl }}" class="btn btn-secondary">Retour</a>
+            </div>
+        {% else %}
+            {% set sansEmail = lignes|length - joignables|length %}
+
+            <form method="post" action="{{ actionUrl }}"
+                  class="envoi-liens-form"
+                  x-data='{ retenus: {{ joignables|json_encode|raw }}, joignables: {{ joignables|json_encode|raw }} }'>
+                <input type="hidden" name="_token" value="{{ csrf_token(tokenId) }}">
+
+                <p class="envoi-liens-resume">
+                    <strong>{{ lignes|length }}</strong> {{ population }}{{ lignes|length > 1 ? 's' }} en attente de signature
+                    {%- if sansEmail > 0 %}, dont <strong>{{ sansEmail }}</strong> sans adresse email — à prévenir autrement{% endif %}.
+                </p>
+
+                <div class="envoi-liens-selection">
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = [...joignables]">Tout cocher</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = []">Tout décocher</button>
+                </div>
+
+                <ul class="envoi-liens-list">
+                    {% for ligne in lignes %}
+                        <li class="envoi-liens-item">
+                            {% if ligne.estJoignable %}
+                                <input type="checkbox"
+                                       name="personnes[]"
+                                       value="{{ ligne.uuid }}"
+                                       class="envoi-liens-case"
+                                       x-model="retenus"
+                                       checked>
+                            {% else %}
+                                <input type="checkbox" class="envoi-liens-case" disabled>
+                            {% endif %}
+                            <span class="envoi-liens-nom">{{ ligne.nomPrenom }}</span>
+                            <span class="envoi-liens-equipe">{{ ligne.rattachement }}</span>
+                            <span class="envoi-liens-email">
+                                {%- if ligne.estJoignable %}{{ ligne.email }}{% else %}<span class="envoi-liens-manquant">Pas d'email</span>{% endif -%}
+                            </span>
+                            <span class="envoi-liens-documents">{{ ligne.titresManquants }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <hr class="envoi-liens-divider">
+
+                <div class="envoi-liens-actions">
+                    <a href="{{ retourUrl }}" class="btn btn-ghost">Annuler</a>
+                    <button type="submit" class="btn btn-primary"
+                            :disabled="retenus.length === 0"
+                            x-text="'Envoyer ' + retenus.length + ' lien' + (retenus.length > 1 ? 's' : '')">
+                        Envoyer {{ joignables|length }} lien{{ joignables|length > 1 ? 's' }}
+                    </button>
+                </div>
+            </form>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

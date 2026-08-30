@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Enum\Permission;
 use App\Security\CsrfGuard;
 use App\Service\Import\ImportService;
 use App\Service\Saison\SeasonContext;
@@ -10,8 +11,10 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/effectif/import', name: 'admin_import_')]
+#[IsGranted(Permission::EFFECTIF_IMPORTER->value)]
 class ImportController extends AbstractController
 {
     public function __construct(

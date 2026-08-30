@@ -1,0 +1,62 @@
+/* Identité de l'association et signataire de ses attestations.
+
+   Le rythme vertical vient du `gap` de .season-form-card : aucun bloc de cette page
+   ne pose de margin-bottom, sinon les deux s'additionnent et la colonne part de
+   travers — c'est exactement ce qui décalait les champs. */
+
+/* Les rangées de champs réutilisent .season-form-row, comme les autres formulaires
+   de configuration.
+
+   La civilité du signataire, elle, est seule sur sa ligne et sans réglage propre :
+   appariée au nom, son libellé s'enroulait sur deux lignes dans une colonne étroite
+   et faisait démarrer son select une hauteur de texte plus bas que l'input voisin.
+   Seule sur sa ligne, elle suit la largeur de tous les autres champs. */
+
+.identite-sous-titre {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+/* La signature vit hors de public/ : elle est embarquée en base64 dans la page,
+   jamais servie par une URL. */
+.identite-signature-actuelle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.identite-signature-img {
+    max-height: 5rem;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+/* Remplacer et Supprimer partagent leur taille : une même rangée ne mélange pas
+   les gabarits de bouton. */
+.identite-signature-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.identite-signature-choix {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+}
+
+.identite-signature-choix .field-input { width: 100%; }
+
+.identite-signature-annuler {
+    margin-top: 0.25rem;
+    padding-left: 0;
+    padding-right: 0;
+}

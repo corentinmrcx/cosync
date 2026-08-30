@@ -31,6 +31,9 @@
                 <span class="dot-card-count">{{ besoins|length }}</span>
             </div>
 
+            {# Liste qu'on relit ligne par ligne avant d'envoyer au floqueur : sur téléphone
+               elle passe en cartes, chaque texte à floquer sous son porteur. #}
+            <div class="table-wrapper table-wrapper-nu table-cartes">
             <table class="table">
                 <thead>
                     <tr>
@@ -44,22 +47,23 @@
                 <tbody>
                     {% for besoin in besoins %}
                         <tr>
-                            <td><span class="dot-item-nom">{{ besoin.nomPrenom }}</span></td>
-                            <td>{{ besoin.teamName ?? '—' }}</td>
+                            <td class="carte-titre"><span class="dot-item-nom">{{ besoin.nomPrenom }}</span></td>
+                            <td class="carte-meta">{{ besoin.teamName ?? 'Sans équipe' }}</td>
                             {# L'article servi : c'est celui-là qui part chez le floqueur. #}
-                            <td>{{ besoin.articleServi.nom }}</td>
-                            <td>
+                            <td data-label="Article">{{ besoin.articleServi.nom }}</td>
+                            <td data-label="Taille">
                                 {% if besoin.taille %}
                                     <span class="dot-item-taille">{{ besoin.taille }}</span>
                                 {% else %}
                                     <span class="dot-item-taille-missing">à renseigner</span>
                                 {% endif %}
                             </td>
-                            <td><span class="dot-flocage-print">{{ besoin.personnalisation }}</span></td>
+                            <td data-label="Flocage"><span class="dot-flocage-print">{{ besoin.personnalisation }}</span></td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
     </div>
 

@@ -1,0 +1,37 @@
+/* ============================================================
+   Encarts d'action en tête d'une liste d'effectif : ce qui reste à
+   envoyer avant que la saison tourne (liens d'inscription, demandes
+   de signature). Joueurs et dirigeants, même encart.
+
+   Sans eux, les écrans d'envoi groupé n'ont aucun chemin visible depuis
+   la liste, et les liens ne partiraient jamais.
+
+   L'espacement est porté par la pile, pas par les encarts : ils sont
+   destinés à se multiplier, et une marge sur chacun laisserait un
+   blanc résiduel dès qu'un seul s'affiche.
+   ============================================================ */
+
+.effectif-alertes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.effectif-alerte {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--color-info);
+    border-radius: var(--radius-md);
+    background: var(--color-info-bg);
+}
+
+.effectif-alerte-texte {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+}

@@ -10,6 +10,8 @@ use App\DTO\FiltreListe;
 use App\DTO\LicencieCreateData;
 use App\DTO\LicencieIdentityData;
 use App\DTO\PaiementManuelData;
+use App\DTO\RelanceDue;
+use App\DTO\RelanceResultat;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\Team;
@@ -18,25 +20,34 @@ use App\Enum\ChampContact;
 use App\Enum\LicenceStatus;
 use App\Enum\NatureLicence;
 use App\Enum\PaymentMode;
+use App\Enum\Permission;
 use App\Form\ContactType;
 use App\Form\LicencieCreateType;
 use App\Form\LicencieEditType;
 use App\Form\LicencieIdentityType;
+use App\Repository\AttestationPaiementRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Repository\TransactionRepository;
 use App\Security\CsrfGuard;
-use App\Security\Voter\SuperAdminVoter;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Document\SignatureCompletionService;
+use App\Service\Document\SignatureRelanceService;
 use App\Service\Dotation\DotationSuiviPresenter;
 use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Inscription\AutorisationCompletionService;
+use App\Service\Licencie\FicheActionsResolver;
 use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Licencie\LicencieService;
 use App\Service\Licencie\PaiementService;
+use App\Service\Mail\DernierContactResolver;
 use App\Service\Mail\InscriptionLinkService;
+use App\Service\Payment\AttestationPaiementService;
 use App\Service\Payment\CotisationResolver;
+use App\Service\Referentiel\ClubSettingsService;
+use App\Service\Relance\RelanceResolver;
+use App\Service\Relance\RelanceService;
 use App\Service\Ui\ListFilterMemory;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -47,6 +58,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/effectif/joueurs', name: 'admin_licencies_')]
+#[IsGranted(Permission::EFFECTIF_LIRE->value)]
 class LicencieController extends AbstractController
 {
     public function __construct(
@@ -63,8 +75,17 @@ class LicencieController extends AbstractController
         private readonly CsrfGuard $csrf,
         private readonly PaiementService $paiementService,
         private readonly HistoriqueFicheService $historiqueService,
+        private readonly DernierContactResolver $dernierContact,
+        private readonly ClubSettingsService $clubSettings,
+        private readonly RelanceResolver $relanceResolver,
+        private readonly RelanceService $relanceLicences,
+        private readonly FicheActionsResolver $ficheActions,
         private readonly DocumentRequirementResolver $documentResolver,
+        private readonly SignatureCompletionService $signatureCompletion,
+        private readonly SignatureRelanceService $relanceService,
         private readonly SuppressionFicheService $suppressionService,
+        private readonly AttestationPaiementService $attestationPaiement,
+        private readonly AttestationPaiementRepository $attestationPaiementRepo,
     ) {}
 
     #[Route('', name: 'list')]
@@ -75,7 +96,7 @@ class LicencieController extends AbstractController
         // Le mode édition n'est pas un filtre : il n'est jamais mémorisé, sinon la liste
         // rouvrirait ses cases à cocher de suppression à la prochaine visite. Il est seulement
         // reporté sur la redirection de restauration des filtres, pour ne pas se perdre en route.
-        $edition = $request->query->getBoolean('edition') && $this->isGranted(SuperAdminVoter::ACCES_DIAGNOSTIC);
+        $edition = $request->query->getBoolean('edition') && $this->isGranted(Permission::EFFECTIF_SUPPRIMER->value);
 
         $restored = $this->filterMemory->restoreOrRemember('licencies', $request, ['team', 'status', 'nature', 'search']);
         if ($restored !== null) {
@@ -128,6 +149,15 @@ class LicencieController extends AbstractController
             'page' => $page,
             'pages' => $pages,
             'liensEnAttente' => $this->licencieRepo->countLienJamaisEnvoye($season),
+            // Signalé au même endroit que les liens jamais envoyés : c'est la même
+            // question — qui reste-t-il à relancer avant que la saison démarre ?
+            'signaturesEnAttente' => count($this->relanceService->licencies($season)),
+            // Ceux dont la licence n'est pas soldée et dont le dernier mail remonte au
+            // délai configuré : exactement la liste que le cron enverrait cette nuit.
+            'relancesEnAttente' => count($this->relanceResolver->dues($season)),
+            // Troisième relance du même écran, mais celle-ci ne s'adresse à personne :
+            // c'est le club qui a une démarche à faire dans FootClubs.
+            'aValiderFff' => $this->licencieRepo->countAValiderFff($season),
             'edition' => $edition,
         ]);
     }
@@ -141,6 +171,7 @@ class LicencieController extends AbstractController
      * dotation faux. L'envoi est donc une décision, prise sur cet écran, après relecture.
      */
     #[Route('/envoyer-liens', name: 'send_links', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendLinks(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -183,6 +214,18 @@ class LicencieController extends AbstractController
         ]);
     }
 
+    /** Le compte rendu nomme ce qui reste à faire à la main : sans email, aucun lien ne part. */
+    private function resumeRelance(RelanceResultat $resultat, string $population): string
+    {
+        $resume = sprintf('%d lien%s envoyé%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '');
+
+        if ($resultat->sansEmail > 0) {
+            $resume .= sprintf(', %d %s%s sans adresse email à prévenir autrement', $resultat->sansEmail, $population, $resultat->sansEmail > 1 ? 's' : '');
+        }
+
+        return $resume . '.';
+    }
+
     private function resumeEnvoi(EnvoiGroupeResultat $resultat): string
     {
         $parties = [sprintf('%d lien%s envoyé%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '')];
@@ -205,8 +248,154 @@ class LicencieController extends AbstractController
      * et ce qui est refusé avec son motif. Déclaré avant `/{uuid}` : sans cela, « supprimer »
      * serait lu comme l'uuid d'une fiche.
      */
+    /**
+     * Relance groupée des signatures manquantes. Déclaré avant la route `/{uuid}` :
+     * sans cela, « demander-signatures » serait lu comme un uuid.
+     *
+     * Cet écran vit ici, avec la population, et non dans « Documents à signer » : ce
+     * dernier sert à préparer les documents, pas à relancer les gens. Frère de
+     * « Envoyer les liens », dont il reprend le vocabulaire — cases à cocher comprises.
+     */
+    #[Route('/demander-signatures', name: 'request_signatures', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
+    public function requestSignatures(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('demander_signatures_licencies', $request);
+
+            $resultat = $this->relanceService->relancerLicencies(
+                $season,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $resultat->envoyes > 0 ? 'success' : 'info',
+                $this->resumeRelance($resultat, 'joueur'),
+            );
+
+            return $this->redirectToRoute('admin_licencies_list');
+        }
+
+        $lignes = $this->relanceService->licencies($season);
+
+        return $this->render('admin/effectif/demander_signatures.html.twig', [
+            'lignes' => $lignes,
+            'joignables' => $this->relanceService->uuidsJoignables($lignes),
+            'population' => 'joueur',
+            'tokenId' => 'demander_signatures_licencies',
+            'actionUrl' => $this->generateUrl('admin_licencies_request_signatures'),
+            'retourUrl' => $this->generateUrl('admin_licencies_list'),
+            'intro' => 'Un joueur dont le dossier était déjà complet n\'a plus de lien valide : ajouter un document ne le prévient pas. Chaque personne cochée reçoit un lien rouvert pour 30 jours vers un parcours réduit à la signature — ni tailles, ni autorisations, ni paiement ne lui sont redemandés. Ceux qui n\'ont pas terminé leur inscription ne sont pas listés : leur formulaire leur présentera ces documents avec le reste.',
+        ]);
+    }
+
+    /**
+     * Relance groupée des licences non soldées. Déclaré avant la route `/{uuid}` : sans
+     * cela, « relancer » serait lu comme un uuid.
+     *
+     * Le même écran qu'utilise le cron, sous les yeux d'un admin : la liste affichée est
+     * exactement celle que le robot enverrait cette nuit. Il reste utilisable robot éteint —
+     * c'est même la seule façon de relancer tant qu'on ne l'a pas allumé, et le moyen de
+     * voir ce qu'il ferait avant de le laisser faire.
+     */
+    #[Route('/relancer', name: 'relancer', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
+    public function relancer(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('relancer_licencies', $request);
+
+            $resultat = $this->relanceLicences->envoyerEnMasse(
+                $season,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $resultat->envoyes > 0 ? 'success' : 'info',
+                $this->resumeEnvoiRelances($resultat),
+            );
+
+            return $this->redirectToRoute('admin_licencies_list');
+        }
+
+        $dues = $this->relanceResolver->dues($season);
+
+        return $this->render('admin/effectif/relancer.html.twig', [
+            'dues' => $dues,
+            'uuids' => array_map(static fn (RelanceDue $due): string => $due->uuid(), $dues),
+            'settings' => $this->clubSettings->get(),
+        ]);
+    }
+
+    private function resumeEnvoiRelances(EnvoiGroupeResultat $resultat): string
+    {
+        $parties = [sprintf('%d relance%s envoyée%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '')];
+
+        if ($resultat->nonRetenus > 0) {
+            $parties[] = sprintf('%d décoché%s', $resultat->nonRetenus, $resultat->nonRetenus > 1 ? 's' : '');
+        }
+        if ($resultat->echecs > 0) {
+            $parties[] = sprintf('%d échec%s d\'envoi', $resultat->echecs, $resultat->echecs > 1 ? 's' : '');
+        }
+
+        return implode(', ', $parties) . '.';
+    }
+
+    /**
+     * Validation groupée dans FootClubs. Déclaré avant la route `/{uuid}` : sans cela,
+     * « valider-footclubs » serait lu comme un uuid.
+     *
+     * Le club signe ses licences dans FootClubs par paquets, puis vient le déclarer ici :
+     * fiche par fiche, il faudrait rouvrir quarante écrans. La liste est repassée au crible
+     * par le service — un uuid ajouté au formulaire ne peut pas valider une licence qui
+     * n'était pas proposée.
+     */
+    #[Route('/valider-footclubs', name: 'validate_fff_bulk', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
+    public function validateFffBulk(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $eligibles = $this->licencieRepo->findAValiderFff($season);
+
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('valider_footclubs_licencies', $request);
+
+            $valides = $this->paiementService->validerSurFootclubsEnMasse(
+                $eligibles,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $valides > 0 ? 'success' : 'info',
+                sprintf('%d licence%s validée%s.', $valides, $valides > 1 ? 's' : '', $valides > 1 ? 's' : ''),
+            );
+
+            return $this->redirectToRoute('admin_licencies_list');
+        }
+
+        return $this->render('admin/effectif/valider_footclubs.html.twig', [
+            'personnes' => array_map(
+                static fn (Licencie $l): array => [
+                    'uuid' => (string) $l->getUuid(),
+                    'nom' => $l->getNomPrenom(),
+                    'detail' => $l->getTeam()?->getName() ?? $l->getCategory()->getLabel(),
+                ],
+                $eligibles,
+            ),
+            'population' => 'joueur',
+            'tokenId' => 'valider_footclubs_licencies',
+            'actionUrl' => $this->generateUrl('admin_licencies_validate_fff_bulk'),
+            'retourUrl' => $this->generateUrl('admin_licencies_list'),
+        ]);
+    }
+
     #[Route('/supprimer', name: 'delete_confirm', methods: ['POST'])]
-    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    #[IsGranted(Permission::EFFECTIF_SUPPRIMER->value)]
     public function deleteConfirm(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -230,7 +419,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/supprimer/confirmer', name: 'delete', methods: ['POST'])]
-    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    #[IsGranted(Permission::EFFECTIF_SUPPRIMER->value)]
     public function delete(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -275,6 +464,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function new(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -310,6 +500,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/identite', name: 'edit_identity', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function editIdentity(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -356,6 +547,7 @@ class LicencieController extends AbstractController
      * en dépend, et l'export ne se corrige parfois qu'après validation du dossier à la ligue.
      */
     #[Route('/{uuid}/coordonnees', name: 'edit_contact', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function editContact(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -381,6 +573,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/coordonnees/{champ}/reprendre-import', name: 'contact_reprendre_import', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function reprendreImportContact(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         ChampContact $champ,
@@ -409,6 +602,10 @@ class LicencieController extends AbstractController
         $montant = $this->cotisationResolver->resolve($licencie);
         $remainingAmount = max(0, (float) $montant - $totalPaid);
 
+        $autorisationsManquantes = $this->completionService->hasMissing($licencie);
+        $signatureManquante = $this->signatureCompletion->hasMissing($licencie);
+        $attestationBlocage = $this->attestationPaiement->motifBlocage($licencie);
+
         return $this->render('admin/licencies/show.html.twig', [
             'licencie' => $licencie,
             'transactions' => $transactions,
@@ -421,15 +618,35 @@ class LicencieController extends AbstractController
             'dotations' => $this->stockMovementRepo->findDotationsByLicencie($licencie),
             'dotationStatut' => $this->dotationSuivi->avancementDe($licencie),
             'history' => $this->historiqueService->pourLicencie($licencie, $transactions),
-            'autorisationsManquantes' => $this->completionService->hasMissing($licencie),
+            // Affiché en tête : avant de relancer à la main, l'admin doit voir si le club
+            // vient d'écrire — sans quoi le licencié reçoit deux mails le même jour.
+            'dernierContact' => $this->dernierContact->pour($licencie),
+            'autorisationsManquantes' => $autorisationsManquantes,
             // Documents attendus et leur signature éventuelle : la checklist n'est plus
             // une liste figée, elle suit ce que la saison demande.
             'documents' => $this->documentResolver->attendusPourLicencie($licencie),
             'signatures' => $this->documentResolver->signaturesParDocumentPourLicencie($licencie),
+            // Un document ajouté depuis l'inscription : le dossier est complet, son lien
+            // est consommé, rien ne le lui redemanderait sans ce bouton.
+            'signatureManquante' => $signatureManquante,
+            // Attestations de paiement déjà émises, et ce qui empêche d'en émettre une
+            // nouvelle — le motif est affiché plutôt que le bouton simplement masqué :
+            // « rien ne s'affiche » n'apprend rien à l'admin qui cherche le bouton.
+            'attestations' => $this->attestationPaiementRepo->findByLicencie($licencie),
+            'attestationBlocage' => $attestationBlocage,
+            // Une action mise en avant, les autres dans un menu : l'en-tête en alignait
+            // jusqu'à cinq, dont trois en « bouton principal ».
+            'actions' => $this->ficheActions->pour(
+                $licencie,
+                autorisationsManquantes: $autorisationsManquantes,
+                signatureManquante: $signatureManquante,
+                attestationPossible: $attestationBlocage === null,
+            ),
         ]);
     }
 
     #[Route('/{uuid}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function edit(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -468,6 +685,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/ajouter-paiement', name: 'add_payment', methods: ['POST'])]
+    #[IsGranted(Permission::PAIEMENT_ENCAISSER->value)]
     public function addPayment(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -499,9 +717,9 @@ class LicencieController extends AbstractController
 
         $this->addFlash('success', 'Paiement de ' . $licencie->getNomPrenom() . ' enregistré.');
 
-        $isValidated = $licencie->getDossierClub()?->getStatus() === LicenceStatus::VALIDATED;
+        $estSolde = $licencie->getDossierClub()?->estSoldee() === true;
         $params = ['uuid' => $licencie->getUuid()];
-        if (!$isValidated) {
+        if (!$estSolde) {
             $params['paymentsModal'] = '1';
         }
 
@@ -509,6 +727,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/paiements/{id}/supprimer', name: 'delete_payment', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted(Permission::PAIEMENT_ENCAISSER->value)]
     public function deletePayment(
         string $uuid,
         int $id,
@@ -528,6 +747,7 @@ class LicencieController extends AbstractController
     }
 
     #[Route('/{uuid}/valider-manuellement', name: 'validate_manually', methods: ['POST'])]
+    #[IsGranted(Permission::PAIEMENT_ENCAISSER->value)]
     public function validateManually(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,
@@ -536,12 +756,81 @@ class LicencieController extends AbstractController
 
         $this->paiementService->validerManuellement($licencie);
 
-        $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' validée manuellement.');
+        $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' considérée comme payée.');
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+    }
+
+    /** Le club a signé la licence dans FootClubs : dernier statut du parcours. */
+    #[Route('/{uuid}/valider-footclubs', name: 'validate_fff', methods: ['POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
+    public function validateFff(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('valider_fff_' . $licencie->getUuid(), $request);
+
+        try {
+            $this->paiementService->validerSurFootclubs($licencie);
+            $this->addFlash('success', 'Licence de ' . $licencie->getNomPrenom() . ' validée.');
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+    }
+
+    /** Sortie de secours d'un clic malheureux : la licence redevient « à valider ». */
+    #[Route('/{uuid}/annuler-validation-footclubs', name: 'cancel_validate_fff', methods: ['POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
+    public function cancelValidateFff(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('annuler_valider_fff_' . $licencie->getUuid(), $request);
+
+        try {
+            $this->paiementService->annulerValidationFootclubs($licencie);
+            $this->addFlash('success', 'Validation annulée : la licence est de nouveau à valider sur FootClubs.');
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+    }
+
+    #[Route('/{uuid}/demander-signature', name: 'request_signature', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
+    public function requestSignature(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('request_signature_' . $licencie->getUuid(), $request);
+
+        if ($licencie->getEmail() === null) {
+            $this->addFlash('error', 'Ce licencié n\'a pas d\'adresse email renseignée.');
+
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+        }
+
+        if (!$this->signatureCompletion->hasMissing($licencie)) {
+            $this->addFlash('error', 'Aucun document en attente de signature pour ce licencié.');
+
+            return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+        }
+
+        try {
+            $this->inscriptionLinkService->sendSignature($licencie);
+            $this->addFlash('success', 'Demande de signature envoyée à ' . $licencie->getEmail() . '.');
+        } catch (\Throwable) {
+            $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
+        }
 
         return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
     }
 
     #[Route('/{uuid}/send-link', name: 'send_link', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendLink(#[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie, Request $request): Response
     {
         $this->csrf->valider('send_link_' . $licencie->getUuid(), $request);
@@ -562,7 +851,35 @@ class LicencieController extends AbstractController
         return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
     }
 
+    /**
+     * Relance à l'unité depuis une fiche : le rappel de cotisation d'un dossier complet.
+     *
+     * Ni délai ni plafond ici — c'est un acte délibéré, et l'en-tête de la fiche affiche le
+     * dernier contact juste au-dessus du bouton. Elle est journalisée comme les autres, et
+     * repousse donc la relance automatique suivante.
+     */
+    #[Route('/{uuid}/relancer', name: 'relance_unitaire', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
+    public function relancerUnLicencie(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('relance_unitaire_' . $licencie->getUuid(), $request);
+
+        try {
+            $this->relanceLicences->relancerUnLicencie($licencie);
+            $this->addFlash('success', 'Relance envoyée à ' . $licencie->getEmail() . '.');
+        } catch (\LogicException $e) {
+            $this->addFlash('error', $e->getMessage());
+        } catch (\Throwable) {
+            $this->addFlash('error', 'Erreur lors de l\'envoi du mail. Vérifiez la configuration SMTP.');
+        }
+
+        return $this->redirectToRoute('admin_licencies_show', ['uuid' => $licencie->getUuid()]);
+    }
+
     #[Route('/{uuid}/send-completion', name: 'send_completion', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendCompletion(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Licencie $licencie,
         Request $request,

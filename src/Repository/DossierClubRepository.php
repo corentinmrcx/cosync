@@ -28,11 +28,14 @@ class DossierClubRepository extends ServiceEntityRepository
 
     /**
      * Dossiers ayant lancé un paiement HelloAsso dont l'encaissement n'a pas encore
-     * abouti à une licence validée.
+     * soldé la cotisation.
      *
      * Le critère est le statut du dossier, pas l'existence d'une transaction en ligne :
      * un licencié qui relance un paiement après un premier encaissement partiel doit
      * rester réconcilié, alors qu'il porte déjà une transaction HelloAsso.
+     *
+     * On sort de la réconciliation dès le solde (`A_VALIDER_FFF`), pas à la validation
+     * FootClubs : celle-ci est un geste du club, elle ne dit rien de l'encaissement.
      *
      * @return DossierClub[]
      */
@@ -40,9 +43,9 @@ class DossierClubRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('d')
             ->where('d.helloassoCheckoutIntentId IS NOT NULL')
-            ->andWhere('d.status != :validated')
+            ->andWhere('d.status NOT IN (:soldes)')
             ->andWhere('d.helloassoCheckoutStartedAt IS NULL OR d.helloassoCheckoutStartedAt >= :limite')
-            ->setParameter('validated', LicenceStatus::VALIDATED)
+            ->setParameter('soldes', LicenceStatus::soldes())
             ->setParameter('limite', new \DateTimeImmutable(self::RECONCILIATION_WINDOW))
             ->getQuery()
             ->getResult();

@@ -19,6 +19,7 @@
         </p>
         <hr class="season-form-divider">
 
+        {% if peut_acceder('admin_cotisations_defaut') %}
         <form method="post" action="{{ path('admin_cotisations_defaut') }}" class="cotisations-defaut">
             <input type="hidden" name="_token" value="{{ csrf_token('cotisation_defaut') }}">
             <div class="field">
@@ -30,6 +31,9 @@
                 <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
             </div>
         </form>
+        {% else %}
+            <p class="season-form-empty">Cotisation par défaut : {{ season.cotisationDefaut }} €.</p>
+        {% endif %}
     </div>
 
     <div class="season-form-card">
@@ -38,7 +42,7 @@
 
         {% if teams is empty %}
             <p class="season-form-empty">Aucune équipe configurée.</p>
-        {% else %}
+        {% elseif peut_acceder('admin_cotisations_equipes') %}
             <form method="post" action="{{ path('admin_cotisations_equipes') }}" class="cotisations-equipes">
                 <input type="hidden" name="_token" value="{{ csrf_token('cotisations_equipes') }}">
 
@@ -70,6 +74,14 @@
                     <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
                 </div>
             </form>
+        {% else %}
+            <ul class="config-teams-list">
+                {% for team in teams %}
+                    <li class="config-teams-item">
+                        {{ team.name }} — {{ team.cotisation is null ? 'cotisation par défaut' : team.cotisation ~ ' €' }}
+                    </li>
+                {% endfor %}
+            </ul>
         {% endif %}
     </div>
 

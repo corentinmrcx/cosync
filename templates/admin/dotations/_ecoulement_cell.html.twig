@@ -21,7 +21,7 @@
                 <span class="dot-ecoulement-lock" title="Article fixé à la main : l'arbitrage automatique ne le change plus">📌</span>
             {% endif %}
 
-            {% if not estDonne %}
+            {% if not estDonne and peut_acceder('admin_dotations_besoin_article') %}
                 <button type="button" class="dot-option-pen" @click="editing = true"
                         title="Choisir l'article servi" aria-label="Choisir l'article servi">
                     {{ ui.icon('edit', 14) }}
@@ -29,7 +29,7 @@
             {% endif %}
         </div>
 
-        {% if not estDonne %}
+        {% if not estDonne and peut_acceder('admin_dotations_besoin_article') %}
             <form x-show="editing" x-cloak method="post"
                   action="{{ path('admin_dotations_besoin_article', {id: besoin.id}) }}"
                   class="dot-option-form">

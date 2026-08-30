@@ -50,6 +50,7 @@
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
+            {% if is_granted('dotation.configurer') %}
             <a href="{{ path('admin_dotations_modeles') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('layers', 20) }}</span>
                 <span class="quicklink-body">
@@ -58,6 +59,8 @@
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
+            {% endif %}
+            {% if is_granted('commande.lire') %}
             <a href="{{ path('admin_commandes_index') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('cart', 20) }}</span>
                 <span class="quicklink-body">
@@ -66,6 +69,8 @@
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
+            {% endif %}
+            {% if is_granted('stock.lire') %}
             <a href="{{ path('admin_stock_dashboard') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('box', 20) }}</span>
                 <span class="quicklink-body">
@@ -74,6 +79,7 @@
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
+            {% endif %}
         </div>
     </div>
 

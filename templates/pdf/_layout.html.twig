@@ -4,6 +4,9 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    {# DomPDF en fait le titre du document, celui que le navigateur affiche dans l'onglet.
+       Sans lui, l'onglet reprend le dernier segment de l'URL — « generer », « telecharger ». #}
+    <title>{% block titre_document %}{{ block('titre') }}{% endblock %}</title>
     <style>
         @page { size: A4; margin: 20mm 25mm; }
 

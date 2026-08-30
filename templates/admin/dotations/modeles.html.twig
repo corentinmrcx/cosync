@@ -49,6 +49,7 @@
                                 {% endif %}
                             </span>
                         </div>
+                        {% if peut_acceder('admin_dotations_edit') %}
                         <div class="dot-list-actions">
                             <a href="{{ path('admin_dotations_edit', {id: modele.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
                             {% include 'components/_form_suppression.html.twig' with {
@@ -57,16 +58,19 @@
                                 message: 'Supprimer ce kit et ses attributions ?',
                             } only %}
                         </div>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>
         {% endif %}
 
-        <form method="post" action="{{ path('admin_dotations_new') }}" class="dot-inline-form">
-            <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_new') }}">
-            <input type="text" name="nom" class="field-input" placeholder="Nom du kit (ex : Kit sénior)" required>
-            <button type="submit" class="btn btn-primary">+ Nouveau kit</button>
-        </form>
+        {% if peut_acceder('admin_dotations_new') %}
+            <form method="post" action="{{ path('admin_dotations_new') }}" class="dot-inline-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('dotation_modele_new') }}">
+                <input type="text" name="nom" class="field-input" placeholder="Nom du kit (ex : Kit sénior)" required>
+                <button type="submit" class="btn btn-primary">+ Nouveau kit</button>
+            </form>
+        {% endif %}
     </div>
 
 </div>

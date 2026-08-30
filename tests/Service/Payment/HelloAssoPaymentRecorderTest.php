@@ -118,7 +118,7 @@ final class HelloAssoPaymentRecorderTest extends KernelTestCase
         ];
     }
 
-    public function testUnPaiementAutoriseCreeLaTransactionEtValideLaLicence(): void
+    public function testUnPaiementAutoriseCreeLaTransactionEtSoldeLaLicence(): void
     {
         $licencie = $this->makeLicencie();
         $recorder = $this->makeRecorder($this->intentAvecPaiement($licencie, 'Authorized'));
@@ -132,7 +132,9 @@ final class HelloAssoPaymentRecorderTest extends KernelTestCase
         self::assertSame('HA-55555', $transactions[0]->getReference());
         self::assertSame('55555', $transactions[0]->getExternalPaymentId());
         self::assertNull($transactions[0]->getConfirmedBy(), 'Aucun dirigeant ne confirme un encaissement en ligne.');
-        self::assertSame(LicenceStatus::VALIDATED, $licencie->getDossierClub()->getStatus());
+        // Encaissement vérifié : le dossier est soldé. La validation FootClubs, elle, reste
+        // un geste du club — aucun paiement ne peut la poser.
+        self::assertSame(LicenceStatus::A_VALIDER_FFF, $licencie->getDossierClub()->getStatus());
     }
 
     public function testUnMemePaiementNotifieDeuxFoisNEstEncaisseQuUneFois(): void
@@ -213,6 +215,6 @@ final class HelloAssoPaymentRecorderTest extends KernelTestCase
 
         $transactions = self::getContainer()->get(TransactionRepository::class)->findByLicencie($licencie);
         self::assertSame('85.00', $transactions[0]->getMontant());
-        self::assertSame(LicenceStatus::VALIDATED, $licencie->getDossierClub()->getStatus());
+        self::assertSame(LicenceStatus::A_VALIDER_FFF, $licencie->getDossierClub()->getStatus());
     }
 }

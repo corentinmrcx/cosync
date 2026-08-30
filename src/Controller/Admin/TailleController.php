@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Taille;
+use App\Enum\Permission;
 use App\Enum\TailleType;
 use App\Repository\GrilleTailleRepository;
 use App\Repository\TailleRepository;
@@ -12,6 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Référentiel des tailles du club. Il sert deux publics : les formulaires, où l'on ne
@@ -19,6 +21,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * le fournisseur étiquette sur le carton.
  */
 #[Route('/admin/club/tailles', name: 'admin_tailles_')]
+#[IsGranted(Permission::CLUB_CONFIGURER->value)]
 class TailleController extends AbstractController
 {
     public function __construct(

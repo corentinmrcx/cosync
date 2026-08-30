@@ -185,7 +185,7 @@ final class DirigeantRoleEnumTest extends WebTestCase
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
         $this->season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-role@example.com')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-role@example.com')->setPassword('x');
 
         $em->persist($this->season);
         $em->persist($user);

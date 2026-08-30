@@ -58,7 +58,7 @@ final class SeasonCreationTest extends WebTestCase
             ->setCotisationDefaut(85)
             ->setAttestationCleText('Texte attestation');
 
-        $user = (new User())->setEmail('admin-saisons@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-saisons@example.test')->setPassword('x');
         $user->setSelectedSeason($season);
 
         $em->persist($season);

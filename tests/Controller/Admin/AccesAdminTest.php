@@ -11,10 +11,13 @@ use Symfony\Component\Routing\RouterInterface;
 /**
  * Contrôle d'accès de l'espace admin.
  *
- * La protection ne repose sur aucun attribut #[IsGranted] : tout tient à la règle
- * attrape-tout `- { path: ^/, roles: ROLE_USER }` de security.yaml, précédée d'une
- * liste de préfixes publics. Un préfixe ajouté par erreur à cette liste ouvrirait
- * silencieusement une partie de l'admin — d'où ces tests, qui balayent les deux sens.
+ * Ce test ne porte que sur **la porte d'entrée** : connecté ou pas. Elle tient à la règle
+ * attrape-tout `- { path: ^/, roles: ROLE_USER }` de security.yaml, précédée d'une liste de
+ * préfixes publics. Un préfixe ajouté par erreur à cette liste ouvrirait silencieusement une
+ * partie de l'admin — d'où ces tests, qui balayent les deux sens.
+ *
+ * Ce qu'un compte connecté a le droit de faire une fois entré est une autre question, tenue
+ * par {@see PermissionsAccesTest} et par `bin/check-permissions.php`.
  */
 final class AccesAdminTest extends WebTestCase
 {
@@ -32,9 +35,14 @@ final class AccesAdminTest extends WebTestCase
             '/admin/effectif/joueurs',
             '/admin/effectif/joueurs/nouveau',
             '/admin/effectif/joueurs/envoyer-liens',
+            '/admin/effectif/joueurs/demander-signatures',
+            '/admin/effectif/joueurs/relancer',
+            '/admin/effectif/joueurs/valider-footclubs',
             '/admin/effectif/dirigeants',
             '/admin/effectif/dirigeants/nouveau',
             '/admin/effectif/dirigeants/envoyer-liens',
+            '/admin/effectif/dirigeants/demander-signatures',
+            '/admin/effectif/dirigeants/valider-footclubs',
             '/admin/effectif/import',
             '/admin/saison',
             '/admin/saison/cotisations',
@@ -44,9 +52,13 @@ final class AccesAdminTest extends WebTestCase
             '/admin/club/tailles',
             '/admin/club/tailles/referentiel',
             '/admin/club/grilles-tailles',
+            '/admin/club/identite',
             '/admin/club/coordonnees-bancaires',
+            '/admin/club/relances',
             '/admin/club/utilisateurs',
             '/admin/club/utilisateurs/nouveau',
+            '/admin/club/roles',
+            '/admin/club/roles/nouveau',
             '/admin/boutique',
             '/admin/boutique/lien',
             '/admin/boutique/annoncer',
@@ -75,6 +87,11 @@ final class AccesAdminTest extends WebTestCase
             '/admin/dotations/suivi',
             '/admin/dotations/flocage',
             '/admin/stock/inventaire.pdf',
+            '/admin/outils',
+            '/admin/outils/planning-matchs',
+            '/admin/outils/planning-matchs/reglages',
+            '/admin/outils/planning-matchs/coller',
+            '/admin/outils/planning-matchs/generer',
         ];
 
         foreach ($urls as $url) {
@@ -147,7 +164,7 @@ final class AccesAdminTest extends WebTestCase
         $client = static::createClient();
 
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-acces@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-acces@example.test')->setPassword('x');
         $em->persist($user);
         $em->flush();
 

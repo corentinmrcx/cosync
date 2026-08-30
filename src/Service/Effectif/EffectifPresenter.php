@@ -4,7 +4,6 @@ namespace App\Service\Effectif;
 
 use App\DTO\Effectif\EffectifTableauDeBord;
 use App\Entity\Season;
-use App\Enum\LicenceStatus;
 use App\Repository\DirigeantRepository;
 use App\Repository\LicencieRepository;
 
@@ -23,9 +22,10 @@ final class EffectifPresenter
         return new EffectifTableauDeBord(
             $nbJoueurs,
             $this->dirigeantRepository->countBySeason($season),
-            // VALIDATED est le seul statut qui signe un dossier bouclé : tout le reste
-            // est en attente, sans distinguer l'étape qui manque.
-            $nbJoueurs - $this->licencieRepository->countWithFilters($season, status: LicenceStatus::VALIDATED),
+            // Le compteur mesure ce qui manque au club, donc l'argent et le formulaire :
+            // un dossier soldé n'est plus « en attente » même s'il reste à valider dans
+            // FootClubs, geste interne qui n'appelle aucune relance du licencié.
+            $nbJoueurs - $this->licencieRepository->countSoldes($season),
             $this->dirigeantRepository->countFormulairesEnAttente($season),
         );
     }

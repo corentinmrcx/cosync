@@ -9,12 +9,15 @@
     <div x-data="{ editing: false }" class="dot-option-edit">
         <div x-show="!editing" class="dot-option-display">
             <span class="dot-item-nom">{{ besoin.stockItem.nom }}</span>
-            <button type="button" class="dot-option-pen" @click="editing = true"
-                    title="Changer l'article choisi" aria-label="Changer l'article choisi">
-                {{ ui.icon('edit', 14) }}
-            </button>
+            {% if peut_acceder('admin_dotations_besoin_option') %}
+                <button type="button" class="dot-option-pen" @click="editing = true"
+                        title="Changer l'article choisi" aria-label="Changer l'article choisi">
+                    {{ ui.icon('edit', 14) }}
+                </button>
+            {% endif %}
         </div>
 
+        {% if peut_acceder('admin_dotations_besoin_option') %}
         <form x-show="editing" x-cloak method="post"
               action="{{ path('admin_dotations_besoin_option', {id: besoin.id}) }}"
               class="dot-option-form">
@@ -30,6 +33,7 @@
             <button type="submit" class="dot-option-ok" title="Valider">✓</button>
             <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
         </form>
+        {% endif %}
     </div>
 {% else %}
     <span class="dot-item-nom">{{ besoin.stockItem.nom }}</span>

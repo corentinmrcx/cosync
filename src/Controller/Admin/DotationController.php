@@ -13,6 +13,7 @@ use App\Entity\Season;
 use App\Entity\User;
 use App\Enum\DotationCibleType;
 use App\Enum\DotationEligibilite;
+use App\Enum\Permission;
 use App\Repository\DotationAffectationRepository;
 use App\Repository\DotationModeleRepository;
 use App\Repository\StockItemRepository;
@@ -34,8 +35,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/dotations', name: 'admin_dotations_')]
+#[IsGranted(Permission::DOTATION_LIRE->value)]
 class DotationController extends AbstractController
 {
     public function __construct(
@@ -69,6 +72,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function modeleNew(Request $request, #[CurrentSeason] Season $season): Response
     {
         $this->csrf->valider('dotation_modele_new', $request);
@@ -87,6 +91,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function modeleEdit(DotationModele $modele, Request $request): Response
     {
         if ($request->isMethod('POST')) {
@@ -106,6 +111,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/{id}/choix/reglages', name: 'choix_reglages', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function choixReglages(DotationModele $modele, Request $request): Response
     {
         $this->csrf->valider('dotation_choix_reglages_' . $modele->getId(), $request);
@@ -124,6 +130,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/{id}/choix/options', name: 'choix_option_add', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function choixOptionAdd(DotationModele $modele, Request $request): Response
     {
         $this->csrf->valider('dotation_choix_option_add_' . $modele->getId(), $request);
@@ -151,6 +158,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/{id}/choix/renommer', name: 'choix_rename', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function choixRename(DotationModele $modele, Request $request): Response
     {
         $this->csrf->valider('dotation_choix_rename_' . $modele->getId(), $request);
@@ -174,6 +182,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function modeleDelete(DotationModele $modele, Request $request): Response
     {
         $this->csrf->valider('dotation_modele_delete_' . $modele->getId(), $request);
@@ -185,6 +194,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/{id}/lignes', name: 'ligne_add', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function ligneAdd(DotationModele $modele, Request $request): Response
     {
         $this->csrf->valider('dotation_ligne_add_' . $modele->getId(), $request);
@@ -207,6 +217,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/{id}/choix', name: 'ligne_choix_add', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function choixAdd(DotationModele $modele, Request $request): Response
     {
         $this->csrf->valider('dotation_choix_add_' . $modele->getId(), $request);
@@ -236,6 +247,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/{id}/choix/supprimer', name: 'choix_delete', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function choixDelete(DotationModele $modele, Request $request): Response
     {
         $this->csrf->valider('dotation_choix_delete_' . $modele->getId(), $request);
@@ -248,6 +260,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/lignes/{id}/reglages', name: 'ligne_reglages', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function ligneReglages(DotationModeleLigne $ligne, Request $request): Response
     {
         $this->csrf->valider('dotation_ligne_reglages_' . $ligne->getId(), $request);
@@ -267,6 +280,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/lignes/{id}/supprimer', name: 'ligne_delete', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function ligneDelete(DotationModeleLigne $ligne, Request $request): Response
     {
         $modeleId = $ligne->getModele()->getId();
@@ -286,6 +300,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/{id}/affectations', name: 'affectation_new', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function affectationNew(DotationModele $modele, Request $request, #[CurrentSeason] Season $season): Response
     {
         $this->csrf->valider('dotation_affectation_new_' . $modele->getId(), $request);
@@ -318,6 +333,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/affectations/{id}/supprimer', name: 'affectation_delete', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_CONFIGURER->value)]
     public function affectationDelete(DotationAffectation $affectation, Request $request): Response
     {
         $modeleId = $affectation->getModele()->getId();
@@ -352,6 +368,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/recalculer', name: 'recalculer', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_GERER->value)]
     public function recalculer(Request $request, #[CurrentSeason] Season $season): Response
     {
         $this->csrf->valider('dotation_recalculer', $request);
@@ -364,6 +381,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/besoins/{id}/taille', name: 'besoin_taille', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_GERER->value)]
     public function besoinTaille(DotationBesoin $besoin, Request $request, #[CurrentUser] ?User $user): Response
     {
         $this->csrf->valider('dotation_besoin_taille_' . $besoin->getId(), $request);
@@ -376,6 +394,7 @@ class DotationController extends AbstractController
 
     /** Corrige l'option retenue dans un groupe de choix — repli automatique ou erreur du licencié. */
     #[Route('/besoins/{id}/option', name: 'besoin_option', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_GERER->value)]
     public function besoinOption(DotationBesoin $besoin, Request $request): Response
     {
         $this->csrf->valider('dotation_besoin_option_' . $besoin->getId(), $request);
@@ -404,6 +423,7 @@ class DotationController extends AbstractController
      * c'est le carton dans lequel on le prend qui change.
      */
     #[Route('/besoins/{id}/article', name: 'besoin_article', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_GERER->value)]
     public function besoinArticle(DotationBesoin $besoin, Request $request): Response
     {
         $this->csrf->valider('dotation_besoin_article_' . $besoin->getId(), $request);
@@ -419,6 +439,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/besoins/{id}/personnalisation', name: 'besoin_personnalisation', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_GERER->value)]
     public function besoinPersonnalisation(DotationBesoin $besoin, Request $request): Response
     {
         $this->csrf->valider('dotation_besoin_personnalisation_' . $besoin->getId(), $request);
@@ -443,6 +464,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/besoins/{id}/remise', name: 'besoin_remise', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_GERER->value)]
     public function besoinRemise(DotationBesoin $besoin, Request $request, #[CurrentUser] ?User $user): Response
     {
         $this->csrf->valider('dotation_besoin_remise_' . $besoin->getId(), $request);
@@ -454,6 +476,7 @@ class DotationController extends AbstractController
     }
 
     #[Route('/besoins/{id}/annuler', name: 'besoin_annuler', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_GERER->value)]
     public function besoinAnnuler(DotationBesoin $besoin, Request $request): Response
     {
         $this->csrf->valider('dotation_besoin_annuler_' . $besoin->getId(), $request);

@@ -22,13 +22,15 @@
 
             <div class="navbar-dropdown-section">
                 <a href="{{ path('admin_seasons_index') }}" class="navbar-dropdown-item">Saisons</a>
-                <a href="{{ path('admin_club_index') }}" class="navbar-dropdown-item">Le club</a>
+                {% if is_granted('club.configurer') or is_granted('utilisateur.gerer') %}
+                    <a href="{{ path('admin_club_index') }}" class="navbar-dropdown-item">Le club</a>
+                {% endif %}
             </div>
 
             <div class="navbar-dropdown-divider"></div>
 
             <div class="navbar-dropdown-section">
-                {% if is_granted('ACCES_DIAGNOSTIC') %}
+                {% if is_granted('diagnostic.acceder') %}
                     <a href="{{ path('admin_diag_index') }}" class="navbar-dropdown-item">Diagnostic</a>
                 {% endif %}
                 <a href="{{ path('admin_documentation') }}" class="navbar-dropdown-item">Documentation</a>

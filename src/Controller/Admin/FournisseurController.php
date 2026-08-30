@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\DTO\FournisseurData;
 use App\Entity\Fournisseur;
+use App\Enum\Permission;
 use App\Repository\FournisseurRepository;
 use App\Security\CsrfGuard;
 use App\Service\Stock\FournisseurService;
@@ -11,8 +12,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/stock/fournisseurs', name: 'admin_stock_fournisseurs_')]
+#[IsGranted(Permission::STOCK_LIRE->value)]
 class FournisseurController extends AbstractController
 {
     public function __construct(
@@ -30,6 +33,7 @@ class FournisseurController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function new(Request $request): Response
     {
         $this->csrf->valider('fournisseur_new', $request);
@@ -48,6 +52,7 @@ class FournisseurController extends AbstractController
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function edit(Fournisseur $fournisseur, Request $request): Response
     {
         $this->csrf->valider('fournisseur_edit_' . $fournisseur->getId(), $request);
@@ -59,6 +64,7 @@ class FournisseurController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function delete(Fournisseur $fournisseur, Request $request): Response
     {
         $this->csrf->valider('fournisseur_delete_' . $fournisseur->getId(), $request);

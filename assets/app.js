@@ -6,6 +6,7 @@ import collapse from '@alpinejs/collapse';
 import { inscriptionForm } from './js/inscription-form.js';
 import { completionForm } from './js/completion-form.js';
 import { dirigeantForm } from './js/dirigeant-form.js';
+import { signatureForm } from './js/signature-form.js';
 import { attestationCleForm } from './js/attestation-cle-form.js';
 import { textCombobox } from './js/text-combobox.js';
 import { initEditeurRiche } from './js/editeur-riche.js';
@@ -21,10 +22,12 @@ import { selectListe } from './js/select-liste.js';
 import { listeTriable } from './js/liste-triable.js';
 import { dotationCibles } from './js/dotation-cibles.js';
 import { ecoulementForm } from './js/ecoulement-form.js';
+import { rolePermissions } from './js/role-permissions.js';
 
 Alpine.data('inscriptionForm', inscriptionForm);
 Alpine.data('completionForm', completionForm);
 Alpine.data('dirigeantForm', dirigeantForm);
+Alpine.data('signatureForm', signatureForm);
 Alpine.data('attestationCleForm', attestationCleForm);
 Alpine.data('textCombobox', textCombobox);
 Alpine.data('stockItemForm', stockItemForm);
@@ -38,6 +41,7 @@ Alpine.data('selectListe', selectListe);
 Alpine.data('listeTriable', listeTriable);
 Alpine.data('dotationCibles', dotationCibles);
 Alpine.data('ecoulementForm', ecoulementForm);
+Alpine.data('rolePermissions', rolePermissions);
 
 Alpine.plugin(collapse);
 

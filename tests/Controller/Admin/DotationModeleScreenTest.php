@@ -392,7 +392,7 @@ final class DotationModeleScreenTest extends WebTestCase
         $this->em = self::getContainer()->get(EntityManagerInterface::class);
 
         $this->season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-dotations@example.com')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-dotations@example.com')->setPassword('x');
 
         $this->em->persist($this->season);
         $this->em->persist($user);

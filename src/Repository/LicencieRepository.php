@@ -28,18 +28,21 @@ class LicencieRepository extends ServiceEntityRepository
     }
 
     /**
-     * Licenciés dont le paiement est confirmé — éligibles aux dotations.
+     * Licenciés dont la cotisation est soldée — éligibles aux dotations.
+     *
+     * Le critère est le solde, pas la validation FootClubs qui le suit : le kit est dû dès
+     * que l'argent est rentré.
      *
      * @return Licencie[]
      */
-    public function findValidatedBySeason(Season $season): array
+    public function findSoldesBySeason(Season $season): array
     {
         return $this->createQueryBuilder('l')
             ->join('l.dossierClub', 'd')
             ->where('l.season = :season')
-            ->andWhere('d.status = :status')
+            ->andWhere('d.status IN (:statuts)')
             ->setParameter('season', $season)
-            ->setParameter('status', LicenceStatus::VALIDATED)
+            ->setParameter('statuts', LicenceStatus::soldes())
             ->orderBy('l.nom', 'ASC')
             ->getQuery()
             ->getResult();
@@ -250,6 +253,59 @@ class LicencieRepository extends ServiceEntityRepository
         return (int) $this->buildFilterQuery($season, $team, $category, $status, $search, $nature)
             ->select('COUNT(l.uuid)')
             ->resetDQLPart('orderBy')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Licenciés dont tout est bouclé côté club et qu'il reste à valider dans FootClubs.
+     *
+     * @return Licencie[]
+     */
+    public function findAValiderFff(Season $season): array
+    {
+        return $this->queryAValiderFff($season)
+            ->leftJoin('l.team', 't')
+            ->addSelect('t')
+            ->orderBy('l.nom', 'ASC')
+            ->addOrderBy('l.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countAValiderFff(Season $season): int
+    {
+        return (int) $this->queryAValiderFff($season)
+            ->select('COUNT(l.uuid)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function queryAValiderFff(Season $season): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->createQueryBuilder('l')
+            ->join('l.dossierClub', 'd')
+            ->where('l.season = :season')
+            ->andWhere('d.status = :statut')
+            ->setParameter('season', $season)
+            ->setParameter('statut', LicenceStatus::A_VALIDER_FFF);
+    }
+
+    /**
+     * Combien de licenciés ont leur cotisation soldée ?
+     *
+     * `countWithFilters()` ne prend qu'un statut unique et sert les filtres d'écran :
+     * l'élargir à une liste pour ce seul besoin le rendrait moins lisible.
+     */
+    public function countSoldes(Season $season): int
+    {
+        return (int) $this->createQueryBuilder('l')
+            ->select('COUNT(l.uuid)')
+            ->join('l.dossierClub', 'd')
+            ->where('l.season = :season')
+            ->andWhere('d.status IN (:statuts)')
+            ->setParameter('season', $season)
+            ->setParameter('statuts', LicenceStatus::soldes())
             ->getQuery()
             ->getSingleScalarResult();
     }

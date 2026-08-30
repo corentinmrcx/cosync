@@ -2,14 +2,17 @@
 
 namespace App\Controller\Admin;
 
+use App\Enum\Permission;
 use App\Form\ClubSettingsType;
 use App\Service\Referentiel\ClubSettingsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/club/coordonnees-bancaires', name: 'admin_club_rib')]
+#[IsGranted(Permission::CLUB_CONFIGURER->value)]
 class ClubSettingsController extends AbstractController
 {
     public function __construct(

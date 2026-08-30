@@ -12,13 +12,49 @@
 
 <div class="dirigeants-page">
 
-    {% if liensEnAttente > 0 %}
-        <div class="dirigeants-liens-attente">
-            <p class="dirigeants-liens-attente-texte">
-                <strong>{{ liensEnAttente }}</strong> dirigeant{{ liensEnAttente > 1 ? 's' }} n'{{ liensEnAttente > 1 ? 'ont' : 'a' }}
-                jamais reçu {{ liensEnAttente > 1 ? 'leur' : 'son' }} lien de formulaire.
-            </p>
-            <a href="{{ path('admin_dirigeants_send_links') }}" class="btn btn-primary btn-sm">Envoyer les liens</a>
+    {% if liensEnAttente > 0 or signaturesEnAttente > 0 or aValiderFff > 0 %}
+        <div class="effectif-alertes">
+
+            {% if liensEnAttente > 0 and peut_acceder('admin_dirigeants_send_links') %}
+                {% embed 'components/_effectif_alerte.html.twig' with {
+                    nb: liensEnAttente,
+                    url: path('admin_dirigeants_send_links'),
+                    libelle: 'Envoyer les liens',
+                } only %}
+                    {% block texte %}
+                        <strong>{{ nb }}</strong> dirigeant{{ nb > 1 ? 's' }} n'{{ nb > 1 ? 'ont' : 'a' }}
+                        jamais reçu {{ nb > 1 ? 'leur' : 'son' }} lien de formulaire.
+                    {% endblock %}
+                {% endembed %}
+            {% endif %}
+
+            {% if signaturesEnAttente > 0 and peut_acceder('admin_dirigeants_request_signatures') %}
+                {% embed 'components/_effectif_alerte.html.twig' with {
+                    nb: signaturesEnAttente,
+                    url: path('admin_dirigeants_request_signatures'),
+                    libelle: 'Demander les signatures',
+                } only %}
+                    {% block texte %}
+                        <strong>{{ nb }}</strong> dirigeant{{ nb > 1 ? 's' }} {{ nb > 1 ? 'ont' : 'a' }}
+                        un document à signer — ajouté après {{ nb > 1 ? 'leur' : 'son' }} inscription.
+                    {% endblock %}
+                {% endembed %}
+            {% endif %}
+
+            {% if aValiderFff > 0 and peut_acceder('admin_dirigeants_validate_fff_bulk') %}
+                {# Ne s'adresse à personne : c'est le club qui a une démarche à faire. #}
+                {% embed 'components/_effectif_alerte.html.twig' with {
+                    nb: aValiderFff,
+                    url: path('admin_dirigeants_validate_fff_bulk'),
+                    libelle: 'Valider sur FootClubs',
+                } only %}
+                    {% block texte %}
+                        <strong>{{ nb }}</strong> licence{{ nb > 1 ? 's' }} dirigeant{{ nb > 1 ? 's' }}
+                        {{ nb > 1 ? 'restent' : 'reste' }} à valider sur FootClubs.
+                    {% endblock %}
+                {% endembed %}
+            {% endif %}
+
         </div>
     {% endif %}
 
@@ -31,19 +67,21 @@
         formId: 'dirigeants'
     } %}
         {% block actions %}
-            {# Réservé au compte de diagnostic : supprimer une fiche est le seul geste
-               irréversible de cet écran. #}
-            {% if is_granted('ACCES_DIAGNOSTIC') and not edition %}
+            {# Supprimer une fiche est le seul geste irréversible de cet écran : il a son
+               propre droit, distinct de la gestion courante de l'effectif. #}
+            {% if is_granted('effectif.supprimer') and not edition %}
                 <a href="{{ path('admin_dirigeants_list', app.request.query.all|merge({edition: 1})) }}" class="btn btn-secondary">
                     Mode édition
                 </a>
             {% endif %}
+            {% if is_granted('effectif.gerer') %}
             <a href="{{ path('admin_dirigeants_new') }}" class="btn btn-primary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
                 Nouveau dirigeant
             </a>
+            {% endif %}
         {% endblock %}
     {% endembed %}
 
@@ -60,6 +98,7 @@
         </div>
     {% else %}
         {# Même règle que côté joueurs : en mode édition la ligne ne mène plus à la fiche. #}
+        {# droits-verifies-cote-serveur: `edition` porte déjà effectif.supprimer, posé par le contrôleur. #}
         {% if edition %}
         <form method="post"
               action="{{ path('admin_dirigeants_delete_confirm') }}"
@@ -67,8 +106,9 @@
             <input type="hidden" name="_token" value="{{ csrf_token('supprimer_dirigeants') }}">
         {% endif %}
 
-            <div class="table-wrapper">
-                <table class="table">
+            {# Même passage en cartes que la liste des joueurs (cf. `.table-cartes`). #}
+            <div class="table-wrapper table-cartes">
+                <table class="table table-cliquable">
                     <thead>
                         <tr>
                             {% if edition %}<th class="edition-col-check"></th>{% endif %}
@@ -76,6 +116,7 @@
                             <th class="dirigeants-col-role">Rôle</th>
                             <th class="dirigeants-col-team">Équipe</th>
                             <th class="dirigeants-col-email">Email</th>
+                            <th class="dirigeants-col-status">Statut</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -92,15 +133,18 @@
                                                aria-label="Sélectionner {{ dirigeant.nomPrenom }}">
                                     </td>
                                 {% endif %}
-                                <td class="dirigeants-td-name">{{ dirigeant.nomPrenom }}</td>
-                                <td class="dirigeants-col-role dirigeants-td-muted">
+                                <td class="dirigeants-td-name carte-titre">{{ dirigeant.nomPrenom }}</td>
+                                <td class="dirigeants-col-role dirigeants-td-muted carte-meta">
                                     {{ dirigeant.role.label() }}
-                                    {% if dirigeant.licenceAdministrative %}
-                                        <span class="dirigeants-td-administrative">licence district</span>
-                                    {% endif %}
                                 </td>
-                                <td class="dirigeants-col-team dirigeants-td-muted">{{ dirigeant.team ? dirigeant.team.name : '—' }}</td>
-                                <td class="dirigeants-col-email dirigeants-td-muted">{{ dirigeant.email ?? '—' }}</td>
+                                <td class="dirigeants-col-team dirigeants-td-muted carte-meta">{{ dirigeant.team ? dirigeant.team.name : 'Sans équipe' }}</td>
+                                <td class="dirigeants-col-email dirigeants-td-muted carte-meta">{{ dirigeant.email ?? 'Pas d\'email' }}</td>
+                                <td class="dirigeants-col-status">
+                                    {# La licence administrative est un statut à part entière :
+                                       la mention « licence district » de la colonne Rôle faisait
+                                       double emploi, elle a disparu au profit du badge. #}
+                                    {% include 'components/_badge_status.html.twig' with { status: statuts[dirigeant.uuid].value } %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

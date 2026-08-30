@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\StockItem;
+use App\Enum\Permission;
 use App\Repository\StockItemRepository;
 use App\Security\CsrfGuard;
 use App\Service\Stock\EcoulementPresenter;
@@ -11,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Les transitions de fournisseur : l'article qu'on commande désormais, et les anciens stocks
@@ -24,6 +26,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * nature au 1ᵉʳ juillet.
  */
 #[Route('/admin/stock/ecoulement', name: 'admin_stock_ecoulement_')]
+#[IsGranted(Permission::STOCK_LIRE->value)]
 class EcoulementController extends AbstractController
 {
     public function __construct(
@@ -52,6 +55,7 @@ class EcoulementController extends AbstractController
      * règle. Seul l'écran distingue « nouvelle transition » et « un carton de plus ».
      */
     #[Route('/lier', name: 'lier', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function lier(Request $request): Response
     {
         $this->csrf->valider('stock_ecoulement_lier', $request);
@@ -86,6 +90,7 @@ class EcoulementController extends AbstractController
      * arbitrage — l'allocateur rend au kit toute ligne dont le substitut a disparu.
      */
     #[Route('/{id}/delier', name: 'delier', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function delier(StockItem $item, Request $request): Response
     {
         $this->csrf->valider('stock_ecoulement_delier_' . $item->getId(), $request);
@@ -110,6 +115,7 @@ class EcoulementController extends AbstractController
      * rien — l'écran ne propose pas le bouton, et ce contrôle le garantit.
      */
     #[Route('/{id}/inverser', name: 'inverser', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function inverser(StockItem $item, Request $request): Response
     {
         $this->csrf->valider('stock_ecoulement_inverser_' . $item->getId(), $request);

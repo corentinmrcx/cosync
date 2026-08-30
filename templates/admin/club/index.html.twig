@@ -8,35 +8,79 @@
     { label: 'Le club' }
 ] } %}
 
-<div class="dashboard">
+{# Deux sujets sans rapport vivaient dans la même grille : ce que le club est (son
+   identité, ses référentiels) et qui peut y entrer. Les séparer évite de chercher
+   « Rôles » entre les tailles et les catégories FFF. #}
+<div class="section-home-page">
 
-    <div class="dashboard-hub">
+    {% if is_granted('club.configurer') %}
+        <div class="section-home-section">
+            <div class="section-home-section-header">
+                <h2 class="section-home-section-title">Réglages du club</h2>
+            </div>
 
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'bank',
-            label: 'Coordonnées bancaires',
-            route: 'admin_club_rib'
-        } only %}
+            <div class="dashboard-hub">
+                {% include 'components/hub-card.html.twig' with {
+                    icon: 'shield',
+                    label: 'Identité de l\'association',
+                    route: 'admin_club_identite_edit',
+                    permission: 'club.configurer'
+                } only %}
 
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'tag',
-            label: 'Catégories FFF',
-            route: 'admin_categories_index'
-        } only %}
+                {% include 'components/hub-card.html.twig' with {
+                    icon: 'bank',
+                    label: 'Coordonnées bancaires',
+                    route: 'admin_club_rib',
+                    permission: 'club.configurer'
+                } only %}
 
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'ruler',
-            label: 'Tailles',
-            route: 'admin_tailles_index'
-        } only %}
+                {% include 'components/hub-card.html.twig' with {
+                    icon: 'send',
+                    label: 'Relances automatiques',
+                    route: 'admin_club_relances',
+                    permission: 'club.configurer'
+                } only %}
 
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'users',
-            label: 'Utilisateurs',
-            route: 'admin_users_list'
-        } only %}
+                {% include 'components/hub-card.html.twig' with {
+                    icon: 'tag',
+                    label: 'Catégories FFF',
+                    route: 'admin_categories_index',
+                    permission: 'club.configurer'
+                } only %}
 
-    </div>
+                {% include 'components/hub-card.html.twig' with {
+                    icon: 'ruler',
+                    label: 'Tailles',
+                    route: 'admin_tailles_index',
+                    permission: 'club.configurer'
+                } only %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if is_granted('utilisateur.gerer') %}
+        <div class="section-home-section">
+            <div class="section-home-section-header">
+                <h2 class="section-home-section-title">Accès à l'application</h2>
+            </div>
+
+            <div class="dashboard-hub">
+                {% include 'components/hub-card.html.twig' with {
+                    icon: 'users',
+                    label: 'Utilisateurs',
+                    route: 'admin_users_list',
+                    permission: 'utilisateur.gerer'
+                } only %}
+
+                {% include 'components/hub-card.html.twig' with {
+                    icon: 'shield',
+                    label: 'Rôles',
+                    route: 'admin_roles_index',
+                    permission: 'utilisateur.gerer'
+                } only %}
+            </div>
+        </div>
+    {% endif %}
 
 </div>
 {% endblock %}

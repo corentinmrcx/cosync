@@ -17,5 +17,7 @@ final class LigneUtilisateur
         public readonly bool $estSuperAdmin,
         public readonly bool $modifiable,
         public readonly bool $supprimable,
+        /** Faux sur le dernier super-admin : le retirer fermerait l'accès à l'application. */
+        public readonly bool $superAdminRetirable = false,
     ) {}
 }

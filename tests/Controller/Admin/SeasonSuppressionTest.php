@@ -99,7 +99,7 @@ final class SeasonSuppressionTest extends WebTestCase
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
         $seule = $this->creerSaison('2025-2026');
-        $user = (new User())->setEmail('admin-season-suppression-seule@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-season-suppression-seule@example.test')->setPassword('x');
         $user->setSelectedSeason($seule);
         $em->persist($user);
         $em->flush();
@@ -163,7 +163,7 @@ final class SeasonSuppressionTest extends WebTestCase
         $precedente = $this->creerSaison('2024-2025');
         $courante = $this->creerSaison('2025-2026');
 
-        $user = (new User())->setEmail('admin-season-suppression@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-season-suppression@example.test')->setPassword('x');
         $user->setSelectedSeason($courante);
         $em->persist($user);
         $em->flush();

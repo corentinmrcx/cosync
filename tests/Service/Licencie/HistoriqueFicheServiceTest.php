@@ -3,11 +3,15 @@
 namespace App\Tests\Service\Licencie;
 
 use App\Entity\DossierClub;
+use App\Entity\EnvoiMail;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\Transaction;
+use App\Enum\OrigineEnvoi;
 use App\Enum\PaymentMode;
+use App\Enum\TypeMail;
 use App\Repository\AttestationCleRepository;
+use App\Repository\EnvoiMailRepository;
 use App\Service\Cle\DetenteurEffectifResolver;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Licencie\HistoriqueFicheService;
@@ -19,6 +23,9 @@ use PHPUnit\Framework\TestCase;
  * date **métier** de l'encaissement — celle du chèque, sans heure. Triée sur cette date,
  * elle valait minuit et faisait remonter le paiement avant l'envoi du lien et avant le
  * formulaire qui l'avait pourtant déclenché.
+ *
+ * Les lignes de mail viennent désormais du journal des envois et non plus de `linkSentAt`,
+ * qui n'en gardait que la dernière : un renvoi doit se voir.
  */
 final class HistoriqueFicheServiceTest extends TestCase
 {
@@ -38,13 +45,24 @@ final class HistoriqueFicheServiceTest extends TestCase
         return (new \ReflectionClass($classe))->newInstanceWithoutConstructor();
     }
 
-    private function service(): HistoriqueFicheService
+    /** @param EnvoiMail[] $envois */
+    private function service(array $envois = []): HistoriqueFicheService
     {
+        $envoiRepo = $this->createStub(EnvoiMailRepository::class);
+        $envoiRepo->method('pourLicencie')->willReturn($envois);
+
         return new HistoriqueFicheService(
             $this->inerte(DocumentRequirementResolver::class),
             $this->inerte(DetenteurEffectifResolver::class),
             $this->inerte(AttestationCleRepository::class),
+            $envoiRepo,
         );
+    }
+
+    private function envoi(TypeMail $type, string $sentAt): EnvoiMail
+    {
+        return (new EnvoiMail($type, OrigineEnvoi::ADMIN, 'parent@example.test'))
+            ->setSentAt(new \DateTimeImmutable($sentAt));
     }
 
     /** `importedAt` est fixé au constructeur : seule la réflexion permet de le dater. */
@@ -75,7 +93,7 @@ final class HistoriqueFicheServiceTest extends TestCase
     public function testLePaiementSeRangeAApresLeFormulaireQuiLADeclenche(): void
     {
         $licencie = $this->licencie('2026-08-15 17:32:00');
-        $licencie->setLinkSentAt(new \DateTimeImmutable('2026-08-16 16:35:00'));
+        $lien = $this->envoi(TypeMail::INSCRIPTION_LINK, '2026-08-16 16:35:00');
 
         $dossier = (new DossierClub())
             ->setLicencie($licencie)
@@ -87,7 +105,7 @@ final class HistoriqueFicheServiceTest extends TestCase
 
         $labels = array_map(
             static fn ($e): string => $e->label,
-            $this->service()->pourLicencie($licencie, [$paiement]),
+            $this->service([$lien])->pourLicencie($licencie, [$paiement]),
         );
 
         self::assertSame([
@@ -119,10 +137,43 @@ final class HistoriqueFicheServiceTest extends TestCase
     public function testUnEvenementHorodateSeTrieSurSaDate(): void
     {
         $licencie = $this->licencie('2026-08-15 17:32:00');
-        $licencie->setLinkSentAt(new \DateTimeImmutable('2026-08-16 16:35:00'));
+        $lien = $this->envoi(TypeMail::INSCRIPTION_LINK, '2026-08-16 16:35:00');
 
-        $evenements = $this->service()->pourLicencie($licencie, []);
+        $evenements = $this->service([$lien])->pourLicencie($licencie, []);
 
         self::assertSame($evenements[1]->date, $evenements[1]->triDate);
+    }
+
+    /**
+     * La raison d'être du journal : `linkSentAt` étant écrasé à chaque renvoi, une relance
+     * ne laissait aucune trace — et l'admin pouvait réécrire à quelqu'un que le club venait
+     * de relancer. Chaque envoi doit désormais tenir sa ligne.
+     */
+    public function testChaqueRenvoiDeLienTientSaPropreLigne(): void
+    {
+        $licencie = $this->licencie('2026-08-01 09:00:00');
+
+        $evenements = $this->service([
+            $this->envoi(TypeMail::INSCRIPTION_LINK, '2026-08-05 10:00:00'),
+            $this->envoi(TypeMail::INSCRIPTION_LINK, '2026-08-20 09:15:00'),
+        ])->pourLicencie($licencie, []);
+
+        self::assertCount(3, $evenements);
+        self::assertSame('2026-08-05', $evenements[1]->date->format('Y-m-d'));
+        self::assertSame('2026-08-20', $evenements[2]->date->format('Y-m-d'));
+    }
+
+    /** L'auteur affiché retombe sur l'origine quand aucun admin n'est à la manœuvre. */
+    public function testUnEnvoiAutomatiqueEstAttribueAuSysteme(): void
+    {
+        $licencie = $this->licencie('2026-08-01 09:00:00');
+
+        $validation = (new EnvoiMail(TypeMail::VALIDATION, OrigineEnvoi::AUTOMATIQUE, 'parent@example.test'))
+            ->setSentAt(new \DateTimeImmutable('2026-08-22 08:00:00'));
+
+        $evenements = $this->service([$validation])->pourLicencie($licencie, []);
+
+        self::assertSame('Confirmation de licence validée envoyée', $evenements[1]->label);
+        self::assertSame('Système', $evenements[1]->who);
     }
 }

@@ -36,7 +36,7 @@
         <span class="inscription-checkbox-text">J'ai lu et j'accepte {{ doc.libelle }}.</span>
     </label>
 
-    <div x-show="docs[{{ index }}].hasRead">
+    <div class="inscription-signature-block" x-show="docs[{{ index }}].hasRead">
         <p class="inscription-signature-label">Signature *</p>
         <p class="inscription-signature-hint">Signez dans le cadre ci-dessous avec votre doigt ou votre souris.</p>
         <div class="inscription-signature-wrap">

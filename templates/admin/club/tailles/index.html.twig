@@ -34,6 +34,7 @@
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
+            {% if peut_acceder('admin_grilles_index') %}
             <a href="{{ path('admin_grilles_index') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('layers', 20) }}</span>
                 <span class="quicklink-body">
@@ -48,6 +49,7 @@
                 </span>
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
+            {% endif %}
         </div>
     </div>
 

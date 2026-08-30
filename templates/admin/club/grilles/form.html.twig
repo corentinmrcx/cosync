@@ -28,6 +28,7 @@
     <div class="dot-header">
         <div>
             <h1 class="dot-title" x-show="!renaming">{{ grille.nom }}</h1>
+            {% if peut_acceder('admin_grilles_rename') %}
             <form method="post" action="{{ path('admin_grilles_rename', {id: grille.id}) }}"
                   class="dot-affect-form grille-rename-form" x-show="renaming" x-cloak>
                 <input type="hidden" name="_token" value="{{ csrf_token('grille_renommer_' ~ grille.id) }}">
@@ -35,18 +36,21 @@
                 <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
                 <button type="button" class="btn btn-ghost btn-sm" @click="renaming = false">Annuler</button>
             </form>
+            {% endif %}
             <p class="dot-subtitle">
                 Échelle : {{ grille.type.label() }}. Chaque ligne dit sous quel libellé du
                 fournisseur ranger les tailles déclarées qu'elle couvre.
             </p>
         </div>
         <div class="dot-header-actions">
-            <button type="button" class="btn btn-secondary" @click="renaming = !renaming" x-show="!renaming">Renommer</button>
-            {# Refermer un formulaire ne détruit rien : le bouton quitte le registre de l'action
-               attendue pour celui du retrait discret (CLAUDE.md §7.6 bis). #}
-            <button type="button" class="btn" :class="adding ? 'btn-ghost' : 'btn-primary'" @click="adding = !adding">
-                <span x-text="adding ? 'Annuler' : '+ Nouvelle ligne'"></span>
-            </button>
+            {% if peut_acceder('admin_grilles_rename') %}
+                <button type="button" class="btn btn-secondary" @click="renaming = !renaming" x-show="!renaming">Renommer</button>
+                {# Refermer un formulaire ne détruit rien : le bouton quitte le registre de l'action
+                   attendue pour celui du retrait discret (CLAUDE.md §7.6 bis). #}
+                <button type="button" class="btn" :class="adding ? 'btn-ghost' : 'btn-primary'" @click="adding = !adding">
+                    <span x-text="adding ? 'Annuler' : '+ Nouvelle ligne'"></span>
+                </button>
+            {% endif %}
         </div>
     </div>
 
@@ -72,6 +76,7 @@
             <span class="dot-card-count">{{ grille.valeurs|length }}</span>
         </div>
 
+        {% if peut_acceder('admin_grilles_valeur_add') %}
         <form method="post" action="{{ path('admin_grilles_valeur_add', {id: grille.id}) }}"
               class="dot-affect-form grille-valeur-form" x-show="adding" x-cloak>
             <input type="hidden" name="_token" value="{{ csrf_token('grille_valeur_ajouter_' ~ grille.id) }}">
@@ -95,6 +100,7 @@
 
             <button type="submit" class="btn btn-primary">Ajouter</button>
         </form>
+        {% endif %}
 
         {% if grille.valeurs is empty %}
             <p class="dot-empty">
@@ -115,6 +121,7 @@
                                 {% endif %}
                             </span>
                         </div>
+                        {% if peut_acceder('admin_grilles_valeur_edit') %}
                         <div x-show="editingId !== {{ valeur.id }}" class="dot-list-actions">
                             <button type="button" class="btn btn-secondary btn-sm" @click="editingId = {{ valeur.id }}">Modifier</button>
                             {% include 'components/_form_suppression.html.twig' with {
@@ -141,6 +148,7 @@
                             <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
                             <button type="button" class="btn btn-ghost btn-sm" @click="editingId = null">Annuler</button>
                         </form>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>

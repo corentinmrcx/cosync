@@ -152,7 +152,7 @@ final class CotisationsEcranTest extends WebTestCase
 
         $this->precedente = (new Season())->setLabel('2024-2025')->setCotisationDefaut(80);
         $this->courante = (new Season())->setLabel('2025-2026')->setCotisationDefaut(self::COTISATION_DEFAUT);
-        $user = (new User())->setEmail('admin-cotisations@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-cotisations@example.test')->setPassword('x');
         $user->setSelectedSeason($this->courante);
 
         $em->persist($this->precedente);

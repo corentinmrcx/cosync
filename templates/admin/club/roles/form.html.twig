@@ -1,0 +1,95 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% set titre = role is null ? 'Nouveau rôle' : 'Modifier « ' ~ role.nom ~ ' »' %}
+
+{% block title %}CoSync — {{ titre }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Rôles', route: 'admin_roles_index' },
+    { label: titre }
+] } %}
+
+<div class="roles-form-page"
+     x-data="rolePermissions({
+        implications: {{ implications|json_encode|e('html_attr') }},
+        cochees: {{ cochees|json_encode|e('html_attr') }}
+     })">
+
+    <form method="post" class="roles-form">
+
+        <input type="hidden" name="_token" value="{{ csrf_token('role_acces') }}">
+
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-titre">{{ titre }}</h1>
+            </div>
+            <div class="card-corps">
+                <div class="field">
+                    <label for="role-nom" class="field-label">Nom du rôle</label>
+                    <input type="text" id="role-nom" name="nom" maxlength="60" required
+                           class="field-input" value="{{ nom }}" placeholder="Trésorerie">
+                    <p class="field-hint">
+                        Cocher un droit de modification coche la lecture qui va avec, et la
+                        verrouille : personne ne doit pouvoir modifier ce qu'il n'a pas le
+                        droit de consulter.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% for domaine in domaines %}
+            <div class="card">
+                <div class="card-header roles-domaine-header">
+                    <h2 class="card-titre">{{ domaine.libelle }}</h2>
+                    <p class="roles-domaine-detail">{{ domaine.description }}</p>
+                </div>
+                <div class="card-corps">
+                    <ul class="roles-permissions">
+                        {% for permission in domaine.permissions %}
+                            <li class="roles-permission"
+                                :class="{ 'roles-permission-verrouillee': estVerrouillee('{{ permission.value }}') }">
+                                <label class="field-checkbox">
+                                    {# `@change` et non `@click.prevent` : l'input est dans son
+                                       <label>, qui redispatche le clic — le geste était donc
+                                       compté deux fois et la case ne bougeait pas. #}
+                                    <input type="checkbox"
+                                           name="permissions[]"
+                                           value="{{ permission.value }}"
+                                           :checked="estCochee('{{ permission.value }}')"
+                                           :disabled="estVerrouillee('{{ permission.value }}')"
+                                           @change="basculer('{{ permission.value }}')">
+                                    <span class="roles-permission-corps">
+                                        <span class="roles-permission-nom">
+                                            {{ permission.libelle }}
+                                            {% if permission.estEcriture %}
+                                                <span class="roles-permission-tag">écriture</span>
+                                            {% endif %}
+                                        </span>
+                                        <span class="roles-permission-detail">{{ permission.description }}</span>
+                                    </span>
+                                </label>
+
+                                {# Une case désactivée n'est pas envoyée par le navigateur : sans
+                                   ce champ caché, le verrou retirerait le droit qu'il accorde. #}
+                                <template x-if="estVerrouillee('{{ permission.value }}')">
+                                    <input type="hidden" name="permissions[]" value="{{ permission.value }}">
+                                </template>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="roles-form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+            <a href="{{ path('admin_roles_index') }}" class="btn btn-ghost btn-lg">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+{% endblock %}

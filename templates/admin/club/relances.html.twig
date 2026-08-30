@@ -1,0 +1,65 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Relances automatiques{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Relances automatiques' }
+] } %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+
+        <h1 class="season-form-header">Relances automatiques</h1>
+        <p class="config-teams-intro">
+            Le club relance de lui-même les licences non soldées : celles dont le formulaire
+            n'est pas rempli, et celles qui le sont mais dont la cotisation n'est pas
+            enregistrée. Le délai part du <strong>dernier mail reçu par la personne</strong> —
+            une relance passée à la main repousse donc d'autant celle du robot, et personne
+            ne reçoit deux messages le même jour.
+        </p>
+        <hr class="season-form-divider">
+
+        {# Case et libellé sur la même ligne, l'explication dessous et alignée sur le
+           libellé : empilés, la case flottait seule au-dessus de son propre intitulé. #}
+        <div class="relance-reglages-bascule">
+            {{ form_widget(form.relanceActive) }}
+            <div class="relance-reglages-bascule-texte">
+                {{ form_label(form.relanceActive) }}
+                {{ form_help(form.relanceActive) }}
+                {{ form_errors(form.relanceActive) }}
+            </div>
+        </div>
+
+        {% for champ in [form.relanceDelaiJours, form.relanceMax] %}
+            <div class="field">
+                {{ form_label(champ) }}
+                {{ form_widget(champ) }}
+                {{ form_help(champ) }}
+                {{ form_errors(champ) }}
+            </div>
+        {% endfor %}
+
+        {# Voir la liste avant d'allumer. L'écran groupé la montre sans rien envoyer :
+           c'est la seule façon de vérifier qui serait concerné, aucune ligne de
+           commande n'a sa place dans une interface d'administration. #}
+        {% if peut_acceder('admin_licencies_relancer') %}
+            <p class="relance-reglages-astuce">
+                L'écran <a href="{{ path('admin_licencies_relancer') }}">Relancer les licences en attente</a>
+                affiche la liste des personnes concernées sans rien envoyer, et permet de
+                relancer au cas par cas.
+            </p>
+        {% endif %}
+
+        <div class="season-form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+            <a href="{{ path('admin_club_index') }}" class="btn btn-ghost btn-lg">Annuler</a>
+        </div>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Identité de l'association{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Le club', route: 'admin_club_index' },
+    { label: 'Identité de l\'association' }
+] } %}
+
+{# Form caché — hors du formulaire principal, qu'on ne peut pas imbriquer. Le bouton
+   qui le déclenche vit dans la carte, à côté de la signature qu'il supprime. #}
+{% if signatureDataUrl %}
+<form id="signature-delete-form"
+      method="post"
+      action="{{ path('admin_club_identite_delete_signature') }}"
+      style="display:none"
+      onsubmit="return confirm('Supprimer la signature enregistrée ? Les prochaines attestations s\'imprimeront avec un cadre à signer à la main.')">
+    <input type="hidden" name="_token" value="{{ csrf_token('club_identite_delete_signature') }}">
+</form>
+{% endif %}
+
+<div class="season-form-page">
+
+    {{ form_start(form, { attr: { class: 'season-form-card' } }) }}
+
+        <h1 class="season-form-header">Identité de l'association</h1>
+
+        <hr class="season-form-divider">
+
+        {% for champ in [form.associationNom, form.associationAdresse] %}
+            <div class="field">
+                {{ form_label(champ) }}
+                {{ form_widget(champ) }}
+                {{ form_help(champ) }}
+                {{ form_errors(champ) }}
+            </div>
+        {% endfor %}
+
+        <div class="season-form-row">
+            {% for champ in [form.associationCodePostal, form.associationVille] %}
+                <div class="field">
+                    {{ form_label(champ) }}
+                    {{ form_widget(champ) }}
+                    {{ form_help(champ) }}
+                    {{ form_errors(champ) }}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% for champ in [form.associationSiret, form.associationEmail] %}
+            <div class="field">
+                {{ form_label(champ) }}
+                {{ form_widget(champ) }}
+                {{ form_help(champ) }}
+                {{ form_errors(champ) }}
+            </div>
+        {% endfor %}
+
+        <hr class="season-form-divider">
+
+        <h2 class="identite-sous-titre">Signataire des attestations</h2>
+
+        <div class="field">
+            {{ form_label(form.signataireCivilite) }}
+            {{ form_widget(form.signataireCivilite) }}
+            {{ form_help(form.signataireCivilite) }}
+            {{ form_errors(form.signataireCivilite) }}
+        </div>
+
+        {% for champ in [form.signataireNom, form.signataireQualite] %}
+            <div class="field">
+                {{ form_label(champ) }}
+                {{ form_widget(champ) }}
+                {{ form_help(champ) }}
+                {{ form_errors(champ) }}
+            </div>
+        {% endfor %}
+
+        <div class="field" x-data="{ remplacer: {{ signatureDataUrl ? 'false' : 'true' }} }">
+            {{ form_label(form.signatureFichier) }}
+
+            {% if signatureDataUrl %}
+                {# Une signature déjà en place se regarde, elle ne se re-téléverse pas :
+                   le champ de fichier ne réapparaît que si on décide de la remplacer. #}
+                <div class="identite-signature-actuelle" x-show="!remplacer">
+                    <img src="{{ signatureDataUrl }}" alt="Signature et cachet de l'association" class="identite-signature-img">
+                    <div class="identite-signature-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" @click="remplacer = true">
+                            {{ ui.icon('edit', 13) }}
+                            Remplacer
+                        </button>
+                        <button type="submit" form="signature-delete-form" class="btn btn-danger btn-sm">
+                            {{ ui.icon('trash', 13) }}
+                            Supprimer
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="identite-signature-choix"
+                 {% if signatureDataUrl %}x-show="remplacer" x-cloak{% endif %}>
+                {{ form_widget(form.signatureFichier) }}
+                {{ form_help(form.signatureFichier) }}
+                {{ form_errors(form.signatureFichier) }}
+                {% if signatureDataUrl %}
+                    <button type="button" class="btn btn-ghost btn-sm identite-signature-annuler" @click="remplacer = false">
+                        Annuler le remplacement
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="season-form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+        </div>
+
+    {{ form_end(form) }}
+
+</div>
+{% endblock %}

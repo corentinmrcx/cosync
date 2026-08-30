@@ -170,7 +170,7 @@ final class FicheDocumentsChecklistTest extends WebTestCase
     private function loginAdmin(KernelBrowser $client): void
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-fiches@example.com')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-fiches@example.com')->setPassword('x');
 
         $this->season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
 

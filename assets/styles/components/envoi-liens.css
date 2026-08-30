@@ -1,7 +1,8 @@
 /* ============================================================
-   Écrans d'envoi groupé : liens d'inscription (joueurs, dirigeants)
-   et annonce de la boutique. Même geste — relire une liste, décocher,
-   envoyer — donc même habillage.
+   Écrans d'envoi groupé : liens d'inscription (joueurs, dirigeants),
+   demande de signatures et annonce de la boutique. Même geste — relire
+   une liste, décocher, envoyer — donc même habillage, et un composant
+   plutôt qu'un fichier de page : quatre écrans le partagent.
    ============================================================ */
 
 .envoi-liens-page {
@@ -61,6 +62,7 @@
 
 .envoi-liens-item {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
     padding: 0.5rem 0.625rem;
@@ -160,4 +162,54 @@
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* Chapô de l'écran : dit pourquoi ces personnes sont listées, et ce que
+   l'envoi va réellement leur demander. */
+.envoi-liens-intro {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
+/* Les documents manquants passent à la ligne : les mettre en colonne écraserait
+   le nom et l'email, qui sont ce qu'on relit d'abord. */
+.envoi-liens-documents {
+    flex-basis: 100%;
+    padding-left: 1.75rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* Ligne de détail sur toute la largeur, alignée sous le nom — jumelle de
+   `.envoi-liens-documents`, pour une liste dont le détail n'est pas un document. */
+.envoi-liens-detail {
+    flex-basis: 100%;
+    padding-left: 1.75rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* — Étape de relance —
+   Ce qui manque à la licence, et donc quel mail partira. Deux étapes qui ne se
+   confondent pas : redonner un lien à qui n'a rien rempli n'est pas rappeler un
+   montant à qui a rempli. La couleur reprend celle du statut correspondant. */
+.relance-etape {
+    flex: none;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-xl);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.relance-etape-dossier {
+    background: var(--color-status-sent-bg);
+    color: var(--color-status-sent);
+}
+
+.relance-etape-paiement {
+    background: var(--color-status-completed-bg);
+    color: var(--color-status-completed);
 }
