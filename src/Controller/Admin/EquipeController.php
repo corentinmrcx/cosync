@@ -7,6 +7,7 @@ use App\DTO\TeamEditData;
 use App\DTO\TeamSetupData;
 use App\Entity\Season;
 use App\Entity\Team;
+use App\Enum\Permission;
 use App\Form\TeamSetupType;
 use App\Repository\CategoryRepository;
 use App\Repository\TeamRepository;
@@ -17,8 +18,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/saison/equipes', name: 'admin_equipes_')]
+#[IsGranted(Permission::SAISON_LIRE->value)]
 class EquipeController extends AbstractController
 {
     public function __construct(
@@ -45,6 +48,7 @@ class EquipeController extends AbstractController
     }
 
     #[Route('/affectation-automatique', name: 'affectation_auto', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function affectationAutomatique(
         #[CurrentSeason] Season $season,
         Request $request,
@@ -76,6 +80,7 @@ class EquipeController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function new(
         #[CurrentSeason] Season $season,
         Request $request,
@@ -100,6 +105,7 @@ class EquipeController extends AbstractController
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function edit(Team $team, Request $request): Response
     {
         $this->csrf->valider('edit_team_' . $team->getId(), $request);
@@ -115,6 +121,7 @@ class EquipeController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function delete(Team $team, Request $request): Response
     {
         $this->csrf->valider('delete_team_' . $team->getId(), $request);

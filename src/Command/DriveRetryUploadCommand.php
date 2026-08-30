@@ -3,10 +3,13 @@
 namespace App\Command;
 
 use App\Entity\AttestationCle;
+use App\Entity\AttestationPaiement;
 use App\Entity\DocumentSignature;
 use App\Repository\AttestationCleRepository;
+use App\Repository\AttestationPaiementRepository;
 use App\Repository\DocumentSignatureRepository;
 use App\Service\Drive\AttestationCleDriveSync;
+use App\Service\Drive\AttestationPaiementDriveSync;
 use App\Service\Drive\DocumentSignatureDriveSync;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -25,6 +28,8 @@ final class DriveRetryUploadCommand extends Command
         private readonly DocumentSignatureDriveSync $documentDriveSync,
         private readonly AttestationCleRepository $attestationCleRepository,
         private readonly AttestationCleDriveSync $attestationCleDriveSync,
+        private readonly AttestationPaiementRepository $attestationPaiementRepository,
+        private readonly AttestationPaiementDriveSync $attestationPaiementDriveSync,
     ) {
         parent::__construct();
     }
@@ -61,6 +66,15 @@ final class DriveRetryUploadCommand extends Command
             static fn (AttestationCle $a): string => $a->getDetenteur()->getNomPrenom(),
             static fn (AttestationCle $a): ?string => $a->getDrivePath(),
             fn (AttestationCle $a): bool => $this->attestationCleDriveSync->sync($a),
+        );
+
+        $failures += $this->retrySection(
+            $io,
+            'attestation(s) de paiement',
+            $this->attestationPaiementRepository->findWithLocalPdf(),
+            static fn (AttestationPaiement $a): string => $a->getLicencieNomPrenom(),
+            static fn (AttestationPaiement $a): ?string => $a->getDrivePath(),
+            fn (AttestationPaiement $a): bool => $this->attestationPaiementDriveSync->sync($a),
         );
 
         return $failures === 0 ? Command::SUCCESS : Command::FAILURE;

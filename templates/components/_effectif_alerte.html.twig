@@ -1,0 +1,17 @@
+{#
+  Encart d'action en tête d'une liste d'effectif.
+
+  Le texte varie trop (population, accords, formulation) pour être passé en paramètre :
+  il est fourni par le bloc `texte`, d'où l'embed plutôt que l'include.
+
+  Toujours placé dans une pile `.effectif-alertes`, qui porte l'espacement — un encart
+  seul ne doit pas traîner de marge.
+
+  Paramètres attendus :
+    url (string)     — où mène l'action
+    libelle (string) — texte du bouton
+#}
+<div class="effectif-alerte">
+    <p class="effectif-alerte-texte">{% block texte %}{% endblock %}</p>
+    <a href="{{ url }}" class="btn btn-primary btn-sm">{{ libelle }}</a>
+</div>

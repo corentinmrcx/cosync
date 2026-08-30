@@ -8,7 +8,6 @@ use App\Entity\StockItem;
 use App\Entity\StockMovement;
 use App\Entity\StockMovementCorrection;
 use App\Entity\User;
-use App\Enum\LicenceStatus;
 use App\Enum\StockMovementSource;
 use App\Enum\StockMovementType;
 use App\Repository\LicencieRepository;
@@ -87,7 +86,7 @@ final class StockMovementService
         $this->assertTailleAdmise($item, $data->taille);
 
         $licencie = $data->action->exigeUnLicencie()
-            ? $this->resolveValidatedLicencie($data->licencieUuid)
+            ? $this->resolveLicencieSolde($data->licencieUuid)
             : null;
 
         $movement = $this->recordMovement(
@@ -203,7 +202,7 @@ final class StockMovementService
         throw new \InvalidArgumentException(sprintf('La taille "%s" ne correspond pas à l\'article "%s".', $taille, $item->getNom()));
     }
 
-    private function resolveValidatedLicencie(?string $uuid): Licencie
+    private function resolveLicencieSolde(?string $uuid): Licencie
     {
         if ($uuid === null || $uuid === '') {
             throw new \InvalidArgumentException('Veuillez sélectionner un licencié pour une dotation.');
@@ -215,7 +214,7 @@ final class StockMovementService
         }
 
         $dossier = $licencie->getDossierClub();
-        if ($dossier === null || $dossier->getStatus() !== LicenceStatus::VALIDATED) {
+        if ($dossier === null || !$dossier->estSoldee()) {
             throw new \InvalidArgumentException(sprintf('La dotation ne peut être enregistrée qu\'après confirmation du paiement de %s.', $licencie->getNomPrenom()));
         }
 

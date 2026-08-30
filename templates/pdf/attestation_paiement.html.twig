@@ -1,0 +1,222 @@
+{% extends 'pdf/_layout.html.twig' %}
+
+{% block titre %}Attestation de paiement{% endblock %}
+{% block sous_titre %}Licence de football — Saison {{ attestation.season.label }}{% endblock %}
+
+{# DomPDF ne connaît ni flexbox ni grid : les alignements horizontaux passent par
+   des <table>, et les couleurs sont écrites en dur (les variables CSS ne sont pas
+   interprétées). #}
+{% block styles %}
+        /* ── Émetteur ── */
+        .emetteur {
+            border-left: 3px solid #ff0033;
+            padding: 1mm 0 1mm 5mm;
+            margin-bottom: 12mm;
+            font-size: 11px;
+            line-height: 1.65;
+            color: #444;
+        }
+
+        .emetteur .raison-sociale {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 1mm;
+        }
+
+        /* ── Corps ── */
+        .statement {
+            font-size: 13px;
+            line-height: 1.9;
+            margin-bottom: 10mm;
+        }
+
+        .statement p { margin: 0 0 5mm; page-break-inside: avoid; }
+        .statement .highlight { font-weight: 700; color: #111; }
+        .statement .montant { font-weight: 700; color: #ff0033; }
+
+        /* ── Bandeau des faits ── */
+        .faits {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12mm;
+            background: #f7f7f8;
+        }
+
+        .faits td {
+            padding: 5mm 6mm;
+            vertical-align: top;
+            border-right: 1px solid #e3e3e6;
+        }
+
+        .faits td:last-child { border-right: none; }
+
+        .faits .fait-label {
+            display: block;
+            font-size: 8.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #82828c;
+            margin-bottom: 1.5mm;
+        }
+
+        .faits .fait-valeur {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #111;
+        }
+
+        .mention-legale {
+            font-size: 11px;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 14mm;
+        }
+
+        /* ── Signature ──
+           Alignée à droite, comme le veut l'usage épistolaire français. */
+        .signature {
+            width: 100%;
+            border-collapse: collapse;
+            page-break-inside: avoid;
+        }
+
+        .signature td { vertical-align: top; }
+        .signature .bloc { width: 100mm; text-align: left; }
+
+        .signature .lieu-date {
+            font-size: 12px;
+            color: #111;
+            margin-bottom: 5mm;
+        }
+
+        .signature .qui {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #82828c;
+            margin-bottom: 3mm;
+        }
+
+        /* Le paraphe scanné a rarement les dimensions du cadre : centré dans la
+           colonne, il ne se colle plus au bord gauche du bloc. DomPDF ne centre pas
+           une image en display:block — c'est le conteneur qui aligne l'inline.
+
+           Hauteur libre plutôt que fixe, et plafond large : un scan porte souvent la
+           signature ET le cachet de l'association, dont les mentions légales sont
+           écrites petit. Bridé à 26 mm dans une colonne de 70 mm, ce cachet devenait
+           illisible — donc inutile, alors que c'est lui qui authentifie le document. */
+        .signature .zone-paraphe {
+            min-height: 20mm;
+            text-align: center;
+        }
+
+        .signature .paraphe { max-height: 45mm; max-width: 100%; }
+
+        .signature .cadre {
+            height: 32mm;
+            border: 1px dashed #c8c8ce;
+            border-radius: 2px;
+        }
+
+        .signature .identite {
+            font-size: 12px;
+            font-weight: 700;
+            color: #111;
+            margin-top: 3mm;
+        }
+
+        .signature .qualite {
+            font-size: 11px;
+            color: #555;
+        }
+{% endblock %}
+
+{% block entete %}
+    {% if previewMode|default(false) %}{% include 'pdf/_bandeau_apercu.html.twig' %}{% endif %}
+    {{ parent() }}
+{% endblock %}
+
+{% block corps %}
+
+    <div class="emetteur">
+        <span class="raison-sociale">{{ club.associationNom }}</span>
+        {%- if club.associationAdresse %}{{ club.associationAdresse }}<br>{% endif %}
+        {%- if club.associationVilleComplete %}{{ club.associationVilleComplete }}<br>{% endif %}
+        {%- if club.associationSiret %}SIRET {{ club.associationSiret }}{% if club.associationEmail %} · {% endif %}{% endif %}
+        {%- if club.associationEmail %}{{ club.associationEmail }}{% endif %}
+    </div>
+
+    <div class="statement">
+        <p>
+            Je soussigné{{ attestation.signataireCivilite.marqueFeminin }},
+            <span class="highlight">{{ attestation.signataireCivilite.label }} {{ attestation.signataireNom }}</span>,
+            {{ attestation.signataireQualite }} de l'association {{ club.associationNom }},
+            atteste par la présente que :
+        </p>
+
+        <p>
+            <span class="highlight">{{ attestation.destinataireComplet }}</span> a réglé la somme de
+            <span class="montant">{{ attestation.montant|number_format(2, ',', ' ') }} €</span>
+            ({{ attestation.montantEnLettres }}) au titre de la licence de football
+            pour la saison {{ attestation.season.label }}
+            {%- if attestation.lienParente.estLeLicencie %}.
+            {%- else %}, concernant {{ attestation.lienParente.label }},
+            <span class="highlight">{{ attestation.licencieNomPrenom }}</span>.
+            {%- endif %}
+        </p>
+    </div>
+
+    <table class="faits">
+        <tr>
+            <td>
+                <span class="fait-label">Licencié</span>
+                <span class="fait-valeur">{{ attestation.licencieNomPrenom }}</span>
+            </td>
+            <td>
+                <span class="fait-label">Date de paiement</span>
+                <span class="fait-valeur">{{ attestation.datePaiement|date('d/m/Y') }}</span>
+            </td>
+            <td>
+                <span class="fait-label">{{ attestation.modes|length > 1 ? 'Modes' : 'Mode' }} de paiement</span>
+                <span class="fait-valeur">{{ attestation.modesLabel }}</span>
+            </td>
+        </tr>
+    </table>
+
+    <p class="mention-legale">
+        Cette attestation est délivrée pour servir et valoir ce que de droit.
+    </p>
+
+    <table class="signature">
+        <tr>
+            <td></td>
+            <td class="bloc">
+                <p class="lieu-date">
+                    Fait à {{ club.associationVille ?? club_nom }}, le {{ attestation.generatedAt|date('d/m/Y') }}
+                </p>
+
+                <p class="qui">Signature et cachet</p>
+
+                {# Sans paraphe scanné, le document reste émissible : il s'imprime avec un
+                   cadre à signer à la main. C'est ce qui permet au club de s'en servir
+                   avant d'avoir numérisé quoi que ce soit. #}
+                {% if signatureDataUrl %}
+                    <div class="zone-paraphe">
+                        <img class="paraphe" src="{{ signatureDataUrl }}" alt="Signature et cachet">
+                    </div>
+                {% else %}
+                    <div class="cadre"></div>
+                {% endif %}
+
+                <p class="identite">{{ attestation.signataireCivilite.label }} {{ attestation.signataireNom }}</p>
+                <p class="qualite">{{ attestation.signataireQualite|capitalize }}</p>
+            </td>
+        </tr>
+    </table>
+
+{% endblock %}

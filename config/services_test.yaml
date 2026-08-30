@@ -2,3 +2,7 @@ parameters:
     # La purge du mode beta vide ce répertoire : sans cette surcharge, `make test`
     # effacerait les PDF signés en attente d'upload Drive de la machine de dev.
     app.pdf_dir: '%kernel.project_dir%/var/test-pdfs'
+
+    # Même raison : un test qui téléverse une signature ne doit pas remplacer
+    # celle du club sur la machine de dev.
+    app.signature_dir: '%kernel.project_dir%/var/test-signatures'

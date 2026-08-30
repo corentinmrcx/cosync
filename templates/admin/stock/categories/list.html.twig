@@ -38,6 +38,7 @@
                 <p class="triable-aide">{{ ui.icon('grip', 14) }} Glissez une catégorie par sa poignée pour changer l'ordre d'affichage.</p>
             {% endif %}
 
+            {% if peut_acceder('admin_stock_categories_reorder') %}
             <form method="post"
                   action="{{ path('admin_stock_categories_reorder') }}"
                   x-ref="formulaire"
@@ -45,6 +46,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('stock_categories_reorder') }}">
                 <span x-ref="ordre"></span>
             </form>
+            {% endif %}
 
             <ul class="dot-list triable-liste"
                 x-ref="liste"
@@ -61,6 +63,7 @@
                         <div x-show="editingId !== {{ category.id }}" class="dot-list-main">
                             <span class="dot-list-name">{{ category.name }}</span>
                         </div>
+                        {% if peut_acceder('admin_stock_categories_edit') %}
                         <div x-show="editingId !== {{ category.id }}" class="dot-list-actions">
                             <button type="button" class="btn btn-secondary btn-sm" @click="editingId = {{ category.id }}">Modifier</button>
                             {% include 'components/_form_suppression.html.twig' with {
@@ -76,6 +79,7 @@
                             <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
                             <button type="button" class="btn btn-ghost btn-sm" @click="editingId = null">Annuler</button>
                         </form>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>

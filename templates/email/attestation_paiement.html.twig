@@ -1,0 +1,34 @@
+{% extends 'email/_layout.html.twig' %}
+
+{% block sujet %}Votre attestation de paiement — {{ club_nom }}{% endblock %}
+
+{% block corps %}
+    {# Un seul bloc : le mail ne porte qu'un message, ses paragraphes se suivent. #}
+        <tr>
+            <td style="padding: 44px 40px 36px;" class="px">
+                <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: {{ c.primaire }};">
+                    Attestation · Saison {{ attestation.season.label }}
+                </p>
+                <h1 class="h1" style="margin: 0 0 18px; font-size: 30px; line-height: 1.2; font-weight: 800; color: {{ c.texteFort }};">
+                    Bonjour {{ attestation.destinatairePrenom }},
+                </h1>
+                <p style="margin: 0; font-size: 16px; line-height: 1.65; color: {{ c.texteCourant }};">
+                    Vous trouverez en pièce jointe votre <strong style="color: {{ c.texteFort }};">attestation de paiement</strong>
+                    {% if attestation.lienParente.estLeLicencie %}
+                        pour votre licence de la saison <strong style="color: {{ c.texteFort }};">{{ attestation.season.label }}</strong>.
+                    {% else %}
+                        pour la licence de <strong style="color: {{ c.texteFort }};">{{ attestation.licencieNomPrenom }}</strong>,
+                        saison <strong style="color: {{ c.texteFort }};">{{ attestation.season.label }}</strong>.
+                    {% endif %}
+                </p>
+                <p style="margin: 16px 0 0; font-size: 15px; line-height: 1.7; color: {{ c.texteCourant }};">
+                    Ce document peut être remis à votre employeur ou à votre comité d'entreprise.
+                    Si l'un des éléments ne correspond pas à votre situation, répondez simplement à ce mail.
+                </p>
+                <p style="margin: 16px 0 0; font-size: 15px; line-height: 1.7; color: {{ c.texteCourant }};">
+                    Sportivement,<br>
+                    <strong style="color: {{ c.texteFort }};">L'équipe du {{ club_nom }}</strong>
+                </p>
+            </td>
+        </tr>
+{% endblock %}

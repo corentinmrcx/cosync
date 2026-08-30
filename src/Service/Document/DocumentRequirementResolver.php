@@ -5,10 +5,12 @@ namespace App\Service\Document;
 use App\Entity\Dirigeant;
 use App\Entity\DocumentSignable;
 use App\Entity\Licencie;
+use App\Entity\Season;
 use App\Enum\DocumentCible;
 use App\Repository\DirigeantRepository;
 use App\Repository\DocumentSignableRepository;
 use App\Repository\DocumentSignatureRepository;
+use App\Repository\LicencieRepository;
 
 /**
  * Quels documents restent à signer par une personne donnée ?
@@ -23,14 +25,19 @@ final class DocumentRequirementResolver
         private readonly DocumentSignableRepository $documentRepo,
         private readonly DocumentSignatureRepository $signatureRepo,
         private readonly DirigeantRepository $dirigeantRepo,
+        private readonly LicencieRepository $licencieRepo,
     ) {}
 
     /**
      * Documents attendus d'un dirigeant, signés ou non, dans l'ordre des étapes.
      *
+     * @param ?DocumentSignable[] $documents documents actifs de la saison, déjà chargés — à ne
+     *                                       passer que depuis un traitement de lot, qui les lit
+     *                                       une fois pour tout le monde
+     *
      * @return DocumentSignable[]
      */
-    public function attendusPourDirigeant(Dirigeant $dirigeant): array
+    public function attendusPourDirigeant(Dirigeant $dirigeant, ?array $documents = null): array
     {
         // Licence purement administrative : rien ne lui est demandé, quel que soit le ciblage
         // des documents de la saison. C'est ce qui empêche son dossier de rester éternellement
@@ -39,12 +46,46 @@ final class DocumentRequirementResolver
             return [];
         }
 
-        $documents = $this->documentRepo->findActifsByCible($dirigeant->getSeason(), DocumentCible::DIRIGEANT);
+        $documents ??= $this->documentRepo->findActifsByCible($dirigeant->getSeason(), DocumentCible::DIRIGEANT);
 
         return array_values(array_filter(
             $documents,
             static fn (DocumentSignable $doc): bool => $doc->concerne($dirigeant),
         ));
+    }
+
+    /**
+     * Documents manquants de toute une population, en un nombre de requêtes fixe.
+     *
+     * Version de lot de {@see self::manquantsPourDirigeant()}, pour les écrans qui affichent
+     * l'avancement de chaque ligne : interrogé dirigeant par dirigeant, le même calcul
+     * coûterait deux requêtes par ligne. Les règles — exception de la licence administrative,
+     * ciblage — restent celles de la version unitaire, qui est appelée ici.
+     *
+     * @param Dirigeant[] $dirigeants
+     *
+     * @return array<string, DocumentSignable[]> indexé par uuid
+     */
+    public function manquantsPourDirigeants(Season $season, array $dirigeants): array
+    {
+        $documents = $this->documentRepo->findActifsByCible($season, DocumentCible::DIRIGEANT);
+
+        $signataires = [];
+        foreach ($documents as $document) {
+            $signataires[$document->getId()] = array_flip($this->signatureRepo->dirigeantUuidsByDocument($document));
+        }
+
+        $manquants = [];
+        foreach ($dirigeants as $dirigeant) {
+            $uuid = (string) $dirigeant->getUuid();
+
+            $manquants[$uuid] = array_values(array_filter(
+                $this->attendusPourDirigeant($dirigeant, $documents),
+                static fn (DocumentSignable $doc): bool => !isset($signataires[$doc->getId()][$uuid]),
+            ));
+        }
+
+        return $manquants;
     }
 
     /**
@@ -100,6 +141,32 @@ final class DocumentRequirementResolver
             static fn (Dirigeant $dirigeant): bool => !$dirigeant->isLicenceAdministrative()
                 && $document->concerne($dirigeant)
                 && !in_array((string) $dirigeant->getUuid(), $signataires, true),
+        ));
+    }
+
+    /**
+     * Licenciés de la saison à qui ce document est demandé et qui ne l'ont pas signé,
+     * **et qu'on peut encore relancer** — c'est-à-dire ceux dont le dossier est déjà
+     * complet. Pendant du {@see self::dirigeantsEnAttente()}, avec un filtre en plus.
+     *
+     * Un licencié qui n'a pas terminé son inscription est volontairement écarté : le
+     * parcours d'inscription lui présentera ce document avec le reste. Le relancer
+     * ferait vivre deux liens en même temps sur la même personne.
+     *
+     * @return Licencie[]
+     */
+    public function licenciesEnAttente(DocumentSignable $document): array
+    {
+        if ($document->getCible() !== DocumentCible::LICENCIE || !$document->isActif()) {
+            return [];
+        }
+
+        $signataires = $this->signatureRepo->licencieUuidsByDocument($document);
+
+        return array_values(array_filter(
+            $this->licencieRepo->findBySeason($document->getSeason()),
+            static fn (Licencie $licencie): bool => $licencie->getDossierClub()?->getFormCompletedAt() !== null
+                && !in_array((string) $licencie->getUuid(), $signataires, true),
         ));
     }
 

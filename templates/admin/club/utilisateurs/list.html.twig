@@ -21,11 +21,12 @@
         </a>
     </div>
 
-    <div class="table-wrapper">
+    <div class="table-wrapper table-cartes">
         <table class="table">
             <thead>
                 <tr>
                     <th>Email</th>
+                    <th>Rôles</th>
                     <th></th>
                 </tr>
             </thead>
@@ -33,14 +34,50 @@
                 {% for ligne in lignes %}
                     {% set user = ligne.user %}
                     <tr class="users-row">
-                        <td class="users-td-email">
+                        <td class="users-td-email carte-titre">
                             {{ user.email }}
                             {% if ligne.estSuperAdmin %}
                                 <span class="users-badge-diag" title="Compte super-admin protégé">Super-admin</span>
                             {% endif %}
                         </td>
+                        <td data-label="Rôles">
+                            {% if ligne.estSuperAdmin %}
+                                <span class="users-role-puce">Tous les droits</span>
+                            {% elseif user.rolesAcces|length > 0 %}
+                                <div class="users-roles-liste">
+                                    {% for role in user.rolesAcces %}
+                                        <span class="users-role-puce">{{ role.nom }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {# Un compte sans rôle se connecte sur une application vide : le dire
+                                   ici évite de chercher longtemps pourquoi la personne « ne voit rien ». #}
+                                <span class="users-roles-aucun">Aucun rôle — ce compte ne voit rien</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <div class="users-actions-cell">
+                                {% if isDiag %}
+                                    {% if not ligne.estSuperAdmin %}
+                                        <form method="post" action="{{ path('admin_users_super_admin', {id: user.id}) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('super_admin_user_' ~ user.id) }}">
+                                            <input type="hidden" name="valeur" value="1">
+                                            <button type="submit" class="btn btn-secondary btn-sm"
+                                                    onclick="return confirm('Donner tous les droits à {{ user.email|e('js') }} ?')">
+                                                Passer super-admin
+                                            </button>
+                                        </form>
+                                    {% elseif ligne.superAdminRetirable %}
+                                        <form method="post" action="{{ path('admin_users_super_admin', {id: user.id}) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('super_admin_user_' ~ user.id) }}">
+                                            <input type="hidden" name="valeur" value="0">
+                                            <button type="submit" class="btn btn-secondary btn-sm"
+                                                    onclick="return confirm('Retirer le statut de super-admin à {{ user.email|e('js') }} ?')">
+                                                Retirer le super-admin
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
                                 {% if ligne.modifiable %}
                                     <a href="{{ path('admin_users_edit', {id: user.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
                                 {% endif %}

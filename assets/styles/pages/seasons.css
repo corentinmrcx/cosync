@@ -75,6 +75,14 @@
     cursor: pointer;
 }
 
+/* Un bloc qu'on montre ou masque (x-show) reste un enfant unique de la carte : sans
+   reprendre son rythme vertical, tout ce qu'il contient se retrouve collé. */
+.season-form-groupe {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
 .season-form-row {
     display: flex;
     flex-direction: column;

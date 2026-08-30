@@ -11,6 +11,8 @@
 @import './components/hub-card.css';
 @import './components/breadcrumb.css';
 @import './components/badge-status.css';
+@import './components/fiche-menu.css';
+@import './components/fiche-dernier-contact.css';
 @import './components/text-combobox.css';
 @import './components/list-toolbar.css';
 @import './components/loader.css';
@@ -20,18 +22,21 @@
 @import './components/liste-triable.css';
 @import './components/editeur-riche.css';
 @import './components/edition.css';
+@import './components/envoi-liens.css';
+@import './components/effectif-alertes.css';
 @import './pages/login.css';
 @import './pages/dashboard.css';
 @import './pages/import.css';
 @import './pages/effectif.css';
 @import './pages/saison.css';
+@import './pages/club-relances.css';
 @import './pages/licencies.css';
 @import './pages/licencie-show.css';
 @import './pages/licencie-edit.css';
-@import './pages/envoi-liens.css';
 @import './pages/boutique.css';
 @import './pages/seasons.css';
 @import './pages/users.css';
+@import './pages/roles.css';
 @import './pages/inscription.css';
 @import './pages/document-edit.css';
 @import './pages/documents.css';
@@ -50,6 +55,9 @@
 @import './pages/error.css';
 @import './pages/legal.css';
 @import './pages/cles.css';
+@import './pages/attestation-paiement.css';
+@import './pages/club-identite.css';
+@import './pages/planning.css';
 
 :root {
     /* — Identité club — */
@@ -80,6 +88,8 @@
     --color-status-sent-bg:      #eff6ff;
     --color-status-completed:    #f59e0b;
     --color-status-completed-bg: #fffbeb;
+    --color-status-a-valider:    #8b5cf6;
+    --color-status-a-valider-bg: #f5f3ff;
     --color-status-validated:    #22c55e;
     --color-status-validated-bg: #f0fdf4;
 
@@ -145,6 +155,11 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+
+    /* Un email ou une référence sans espace ne pousse jamais la mise en page : il revient
+       à la ligne. Sans cette règle, une adresse un peu longue élargissait sa carte, qui
+       élargissait la page, qui sortait une barre de défilement horizontale. */
+    overflow-wrap: break-word;
 }
 
 .main-content {
@@ -153,4 +168,17 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+
+    /*
+     * Garde-fou : la page ne défile **jamais** horizontalement.
+     *
+     * `overflow-y: auto` seul ne suffit pas — la spec force alors l'autre axe à `auto` :
+     * le moindre dépassement, n'importe où, sortait une barre horizontale au niveau de la
+     * page, en plus de celle du tableau qui la causait.
+     *
+     * Ce n'est pas un tapis sous lequel glisser les débordements : un contenu large doit
+     * porter son propre défilement (`.table-wrapper`) ou passer en cartes
+     * (`.table-cartes`). Ici, on ne fait qu'empêcher un oubli de déformer toute l'appli.
+     */
+    overflow-x: hidden;
 }

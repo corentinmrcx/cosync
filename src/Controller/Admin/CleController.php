@@ -9,6 +9,7 @@ use App\Entity\Season;
 use App\Entity\User;
 use App\Enum\CleDetentionStatut;
 use App\Enum\CleMouvementType;
+use App\Enum\Permission;
 use App\Repository\DetenteurRepository;
 use App\Security\CsrfGuard;
 use App\Service\Cle\AttestationCleService;
@@ -21,6 +22,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Registre des clés du local. Le registre lui-même est au niveau du club — un
@@ -28,6 +30,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * porte sur la saison sélectionnée dans la navbar, l'engagement étant annuel.
  */
 #[Route('/admin/cles', name: 'admin_cles_')]
+#[IsGranted(Permission::CLE_LIRE->value)]
 class CleController extends AbstractController
 {
     public function __construct(
@@ -78,6 +81,7 @@ class CleController extends AbstractController
     }
 
     #[Route('/mouvement', name: 'mouvement', methods: ['POST'])]
+    #[IsGranted(Permission::CLE_GERER->value)]
     public function mouvement(Request $request): Response
     {
         $this->csrf->valider('cle_mouvement', $request);
@@ -120,6 +124,7 @@ class CleController extends AbstractController
     }
 
     #[Route('/detenteurs/exterieur', name: 'detenteur_exterieur', methods: ['POST'])]
+    #[IsGranted(Permission::CLE_GERER->value)]
     public function detenteurExterieur(Request $request): Response
     {
         $this->csrf->valider('cle_detenteur_exterieur', $request);
@@ -152,6 +157,7 @@ class CleController extends AbstractController
 
     /** Envoi groupé du lien de signature — déclenché à la main, jamais automatiquement. */
     #[Route('/attestations/campagne', name: 'campagne', methods: ['POST'])]
+    #[IsGranted(Permission::CLE_GERER->value)]
     public function campagne(Request $request, #[CurrentSeason] Season $season): Response
     {
         $this->csrf->valider('cle_campagne_' . $season->getId(), $request);
@@ -192,6 +198,7 @@ class CleController extends AbstractController
     }
 
     #[Route('/detenteurs/{id}/attestation/demander', name: 'demander_signature', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted(Permission::CLE_GERER->value)]
     public function demanderSignature(int $id, Request $request, #[CurrentSeason] Season $season): Response
     {
         $this->csrf->valider('cle_demander_signature_' . $id, $request);

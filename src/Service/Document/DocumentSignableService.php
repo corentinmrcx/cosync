@@ -99,6 +99,9 @@ final class DocumentSignableService
                 $pourDirigeants
                     ? count($this->requirementResolver->dirigeantsEnAttente($document))
                     : max(0, $licenciesDeLaSaison - $signes),
+                count($pourDirigeants
+                    ? $this->requirementResolver->dirigeantsEnAttente($document)
+                    : $this->requirementResolver->licenciesEnAttente($document)),
             );
         }
 

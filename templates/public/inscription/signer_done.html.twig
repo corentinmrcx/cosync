@@ -1,0 +1,20 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Merci – Foyer de Soudron{% endblock %}
+
+{% block contenu %}
+    <div class="inscription-card">
+        <div class="inscription-confirm-icon">✅</div>
+        {% if rienASigner %}
+            <h1 class="inscription-confirm-title">Rien à signer</h1>
+            <p class="inscription-confirm-text">Tous les documents du club sont déjà signés. Il n'y a rien de plus à faire.</p>
+        {% else %}
+            <h1 class="inscription-confirm-title">Merci !</h1>
+            <p class="inscription-confirm-text">Votre signature a bien été enregistrée. Votre dossier est de nouveau complet.</p>
+        {% endif %}
+
+        <p class="inscription-confirm-note">
+            Pour toute question, contactez le club directement.
+        </p>
+    </div>
+{% endblock %}

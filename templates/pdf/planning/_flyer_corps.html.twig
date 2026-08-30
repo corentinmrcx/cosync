@@ -1,0 +1,103 @@
+{# Contenu d'un flyer A5, sans coquille de page.
+
+   Reprend le visuel que le club distribue depuis 2025-2026. Les cotes sont relevées sur ce
+   visuel — voir _flyer_styles.html.twig.
+
+   Inclus une fois par flyer_a5.html.twig et DEUX fois par flyer_duo.html.twig. C'est ce
+   partiel unique qui garantit que le flyer imprimé seul et celui imprimé par deux disent
+   exactement la même chose.
+
+   DomPDF n'a ni flexbox ni grid : toute mise en colonnes passe par des <table>. #}
+
+<div class="flyer">
+
+    {# Le logo vient **après** le bandeau : deux blocs absolus se recouvrent dans l'ordre
+       du balisage, et DomPDF ne gère pas `z-index` de façon fiable. #}
+    <div class="flyer-entete">
+        <div class="flyer-bandeau">
+            <div class="flyer-bandeau-titre">Matchs à domicile</div>
+            <div class="flyer-bandeau-club">{{ club.associationNom|default('Foyer de Soudron') }} — {{ season.label }}</div>
+        </div>
+        {% if logoDataUrl %}<img src="{{ logoDataUrl }}" class="flyer-logo" alt="">{% endif %}
+    </div>
+
+    <div class="flyer-corps">
+
+        <div class="flyer-tableau">
+        {% if journees is empty %}
+            <p class="flyer-vide">Aucun match à domicile sur cette période.</p>
+        {% else %}
+            <table class="flyer-matchs">
+                <thead>
+                    <tr>
+                        <th class="fc-date">Date</th>
+                        <th class="fc-heure">Heure</th>
+                        <th class="fc-cat">Catégorie</th>
+                        <th>Rencontre / Équipes invitées</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for journee in journees %}
+                        {% for match in journee.matchs %}
+                            <tr>
+                                <td class="fc-date">{{ match.date|date_fr_courte|capitalize }} {{ match.date|date('Y') }}</td>
+                                <td class="fc-heure">{{ match.heure ? match.heure|replace({':': 'h'}) : '—' }}</td>
+                                <td class="fc-cat">{{ match.categorie }}</td>
+                                {# « Contre X » ou « Accueil de X, Y et Z » : la règle vit dans
+                                   l'entité, le document ne fait que l'imprimer. #}
+                                <td>{{ match.libelleRencontre }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+
+                    {# Dernière ligne du **tableau**, et non paragraphe placé après lui :
+                       DomPDF n'ajoute pas la hauteur d'un bloc en fin de conteneur à
+                       `min-height`, et le filet rouge du pied venait se poser en travers
+                       de la mention. Dans le tableau, sa hauteur est comptée. #}
+                    {% if omis|default(0) > 0 %}
+                        <tr class="flyer-omis">
+                            <td colspan="4">
+                                … et {{ omis }} autre{{ omis > 1 ? 's' : '' }} rencontre{{ omis > 1 ? 's' : '' }} sur la période.
+                                Planning complet auprès du club.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        {% endif %}
+        </div>
+
+        <div class="flyer-pied" style="top: {{ piedTop|number_format(2, '.', '') }}mm">
+            <div class="flyer-filet"></div>
+
+            {% set contacts = club.planningContactsLignes %}
+            {% if contacts is not empty %}
+                <table class="flyer-contacts">
+                    <tr>
+                        {% for contact in contacts %}
+                            {# Nom et téléphone séparés par « — » en base, empilés à l'impression. #}
+                            {% set parties = contact|split(' — ', 2) %}
+                            <td class="{{ loop.first ? 'contact-gauche' : 'contact-droite' }}">
+                                <span class="flyer-contact-nom">{{ parties[0] }}</span>
+                                {% if parties[1] is defined %}
+                                    <span class="flyer-contact-tel">{{ parties[1] }}</span>
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                </table>
+            {% endif %}
+
+            {% if club.associationEmail %}
+                <div class="flyer-email">{{ club.associationEmail }}</div>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    {# Le texte est un bloc absolu à l'intérieur de la bande : c'est ce qui permet à la
+       bande de garder sa hauteur exacte et au texte d'être centré verticalement. #}
+    <div class="flyer-appel"><div class="flyer-appel-texte">Tous derrière nos équipes !</div></div>
+
+</div>

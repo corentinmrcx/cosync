@@ -314,7 +314,31 @@ final class DotationBesoinSynchronizerTest extends StockIntegrationTestCase
         $licencie = $this->reload($licencie);
         self::assertFalse($this->synchronizer()->recomputeForLicencie($licencie));
 
-        self::assertSame([], $this->besoinRepo()->findForLicencie($licencie), 'Aucun besoin tant que la licence n\'est pas validée.');
+        self::assertSame([], $this->besoinRepo()->findForLicencie($licencie), 'Aucun besoin tant que la cotisation n\'est pas soldée.');
+    }
+
+    /**
+     * Le kit est dû dès le **solde**, pas à la validation FootClubs : celle-ci est une
+     * démarche administrative du club, elle n'a rien à voir avec l'équipement du licencié.
+     * Sans ce test, insérer un statut entre les deux suspendrait tous les kits payés à un
+     * clic sans rapport.
+     */
+    public function testLicencieSoldeMaisPasEncoreValideAlaFffADroitAuKit(): void
+    {
+        $season = $this->makeSeason();
+        $cat = $this->makeCategory('SENIOR');
+        $item = $this->makeItem('Veste', StockItemVetementType::HAUT);
+        $modele = $this->makeModele($season);
+        $this->addLigne($modele, $item, 1);
+        $this->affecterCategorie($season, $modele, $cat);
+
+        $licencie = $this->makeLicencie($season, $cat, null, 'L', LicenceStatus::A_VALIDER_FFF);
+
+        /** @var Licencie $licencie */
+        $licencie = $this->reload($licencie);
+        self::assertTrue($this->synchronizer()->recomputeForLicencie($licencie));
+
+        self::assertCount(1, $this->besoinRepo()->findForLicencie($licencie));
     }
 
     public function testRecalculGlobalRetireLesBesoinsDUnLicencieNonValide(): void

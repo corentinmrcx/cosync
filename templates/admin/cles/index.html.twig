@@ -24,10 +24,12 @@
             <h1 class="cles-title">Clés du local</h1>
         </div>
         <div class="cles-actions">
-            <a href="{{ path('admin_cles_attestation_edit') }}" class="btn btn-secondary">
-                {{ ui.icon('edit') }}
-                Texte de l'attestation
-            </a>
+            {% if peut_acceder('admin_cles_attestation_edit') %}
+                <a href="{{ path('admin_cles_attestation_edit') }}" class="btn btn-secondary">
+                    {{ ui.icon('edit') }}
+                    Texte de l'attestation
+                </a>
+            {% endif %}
             <a href="{{ path('admin_cles_attestation_recap') }}" class="btn btn-secondary">
                 {{ ui.icon('download') }}
                 Récapitulatif PDF
@@ -77,7 +79,7 @@
                 </span>
             {% endif %}
         </div>
-        {% if nbEnAttente > 0 %}
+        {% if nbEnAttente > 0 and peut_acceder('admin_cles_campagne') %}
             <form method="post" action="{{ path('admin_cles_campagne') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('cle_campagne_' ~ season.id) }}">
                 <button type="submit" class="btn btn-primary">
@@ -99,6 +101,7 @@
     } %}
         {% block actions %}
             {# L'import de macro du template parent ne traverse pas l'embed : SVG inline. #}
+            {% if peut_acceder('admin_cles_mouvement') %}
             <button type="button" class="btn btn-secondary" @click="modaleExterieur = true">
                 Personne extérieure
             </button>
@@ -108,6 +111,7 @@
                 </svg>
                 Remettre une clé
             </button>
+            {% endif %}
         {% endblock %}
     {% endembed %}
 
@@ -115,7 +119,9 @@
     {% if lignes is empty %}
         <p class="cles-empty">Aucune personne ne correspond à cette recherche.</p>
     {% else %}
-        <div class="table-wrapper">
+        {# Registre consulté au local, téléphone en main : en cartes sur petit écran.
+           Les `data-label` des cellules deviennent les intitulés de chaque ligne de carte. #}
+        <div class="table-wrapper table-cartes">
             <table class="table resp-table">
                 <thead>
                     <tr>
@@ -132,7 +138,7 @@
                         {% set detenteur = ligne.detenteur() %}
                         {% set etat = ligne.etatAttestation() %}
                         <tr>
-                            <td data-label="Personne">
+                            <td class="carte-titre">
                                 <span class="cles-nom">{{ detenteur.nomPrenom }}</span>
                                 {% if detenteur.email %}
                                     <span class="cles-meta">{{ detenteur.email }}</span>
@@ -171,8 +177,8 @@
                                     <span class="cles-meta">Sans objet</span>
                                 {% endif %}
                             </td>
-                            <td data-label="Actions" class="cles-row-actions">
-                                {% if ligne.attendSignature() and detenteur.email %}
+                            <td class="cles-row-actions table-actions">
+                                {% if ligne.attendSignature() and detenteur.email and peut_acceder('admin_cles_demander_signature') %}
                                     <form method="post" action="{{ path('admin_cles_demander_signature', {id: detenteur.id}) }}">
                                         <input type="hidden" name="_token" value="{{ csrf_token('cle_demander_signature_' ~ detenteur.id) }}">
                                         <button type="submit" class="btn btn-secondary btn-sm">
@@ -181,10 +187,12 @@
                                         </button>
                                     </form>
                                 {% endif %}
-                                <button type="button" class="btn btn-secondary btn-sm"
-                                        @click="modaleOuverte = true; personne = 'detenteur:{{ detenteur.id }}'; typeMouvement = 'remise'">
-                                    Mouvement
-                                </button>
+                                {% if peut_acceder('admin_cles_mouvement') %}
+                                    <button type="button" class="btn btn-secondary btn-sm"
+                                            @click="modaleOuverte = true; personne = 'detenteur:{{ detenteur.id }}'; typeMouvement = 'remise'">
+                                        Mouvement
+                                    </button>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -199,7 +207,7 @@
             <div class="cles-section-header">
                 <h2 class="cles-section-title">Derniers mouvements</h2>
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper table-cartes">
                 <table class="table resp-table">
                     <thead>
                         <tr>
@@ -212,7 +220,7 @@
                     <tbody>
                         {% for mouvement in recents %}
                             <tr>
-                                <td data-label="Personne">{{ mouvement.detenteur.nomPrenom }}</td>
+                                <td class="carte-titre">{{ mouvement.detenteur.nomPrenom }}</td>
                                 <td data-label="Mouvement"><span class="cles-badge-{{ mouvement.type.value }}">{{ mouvement.type.label }}</span></td>
                                 <td data-label="Quantité">{{ mouvement.quantite }}</td>
                                 <td data-label="Date">{{ mouvement.dateMouvement|date('d/m/Y') }}</td>
@@ -225,6 +233,7 @@
     {% endif %}
 
     {# — Modale de saisie d'un mouvement — #}
+    {% if peut_acceder('admin_cles_mouvement') %}
     <div class="modal-voile" x-show="modaleOuverte" x-cloak @click.self="modaleOuverte = false">
         <form method="post" action="{{ path('admin_cles_mouvement') }}" class="modal">
             <div class="modal-header">
@@ -294,7 +303,10 @@
         </form>
     </div>
 
+    {% endif %}
+
     {# — Modale d'ajout d'une personne extérieure à l'effectif — #}
+    {% if peut_acceder('admin_cles_detenteur_exterieur') %}
     <div class="modal-voile" x-show="modaleExterieur" x-cloak @click.self="modaleExterieur = false">
         <form method="post" action="{{ path('admin_cles_detenteur_exterieur') }}" class="modal">
             <div class="modal-header">
@@ -345,6 +357,7 @@
             </div>
         </form>
     </div>
+    {% endif %}
 
 </div>
 {% endblock %}

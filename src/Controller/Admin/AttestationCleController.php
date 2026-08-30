@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
 use App\Entity\Season;
+use App\Enum\Permission;
 use App\Security\CsrfGuard;
 use App\Service\Cle\AttestationCleRecapService;
 use App\Service\Drive\PendingUploadQueue;
@@ -14,6 +15,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Édition du texte de l'attestation de remise de clés et exports associés.
@@ -21,6 +23,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * sélecteur de saison de la navbar.
  */
 #[Route('/admin/cles/attestation', name: 'admin_cles_attestation_')]
+#[IsGranted(Permission::CLE_LIRE->value)]
 class AttestationCleController extends AbstractController
 {
     public function __construct(
@@ -33,6 +36,7 @@ class AttestationCleController extends AbstractController
     ) {}
 
     #[Route('', name: 'edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::CLE_GERER->value)]
     public function edit(Request $request, #[CurrentSeason] Season $season): Response
     {
         if ($request->isMethod('POST')) {
@@ -73,6 +77,7 @@ class AttestationCleController extends AbstractController
     }
 
     #[Route('/recapitulatif/synchroniser', name: 'recap_sync', methods: ['POST'])]
+    #[IsGranted(Permission::CLE_GERER->value)]
     public function recapSync(Request $request, #[CurrentSeason] Season $season): Response
     {
         $this->csrf->valider('attestation_cle_recap_sync', $request);

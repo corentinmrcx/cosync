@@ -348,9 +348,14 @@ class DossierClub
         return DrivePath::estArchive($this->getAttestationTransportDriveId());
     }
 
-    /** La cotisation est-elle soldée ? C'est ce que porte le statut VALIDATED. */
-    public function estValidee(): bool
+    /**
+     * La cotisation est-elle soldée ?
+     *
+     * Vrai dès `A_VALIDER_FFF` : il ne reste alors que la validation dans FootClubs, qui ne
+     * dit rien de l'argent rentré. Cf. {@see LicenceStatus::estSolde()}.
+     */
+    public function estSoldee(): bool
     {
-        return $this->status === LicenceStatus::VALIDATED;
+        return $this->status->estSolde();
     }
 }

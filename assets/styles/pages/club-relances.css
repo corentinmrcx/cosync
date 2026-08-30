@@ -1,0 +1,42 @@
+/* — Réglages des relances automatiques (/admin/club/relances) —
+   La page réutilise le gabarit de formulaire `season-form-*` comme les autres écrans
+   de réglages du club ; seuls la bascule et son renvoi lui sont propres. */
+
+/* Case et libellé sur la même ligne, l'explication alignée sous le libellé. Empilés
+   dans un `.field` ordinaire, la case flottait seule au-dessus de son intitulé. */
+.relance-reglages-bascule {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+}
+
+.relance-reglages-bascule input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.125rem;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.relance-reglages-bascule-texte {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.relance-reglages-bascule label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-body);
+    cursor: pointer;
+    margin: 0;
+}
+
+.relance-reglages-astuce {
+    margin: 0.5rem 0 0;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    color: var(--color-text-muted);
+}

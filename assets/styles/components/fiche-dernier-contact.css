@@ -1,0 +1,15 @@
+/* — Dernier contact —
+   Ligne discrète en tête de fiche : la date du dernier mail réellement parti.
+   Partagée par la fiche licencié et la fiche dirigeant, d'où sa place en composant.
+   Volontairement sourde : c'est un repère avant de relancer, pas un état du dossier —
+   les badges au-dessus s'en chargent. */
+.fiche-dernier-contact {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: 0.5rem 0 0;
+}
+
+.fiche-dernier-contact strong {
+    color: var(--color-text-body);
+    font-weight: 500;
+}

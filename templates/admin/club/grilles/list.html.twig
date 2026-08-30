@@ -23,11 +23,13 @@
             </p>
         </div>
         <div class="dot-header-actions">
-            {# Refermer un formulaire ne détruit rien : le bouton quitte le registre de l'action
-               attendue pour celui du retrait discret (CLAUDE.md §7.6 bis). #}
-            <button type="button" class="btn" :class="adding ? 'btn-ghost' : 'btn-primary'" @click="adding = !adding">
-                <span x-text="adding ? 'Annuler' : '+ Nouvelle grille'"></span>
-            </button>
+            {% if peut_acceder('admin_grilles_new') %}
+                {# Refermer un formulaire ne détruit rien : le bouton quitte le registre de l'action
+                   attendue pour celui du retrait discret (CLAUDE.md §7.6 bis). #}
+                <button type="button" class="btn" :class="adding ? 'btn-ghost' : 'btn-primary'" @click="adding = !adding">
+                    <span x-text="adding ? 'Annuler' : '+ Nouvelle grille'"></span>
+                </button>
+            {% endif %}
         </div>
     </div>
 
@@ -38,6 +40,7 @@
             <span class="dot-card-count">{{ grilles|length }}</span>
         </div>
 
+        {% if peut_acceder('admin_grilles_new') %}
         <form method="post" action="{{ path('admin_grilles_new') }}" class="dot-affect-form grille-add-form" x-show="adding" x-cloak>
             <input type="hidden" name="_token" value="{{ csrf_token('grille_nouvelle') }}">
             <input type="text" name="nom" class="field-input" placeholder="Nom (ex : Chaussettes Nike)" maxlength="100" required>
@@ -48,6 +51,7 @@
             </select>
             <button type="submit" class="btn btn-primary">Créer</button>
         </form>
+        {% endif %}
 
         {% if grilles is empty %}
             <p class="dot-empty">
@@ -76,10 +80,10 @@
                             <a href="{{ path('admin_grilles_show', {id: grille.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>
                             {# Une grille en service ne se supprime pas : le stock des articles
                                rattachés est rangé sous ses déclinaisons. #}
-                            {% if articles %}
+                            {% if peut_acceder('admin_grilles_delete') and articles %}
                                 <span class="btn btn-danger btn-sm grille-btn-disabled"
                                       title="{{ articles }} article(s) s'en servent — retirez-la d'abord">Supprimer</span>
-                            {% else %}
+                            {% elseif peut_acceder('admin_grilles_delete') %}
                                 {% include 'components/_form_suppression.html.twig' with {
                                     action: path('admin_grilles_delete', {id: grille.id}),
                                     jeton: 'grille_supprimer_' ~ grille.id,

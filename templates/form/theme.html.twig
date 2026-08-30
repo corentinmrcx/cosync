@@ -24,6 +24,23 @@
     {{- parent() -}}
 {% endblock %}
 
+{# Liste de cases à cocher (multiple + expanded).
+
+   Le layout de Symfony aligne les paires case/libellé **sans rien entre elles** : à deux
+   choix, ça donne « Responsable foot☐ Trésorerie », collé et illisible. Chaque paire reçoit
+   donc son conteneur, une fois pour toutes ici plutôt qu'au cas par cas dans les pages. #}
+{% block choice_widget_expanded %}
+    {% set attr = attr|merge({ class: (attr.class|default('') ~ ' field-choices')|trim }) %}
+    <div {{ block('widget_container_attributes') }}>
+        {%- for child in form %}
+            <div class="field-choice">
+                {{- form_widget(child) }}
+                {{- form_label(child, null, { translation_domain: choice_translation_domain }) -}}
+            </div>
+        {% endfor -%}
+    </div>
+{% endblock %}
+
 {# Case à cocher et bouton radio : le libellé se pose à côté du champ, pas au-dessus. #}
 {% block form_label %}
     {% if 'checkbox' not in block_prefixes and 'radio' not in block_prefixes %}

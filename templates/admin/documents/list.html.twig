@@ -22,10 +22,12 @@
                     exigible : les dossiers concernés redeviennent incomplets.
                 </p>
             </div>
-            <a href="{{ path('admin_documents_new') }}" class="btn btn-primary">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Nouveau document
-            </a>
+            {% if peut_acceder('admin_documents_new') %}
+                <a href="{{ path('admin_documents_new') }}" class="btn btn-primary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nouveau document
+                </a>
+            {% endif %}
         </div>
 
         <hr class="documents-divider">
@@ -74,19 +76,30 @@
                         </div>
 
                         <div class="documents-item-actions">
-                            <a href="{{ path('admin_documents_edit', {id: doc.id}) }}" class="btn btn-secondary">Modifier</a>
-                            <a href="{{ path('admin_documents_apercu', {id: doc.id}) }}" target="_blank" class="btn btn-secondary">Aperçu PDF</a>
-
-                            {% if doc.cible.value == 'dirigeant' and doc.actif and stats[doc.id].enAttente > 0 %}
-                                <a href="{{ path('admin_documents_relancer', {id: doc.id}) }}" class="btn btn-secondary">Relancer</a>
+                            {% if peut_acceder('admin_documents_edit') %}
+                                <a href="{{ path('admin_documents_edit', {id: doc.id}) }}" class="btn btn-secondary">Modifier</a>
+                                <a href="{{ path('admin_documents_apercu', {id: doc.id}) }}" target="_blank" class="btn btn-secondary">Aperçu PDF</a>
                             {% endif %}
 
-                            <form method="post" action="{{ path('admin_documents_toggle', {id: doc.id}) }}">
-                                <input type="hidden" name="_token" value="{{ csrf_token('document_toggle_' ~ doc.id) }}">
-                                <button type="submit" class="btn btn-secondary">{{ doc.actif ? 'Désactiver' : 'Réactiver' }}</button>
-                            </form>
+                            {# Simple raccourci de navigation, pas une action : relancer les gens se
+                               fait dans l'effectif, cet écran sert à préparer les documents.
+                               `relancables`, pas `enAttente` : côté joueurs, celui qui n'a pas fini
+                               son inscription n'a pas signé mais ne se relance pas. #}
+                            {% if doc.actif and stats[doc.id].relancables > 0 and peut_acceder('admin_licencies_request_signatures') %}
+                                <a href="{{ doc.cible.value == 'dirigeant'
+                                        ? path('admin_dirigeants_request_signatures')
+                                        : path('admin_licencies_request_signatures') }}"
+                                   class="btn btn-secondary">Demander les signatures</a>
+                            {% endif %}
 
-                            {% if stats[doc.id].signes == 0 %}
+                            {% if peut_acceder('admin_documents_toggle') %}
+                                <form method="post" action="{{ path('admin_documents_toggle', {id: doc.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('document_toggle_' ~ doc.id) }}">
+                                    <button type="submit" class="btn btn-secondary">{{ doc.actif ? 'Désactiver' : 'Réactiver' }}</button>
+                                </form>
+                            {% endif %}
+
+                            {% if stats[doc.id].signes == 0 and peut_acceder('admin_documents_delete') %}
                                 <form method="post" action="{{ path('admin_documents_delete', {id: doc.id}) }}"
                                       onsubmit="return confirm('Supprimer définitivement ce document ?')">
                                     <input type="hidden" name="_token" value="{{ csrf_token('document_delete_' ~ doc.id) }}">

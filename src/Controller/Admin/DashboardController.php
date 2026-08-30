@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Security\Attribute\AccesLibre;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -11,6 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * rappelée par un raccourci, rendu depuis le global Twig navbar_current_season.
  */
 #[Route('/admin', name: 'admin_')]
+#[AccesLibre('Racine de l\'administration : deux portes, filtrées par les permissions.')]
 class DashboardController extends AbstractController
 {
     #[Route('/', name: 'dashboard')]

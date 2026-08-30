@@ -1,0 +1,46 @@
+{# Actions d'une ligne du planning.
+
+   ⚠️ Boutons **en ligne** dans une `.table-actions-cellule`, comme la gestion du stock —
+   surtout pas un menu `fiche-menu`. Ce dernier est un panneau en position absolue : dans
+   un `.table-wrapper`, qui porte `overflow-x: auto`, il se retrouve rogné par le cadre et
+   fait apparaître une barre de défilement au lieu de s'ouvrir. Le menu « ⋯ » est réservé
+   à l'en-tête d'une fiche, où rien ne le découpe. #}
+
+<div class="table-actions-cellule">
+
+    {% if peut_acceder('admin_planning_edit') %}
+    {% if match.estModifiable %}
+        <a href="{{ path('admin_planning_edit', { id: match.id }) }}" class="btn btn-secondary btn-sm">Modifier</a>
+    {% else %}
+        {# Détacher est le préalable à toute correction : sans lui, la mise à jour
+           suivante écraserait la saisie sans que personne le voie. #}
+        <form method="post" action="{{ path('admin_planning_detach', { id: match.id }) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('planning_detach_' ~ match.id) }}">
+            <button type="submit" class="btn btn-secondary btn-sm" title="Reprendre la main sur ce match pour pouvoir le modifier">Détacher</button>
+        </form>
+    {% endif %}
+
+    {% if match.fffMaNo and not match.suitLaFff %}
+        <form method="post" action="{{ path('admin_planning_reattach', { id: match.id }) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('planning_reattach_' ~ match.id) }}">
+            <button type="submit" class="btn btn-secondary btn-sm" title="Rendre ce match au calendrier officiel">Rattacher</button>
+        </form>
+    {% endif %}
+
+    <form method="post" action="{{ path('admin_planning_toggle_masque', { id: match.id }) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('planning_masque_' ~ match.id) }}">
+        <button type="submit" class="btn btn-secondary btn-sm">{{ match.masque ? 'Réafficher' : 'Masquer' }}</button>
+    </form>
+
+    {# Un match du calendrier officiel ne se supprime pas : la mise à jour le recréerait.
+       Le geste n'est donc pas proposé — l'équivalent utile est « Masquer ». #}
+    {% if not match.suitLaFff %}
+        <form method="post" action="{{ path('admin_planning_delete', { id: match.id }) }}"
+              onsubmit="return confirm('Supprimer définitivement ce match du planning ?')">
+            <input type="hidden" name="_token" value="{{ csrf_token('planning_delete_' ~ match.id) }}">
+            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+    {% endif %}
+    {% endif %}
+
+</div>

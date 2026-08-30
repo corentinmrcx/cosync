@@ -87,7 +87,7 @@ final class CreationManuelleLicencieTest extends WebTestCase
 
         $this->season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
         $this->category = (new Category())->setCode('SENIOR')->setLabel('Séniors')->setIsEcoleFoot(false);
-        $user = (new User())->setEmail('admin-creation@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-creation@example.test')->setPassword('x');
         $user->setSelectedSeason($this->season);
 
         $em->persist($this->season);

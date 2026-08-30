@@ -81,7 +81,7 @@ final class DotationModeleFormContext
             ),
             DotationCibleType::LICENCIE->value => array_map(
                 static fn (Licencie $l) => new DotationCibleOption((string) $l->getUuid(), $l->getNomPrenom()),
-                $this->licencieRepository->findValidatedBySeason($season),
+                $this->licencieRepository->findSoldesBySeason($season),
             ),
             DotationCibleType::DIRIGEANT->value => array_map(
                 static fn (Dirigeant $d) => new DotationCibleOption((string) $d->getUuid(), $d->getNomPrenom()),

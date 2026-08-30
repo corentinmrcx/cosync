@@ -94,6 +94,56 @@ final class DirigeantService
         $this->em->flush();
     }
 
+    /**
+     * Le club a signé cette licence dans FootClubs. Dernier état du parcours dirigeant.
+     *
+     * Aucun mail : c'est une démarche interne, le dirigeant n'a rien à en faire. Pendant de
+     * {@see \App\Service\Licencie\PaiementService::validerSurFootclubs()}.
+     */
+    public function validerSurFootclubs(Dirigeant $dirigeant): void
+    {
+        if ($dirigeant->getValidatedFffAt() !== null) {
+            return;
+        }
+
+        $dirigeant->setValidatedFffAt(new \DateTimeImmutable());
+        $this->em->flush();
+    }
+
+    /** Sortie de secours d'un clic malheureux : la licence redevient à valider. */
+    public function annulerValidationFootclubs(Dirigeant $dirigeant): void
+    {
+        $dirigeant->setValidatedFffAt(null);
+        $this->em->flush();
+    }
+
+    /**
+     * Validation groupée. La liste éligible est repassée au crible ici, jamais crue sur parole :
+     * un uuid ajouté au formulaire posté ne doit pas pouvoir valider une fiche qui n'était pas
+     * proposée à l'écran.
+     *
+     * @param Dirigeant[] $eligibles
+     * @param string[]    $uuidsRetenus
+     *
+     * @return int nombre de licences validées
+     */
+    public function validerSurFootclubsEnMasse(array $eligibles, array $uuidsRetenus): int
+    {
+        $retenus = array_flip($uuidsRetenus);
+        $valides = 0;
+
+        foreach ($eligibles as $dirigeant) {
+            if (!isset($retenus[(string) $dirigeant->getUuid()])) {
+                continue;
+            }
+
+            $this->validerSurFootclubs($dirigeant);
+            ++$valides;
+        }
+
+        return $valides;
+    }
+
     private function hydrate(Dirigeant $dirigeant, DirigeantData $data, string $nom, string $prenom, ?string $numLicence): Dirigeant
     {
         $dirigeant->setNom($nom);

@@ -20,10 +20,12 @@
             <li><a href="#formulaire-public" class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'formulaire-public' }">Le formulaire public</a></li>
             <li><a href="#suivi"             class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'suivi' }">Suivre les inscriptions</a></li>
             <li><a href="#paiements"         class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'paiements' }">Gérer les paiements</a></li>
+            <li><a href="#attestations"      class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'attestations' }">Attestations de paiement</a></li>
             <li><a href="#dirigeants"        class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'dirigeants' }">Les dirigeants</a></li>
             <li><a href="#stock"             class="doc-toc-link doc-toc-link-strong" :class="{ 'doc-toc-link-active': active === 'stock' }">Le stock</a></li>
             <li><a href="#dotations"         class="doc-toc-link doc-toc-link-strong" :class="{ 'doc-toc-link-active': active === 'dotations' }">Les dotations</a></li>
             <li><a href="#commandes"         class="doc-toc-link doc-toc-link-strong" :class="{ 'doc-toc-link-active': active === 'commandes' }">Les commandes</a></li>
+            <li><a href="#roles"             class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'roles' }">Comptes et rôles</a></li>
             <li><a href="#diagnostic"        class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'diagnostic' }">Diagnostic &amp; outils</a></li>
             <li><a href="#faq"               class="doc-toc-link" :class="{ 'doc-toc-link-active': active === 'faq' }">Questions fréquentes</a></li>
         </ul>
@@ -193,8 +195,13 @@
                 <li><span class="doc-badge doc-badge-imported">Lien non envoyé</span> — le licencié est présent, son lien n'est pas parti.</li>
                 <li><span class="doc-badge doc-badge-sent">Lien envoyé</span> — le licencié n'a pas encore rempli son formulaire.</li>
                 <li><span class="doc-badge doc-badge-completed">Formulaire complété</span> — formulaire signé, en attente du paiement.</li>
-                <li><span class="doc-badge doc-badge-validated">Validé</span> — paiement confirmé, inscription finalisée.</li>
+                <li><span class="doc-badge doc-badge-a-valider">À valider sur FootClubs</span> — tout est bouclé côté club : formulaire signé et cotisation soldée. Il reste au club à signer la licence dans FootClubs.</li>
+                <li><span class="doc-badge doc-badge-validated">Validé</span> — la licence a été validée dans FootClubs. Dernier statut du parcours.</li>
             </ul>
+
+            <p class="doc-p">Le passage à <em>Validé</em> ne se fait jamais tout seul : c'est le club qui déclare avoir fait la démarche, depuis la fiche du licencié ou, plus commode, depuis <em>Valider sur FootClubs</em> — l'encart proposé en tête de la liste, qui permet de cocher tout un paquet d'un coup. Le licencié, lui, a déjà été prévenu par mail dès son paiement : cette étape ne concerne que le club.</p>
+
+            <p class="doc-p">La liste des <strong>dirigeants</strong> affiche la même colonne, à ceci près que leur statut n'a rien à voir avec un paiement : il suit le lien envoyé, le formulaire rempli, les documents signés, puis la validation FootClubs. Une <em>licence administrative</em> (président, secrétaire, trésorier déclarés au district) y apparaît comme telle : aucun document ne lui est demandé.</p>
 
             <p class="doc-p">Un clic sur une ligne ouvre la <strong>fiche du licencié</strong> : ses informations, l'état de son dossier, ses paiements et ses dotations.</p>
         </section>
@@ -219,6 +226,37 @@
             <p class="doc-p">Chaque paiement de la liste a une <strong>icône corbeille</strong> : elle supprime le paiement (après confirmation). Pour corriger un montant, supprimez la ligne erronée et ré-ajoutez la bonne.</p>
             <div class="doc-tip">
                 Supprimer un paiement ne change pas le statut de la licence : une licence validée le reste, même si le total redescend sous le montant dû.
+            </div>
+        </section>
+
+        {# ─────────────────────── 6 bis. ATTESTATIONS DE PAIEMENT ─────────────────────── #}
+        <section id="attestations" class="doc-section">
+            <h2 class="doc-h2">Attestations de paiement</h2>
+
+            <p class="doc-p">Certains employeurs et comités d'entreprise remboursent tout ou partie d'une licence sportive, sur présentation d'une attestation. CoSync la génère depuis la fiche du licencié.</p>
+
+            <h3 class="doc-h3">Avant la première attestation</h3>
+            <p class="doc-p">Renseignez une fois pour toutes <em>Le club → Identité de l'association</em> : raison sociale, adresse, SIRET, et le <strong>signataire</strong> (civilité, nom, qualité). Son nom figure sur l'attestation : sans lui, un employeur peut la refuser.</p>
+            <p class="doc-p">Vous pouvez y déposer une <strong>image de votre signature et de votre cachet</strong>. Sans elle, l'attestation s'imprime avec un cadre à signer à la main : le document reste parfaitement utilisable, il faut simplement le signer avant de le remettre.</p>
+
+            <h3 class="doc-h3">Générer une attestation</h3>
+            <ol class="doc-ol">
+                <li>Ouvrez la fiche du licencié, puis <strong>« Attestation de paiement »</strong>.</li>
+                <li>Renseignez le <strong>destinataire</strong> : c'est la personne qui a payé, et ce n'est pas toujours celle que connaît FootClubs. Pour un enfant dont les deux parents cotisent chacun de leur côté, faites une attestation par parent.</li>
+                <li>Précisez le lien : « son fils », « sa fille », « lui-même »…</li>
+                <li><strong>Aperçu</strong> ouvre le document dans un onglet sans rien enregistrer.</li>
+                <li><strong>Générer l'attestation</strong> l'enregistre, l'archive sur le Drive et l'envoie par mail si vous avez indiqué une adresse.</li>
+            </ol>
+
+            <div class="doc-tip">
+                Le montant, la date et le mode de paiement ne se saisissent pas : ils sont repris des paiements enregistrés. Une attestation ne peut donc jamais annoncer autre chose que ce que montre la comptabilité du club.
+            </div>
+
+            <h3 class="doc-h3">Retrouver ou renvoyer une attestation</h3>
+            <p class="doc-p">Toutes les attestations émises sont listées sur la fiche du licencié : date, destinataire, montant, envoi et archivage. <strong>Télécharger</strong> régénère le PDF à l'identique, et le champ d'adresse permet de le <strong>renvoyer</strong> à quelqu'un d'autre — un parent qui a changé de mail, par exemple.</p>
+
+            <div class="doc-tip">
+                Le bouton n'apparaît que sur une <strong>licence soldée</strong>. Tant qu'il reste un impayé, il n'y a rien à attester — et une licence validée à la main sans paiement n'y donne pas droit non plus.
             </div>
         </section>
 
@@ -359,7 +397,57 @@
             </div>
         </section>
 
-        {# ───────────────────────────── 11. DIAGNOSTIC ───────────────────────────── #}
+        {# ───────────────────────────── 11. COMPTES ET RÔLES ───────────────────────────── #}
+        <section id="roles" class="doc-section">
+            <h2 class="doc-h2">Comptes et rôles</h2>
+
+            <p class="doc-p">
+                Plusieurs personnes peuvent avoir un accès à CoSync sans avoir les mêmes droits. La trésorerie
+                suit les encaissements, la présidence regarde sans modifier, l'intendance s'occupe du stock et
+                des dotations. Cela se règle en deux écrans, tous deux dans <em>Le club</em>.
+            </p>
+
+            <h3 class="doc-h3">Les rôles — qui a le droit de quoi</h3>
+            <p class="doc-p">
+                Un <strong>rôle</strong> est un paquet de droits, avec un nom que vous choisissez. Deux sont
+                livrés avec l'application — <em>Responsable foot</em> et <em>Trésorerie</em> — et servent de
+                point de départ : vous pouvez les renommer et cocher ou décocher ce qu'ils permettent. Tous
+                les autres se créent en trois clics : présidence, intendance, arbitrage, ce que le club veut.
+            </p>
+            <p class="doc-p">
+                Les droits sont groupés par domaine (effectif, paiements, stock…) et chaque domaine distingue
+                <strong>consulter</strong> et <strong>modifier</strong>. Cocher un droit de modification coche
+                automatiquement la consultation qui va avec, et la verrouille : personne ne doit pouvoir
+                modifier ce qu'il n'a pas le droit de regarder.
+            </p>
+            <div class="doc-tip">
+                Un rôle livré avec l'application se modifie et se renomme, mais ne se supprime pas — il reste
+                toujours de quoi rouvrir un accès. Un rôle encore attribué à quelqu'un ne se supprime pas non
+                plus : retirez-le d'abord des comptes concernés.
+            </div>
+
+            <h3 class="doc-h3">Les comptes — qui porte quel rôle</h3>
+            <p class="doc-p">
+                Un compte peut porter <strong>plusieurs rôles</strong> : leurs droits s'additionnent. C'est le
+                cas courant dans un club, où la même personne cumule les casquettes. Un compte sans aucun rôle
+                se connecte, mais ne voit rien — la liste des utilisateurs le signale en rouge.
+            </p>
+            <p class="doc-p">
+                Ce qu'un compte ne peut pas ouvrir <strong>n'apparaît pas</strong> : les cartes du tableau de
+                bord et les entrées de menu se réduisent à ce qui lui est accessible. Ce n'est pas un oubli
+                d'affichage, c'est le réglage de son rôle.
+            </p>
+
+            <h3 class="doc-h3">Le super-admin</h3>
+            <p class="doc-p">
+                Un compte au moins est <strong>super-admin</strong> : il a tous les droits sans porter aucun
+                rôle, et c'est la sécurité qui évite de se fermer dehors en décochant la mauvaise case. Il ne
+                peut pas être supprimé, et l'application refuse de retirer le dernier. Seul un super-admin peut
+                en désigner un autre.
+            </p>
+        </section>
+
+        {# ───────────────────────────── 12. DIAGNOSTIC ───────────────────────────── #}
         <section id="diagnostic" class="doc-section">
             <h2 class="doc-h2">Diagnostic &amp; outils</h2>
 
@@ -375,8 +463,8 @@
 
             <h3 class="doc-h3">Mode édition — retirer des fiches entrées par erreur</h3>
             <p class="doc-p">
-                Les listes <em>Joueurs</em> et <em>Dirigeants</em> ont un bouton <strong>Mode édition</strong>, visible du
-                seul compte de diagnostic. Il fait apparaître une case à cocher par ligne : cochez les fiches à retirer,
+                Les listes <em>Joueurs</em> et <em>Dirigeants</em> ont un bouton <strong>Mode édition</strong>, visible
+                des seuls comptes qui portent le droit <em>Supprimer une fiche</em>. Il fait apparaître une case à cocher par ligne : cochez les fiches à retirer,
                 validez, et un écran annonce <strong>nom par nom</strong> ce qui va être supprimé avant d'agir.
             </p>
             <p class="doc-p">
@@ -392,7 +480,7 @@
             </div>
         </section>
 
-        {# ───────────────────────────── 12. FAQ ───────────────────────────── #}
+        {# ───────────────────────────── 13. FAQ ───────────────────────────── #}
         <section id="faq" class="doc-section">
             <h2 class="doc-h2">Questions fréquentes</h2>
 

@@ -2,7 +2,16 @@
 
 namespace App\Service\Mail;
 
+use App\Entity\Detenteur;
+use App\Entity\Dirigeant;
+use App\Entity\EnvoiMail;
+use App\Entity\Licencie;
+use App\Entity\User;
+use App\Enum\OrigineEnvoi;
+use App\Enum\TypeMail;
 use App\Service\Ops\BetaModeService;
+use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Mailer\MailerInterface;
@@ -11,7 +20,8 @@ use Symfony\Component\Mime\Part\DataPart;
 use Symfony\Component\Mime\Part\File;
 
 /**
- * Point de passage unique des mails du club : expéditeur, redirection en mode bêta et envoi.
+ * Point de passage unique des mails du club : expéditeur, redirection en mode bêta, envoi
+ * et **journalisation**.
  *
  * En mode bêta, aucun mail ne part vers un vrai licencié : le destinataire est remplacé et
  * le sujet préfixé par l'adresse réellement visée, pour que le test reste vérifiable.
@@ -19,6 +29,11 @@ use Symfony\Component\Mime\Part\File;
  * L'expéditeur et l'adresse de réponse sont volontairement dissociés : le premier doit vivre
  * sur le domaine authentifié chez Brevo pour que la signature DKIM tienne, le second désigne
  * la boîte du foot, que personne n'a besoin d'authentifier. Cf. `club.email_reponse`.
+ *
+ * **Le journal s'écrit ici, et nulle part ailleurs.** Chaque envoi laisse un `EnvoiMail`,
+ * d'où l'exigence d'un `TypeMail` à l'appel : aucun mail ne peut plus partir en silence.
+ * Le confier aux services appelants les ferait diverger, et c'est le côté oublié qui
+ * enverrait le mail invisible — le défaut qu'on corrige, `SignatureRelanceService` en tête.
  */
 final class ClubMailer
 {
@@ -26,6 +41,8 @@ final class ClubMailer
         private readonly MailerInterface $mailer,
         private readonly BetaModeService $betaModeService,
         private readonly Security $security,
+        private readonly EntityManagerInterface $em,
+        private readonly LoggerInterface $logger,
         private readonly string $emailExpediteur,
         private readonly string $nomExpediteur,
         private readonly string $emailReponse,
@@ -34,13 +51,19 @@ final class ClubMailer
     /**
      * @param array<string, mixed>  $contexte
      * @param array<string, string> $piecesJointes chemin absolu => nom de fichier lisible
+     * @param ?OrigineEnvoi         $origine       à préciser pour les seuls mails qui partent
+     *                                             de plusieurs façons — la relance, envoyée
+     *                                             tantôt par le cron, tantôt par un admin
      */
     public function envoyer(
+        TypeMail $type,
+        Licencie|Dirigeant|Detenteur|null $personne,
         Address $destinataire,
         string $sujet,
         string $template,
         array $contexte = [],
         array $piecesJointes = [],
+        ?OrigineEnvoi $origine = null,
     ): void {
         $email = (new TemplatedEmail())
             ->from(new Address($this->emailExpediteur, $this->nomExpediteur))
@@ -55,6 +78,42 @@ final class ClubMailer
         }
 
         $this->mailer->send($email);
+
+        // Après l'envoi seulement : une ligne écrite sur un envoi qui a échoué ferait
+        // croire la personne relancée, et empêcherait la vraie relance de partir.
+        $this->journaliser($type, $personne, $destinataire, $origine ?? $type->origineParDefaut());
+    }
+
+    /**
+     * L'adresse journalisée est celle réellement visée, jamais la redirection du mode bêta :
+     * un test ne doit pas laisser dans l'historique la trace d'un mail au développeur.
+     */
+    private function journaliser(
+        TypeMail $type,
+        Licencie|Dirigeant|Detenteur|null $personne,
+        Address $destinataire,
+        OrigineEnvoi $origine,
+    ): void {
+        $envoi = (new EnvoiMail($type, $origine, $destinataire->getAddress()))
+            ->rattacherA($personne);
+
+        $user = $this->security->getUser();
+        if ($user instanceof User) {
+            $envoi->setDeclenchePar($user);
+        }
+
+        try {
+            $this->em->persist($envoi);
+            $this->em->flush();
+        } catch (\Throwable $e) {
+            // Le mail est parti : perdre sa trace est regrettable, le faire repartir en
+            // erreur 500 le serait davantage. On le signale et on continue.
+            $this->logger->error('Envoi de mail non journalisé ({type} → {email}) : {message}', [
+                'type' => $type->value,
+                'email' => $destinataire->getAddress(),
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function destinataireEffectif(Address $reel): Address

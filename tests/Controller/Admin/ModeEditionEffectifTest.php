@@ -6,9 +6,11 @@ use App\Entity\Category;
 use App\Entity\Dirigeant;
 use App\Entity\DossierClub;
 use App\Entity\Licencie;
+use App\Entity\RoleAcces;
 use App\Entity\Season;
 use App\Entity\User;
 use App\Enum\LicenceStatus;
+use App\Enum\Permission;
 use App\Repository\DirigeantRepository;
 use App\Repository\LicencieRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -38,22 +40,22 @@ final class ModeEditionEffectifTest extends WebTestCase
         $this->em->flush();
     }
 
-    public function testLeBoutonNEstOffertQuAuCompteDeDiagnostic(): void
+    public function testLeBoutonNEstOffertQuAuxComptesQuiPeuventSupprimer(): void
     {
-        $this->login('autre-admin@example.test');
+        $this->loginSansSuppression();
         $ordinaire = $this->client->request('GET', '/admin/effectif/joueurs')->html();
 
         self::assertStringNotContainsString('Mode édition', $ordinaire);
 
-        $this->login(); // admin@example.test = DIAG_EMAIL du .env.test
+        $this->login(); // super-admin : passe-partout
         $diagnostic = $this->client->request('GET', '/admin/effectif/joueurs')->html();
 
         self::assertStringContainsString('Mode édition', $diagnostic);
     }
 
-    public function testUnAdminOrdinaireNePeutPasAtteindreLaRouteDeSuppression(): void
+    public function testUnCompteSansLeDroitNePeutPasAtteindreLaRouteDeSuppression(): void
     {
-        $this->login('autre-admin@example.test');
+        $this->loginSansSuppression();
         $licencie = $this->makeLicencie('FANTOME');
 
         // Le jeton n'a pas d'importance : le refus tombe avant le corps du contrôleur.
@@ -216,9 +218,34 @@ final class ModeEditionEffectifTest extends WebTestCase
 
     private function login(string $email = 'admin@example.test'): void
     {
-        $user = (new User())->setEmail($email)->setRoles(['ROLE_ADMIN']);
+        $this->connecter($email, superAdmin: true);
+    }
+
+    /**
+     * Un compte qui consulte l'effectif sans pouvoir en supprimer une fiche — le profil le
+     * plus courant, et justement celui qui rate un import.
+     */
+    private function loginSansSuppression(string $email = 'autre-admin@example.test'): void
+    {
+        $role = (new RoleAcces())
+            ->setNom('Lecture effectif ' . $email)
+            ->setPermissions([Permission::EFFECTIF_LIRE, Permission::EFFECTIF_GERER]);
+
+        $this->em->persist($role);
+
+        $this->connecter($email, superAdmin: false, roles: [$role]);
+    }
+
+    /** @param list<RoleAcces> $roles */
+    private function connecter(string $email, bool $superAdmin, array $roles = []): void
+    {
+        $user = (new User())->setSuperAdmin($superAdmin)->setEmail($email)->setRoles(['ROLE_ADMIN']);
         $user->setPassword('x');
         $user->setSelectedSeason($this->season);
+
+        foreach ($roles as $role) {
+            $user->ajouterRoleAcces($role);
+        }
 
         $this->em->persist($user);
         $this->em->flush();

@@ -7,6 +7,8 @@ use App\Repository\LicencieRepository;
 use App\Repository\TransactionRepository;
 use App\Security\CsrfGuard;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Document\SignatureCollector;
+use App\Service\Document\SignatureCompletionService;
 use App\Service\Dotation\DotationChoixRequestFactory;
 use App\Service\Dotation\DotationModeleService;
 use App\Service\Dotation\DotationResolver;
@@ -40,6 +42,8 @@ class InscriptionController extends AbstractController
         private readonly InscriptionFormConfig $formConfig,
         private readonly AutorisationCompletionRequestFactory $completionFactory,
         private readonly DocumentRequirementResolver $documentResolver,
+        private readonly SignatureCompletionService $signatureCompletion,
+        private readonly SignatureCollector $signatureCollector,
     ) {}
 
     #[Route('/{uuid}', name: 'show', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
@@ -130,6 +134,61 @@ class InscriptionController extends AbstractController
             // Seule une transaction réellement enregistrée autorise à annoncer un paiement reçu.
             'paiementRecu' => $this->transactionRepo->sumByLicencieAndSeason($licencie, $licencie->getSeason()) >= (float) $montant,
         ]);
+    }
+
+    /**
+     * Signature d'un document ajouté après l'inscription. Parcours volontairement réduit :
+     * le dossier est déjà complet, seul le document manque.
+     */
+    #[Route('/{uuid}/signer', name: 'signer', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]
+    public function signer(string $uuid): Response
+    {
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
+
+        if ($licencie === null || !$licencie->isFormTokenValid()) {
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
+        }
+
+        $documents = $this->signatureCompletion->manquants($licencie);
+
+        if ($documents === []) {
+            return $this->render('public/inscription/signer_done.html.twig', ['rienASigner' => true]);
+        }
+
+        return $this->render('public/inscription/signer.html.twig', [
+            'licencie' => $licencie,
+            'documents' => $documents,
+        ]);
+    }
+
+    #[Route('/{uuid}/signer', name: 'signer_submit', methods: ['POST'], requirements: ['uuid' => Requirement::UUID])]
+    public function signerSubmit(string $uuid, Request $request): Response
+    {
+        $licencie = $this->licencieRepo->findByUuid(Uuid::fromString($uuid));
+
+        if ($licencie === null || !$licencie->isFormTokenValid()) {
+            return $this->render('public/lien_expire.html.twig', ['message' => 'Ce lien de signature n\'est plus valide.']);
+        }
+
+        $this->csrf->valider('inscription_signer', $request);
+
+        if ($this->signatureCompletion->manquants($licencie) === []) {
+            return $this->render('public/inscription/signer_done.html.twig', ['rienASigner' => true]);
+        }
+
+        // Liste des documents attendus recalculée côté serveur : un id envoyé mais non
+        // attendu est ignoré, un document attendu non signé rejette la soumission.
+        $signatures = $this->signatureCollector->pourLicencie($request, $licencie);
+
+        if ($signatures === null) {
+            $this->addFlash('error', 'Merci de lire et de signer chaque document.');
+
+            return $this->redirectToRoute('public_inscription_signer', ['uuid' => $uuid]);
+        }
+
+        $this->signatureCompletion->signer($licencie, $signatures);
+
+        return $this->render('public/inscription/signer_done.html.twig', ['rienASigner' => false]);
     }
 
     #[Route('/{uuid}/completer', name: 'completer', methods: ['GET'], requirements: ['uuid' => Requirement::UUID])]

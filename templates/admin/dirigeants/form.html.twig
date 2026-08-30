@@ -134,7 +134,8 @@
         <div x-data="{ administrative: document.getElementById('{{ form.licenceAdministrative.vars.id }}').checked }"
              x-init="document.getElementById('{{ form.licenceAdministrative.vars.id }}')
                  .addEventListener('change', e => administrative = e.target.checked)"
-             x-show="!administrative">
+             x-show="!administrative"
+             class="season-form-groupe">
 
         <hr class="season-form-divider">
 

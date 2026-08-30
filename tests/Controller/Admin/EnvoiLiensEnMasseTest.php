@@ -170,7 +170,7 @@ final class EnvoiLiensEnMasseTest extends WebTestCase
 
         $crawler = $client->request('GET', '/admin/effectif/joueurs');
 
-        self::assertStringContainsString('jamais reçu', $crawler->filter('.licencies-liens-attente')->text());
+        self::assertStringContainsString('jamais reçu', $crawler->filter('.effectif-alerte')->first()->text());
     }
 
     private function relire(Licencie $licencie): Licencie
@@ -237,7 +237,7 @@ final class EnvoiLiensEnMasseTest extends WebTestCase
 
         $this->courante = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
         $this->category = (new Category())->setCode('U15')->setLabel('U15')->setIsEcoleFoot(false);
-        $user = (new User())->setEmail('admin-liens@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-liens@example.test')->setPassword('x');
         $user->setSelectedSeason($this->courante);
 
         $em->persist($this->courante);

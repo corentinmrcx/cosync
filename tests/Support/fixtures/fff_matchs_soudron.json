@@ -1,0 +1,79 @@
+[
+  {
+    "_cas": "Match à l'extérieur : le club est en away, la ligne doit être écartée",
+    "ma_no": 56655204,
+    "competition": { "cp_no": 451354, "season": 2026, "type": "CH", "name": "U16 DISTRICT", "level": "D" },
+    "poule_journee": { "number": 1, "name": "1" },
+    "home": { "club": { "cl_no": 1582 }, "category_code": "U17", "number": 2, "short_name": "COUVROT US", "category_label": "U17 - U16 Libre", "category_gender": "M" },
+    "away": { "club": { "cl_no": 194947 }, "category_code": "U17", "number": 2, "short_name": "SOUDRON", "category_label": "U17 - U16 Libre" },
+    "terrain": { "te_no": 511950101, "name": "STADE MUNICIPAL", "zip_code": "51300", "city": "COUVROT", "address": "21 RUE DU STADE" },
+    "season": 2026, "status": "A", "status_label": "/",
+    "date": "2026-09-19T00:00:00+00:00", "time": "15H30", "initial_date": null
+  },
+  {
+    "_cas": "À domicile, équipe EXEMPTE : away et terrain valent null",
+    "ma_no": 56656241,
+    "competition": { "cp_no": 451354, "season": 2026, "type": "CH", "name": "U16 DISTRICT", "level": "D" },
+    "poule_journee": { "number": 3, "name": "3" },
+    "home": { "club": { "cl_no": 194947 }, "category_code": "U17", "number": 2, "short_name": "SOUDRON", "category_label": "U17 - U16 Libre", "category_gender": "M" },
+    "away": null,
+    "terrain": null,
+    "season": 2026, "status": "A", "status_label": "/",
+    "date": "2026-09-19T00:00:00+00:00", "time": "15H30", "initial_date": null
+  },
+  {
+    "_cas": "À domicile, cas nominal : la compétition dit U16 alors que le code catégorie dit U17",
+    "ma_no": 56655217,
+    "competition": { "cp_no": 451354, "season": 2026, "type": "CH", "name": "U16 DISTRICT", "level": "D" },
+    "poule_journee": { "number": 5, "name": "5" },
+    "home": { "club": { "cl_no": 194947 }, "category_code": "U17", "number": 2, "short_name": "SOUDRON", "category_label": "U17 - U16 Libre", "category_gender": "M" },
+    "away": { "club": { "cl_no": 1517 }, "category_code": "U17", "number": 5, "short_name": "COTE DES BLANCS FC", "category_label": "U17 - U16 Libre" },
+    "terrain": { "te_no": 515560101, "name": "COMPLEXE SPORTIF DE SOUDRON", "zip_code": "51320", "city": "SOUDRON", "address": "CHEMIN DES HAUTS" },
+    "season": 2026, "status": "A", "status_label": "/",
+    "date": "2026-10-03T00:00:00+00:00", "time": "15H30", "initial_date": null
+  },
+  {
+    "_cas": "À domicile, séniors : aucune classe d'âge dans le nom de compétition, repli sur le code SEM",
+    "ma_no": 56649846,
+    "competition": { "cp_no": 451349, "season": 2026, "type": "CH", "name": "SENIORS DISTRICT 3", "level": "D" },
+    "poule_journee": { "number": 1, "name": "1" },
+    "home": { "club": { "cl_no": 194947 }, "category_code": "SEM", "number": 1, "short_name": "SOUDRON", "category_label": "Senior Libre", "category_gender": "M" },
+    "away": { "club": { "cl_no": 149081 }, "category_code": "SEM", "number": 4, "short_name": "ARGONNE FC", "category_label": "Senior Libre" },
+    "terrain": { "te_no": 515560101, "name": "COMPLEXE SPORTIF DE SOUDRON", "zip_code": "51320", "city": "SOUDRON", "address": "CHEMIN DES HAUTS" },
+    "season": 2026, "status": "A", "status_label": "/",
+    "date": "2026-09-20T00:00:00+00:00", "time": "15H00", "initial_date": null
+  },
+  {
+    "_cas": "À domicile en coupe, et match reporté : initial_date renseignée, seule `date` fait foi",
+    "ma_no": 56697445,
+    "competition": { "cp_no": 458477, "season": 2026, "type": "CP", "name": "COUPE NEOTEC Challenge Collinet", "level": "D" },
+    "poule_journee": { "number": 1, "name": "Tour 1" },
+    "home": { "club": { "cl_no": 194947 }, "category_code": "SEM", "number": 1, "short_name": "SOUDRON", "category_label": "Senior Libre", "category_gender": "M" },
+    "away": { "club": { "cl_no": 201812 }, "category_code": "SEM", "number": 1, "short_name": "NATIONS FC 51", "category_label": "Senior Libre" },
+    "terrain": { "te_no": 515560101, "name": "COMPLEXE SPORTIF DE SOUDRON", "zip_code": "51320", "city": "SOUDRON", "address": "CHEMIN DES HAUTS" },
+    "season": 2026, "status": "A", "status_label": "/",
+    "date": "2026-09-09T00:00:00+00:00", "time": "18H00", "initial_date": "2026-08-30T00:00:00+00:00"
+  },
+  {
+    "_cas": "À domicile, terrain pas encore affecté par le district : terrain vaut null mais le match a bien lieu",
+    "ma_no": 56653790,
+    "competition": { "cp_no": 451349, "season": 2026, "type": "CH", "name": "SENIORS DISTRICT 3", "level": "D" },
+    "poule_journee": { "number": 3, "name": "3" },
+    "home": { "club": { "cl_no": 194947 }, "category_code": "SEM", "number": 1, "short_name": "SOUDRON", "category_label": "Senior Libre", "category_gender": "M" },
+    "away": { "club": { "cl_no": 16712 }, "category_code": "SEM", "number": 1, "short_name": "BIGNIC/SAULX", "category_label": "Senior Libre" },
+    "terrain": null,
+    "season": 2026, "status": "A", "status_label": "/",
+    "date": "2026-09-27T00:00:00+00:00", "time": "15H00", "initial_date": null
+  },
+  {
+    "_cas": "Ligne inexploitable : ni date ni ma_no utilisables, doit être ignorée sans planter",
+    "ma_no": null,
+    "competition": null,
+    "poule_journee": null,
+    "home": { "club": { "cl_no": 194947 }, "category_code": "SEM", "number": 1, "short_name": "SOUDRON", "category_label": "Senior Libre", "category_gender": "M" },
+    "away": null,
+    "terrain": null,
+    "season": 2026, "status": "A", "status_label": "/",
+    "date": null, "time": null, "initial_date": null
+  }
+]

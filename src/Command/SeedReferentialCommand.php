@@ -3,8 +3,10 @@
 namespace App\Command;
 
 use App\Entity\Category;
+use App\Entity\RoleAcces;
 use App\Entity\Taille;
 use App\Enum\TailleType;
+use App\Service\Compte\RolesSysteme;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -64,6 +66,7 @@ class SeedReferentialCommand extends Command
 
         $this->seedCategories($io);
         $this->seedTailles($io);
+        $this->seedRolesAcces($io);
 
         $this->em->flush();
 
@@ -88,6 +91,32 @@ class SeedReferentialCommand extends Command
 
             $this->em->persist($cat);
             $io->writeln(sprintf('  Catégorie ajoutée : %s', $data['code']));
+        }
+    }
+
+    /**
+     * Rôles d'accès livrés avec l'application.
+     *
+     * Idempotent au sens strict : un rôle déjà présent n'est **pas** remis à ses permissions
+     * d'origine. Le club les ajuste après coup, et une commande de seed qui écraserait ces
+     * ajustements ferait perdre des réglages à chaque déploiement.
+     */
+    private function seedRolesAcces(SymfonyStyle $io): void
+    {
+        $repo = $this->em->getRepository(RoleAcces::class);
+
+        foreach (RolesSysteme::definitions() as $nom => $permissions) {
+            if ($repo->findOneBy(['nom' => $nom]) !== null) {
+                continue;
+            }
+
+            $role = (new RoleAcces())
+                ->setNom($nom)
+                ->setPermissions($permissions)
+                ->setSysteme(true);
+
+            $this->em->persist($role);
+            $io->writeln(sprintf('  Rôle ajouté : %s', $nom));
         }
     }
 

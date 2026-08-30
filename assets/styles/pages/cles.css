@@ -69,6 +69,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 0.75rem;
 }
 
@@ -337,4 +338,14 @@
     padding: 0.85rem 1rem;
     background: var(--color-bg-page);
     border-top: 1px solid var(--color-border);
+}
+
+/* — Téléphone — le registre se consulte au local, l'écran doit respirer sans déborder. */
+@media (max-width: 640px) {
+    .cles-page { padding: 1rem; gap: 1rem; }
+    .cles-section { padding: 1rem; }
+
+    /* Les boutons d'une ligne passent sous la carte : ils s'alignent à gauche comme le
+       reste, plutôt que collés au bord droit d'une colonne qui n'existe plus. */
+    .cles-row-actions { justify-content: flex-start; }
 }

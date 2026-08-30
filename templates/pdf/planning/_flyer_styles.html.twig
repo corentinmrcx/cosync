@@ -1,0 +1,277 @@
+{# Styles du flyer, calés sur le visuel Canva du club.
+
+   Deux sources se complètent :
+   — les **réglages d'origine** donnés par le club : Montserrat, titre en très gras
+     corps 33, sous-titre en très gras corps 12 centré sous le titre, contacts corps 13,
+     appel en gras corps 33, logo à 10 px du bord haut, bloc bas à 5 px des bords ;
+   — les **cotes relevées au pixel** sur l'export PDF de ce visuel, qui font foi pour tout
+     ce que les réglages ne disent pas (hauteur des bandes, début du tableau).
+
+   Les « px » de Canva sont convertis à 96 dpi, soit 0,265 mm.
+
+   Couleurs écrites en dur : DomPDF n'applique pas les variables CSS. #}
+
+/*
+ * Montserrat, la police du club, lue sur le disque : `isRemoteEnabled` est à false, un PDF
+ * ne doit jamais dépendre du réseau au moment où il est produit. Les fichiers vivent dans
+ * `public/fonts/montserrat/` et PdfRenderer expose leur chemin absolu via `fontDir`.
+ *
+ * ⚠️ « Très gras » (ExtraBold) est déclaré comme une **famille distincte** : son nom
+ * interne est « Montserrat ExtraBold » avec un style « Regular », et le rattacher à la
+ * famille Montserrat en poids 800 le ferait ignorer au profit du Bold.
+ */
+@font-face {
+    font-family: 'Montserrat';
+    font-weight: normal;
+    src: url("{{ fontDir }}/montserrat/Montserrat-Regular.ttf") format('truetype');
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    font-weight: bold;
+    src: url("{{ fontDir }}/montserrat/Montserrat-Bold.ttf") format('truetype');
+}
+
+@font-face {
+    font-family: 'Montserrat ExtraBold';
+    font-weight: normal;
+    src: url("{{ fontDir }}/montserrat/Montserrat-ExtraBold.ttf") format('truetype');
+}
+
+.flyer {
+    position: relative;
+    /* Hauteur d'une A5. Le bloc tient cette hauteur sans paginer parce que les deux
+       coquilles le posent **hors flux** (`.demi` en absolu) : en flux normal, DomPDF
+       sortait une seconde feuille vide derrière chaque flyer. */
+    height: 210mm;
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+    color: #1a1a1a;
+}
+
+/* — En-tête : bande rouge pleine largeur, logo posé par-dessus —
+
+   Ni la bande ni le tableau n'ont de marge latérale : choix du club, l'imprimante ajoutant
+   déjà ses propres bords. */
+
+.flyer-entete {
+    position: relative;
+    /* Réserve jusqu'au début du tableau : le logo descend bas, en deçà le blason mordrait
+       sur l'en-tête du tableau. */
+    height: 50mm;
+}
+
+/*
+ * ⚠️ Les deux lignes de titre sont **hors flux** (absolues) dans la bande.
+ *
+ * En flux, DomPDF ajoute la hauteur du contenu à la hauteur déclarée du bloc au lieu de la
+ * respecter : la bande gonflait de 5 mm et aucune valeur de `height` ne permettait de
+ * retomber sur les 19,6 mm du visuel.
+ */
+.flyer-bandeau {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 12mm;
+    height: 19.6mm;
+    background: #ff3131;
+}
+
+/* Corps 33 et 12 en unités Canva → 24,75 pt et 9 pt, en très gras.
+   Les deux lignes partagent la même colonne et le même centrage : le sous-titre est
+   centré **sur le titre**, pas sur la bande — sinon il se décalerait à gauche, le logo
+   mangeant le début de la bande. */
+.flyer-bandeau-titre,
+.flyer-bandeau-club {
+    position: absolute;
+    left: 42mm;
+    right: 3mm;
+    text-align: center;
+    color: #ffffff;
+    font-family: 'Montserrat ExtraBold', 'Montserrat', Arial, sans-serif;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.flyer-bandeau-titre { top: 2.1mm;  font-size: 24.75pt; }
+/* 13,1 et non 12,2 : un millimètre de plus sous le titre, la respiration qui manquait.
+   Le titre remonte d'autant pour que le bloc des deux lignes reste centré dans la bande. */
+.flyer-bandeau-club  { top: 13.1mm; font-size: 9pt; letter-spacing: 0.2pt; }
+
+/*
+ * Déclaré **après** le bandeau dans le balisage : deux blocs absolus se recouvrent dans
+ * l'ordre du DOM, et DomPDF ne gère pas `z-index` de façon fiable.
+ *
+ * ⚠️ **Une seule dimension imposée, et carrée.** Le fichier source est carré (1563×1563)
+ * avec le blason en réserve transparente ; lui donner une largeur et une hauteur
+ * différentes l'étirait de 18 %. DomPDF ignore `object-fit` : il n'y a pas d'autre
+ * garde-fou que de respecter le rapport de l'image.
+ *
+ * Haut du blason à 10 px du bord (2,6 mm), comme sur le Canva du club. Le débordement de
+ * la bande, en haut comme en bas, est voulu.
+ */
+.flyer-logo {
+    position: absolute;
+    left: 3mm;
+    top: 2.5mm;
+    width: 39.7mm;
+    height: 39.7mm;
+}
+
+/* — Tableau des matchs — */
+
+/* Le tableau n'a plus de hauteur imposée : c'est FlyerGeometrie qui a déjà borné le
+   nombre de rencontres à ce qui tient sur la page, et qui place le pied en dessous. */
+
+.flyer-matchs { width: 100%; border-collapse: collapse; }
+
+.flyer-matchs th {
+    padding: 0 2mm 2.4mm;
+    text-align: left;
+    font-size: 8pt;
+    font-weight: bold;
+    color: #1a1a1a;
+    border-bottom: 0.75pt solid #d0d0d0;
+}
+
+.flyer-matchs td {
+    /* Interligne resserré : c'est lui qui fixe la capacité du flyer. À 2,6 mm, un mois à
+       douze rencontres poussait le bloc de contacts sous le bandeau d'appel. */
+    padding: 2mm;
+    font-size: 8pt;
+    vertical-align: top;
+    border-bottom: 0.5pt solid #ececec;
+}
+
+.fc-date  { width: 27mm; white-space: nowrap; }
+.fc-heure { width: 15mm; white-space: nowrap; }
+.fc-cat   { width: 22mm; }
+
+/* Pas de rembourrage bas : c'est FlyerGeometrie qui pose le pied sous ce paragraphe, au
+   même écart que partout ailleurs. Un rembourrage ici s'y ajouterait. */
+.flyer-vide {
+    padding: 14mm 0 0;
+    text-align: center;
+    font-size: 9pt;
+    font-style: italic;
+    color: #888;
+}
+
+/* Mention de troncature : discrète, elle n'est pas une rencontre de plus — ni filet de
+   séparation, ni graisse. */
+.flyer-omis td {
+    padding: 2.5mm 2mm 0;
+    border-bottom: none;
+    font-size: 7.5pt;
+    font-style: italic;
+    color: #777;
+}
+
+/* — Pied : filet rouge, contacts sur deux lignes, mail — */
+
+/*
+ * Le pied est posé à une cote **calculée** (attribut `style`, cf. FlyerGeometrie) : il suit
+ * la fin du tableau au même écart que celui qui sépare le blason de l'en-tête du tableau.
+ *
+ * Ni hauteur minimale ni marge : DomPDF n'a ni flexbox ni `calc()` sur des hauteurs de
+ * contenu. En flux, le pied venait se coller sous la dernière ligne ; ancré à une cote
+ * fixe, il laissait un trou variable au-dessus de lui.
+ */
+.flyer-pied {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+
+.flyer-filet {
+    width: 45.4mm;
+    height: 1.5pt;
+    background: #ff3131;
+    margin: 0 auto 4.6mm;
+}
+
+/*
+ * Table pleine largeur, et c'est le **rembourrage des cellules** qui rapproche les deux
+ * noms du centre. Une table étroite centrée par ses marges revenait au même à l'œil, mais
+ * DomPDF décalait le bloc d'un millimètre vers la droite : la largeur restante n'était pas
+ * répartie symétriquement. À 100 %, chaque cellule fait exactement la moitié de la page et
+ * le bloc est centré par construction.
+ */
+.flyer-contacts {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.flyer-contacts td { width: 50%; text-align: center; padding: 0; }
+
+/* Rembourrages en miroir : chaque nom se rapproche du centre d'autant, l'ensemble reste
+   centré quelle que soit la longueur des noms. Le contenu d'une cellule se recentrant dans
+   la largeur qui lui reste, l'écart entre les deux noms se resserre **d'autant** que le
+   rembourrage grandit : 26 mm laissent 18 mm entre les deux noms. */
+.flyer-contacts td.contact-gauche { padding-left: 26mm; }
+.flyer-contacts td.contact-droite { padding-right: 26mm; }
+
+/* Corps 13 en unités Canva → 9,75 pt. Nom puis téléphone **l'un sous l'autre** : sur une
+   seule ligne, le bloc se repliait dès qu'un nom était un peu long. */
+/* `line-height: 1` sur les trois lignes du pied : l'interligne par défaut ajoutait près
+   de 2 mm à chaque écart, et le bloc respirait beaucoup plus que sur le visuel. */
+.flyer-contact-nom {
+    display: block;
+    font-size: 9.75pt;
+    font-weight: bold;
+    line-height: 1;
+    color: #1a1a1a;
+}
+
+.flyer-contact-tel {
+    display: block;
+    margin-top: 0.6mm;
+    font-size: 9.75pt;
+    line-height: 1;
+    color: #333;
+}
+
+.flyer-email {
+    margin-top: 2.5mm;
+    font-size: 9.75pt;
+    line-height: 1;
+    color: #333;
+}
+
+/* — Bandeau d'appel —
+
+   Positionné par `top` et non par `bottom` : DomPDF calcule mal `bottom` sur un bloc
+   absolu, le bandeau sortait sous le bord de la feuille.
+
+   À 5 px des bords (1,3 mm) à gauche, à droite et en bas, comme sur le Canva du club. */
+
+.flyer-appel {
+    position: absolute;
+    left: 1.3mm;
+    right: 1.3mm;
+    top: 195.1mm;
+    /* Hauteur respectée à la lettre : le texte du bandeau étant hors flux, rien ne vient
+       la gonfler — contrairement aux blocs à contenu en flux. */
+    height: 13.6mm;
+    background: #ff3131;
+}
+
+/* Hors flux, comme les lignes du bandeau haut, et pour la même raison : la bande garde
+   alors exactement sa hauteur. Centré horizontalement par `text-align`, verticalement par
+   la cote `top`. Corps 33 en unités Canva → 24,75 pt, en **gras** et non en très gras :
+   c'est le réglage du visuel d'origine. */
+.flyer-appel-texte {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 1.2mm;
+    color: #ffffff;
+    text-align: center;
+    font-size: 22.5pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 1;
+    /* La phrase tient sur une ligne ou le bandeau n'a plus de sens : le « ! » partait
+       seul sur une seconde ligne, à moitié hors du rouge. */
+    white-space: nowrap;
+}

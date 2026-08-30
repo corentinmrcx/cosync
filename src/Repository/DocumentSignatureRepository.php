@@ -81,6 +81,25 @@ class DocumentSignatureRepository extends ServiceEntityRepository
         return array_map(static fn (array $row): string => (string) $row['uuid'], $rows);
     }
 
+    /**
+     * Uuids des licenciés ayant déjà signé ce document, sous forme de chaînes,
+     * pour un test d'appartenance sans recharger les entités.
+     *
+     * @return string[]
+     */
+    public function licencieUuidsByDocument(DocumentSignable $document): array
+    {
+        $rows = $this->createQueryBuilder('s')
+            ->select('IDENTITY(s.licencie) AS uuid')
+            ->where('s.document = :document')
+            ->andWhere('s.licencie IS NOT NULL')
+            ->setParameter('document', $document)
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_map(static fn (array $row): string => (string) $row['uuid'], $rows);
+    }
+
     public function countByDocument(DocumentSignable $document): int
     {
         return (int) $this->createQueryBuilder('s')

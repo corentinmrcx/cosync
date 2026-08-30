@@ -3,7 +3,6 @@
 namespace App\Service\Mail;
 
 use App\DTO\EnvoiGroupeResultat;
-use App\DTO\RelanceResultat;
 use App\Entity\Dirigeant;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -80,28 +79,5 @@ final class DirigeantLinkService
         }
 
         return new EnvoiGroupeResultat($envoyes, $echecs, $sansEmail, $nonRetenus);
-    }
-
-    /**
-     * Relance en masse : les dirigeants sans adresse sont ignorés, pas bloquants.
-     *
-     * @param Dirigeant[] $dirigeants
-     */
-    public function relancerEnMasse(array $dirigeants): RelanceResultat
-    {
-        $envoyes = 0;
-        $sansEmail = 0;
-
-        foreach ($dirigeants as $dirigeant) {
-            if ($dirigeant->getEmail() === null) {
-                ++$sansEmail;
-                continue;
-            }
-
-            $this->send($dirigeant);
-            ++$envoyes;
-        }
-
-        return new RelanceResultat($envoyes, $sansEmail);
     }
 }

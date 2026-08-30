@@ -7,6 +7,7 @@ use App\Repository\SeasonRepository;
 use App\Service\Referentiel\ClubSettingsService;
 use App\Service\Referentiel\TailleReferentiel;
 use App\Service\Saison\SeasonContext;
+use App\Service\Ui\DateFrancaiseFormatter;
 use Twig\Extension\AbstractExtension;
 use Twig\Extension\GlobalsInterface;
 use Twig\TwigFilter;
@@ -19,6 +20,7 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
         private readonly SeasonRepository $seasonRepository,
         private readonly ClubSettingsService $clubSettings,
         private readonly TailleReferentiel $tailles,
+        private readonly DateFrancaiseFormatter $dates,
         private readonly string $nomClub,
     ) {}
 
@@ -48,6 +50,13 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
     {
         return [
             new TwigFilter('phone_format', $this->formatPhone(...)),
+            // Dates en français. Le filtre Twig `date` ne sait pas traduire, et
+            // `format_datetime` s'appuierait sur un ICU réduit à l'anglais dans cette
+            // image — cf. DateFrancaiseFormatter.
+            new TwigFilter('date_fr', $this->dates->complete(...)),
+            new TwigFilter('date_fr_jour_mois', $this->dates->jourEtMois(...)),
+            new TwigFilter('date_fr_courte', $this->dates->court(...)),
+            new TwigFilter('date_fr_sans_jour', $this->dates->sansJour(...)),
         ];
     }
 

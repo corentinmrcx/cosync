@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Attribute\CurrentSeason;
 use App\Entity\Season;
+use App\Enum\Permission;
 use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
 use App\Service\Referentiel\TeamService;
@@ -12,12 +13,14 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Tous les montants dus de la saison au même endroit : la cotisation par défaut et,
  * pour chaque équipe, le montant qui la remplace éventuellement.
  */
 #[Route('/admin/saison/cotisations', name: 'admin_cotisations_')]
+#[IsGranted(Permission::SAISON_LIRE->value)]
 class CotisationController extends AbstractController
 {
     public function __construct(
@@ -38,6 +41,7 @@ class CotisationController extends AbstractController
     }
 
     #[Route('/defaut', name: 'defaut', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function defaut(
         #[CurrentSeason] Season $season,
         Request $request,
@@ -61,6 +65,7 @@ class CotisationController extends AbstractController
      * Les équipes se règlent d'un bloc : on ajuste plusieurs montants, on enregistre une fois.
      */
     #[Route('/equipes', name: 'equipes', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function equipes(
         #[CurrentSeason] Season $season,
         Request $request,

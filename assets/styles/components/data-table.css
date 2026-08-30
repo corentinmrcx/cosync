@@ -7,11 +7,35 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 .table-wrapper {
-    background: var(--color-bg-page);
+    background-color: var(--color-bg-page);
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-xl);
     overflow-x: auto;
     box-shadow: var(--shadow-card);
+
+    /* Ombres de défilement : quand le tableau déborde, un dégradé apparaît du côté où il
+       reste du contenu. Sans ce signal, une colonne coupée net passe pour la fin du tableau.
+       Deux masques opaques collés au contenu (`local`) recouvrent les ombres tant qu'on est
+       en bout de course ; les ombres, elles, restent collées au cadre (`scroll`). */
+    background-image:
+        linear-gradient(to right, var(--color-bg-page) 40%, rgb(255 255 255 / 0)),
+        linear-gradient(to left, var(--color-bg-page) 40%, rgb(255 255 255 / 0)),
+        linear-gradient(to right, rgb(0 0 0 / 0.09), rgb(0 0 0 / 0)),
+        linear-gradient(to left, rgb(0 0 0 / 0.09), rgb(0 0 0 / 0));
+    background-position: left center, right center, left center, right center;
+    background-repeat: no-repeat;
+    background-size: 2.5rem 100%, 2.5rem 100%, 0.875rem 100%, 0.875rem 100%;
+    background-attachment: local, local, scroll, scroll;
+}
+
+/*
+ * Tableau déjà posé dans une carte : il lui faut le défilement, pas un second cadre.
+ * On garde le fond (les masques d'ombre en dépendent) et on retire bordure et relief.
+ */
+.table-wrapper-nu {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .table {
@@ -74,3 +98,135 @@
 /* Tableau compact : listes denses (mouvements de stock, suivi des dotations). */
 .table-compact th { padding: 0.5rem 0.75rem; }
 .table-compact td { padding: 0.5rem 0.75rem; }
+
+
+/* ── Passage en cartes sur téléphone ──────────────────────────────────────────
+   Une liste de personnes à six colonnes ne se lit pas sur 360 px : elle glisse
+   sous le doigt, colonne par colonne. `.table-cartes`, posé **sur le wrapper**,
+   la transforme en cartes empilées — on ne défile plus que vers le bas.
+
+   Réservé aux listes qu'on consulte : un tableau dense qui sert à *comparer* des
+   lignes (mouvements de stock, commandes) perd tout à être empilé, il garde son
+   défilement horizontal et ses ombres de bord.
+
+   Côté balisage, trois marqueurs, tous facultatifs :
+     data-label="Équipe"  sur un <td> → l'intitulé s'affiche devant la valeur
+     class="carte-titre"  → le nom, en tête de carte (sans intitulé)
+     class="carte-meta"   → une ligne discrète (sans intitulé)
+   Un <td> sans marqueur affiche sa valeur seule, sur toute la largeur.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+    /* Le cadre et le défilement appartenaient au tableau : les cartes portent le leur. */
+    .table-cartes {
+        background: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        overflow-x: visible;
+    }
+
+    /* `.resp-table` force une largeur mini pour garder ses colonnes lisibles en défilant :
+       en cartes, cette largeur ferait déborder la page, la colonne n'existe plus. */
+    .table-cartes .resp-table { min-width: 0; }
+
+    .table-cartes .table,
+    .table-cartes tbody,
+    .table-cartes tr,
+    .table-cartes td {
+        display: block;
+    }
+
+    /* Les en-têtes sont repris cellule par cellule via data-label. */
+    .table-cartes thead {
+        display: none;
+    }
+
+    .table-cartes tr {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0.875rem 1rem;
+        margin-bottom: 0.625rem;
+        background: var(--color-bg-page);
+        border: 1px solid var(--color-border-strong);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+    }
+
+    .table-cartes tr:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Les filets de ligne du tableau n'ont plus de sens : la carte est la séparation. */
+    .table-cartes tbody tr { border-top: none; }
+
+    .table-cartes td {
+        padding: 0;
+        border: none;
+        font-size: var(--font-size-sm);
+        min-width: 0;
+        overflow-wrap: break-word;
+    }
+
+    /* Intitulé à gauche, valeur à droite — la lecture verticale des valeurs reste possible. */
+    .table-cartes td[data-label] {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .table-cartes td[data-label]::before {
+        content: attr(data-label);
+        flex: 0 0 auto;
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        color: var(--color-text-muted);
+    }
+
+    .table-cartes .carte-titre {
+        font-size: var(--font-size-base);
+        font-weight: 700;
+        color: var(--color-text-base);
+    }
+
+    .table-cartes .carte-meta {
+        color: var(--color-text-muted);
+    }
+
+    /* Une carte qui mène quelque part le dit : sur un écran tactile, il n'y a pas de survol
+       pour le suggérer. */
+    .table-cartes .table-cliquable .carte-titre {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .table-cartes .table-cliquable .carte-titre::after {
+        content: '›';
+        font-size: var(--font-size-xl);
+        font-weight: 400;
+        line-height: 1;
+        color: var(--color-text-disabled);
+    }
+
+    /* Une cellule d'actions retrouve toute la largeur : ses boutons ne sont plus tassés
+       dans une colonne de bout de ligne, ils s'alignent à gauche sous la carte.
+       `display: flex` est réaffirmé ici : la règle générique des cellules l'aurait repassée
+       en `block`, et les boutons se seraient empilés un par ligne. */
+    .table-cartes .table-actions,
+    .table-cartes .table-actions-cellule {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+        width: auto;
+        justify-content: flex-start;
+        white-space: normal;
+    }
+
+    .table-cartes .table-actions {
+        margin-top: 0.375rem;
+    }
+}

@@ -177,6 +177,7 @@
 .doc-badge-imported  { background: var(--color-status-imported-bg);  color: var(--color-status-imported); }
 .doc-badge-sent      { background: var(--color-status-sent-bg);      color: var(--color-status-sent); }
 .doc-badge-completed { background: var(--color-status-completed-bg); color: var(--color-status-completed); }
+.doc-badge-a-valider { background: var(--color-status-a-valider-bg); color: var(--color-status-a-valider); }
 .doc-badge-validated { background: var(--color-status-validated-bg); color: var(--color-status-validated); }
 
 /* — Responsive : sommaire au-dessus du contenu — */

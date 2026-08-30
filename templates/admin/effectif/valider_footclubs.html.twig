@@ -1,0 +1,92 @@
+{% extends 'admin/layout.html.twig' %}
+
+{#
+  Validation groupée dans FootClubs — joueurs et dirigeants.
+
+  Le club signe ses licences dans l'outil fédéral par paquets, puis vient le déclarer ici.
+  Aucun mail ne part : c'est un geste interne, la personne a déjà été prévenue au solde.
+  Le même écran sert les deux populations, comme pour la relance des signatures.
+
+  Paramètres attendus :
+    personnes ([{uuid, nom, detail}]) · population ('joueur'|'dirigeant') · tokenId
+    actionUrl · retourUrl
+#}
+
+{% block title %}CoSync — Valider sur FootClubs{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: navbar_saison_label, route: 'admin_saison_dashboard' },
+    { label: 'Effectif', route: 'admin_effectif_index' },
+    { label: population == 'joueur' ? 'Joueurs' : 'Dirigeants', route: population == 'joueur' ? 'admin_licencies_list' : 'admin_dirigeants_list' },
+    { label: 'Valider sur FootClubs' }
+] } %}
+
+{% set uuids = personnes|map(p => p.uuid) %}
+
+<div class="envoi-liens-page">
+    <div class="envoi-liens-card">
+
+        <h1 class="envoi-liens-title">Valider sur FootClubs</h1>
+        <p class="envoi-liens-intro">
+            Ces {{ population }}s n'attendent plus rien du club : dossier complet
+            {%- if population == 'joueur' %} et cotisation soldée{% endif %}. Il reste à signer
+            leur licence dans FootClubs. Cochez ce que vous venez d'y valider — CoSync se contente
+            d'en garder la trace, aucun message n'est envoyé.
+        </p>
+
+        <hr class="envoi-liens-divider">
+
+        {% if personnes is empty %}
+            <p class="envoi-liens-empty">Rien à valider : aucune licence en attente côté FootClubs.</p>
+            <div class="envoi-liens-actions">
+                <a href="{{ retourUrl }}" class="btn btn-secondary">Retour</a>
+            </div>
+        {% else %}
+            <form method="post" action="{{ actionUrl }}"
+                  class="envoi-liens-form"
+                  x-data='{ retenus: {{ uuids|json_encode|raw }}, tous: {{ uuids|json_encode|raw }} }'>
+                <input type="hidden" name="_token" value="{{ csrf_token(tokenId) }}">
+
+                <p class="envoi-liens-resume">
+                    <strong>{{ personnes|length }}</strong> {{ population }}{{ personnes|length > 1 ? 's' }}
+                    à valider sur FootClubs.
+                </p>
+
+                <div class="envoi-liens-selection">
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = [...tous]">Tout cocher</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="retenus = []">Tout décocher</button>
+                </div>
+
+                <ul class="envoi-liens-list">
+                    {% for personne in personnes %}
+                        <li class="envoi-liens-item">
+                            <input type="checkbox"
+                                   name="personnes[]"
+                                   value="{{ personne.uuid }}"
+                                   class="envoi-liens-case"
+                                   x-model="retenus"
+                                   checked>
+                            <span class="envoi-liens-nom">{{ personne.nom }}</span>
+                            <span class="envoi-liens-equipe">{{ personne.detail }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <hr class="envoi-liens-divider">
+
+                <div class="envoi-liens-actions">
+                    <a href="{{ retourUrl }}" class="btn btn-ghost">Annuler</a>
+                    <button type="submit" class="btn btn-primary"
+                            :disabled="retenus.length === 0"
+                            x-text="'Valider ' + retenus.length + ' licence' + (retenus.length > 1 ? 's' : '')">
+                        Valider {{ personnes|length }} licence{{ personnes|length > 1 ? 's' }}
+                    </button>
+                </div>
+            </form>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

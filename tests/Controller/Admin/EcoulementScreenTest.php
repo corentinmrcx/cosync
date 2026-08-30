@@ -292,7 +292,7 @@ final class EcoulementScreenTest extends WebTestCase
     {
         $this->em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $user = (new User())->setEmail('admin-ecoulement@example.com')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-ecoulement@example.com')->setPassword('x');
         $this->em->persist($user);
         $this->em->flush();
 

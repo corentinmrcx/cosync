@@ -8,17 +8,17 @@ use App\Entity\DocumentSignable;
 use App\Entity\Season;
 use App\Enum\DirigeantRole;
 use App\Enum\DocumentCible;
+use App\Enum\Permission;
 use App\Repository\DirigeantRepository;
 use App\Repository\DocumentSignableRepository;
 use App\Security\CsrfGuard;
-use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Document\DocumentSignableService;
-use App\Service\Mail\DirigeantLinkService;
 use App\Service\Pdf\PdfGeneratorService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Administration des documents que le club fait signer.
@@ -27,16 +27,15 @@ use Symfony\Component\Routing\Attribute\Route;
  * documents n'est plus une constante du code, donc l'écran non plus.
  */
 #[Route('/admin/effectif/documents', name: 'admin_documents_')]
+#[IsGranted(Permission::SAISON_LIRE->value)]
 class DocumentSignableController extends AbstractController
 {
     public function __construct(
         private readonly DirigeantRepository $dirigeantRepo,
         private readonly PdfGeneratorService $pdfGenerator,
-        private readonly DirigeantLinkService $linkService,
         private readonly CsrfGuard $csrf,
         private readonly DocumentSignableRepository $documentRepo,
         private readonly DocumentSignableService $documentService,
-        private readonly DocumentRequirementResolver $resolver,
     ) {}
 
     #[Route('', name: 'list', methods: ['GET'])]
@@ -51,6 +50,7 @@ class DocumentSignableController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function new(Request $request, #[CurrentSeason] Season $season): Response
     {
         if ($request->isMethod('POST')) {
@@ -78,6 +78,7 @@ class DocumentSignableController extends AbstractController
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function edit(DocumentSignable $document, Request $request): Response
     {
         $csrfId = 'document_edit_' . $document->getId();
@@ -116,6 +117,7 @@ class DocumentSignableController extends AbstractController
     }
 
     #[Route('/{id}/activation', name: 'toggle', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function toggle(DocumentSignable $document, Request $request): Response
     {
         $this->csrf->valider('document_toggle_' . $document->getId(), $request);
@@ -131,6 +133,7 @@ class DocumentSignableController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function delete(DocumentSignable $document, Request $request): Response
     {
         $this->csrf->valider('document_delete_' . $document->getId(), $request);
@@ -145,42 +148,6 @@ class DocumentSignableController extends AbstractController
         }
 
         return $this->redirectToRoute('admin_documents_list');
-    }
-
-    /**
-     * Relance groupée : un document ajouté en cours de saison ne se voit pas, les
-     * dossiers concernés étant déjà complets et leurs liens consommés. L'écran liste
-     * qui est concerné avant tout envoi.
-     */
-    #[Route('/{id}/relancer', name: 'relancer', methods: ['GET', 'POST'])]
-    public function relancer(DocumentSignable $document, Request $request): Response
-    {
-        if ($document->getCible() !== DocumentCible::DIRIGEANT) {
-            $this->addFlash('error', 'La relance groupée ne concerne que les documents destinés aux dirigeants.');
-
-            return $this->redirectToRoute('admin_documents_list');
-        }
-
-        $enAttente = $this->resolver->dirigeantsEnAttente($document);
-
-        if ($request->isMethod('POST')) {
-            $this->csrf->valider('document_relancer_' . $document->getId(), $request);
-
-            $resultat = $this->linkService->relancerEnMasse($enAttente);
-
-            $this->addFlash('success', sprintf(
-                '%d lien(s) envoyé(s)%s.',
-                $resultat->envoyes,
-                $resultat->sansEmail > 0 ? sprintf(', %d dirigeant(s) sans adresse email', $resultat->sansEmail) : '',
-            ));
-
-            return $this->redirectToRoute('admin_documents_list');
-        }
-
-        return $this->render('admin/documents/relancer.html.twig', [
-            'document' => $document,
-            'enAttente' => $enAttente,
-        ]);
     }
 
     private function buildData(Request $request): DocumentSignableData

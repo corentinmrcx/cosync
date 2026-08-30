@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\GrilleTaille;
 use App\Entity\GrilleTailleValeur;
+use App\Enum\Permission;
 use App\Enum\TailleType;
 use App\Repository\GrilleTailleRepository;
 use App\Security\CsrfGuard;
@@ -12,12 +13,14 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Grilles de tailles : la traduction entre ce qu'une personne déclare et ce que le fournisseur
  * étiquette. Référentiel niveau club, comme les tailles elles-mêmes.
  */
 #[Route('/admin/club/grilles-tailles', name: 'admin_grilles_')]
+#[IsGranted(Permission::STOCK_LIRE->value)]
 class GrilleTailleController extends AbstractController
 {
     public function __construct(
@@ -37,6 +40,7 @@ class GrilleTailleController extends AbstractController
     }
 
     #[Route('/nouvelle', name: 'new', methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function new(Request $request): Response
     {
         $this->csrf->valider('grille_nouvelle', $request);
@@ -69,6 +73,7 @@ class GrilleTailleController extends AbstractController
     }
 
     #[Route('/{id}/renommer', name: 'rename', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function rename(GrilleTaille $grille, Request $request): Response
     {
         $this->csrf->valider('grille_renommer_' . $grille->getId(), $request);
@@ -84,6 +89,7 @@ class GrilleTailleController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function delete(GrilleTaille $grille, Request $request): Response
     {
         $this->csrf->valider('grille_supprimer_' . $grille->getId(), $request);
@@ -101,6 +107,7 @@ class GrilleTailleController extends AbstractController
     }
 
     #[Route('/{id}/valeurs', name: 'valeur_add', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function valeurAdd(GrilleTaille $grille, Request $request): Response
     {
         $this->csrf->valider('grille_valeur_ajouter_' . $grille->getId(), $request);
@@ -116,6 +123,7 @@ class GrilleTailleController extends AbstractController
     }
 
     #[Route('/valeurs/{id}/modifier', name: 'valeur_edit', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function valeurEdit(GrilleTailleValeur $valeur, Request $request): Response
     {
         $this->csrf->valider('grille_valeur_modifier_' . $valeur->getId(), $request);
@@ -131,6 +139,7 @@ class GrilleTailleController extends AbstractController
     }
 
     #[Route('/valeurs/{id}/supprimer', name: 'valeur_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[IsGranted(Permission::STOCK_CONFIGURER->value)]
     public function valeurDelete(GrilleTailleValeur $valeur, Request $request): Response
     {
         $this->csrf->valider('grille_valeur_supprimer_' . $valeur->getId(), $request);

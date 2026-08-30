@@ -1,0 +1,60 @@
+{% extends 'public/layout.html.twig' %}
+
+{% block title %}Document à signer – Foyer de Soudron{% endblock %}
+
+{% block page_attributs %} x-data="signatureForm({ documents: {{ documents|map(d => {id: d.id})|json_encode }} })"{% endblock %}
+
+{% block entete_droite %}
+    <span class="inscription-header-step" x-text="`Étape ${displayStep} sur ${totalSteps}`"></span>
+{% endblock %}
+
+{% block entete_extra %}
+    <div class="inscription-progress">
+        <template x-for="n in totalSteps" :key="n">
+            <div class="inscription-progress-segment"
+                 :class="displayStep >= n ? 'inscription-progress-segment-done' : ''"></div>
+        </template>
+    </div>
+{% endblock %}
+
+{% block contenu %}
+    <form method="post"
+          action="{{ path('public_inscription_signer_submit', {uuid: licencie.uuid}) }}"
+          @submit="submitting = true">
+        <input type="hidden" name="_token" value="{{ csrf_token('inscription_signer') }}">
+
+        {# Le dossier est déjà complet : une étape par document manquant, et rien d'autre. #}
+        {% for doc in documents %}
+            {% include 'public/_document_signature_step.html.twig' with {
+                doc: doc,
+                index: loop.index0,
+                stepShow: 'step === ' ~ loop.index0
+            } only %}
+        {% endfor %}
+
+        <div class="inscription-nav">
+            <template x-if="step > 0">
+                <button type="button" @click="prev" class="btn btn-ghost">
+                    ← Précédent
+                </button>
+            </template>
+
+            <template x-if="!isLastStep">
+                <button type="button" @click="next" :disabled="!canGoNext" class="btn btn-primary btn-block">
+                    Suivant →
+                </button>
+            </template>
+
+            <template x-if="isLastStep">
+                <button type="submit" :disabled="!canGoNext || submitting" class="btn btn-primary btn-block">
+                    Valider ma signature ✓
+                </button>
+            </template>
+        </div>
+
+    </form>
+{% endblock %}
+
+{% block hors_flux %}
+    {% include 'components/_overlay_chargement.html.twig' with { visible: 'submitting', titre: "Enregistrement…" } only %}
+{% endblock %}

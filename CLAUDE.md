@@ -208,8 +208,42 @@ dotation_personnalisation: json           // textes de flocage par groupe
 helloasso_checkout_intent_id: ?string
 helloasso_checkout_started_at: ?datetime  // borne la réconciliation des paiements
 form_completed_at: ?datetime
-status: LicenceStatus  // IMPORTED | LINK_SENT | FORM_COMPLETED | VALIDATED
+status: LicenceStatus  // IMPORTED | LINK_SENT | FORM_COMPLETED | A_VALIDER_FFF | VALIDATED
 ```
+
+### « Payé » et « validé » sont deux faits, et deux statuts
+
+Une licence soldée dans CoSync n'est pas une licence validée : le club doit encore la
+**signer dans FootClubs**, et rien ne peut faire ce geste à sa place — les deux outils ne se
+parlent pas. Tant qu'un seul statut portait les deux, le club n'avait aucun moyen de savoir
+ce qu'il lui restait à faire côté fédéral.
+
+| Fait | Statut | Qui le pose |
+|---|---|---|
+| Le total encaissé atteint la cotisation due | `A_VALIDER_FFF` | `PaiementService`, automatiquement (saisie manuelle, HelloAsso vérifié, ou « Valider quand même ») |
+| Le club a signé la licence dans FootClubs | `VALIDATED` | un admin, depuis la fiche ou l'écran groupé `/admin/effectif/joueurs/valider-footclubs` |
+
+Ce qui ne doit pas se défaire :
+
+- **Tout ce qui demandait « la licence est-elle validée ? » demandait en réalité « a-t-elle
+  payé ? »** — droit à la dotation, sortie de stock, réconciliation HelloAsso, compteurs du
+  hub Effectif. Le point de lecture unique est **`LicenceStatus::estSolde()`** (et
+  `DossierClub::estSoldee()`, `LicenceStatus::soldes()` pour les requêtes). Tester
+  `=== VALIDATED` en aval suspendrait le kit d'un licencié payé à un clic administratif sans
+  rapport.
+- **Le mail « votre licence est validée » part au solde**, pas à la validation FootClubs :
+  c'est l'encaissement qui intéresse le licencié, la démarche fédérale est interne au club.
+- **La validation se défait** (`annulerValidationFootclubs`). Sans cette sortie, un clic de
+  trop ferait disparaître pour toujours une licence qu'il reste réellement à signer.
+- **Aucune donnée n'a été rétro-migrée** : les dossiers déjà en `validated` avant la bascule
+  le restent. Ce n'est pas un backfill oublié (cf. `Version20260828211444`).
+
+Côté **dirigeant**, le même dernier geste existe (`Dirigeant.validatedFffAt`, un fait daté),
+mais son avancement n'est **pas stocké** : tout ce qui le compose est déjà en base — lien
+parti, formulaire soumis, documents signés, licence validée. `DirigeantStatutResolver` le
+calcule (`DirigeantStatut`), `pourLot()` pour les listes. L'ordre des règles est la règle :
+`VALIDE` passe avant `LICENCE_ADMINISTRATIVE`, qui n'attend ni lien ni document mais existe
+bien à la FFF et se signe comme les autres.
 
 ### Transaction
 ```php
@@ -436,10 +470,233 @@ district » — d'où découlent **trois** conséquences, réglées ensemble et 
   `DirigeantLinkService::send()` refuse l'envoi à l'unité.
 
 Les **clés font exception** : un président sans dossier club détient souvent le trousseau du
-local, sa fiche continue donc d'afficher le registre et son attestation.
+local, sa fiche continue donc d'afficher le registre et son attestation. La **validation
+FootClubs** aussi : la licence existe à la FFF, le club la signe comme les autres (cf. « Payé »
+et « validé »).
 
 Ne pas remplacer ce drapeau par trois réglages indépendants : c'est justement ce qui faisait
 oublier l'un des trois.
+
+### AttestationPaiement — attester un encaissement, sans jamais le réécrire
+
+Un employeur ou un CE rembourse tout ou partie d'une licence sur présentation d'une
+attestation. `AttestationPaiement` est le document remis, et il obéit à deux règles qui
+tiennent tout le reste :
+
+**1. On n'atteste qu'une licence soldée, et le verrou porte sur l'encaissement.**
+`AttestationPaiementService::motifBlocage()` compare la cotisation due au total réellement
+encaissé — **jamais** au statut du dossier. « Valider quand même » passe une licence en
+`A_VALIDER_FFF` sans qu'un centime soit entré : un verrou posé sur le statut aurait émis un
+document affirmant un versement qui n'a pas eu lieu. Le motif est *rendu*, pas réduit à un
+booléen : l'écran doit pouvoir dire ce qui manque.
+
+**2. Le montant, la date et le mode ne se saisissent pas.** Ils sont dérivés des
+`Transaction` de la saison — total, date du dernier versement, modes dédoublonnés — puis
+**figés** sur l'attestation. Le formulaire ne porte que ce qu'aucune donnée du club ne sait
+dire : **qui a payé**. FootClubs ne connaît qu'un parent, le payeur peut être l'autre, et
+`Licencie` n'a ni sexe ni civilité — d'où `LienParente`, choisi à chaque fois.
+
+Tout ce que le document affirme est recopié à l'émission, **signataire compris** : le club
+change de trésorier, une attestation déjà remise continue de nommer celui qui l'a signée.
+Le lien vers les `Transaction` (`ON DELETE CASCADE`) n'est qu'une trace de rapprochement —
+un paiement supprimé plus tard retire la jointure sans rien changer à ce qui est écrit.
+La table est append-only : une réémission ajoute une ligne, le fichier Drive est daté.
+
+Le retéléchargement **régénère** le PDF depuis ces valeurs figées plutôt que de rapatrier
+le fichier de Drive : `DriveUploader` n'expose qu'`uploadToPath()`, et un document doit
+rester récupérable Drive en panne. Prix assumé : l'identité de l'association et le paraphe
+scanné sont relus en direct — l'exemplaire qui fait foi reste celui archivé.
+
+⚠️ Le montant en toutes lettres est produit par `MontantEnLettresFormatter`, écrit à la
+main. `NumberFormatter::SPELLOUT` **ne convient pas** : l'image PHP embarque un ICU aux
+données réduites au seul anglais et rendait « one hundred twenty » **sans lever d'erreur**.
+Ne pas y revenir.
+
+### EnvoiMail — un mail parti laisse une trace, toujours
+
+`Licencie.linkSentAt` atteste que la personne a été contactée **un jour**. C'est ce qu'il
+faut aux écrans d'envoi groupé, et rien d'autre : la colonne est écrasée à chaque renvoi.
+Une relance ne se voyait donc nulle part — et un admin pouvait réécrire à quelqu'un que le
+club venait de relancer. Les mails qui ne passent par aucun lien (signature, complément,
+boutique, validation, attestation) ne laissaient, eux, aucune trace du tout.
+
+`EnvoiMail` est un journal **append-only**, une ligne par envoi, rattaché à un `Licencie`,
+un `Dirigeant` ou un `Detenteur`. Quatre règles le tiennent :
+
+- **Une seule plume : `ClubMailer::envoyer()`.** Le `TypeMail` y est obligatoire à l'appel,
+  aucun mail ne peut plus partir en silence. Confier le traçage aux services appelants les
+  ferait diverger, et c'est le côté oublié qui enverrait le mail invisible.
+- **Après l'envoi, jamais avant.** Une ligne posée sur un envoi qui a échoué ferait croire
+  la personne relancée et empêcherait la vraie relance de partir — pire que pas de trace.
+  Symétriquement, un échec d'écriture du journal ne fait pas échouer un mail déjà parti :
+  il est journalisé en erreur.
+- **L'adresse enregistrée est celle réellement visée**, pas la redirection du mode bêta.
+- **Pas de colonne `season`** : `Licencie` et `Dirigeant` sont déjà cloisonnés par saison,
+  toute question sur les envois d'une saison passe par eux. Seul un `Detenteur` vit hors
+  saison, délibérément — une colonne saison serait le seul endroit à prétendre l'inverse.
+
+`linkSentAt` et `boutiqueAnnonceeAt` **restent** : ils continuent de faire foi pour les
+écrans d'envoi groupé. La migration `Version20260829090000` les a repris dans le journal —
+sans ce backfill, l'historique des fiches, qui lit désormais le journal, aurait perdu la
+ligne « lien envoyé » de chaque personne déjà contactée.
+
+Les fiches licencié et dirigeant affichent en tête un **dernier contact**
+(`DernierContactResolver`) : c'est le repère à lire avant de relancer à la main.
+
+### Relance automatique — le délai part du dernier mail, pas de l'inscription
+
+Le club relance de lui-même les licences non soldées : une passe par jour à 9 h
+(`app:relances:envoyer`, cron du conteneur `cosync_cron`). Heure ouvrable et non 2 h du
+matin — un mail horodaté à 3 h part en indésirable.
+
+**La règle qui tient tout le dispositif : le délai est compté depuis le dernier mail reçu
+par la personne, quel qu'il soit.** Une relance passée à la main hier repousse donc
+mécaniquement celle du robot de dix jours. Sans cette ancre, un envoi automatique serait
+suivi d'une relance manuelle quelques heures plus tard, et le club harcèlerait ceux qu'il
+vient de relancer. C'est précisément ce que le journal rend possible.
+
+`RelanceResolver` énonce la règle **une seule fois**, et les trois chemins la lisent :
+le cron, l'écran groupé `/admin/effectif/joueurs/relancer`, le bouton d'une fiche. Six
+conditions, toutes nécessaires :
+
+| Condition | Pourquoi |
+|---|---|
+| dossier **non** `estSoldee()` | `estSolde()`, jamais `=== VALIDATED` : c'est l'encaissement qui intéresse le licencié |
+| `linkSentAt !== null` | relancer qui n'a jamais été contacté n'est pas une relance : c'est l'envoi initial, décidé par un admin |
+| une adresse email existe | sans elle, la relance se fait au téléphone ; ces personnes ne sont donc **pas** listées |
+| relances déjà envoyées `< relanceMax` | sans plafond, on écrirait tous les dix jours jusqu'en juin à qui ne paiera pas |
+| dernier mail plus vieux que `relanceDelaiJours` | l'ancre ci-dessus |
+| `relanceActive` | vérifié par `RelanceService`, **pas** par le resolver : l'écran groupé doit rester utilisable robot éteint |
+
+**Deux étapes, deux mails** (`EtapeRelance`) : `DOSSIER` redonne un lien à qui n'a rien
+rempli — en **rouvrant le jeton** de 30 jours, sans quoi le mail renverrait vers un lien
+expiré ; `PAIEMENT` rappelle le montant et les instructions du mode déclaré à qui a rempli.
+La page de confirmation n'étant protégée par aucun jeton, ce second lien reste valide.
+
+Ce qui ne doit pas se défaire :
+
+- **L'interrupteur est éteint à la migration.** Un automate qui écrit à tout un effectif ne
+  démarre jamais d'un déploiement : il démarre d'une décision, prise dans
+  `/admin/club/relances` après un `app:relances:envoyer --dry-run`.
+- **La relance à l'unité depuis une fiche ignore délai et plafond**, volontairement : c'est
+  un acte délibéré, et la fiche affiche le dernier contact juste au-dessus du bouton. On
+  montre l'information, on ne bloque pas la personne qui la lit. Elle compte en revanche
+  **dans** le plafond, et repousse la relance automatique suivante.
+- **Les lectures du resolver sont groupées** (`dernierEnvoiParLicencie`,
+  `compterEnvoisParLicencie`) : la liste des joueurs affiche son compteur à chaque
+  ouverture, deux requêtes par licencié en feraient trois cents.
+- **Il n'y a pas de module de templates de mails**, et c'est assumé : pour huit messages par
+  an, l'éditeur, la substitution de variables, l'aperçu et les envois de test ne se paient
+  pas. `TypeMail` en est l'amorce si le besoin vient — un envoi libre à une sélection
+  couvrirait l'essentiel (annonces, événements) pour une fraction du coût.
+
+### ClubSettings — l'identité de l'association
+
+`ClubSettings` porte désormais, à côté du RIB et de la boutique, ce qu'une attestation
+engage juridiquement : raison sociale, adresse, SIRET, email, et le **signataire**
+(civilité, nom, qualité libre). Ces valeurs étaient écrites en dur dans une trentaine de
+templates ; les autres peuvent migrer plus tard, sans urgence.
+
+`ClubSettings` porte aussi les trois réglages de la **relance automatique** —
+`relanceActive`, `relanceDelaiJours` (10), `relanceMax` (3). Au niveau du club et non de la
+saison : c'est une politique de relance, elle ne se redécide pas chaque rentrée.
+
+Rien n'impose que le signataire soit le trésorier — président, secrétaire ou toute personne
+ayant délégation peuvent engager l'association. Le **nom**, lui, doit figurer : un document
+signé sans nom n'engage personne. Ne pas tenter de dériver le signataire de `Dirigeant`, dont
+les rôles ne distinguent plus le bureau depuis `Version20260807220000`.
+
+La signature scannée est **facultative** — sans elle, le PDF imprime un cadre à signer à la
+main, et la fonctionnalité reste utilisable dès le premier jour. Elle vit dans
+`var/signatures/` (volume `cosync_signatures`), **hors de `public/`** : c'est un paraphe, il
+ne doit jamais être servi par le serveur web. Elle n'est pas dans `ClubSettings` en base
+parce que `ClubSettingsService::get()` est appelé à chaque rendu de page par `AppExtension` —
+y loger 100 Ko de base64 les chargerait sur toutes les requêtes. Contrepartie à connaître :
+le volume n'est pas couvert par `app:db:backup`, l'image est à re-téléverser après une
+reconstruction du VPS.
+
+`ClubSettings` porte enfin le rattachement du club à la FFF pour le planning des matchs —
+`fffClubNo`, `fffSyncActive` (cf. ci-dessous). Au niveau du club : le numéro d'un club à la
+fédération ne change pas à la rentrée. ⚠️ Quand un troisième outil aura besoin de réglages,
+il faudra les sortir d'ici : `ClubSettings` ne doit pas devenir le fourre-tout de tous les
+outils.
+
+### MatchDomicile — un planning distribué, pas un miroir du calendrier fédéral
+
+Le club imprime chaque mois la liste de ses matchs à domicile, pour **deux publics qui n'ont
+pas le même besoin** : la mairie, qui planifie la tonte du terrain, et les boîtes aux lettres
+du village. D'où trois tirages d'une même donnée (`PlanningFormat`) — A4 mairie, A5 flyer, et
+surtout **A4 « duo »**, deux A5 côte à côte à couper au massicot : c'est le tirage réel,
+imprimer les flyers un par un gâche la moitié du papier.
+
+```php
+MatchDomicile  // season, date, heure (?string 'HH:MM'), categorie, adversaire, note,
+               // source: MatchSource (MANUEL|FFF), fffMaNo, fffCompetition, fffTerrain, masque
+```
+
+**Qui possède quoi — la règle qui tient tout le reste.** Sur une ligne venue de la FFF, le
+district fait foi : date, heure, catégorie et adversaire sont **réécrits à chaque
+synchronisation**, sinon un report de match ne remonterait jamais sur le planning distribué.
+Le club possède la **note** et le **masque**. Pour corriger un horaire fédéral faux, on
+**détache** la ligne (`detacherDeLaFff()`, et son inverse `reprendreLaFff()`) — même doctrine
+que `reprendreImport()` pour les coordonnées. Sans cette sortie explicite, la correction
+serait effacée à la sync suivante sans que personne le voie ; et le `fffMaNo` est **conservé**
+au détachement, faute de quoi la sync recréerait le match en double.
+
+Ce qui ne doit pas se défaire :
+
+- **`heure` est une chaîne, pas un `time`.** C'est un libellé qu'on imprime, jamais un instant
+  qu'on calcule. En `DateTimeImmutable`, un fuseau entrerait dans un document papier et un
+  match de 15h00 s'imprimerait à 14h00.
+- **Un match fédéral ne se supprime pas** : la sync le recréerait. Le **masque** est la seule
+  façon de l'écarter durablement des documents. L'écran le dit plutôt que de laisser
+  l'admin recommencer trois fois.
+- **Un match disparu du flux n'est supprimé que s'il est resté intact** (ni note, ni masque).
+  Annoté, il est conservé et **signalé** : le club y a mis du travail, l'automate n'a pas à
+  l'effacer en silence.
+- **Les dates françaises passent par `DateFrancaiseFormatter`**, écrit à la main.
+  `IntlDateFormatter('fr_FR')` rend « Sunday 20 September » **sans lever d'erreur** — l'ICU de
+  l'image est réduit au seul anglais, exactement comme pour `NumberFormatter::SPELLOUT`. Et
+  dans les templates PDF, `|capitalize` de Twig, jamais `text-transform: capitalize` : DomPDF
+  l'applique à chaque mot et rend « Dimanche 20 Septembre ».
+- **Le tirage duo est en positionnement absolu**, pas en `<table>` : DomPDF ajoutait marges et
+  rembourrages à la hauteur de ligne, le tableau dépassait la page et sortait rejeté sur une
+  deuxième feuille, la première blanche. Le défaut est invisible à l'écran, il ne se voit
+  qu'à l'impression.
+
+#### Récupérer le calendrier depuis la FFF
+
+L'API publique DOFA (`https://api-dofa.fff.fr/api/clubs/{cl_no}/matchs`) est **ouverte, sans
+jeton**, et rend exactement la donnée utile. `cl_no` n'est **pas** le numéro d'affiliation :
+c'est l'identifiant interne DOFA, réglé dans `/admin/outils/planning-matchs/reglages`, où un
+bouton **vérifie** le numéro en réaffichant le nom du club — un numéro faux ramènerait le
+calendrier d'un autre club sans que rien ne le signale.
+
+⚠️ **Ce n'est pas une API contractuelle** : elle a déjà changé d'hôte deux fois, n'a plus de
+documentation publique, et la FFF sert son calendrier derrière une protection anti-robot qui
+**refuse les clients non navigateurs**. Un serveur peut donc recevoir un **403 permanent** là
+où le même appel passe depuis un poste de travail. `app:planning:sync-fff --dry-run` répond à
+la question sur l'hébergement visé ; `FffApiException::estRefusParProtection()` fait dire à
+l'écran « la FFF refuse les appels venant du serveur » plutôt que « réessayez », car il n'y a
+rien à réessayer. **La saisie à la main et l'import par collage ne sont donc pas un repli
+mais un mode de plein exercice** — d'autant que les **plateaux U7/U9 n'existent pas** dans ce
+flux.
+
+Trois pièges tenus par `FffMatchMapper`, tous vus dans les données réelles :
+
+| Donnée FFF | Traitement |
+|---|---|
+| `away: null` | **équipe exempte** : personne ne joue. La ligne est écartée — l'inscrire ferait tondre la mairie pour rien |
+| `terrain: null` | affecté après parution du calendrier : le match a bien lieu. C'est `home.club.cl_no` qui décide du domicile, jamais le terrain |
+| `time: "15H30"` | traduit en `15:30` ; `date` ISO à minuit UTC dont on prend la **partie date**, sans conversion de fuseau |
+
+La catégorie imprimée vient de la **compétition** (`U16 DISTRICT` → « U16 ») et non du code
+fédéral, qui classe cette même équipe en `U17` : c'est « U16 » que le village reconnaît. Le
+numéro d'équipe n'est pas ajouté — sa signification varie d'un club à l'autre, et un
+« Séniors 2 » faux sur un tract vaut moins qu'un « Séniors » un peu large.
+
+L'interrupteur `fffSyncActive` est **éteint à la migration**, comme `relanceActive` : un
+automate démarre d'une décision, pas d'un déploiement.
 
 ### Detenteur, CleMouvement, AttestationCle — deux échelles de temps
 
@@ -483,7 +740,8 @@ enum LicenceStatus: string {
     case IMPORTED = 'imported';           // créé à l'import, lien pas encore envoyé
     case LINK_SENT = 'link_sent';
     case FORM_COMPLETED = 'form_completed';
-    case VALIDATED = 'validated';         // paiement soldé (ou validation manuelle)
+    case A_VALIDER_FFF = 'a_valider_fff'; // paiement soldé (ou validation manuelle) — cf. §4
+    case VALIDATED = 'validated';         // licence signée dans FootClubs, sur décision d'un admin
 }
 
 enum PaymentMode: string {
@@ -500,6 +758,17 @@ enum StockMovementType: string {
     case ENTREE = 'entree';
     case SORTIE = 'sortie';
     case REBUT = 'rebut';
+}
+
+enum MatchSource: string {
+    case MANUEL = 'manuel';   // le club décide ; rien ne l'écrase
+    case FFF = 'fff';         // le district décide ; réécrit à chaque synchronisation
+}
+
+enum PlanningFormat: string {
+    case A4_MAIRIE = 'a4_mairie';  // feuille de service pour la tonte du terrain
+    case A5_FLYER  = 'a5_flyer';   // un flyer par page A5
+    case A4_DUO    = 'a4_duo';     // deux A5 côte à côte sur une A4 paysage, à couper
 }
 ```
 
@@ -662,10 +931,11 @@ Tableau filtrable (CSS natif, pas de lib externe) :
   - ⚪ `IMPORTED` — Importé, lien pas encore envoyé
   - 🔵 `LINK_SENT` — Lien envoyé
   - 🟡 `FORM_COMPLETED` — Formulaire complété, paiement en attente
+  - 🟣 `A_VALIDER_FFF` — Payé, à valider sur FootClubs
   - 🟢 `VALIDATED` — Validé
 
 Action depuis le tableau :
-- "Confirmer paiement" → modal rapide (mode, montant, référence) → crée `Transaction` + passe statut à `VALIDATED`
+- "Confirmer paiement" → modal rapide (mode, montant, référence) → crée `Transaction` + passe statut à `A_VALIDER_FFF`
 - "Renvoyer le lien" → rouvre la fenêtre de 30 jours et renvoie le mail.
   ⚠️ L'UUID n'est **pas** régénéré, volontairement : le régénérer invaliderait les liens déjà
   distribués, ce qui casserait les licenciés en cours de saisie.
@@ -705,7 +975,11 @@ Drive/
     │   ├── Documents signés/
     │   │   └── Règlement intérieur/
     │   │       └── RI_DUPONT_Thomas.pdf
+    │   ├── Attestations de paiement/
+    │   │   └── attestation_paiement_MARCOUX_Maxence_2026-08-28.pdf
     │   ├── Attestations Transport/
+    │   ├── Plannings/
+    │   │   └── planning_matchs_2026-09-01_2026-09-30_flyer-duo.pdf
     │   └── Club house/Clés/Attestations de remise/
     └── Sauvegardes/
         └── 2026-08/
@@ -729,12 +1003,22 @@ encore en local ». La commande `app:drive-retry-upload` (cron toutes les 15 min
 échecs. Le fichier local n'est supprimé qu'après un upload réussi : tant que Drive est
 injoignable, c'est la seule copie de la signature.
 
+**Le planning des matchs échappe à ce dispositif, volontairement.** File d'attente, colonne
+`drivePath` et reprise cron existent parce qu'une signature perdue l'est pour toujours ; un
+planning se **régénère intégralement depuis la base**. `PlanningDriveSync` archive donc de
+façon **synchrone et à la demande**, via `replaceAtPath` — régénérer la même période remplace
+le fichier au lieu d'empiler des copies — et un échec est **rendu à l'admin** plutôt qu'entré
+dans une file. Ne pas l'y faire rentrer « par cohérence » : ce serait trois mécanismes de plus
+pour protéger un document reproductible en un clic.
+
 ### E. Tâches planifiées (conteneur `cosync_cron`)
 
 | Fréquence | Commande | Pourquoi |
 |---|---|---|
 | toutes les 15 min | `app:drive-retry-upload` | rattrape les PDF restés en local |
 | toutes les 30 min | `app:helloasso:sync-paiements` | rattrape un encaissement dont la notification n'est jamais arrivée — sans lui, le club encaisse sans que la licence passe en validée |
+| 07h00 | `app:planning:sync-fff` | aligne le planning des matchs sur le calendrier du district ; ne fait rien tant que `fffSyncActive` est faux |
+| 09h00 | `app:relances:envoyer` | relance les licences non soldées ; ne fait rien tant que `relanceActive` est faux. Heure ouvrable : un mail du club horodaté à 3 h part en indésirable |
 | 02h30 | `app:db:backup` | dump PostgreSQL + copie sur le Drive |
 
 ⚠️ Toute commande console rend potentiellement du Twig (mails), et `AppExtension` expose la
@@ -885,6 +1169,59 @@ pas une page.
 après enregistrement, le lien Annuler pointe sur `admin_stock_gestion`, pas sur un écran
 voisin : quitter un formulaire ne doit pas déplacer l'utilisateur.
 
+### 7.6 quinquies Le mobile : la page ne défile jamais horizontalement
+
+L'outil se consulte au local, téléphone en main. La règle tient en une phrase : **rien ne
+dépasse de la largeur de l'écran**, et ce qui est trop large porte son propre défilement.
+
+- **`.main-content` est en `overflow-x: hidden`**, garde-fou et non solution. Sans lui,
+  `overflow-y: auto` forçait l'autre axe à `auto` : le moindre débordement, n'importe où,
+  sortait une barre horizontale au niveau de **la page**. Ne pas s'en servir pour masquer un
+  contenu large : il deviendrait inatteignable, faute de barre pour l'atteindre.
+- **Un `<table class="table">` vit toujours dans un `.table-wrapper`.** C'est lui qui porte
+  le cadre et le défilement, avec des ombres de bord qui signalent qu'il reste du contenu.
+  `bin/check-tables-scroll.php` (job CI `csp`) refuse un tableau posé sans conteneur.
+  Deux variantes : `table-wrapper-nu` quand le tableau est déjà dans une carte (pas de
+  second cadre), `table-cartes` pour le passage en cartes ci-dessous.
+- **Les listes qu'on consulte passent en cartes sous 640 px** (`.table-cartes`) : joueurs,
+  dirigeants, suivi des dotations, clés, flocage, paiements et attestations d'une fiche.
+  Marqueurs sur les `<td>` : `data-label="Équipe"` affiche l'intitulé devant la valeur,
+  `carte-titre` fait la tête de carte, `carte-meta` une ligne discrète.
+- **Les tableaux denses gardent leur défilement** — mouvements de stock, commandes. Empilés,
+  ils perdent ce qui fait leur intérêt : la comparaison d'une ligne à l'autre.
+- **`body` est en `overflow-wrap: break-word`** : une adresse email un peu longue revient à
+  la ligne au lieu d'élargir sa carte, puis la page.
+- **Un enfant de grille ou de flex vaut `min-width: auto`** — « jamais plus étroit que mon
+  contenu ». C'est la cause n°1 des débordements : une rangée non sécable élargit la colonne
+  `1fr`, la carte dépasse l'écran, et son bord droit disparaît sous la coupe. D'où deux
+  réflexes : `minmax(0, 1fr)` plutôt que `1fr` dans une grille, `min-width: 0` sur les
+  conteneurs qui doivent pouvoir rétrécir, et `flex-wrap: wrap` sur toute rangée
+  `space-between` qui met un titre en face d'un bouton.
+- **Deux points de rupture**, à respecter pour toute nouvelle règle : **640 px** (téléphone)
+  et **1024 px** (tablette). L'existant en compte une dizaine, hérités ; ne pas en ajouter.
+
+### 7.6 quater Une fiche met en avant **une** action, et range les autres
+
+Une fiche accumule les gestes au fil des fonctionnalités. Celle du licencié en alignait cinq
+côte à côte, dont trois en `btn-primary` : l'écran ne disait plus lequel comptait, et le
+registre du §7.6 bis ne voulait plus rien dire.
+
+Le motif retenu, à reprendre partout où une zone d'actions déborde :
+
+- **Un bouton mis en avant**, et un seul : la **première étape non franchie du parcours**.
+  Le choix est fait côté serveur — c'est du métier (l'ordre des étapes, les conditions de
+  chaque geste), pas de la mise en forme. Pour la fiche licencié : `FicheActionsResolver`,
+  qui rend un `FicheActions` (principale + secondaires + motif de blocage).
+- **Le reste dans un menu « ⋯ »** (`components/fiche-menu.css`, ouverture Alpine avec
+  `@click.outside` et `x-transition`). Une action destructive n'y est jamais mise en avant :
+  elle vit en bas du menu, séparée d'un filet (`fiche-menu-item-danger`).
+- **Un seul balisage pour les deux contextes.** `admin/licencies/_action.html.twig` rend le
+  même geste en bouton d'en-tête ou en ligne de menu selon `contexte` : dupliquer les deux
+  formes ferait diverger un intitulé ou un jeton CSRF au premier changement.
+- **Une action injouable ne se cache pas en silence** : si la seule étape du moment part par
+  mail et que la personne n'a pas d'adresse, le motif s'affiche à la place du bouton. « Rien
+  ne s'affiche » n'apprend rien à l'admin qui cherche le bouton.
+
 ### 7.6 ter Un article du stock se désigne par nom · marque · couleur
 
 Le club crée **un article par déclinaison** : plusieurs `StockItem` portent le même `nom`
@@ -1032,6 +1369,108 @@ Convention : **tirets simples uniquement**. Pas de `__` ni de `--` BEM. Le préf
 
 ## 8. Sécurité & RGPD
 
+### Rôles et permissions — les droits sont du code, les rôles sont de la donnée
+
+C'est la règle qui porte tout le dispositif, et celle qui décide de ce qui peut être
+configurable.
+
+Une **permission** existe parce qu'une ligne de code la vérifie. La créer depuis un écran
+d'administration ne donnerait aucun droit, puisque personne ne la lit — un tel écran
+produirait des rôles qui ne protègent rien, et c'est pire qu'une absence de flexibilité
+parce que ça rassure. Le catalogue est donc l'enum **`Permission`**, versionnée avec le code
+qui l'applique.
+
+Un **rôle** est un paquet de permissions que le club compose lui-même : « Trésorerie » ne
+veut pas dire la même chose d'un club à l'autre. C'est l'entité **`RoleAcces`** (`role_acces`),
+un `json` de valeurs d'enum, éditable depuis `/admin/club/roles`.
+
+```php
+Permission          // enum : domaine, libellé, description, estEcriture(), implique()
+DomainePermission   // enum : le groupage d'affichage de l'écran d'un rôle
+RoleAcces           // entité : nom, permissions (json), systeme
+User.rolesAcces     // ManyToMany — plusieurs rôles, droits cumulés
+User.superAdmin     // passe-partout
+```
+
+Ce qui ne doit pas se défaire :
+
+- **Pas d'héritage entre rôles.** `role_hierarchy` rend les droits illisibles (« pourquoi la
+  présidente peut-elle modifier le stock ? — parce que X hérite de Y qui… »), et un droit
+  qu'on ne sait pas expliquer est un droit qu'on n'ose plus retirer. La seule hiérarchie est
+  **verticale et interne à un domaine** : `stock.gerer` implique `stock.lire`, déclaré sur
+  `Permission::implique()`, déplié **transitivement** par `PermissionCollector`. Un rôle
+  reste un ensemble plat.
+- **Une écriture entraîne sa lecture, et c'est impossible à produire autrement.**
+  `PermissionCollector::completer()` est appelé à chaque enregistrement d'un rôle. Sans ça,
+  on compose un rôle qui encaisse un paiement sur une fiche qu'il n'a pas le droit d'ouvrir —
+  d'où les rares passerelles inter-domaines (`paiement.lire` → `effectif.lire`,
+  `commande.lire` → `stock.lire`).
+- **Refus par défaut, et c'est le CI qui le tient.** Toute action de `src/Controller/Admin/`
+  déclare `#[IsGranted(Permission::X->value)]` ou, pour une exception assumée,
+  `#[AccesLibre('raison')]`. `bin/check-permissions.php` (job CI `csp`) refuse une action qui
+  ne déclare ni l'un ni l'autre. Le modèle est facile ; ce qui échoue, c'est la route qu'on
+  oublie — et une route oubliée, ici, c'est une lecture seule qui supprime une fiche signée.
+  `AccesLibre` ne vaut que pour un **point de navigation** (un hub, la bascule de saison) ou
+  un écran qui ne parle **que du compte connecté** (profil, documentation).
+- **Le motif : lecture du domaine sur la classe, écriture sur la méthode.** L'oubli le plus
+  probable — une nouvelle action d'écriture — tombe alors du côté restrictif.
+- **`User.roles` (json) n'est pas `User.rolesAcces`.** Le premier est le tableau de rôles de
+  Symfony exigé par `UserInterface` ; il ne porte que `ROLE_USER` et ne sert qu'à la règle
+  `^/ → ROLE_USER` de `security.yaml`, qui reste la porte d'entrée. Les droits métier sont
+  dans le second.
+- **Le super-admin passe partout sans porter aucun rôle**, et il doit toujours en rester au
+  moins un (`UserService::definirSuperAdmin`). C'est la sortie de secours qui empêche de se
+  verrouiller dehors : un club sans accès à ses propres signatures n'a aucun recours.
+  ⚠️ Ce statut était auparavant **déduit** de `DIAG_EMAIL`, l'email de redirection du mode
+  bêta : un réglage d'exploitation décidait de qui administrait l'application. Ne pas revenir
+  à une dérivation.
+- **On masque ce qu'on ne possède pas, on explique ce qu'on ne peut pas jouer.** Les cartes
+  de hub (`permission:` sur `hub-card.html.twig`), les quicklinks et les entrées de navbar
+  disparaissent — sinon on clique sur six cartes pour six 403. À l'intérieur d'un écran qu'on
+  utilise, une action **qu'on ne possède pas** disparaît aussi ; c'est une action possédée
+  mais **injouable** (pas d'adresse email, dossier incomplet) qui affiche son motif
+  (§7.6 quater). `FicheActionsResolver` fait les deux : il filtre sur
+  `FicheAction::permission()`, puis rend le motif de ce qui reste.
+- **Un bouton se garde par sa route, jamais par une permission recopiée.**
+  `{% if peut_acceder('admin_stock_items_new') %}` — la fonction Twig lit le droit sur le
+  contrôleur de la route (`RoutePermissionResolver`, réflexion sur `#[IsGranted]`, carte mise
+  en cache). Recopier le droit dans le template (`is_granted('stock.configurer')`) le fait se
+  tromper — un « Modifier » gardé par `stock.gerer` alors que la route exige
+  `stock.configurer` — et surtout **ne suit pas** : changer la permission d'une action
+  laisserait derrière elle un bouton gardé par l'ancienne. `is_granted()` reste le bon outil
+  pour ce qui n'est pas un lien : une colonne de tableau, un bloc d'information.
+  ⚠️ Masquer n'est pas protéger : le refus reste celui du contrôleur.
+- **Le garde-fou est `bin/check-boutons.php`** (job CI `csp`), qui refuse un `path()` menant à
+  une route dont l'écran n'exige pas le droit, hors garde. Cent douze actions étaient dans ce
+  cas — un rôle « consultation du stock » ouvrait `/admin/stock/gestion` et y trouvait neuf
+  boutons qui répondaient tous « Access Denied » : l'application était sûre et illisible.
+  L'exception s'écrit pour exister — `{# droits-verifies-cote-serveur: raison #}`, en tête de
+  fichier pour tout le template, au-dessus des lignes concernées sinon. Deux angles morts
+  connus, à garder en tête plutôt qu'à découvrir : une action de formulaire posée par le
+  contrôleur (`createForm(..., ['action' => generateUrl(…)])`) et une garde portée par une
+  variable ne se voient pas dans le template — la garde s'y pose à la main.
+- **Les rôles sont au niveau du club, pas de la saison.** La trésorière l'est toutes les
+  saisons ; les cloisonner obligerait à les réaffecter chaque 1ᵉʳ juillet, et le premier oubli
+  fermerait l'outil en pleine campagne d'inscriptions.
+- **`RolesSysteme` livre deux rôles seulement** — Responsable foot et Trésorerie —, créés par
+  `Version20260829200000` puis maintenus par `app:seed-referential`. Ce sont les deux fonctions
+  qui existent dans tous les clubs ; en livrer davantage reviendrait à deviner l'organigramme
+  du club à sa place, et un rôle livré inutilisé encombre l'écran sans pouvoir être supprimé.
+  Ils se renomment et se modifient librement, mais **ne se suppriment pas** : il reste toujours
+  de quoi rouvrir un accès. Le seed est idempotent **au sens strict** — un rôle déjà présent
+  n'est pas remis à ses permissions d'origine, sinon chaque déploiement effacerait les
+  ajustements du club. Les noms désignent des **fonctions**, pas des personnes.
+- **Un rôle ne porte pas de description** : les permissions cochées disent déjà ce qu'il fait,
+  et mieux qu'une phrase que personne ne relit quand les cases changent.
+- **Hors périmètre, et pas par oubli** : le périmètre par équipe (« l'éducateur des U15 ne
+  voit que ses U15 ») n'est pas une permission mais un jugement porté sur un **sujet**, donc
+  un autre voter et un filtrage de chaque requête de liste — où l'oubli d'un filtre est
+  invisible. Rien dans ce modèle ne l'empêche plus tard.
+
+La migration a attribué « Responsable foot » à **tous les comptes existants** : jusque-là,
+tout compte connecté pouvait tout faire, et un déploiement de sécurité qui commence par
+bloquer les gens en place se fait annuler dans l'heure.
+
 ### Accès public
 - Le lien `/inscription/{uuid}` est valide **30 jours** après génération.
 - Après soumission, le lien devient invalide (token consommé).
@@ -1093,8 +1532,8 @@ de l'ouvrir.
 
 Un dossier = un domaine métier, pas une couche technique. `Licencie/`, `Dirigeant/`,
 `Inscription/`, `Dotation/`, `Stock/`, `Cle/`, `Saison/`, `Referentiel/`, `Compte/`,
-`Document/`, `Payment/`, `Import/`, `Mail/`, `Pdf/`, `Drive/`, `Ops/` (exploitation),
-`Ui/` (état d'affichage).
+`Document/`, `Payment/`, `Import/`, `Planning/` (matchs à domicile), `Relance/`, `Boutique/`,
+`Effectif/`, `Mail/`, `Pdf/`, `Drive/`, `Ops/` (exploitation), `Ui/` (état d'affichage).
 
 **Aucun service à la racine de `src/Service/`.** Si le domaine d'une nouvelle classe
 n'est pas évident, c'est le signe qu'elle en fait trop.
@@ -1117,6 +1556,17 @@ n'est pas évident, c'est le signe qu'elle en fait trop.
   prod installe `--no-dev`, la classe manque et le code casse **en production uniquement**.
   Tout paquet utilisé par `src/`, `bin/`, `config/` ou `public/` va dans `require`.
   Garde-fou : `bin/check-prod-deps.php`, joué par le job CI `dependances-prod`.
+- ❌ Ajouter une action à `src/Controller/Admin/` sans `#[IsGranted(Permission::…)]` ni
+  `#[AccesLibre('raison')]` : elle serait ouverte à tout compte connecté. Garde-fou :
+  `bin/check-permissions.php`, joué par le job CI `csp`.
+- ❌ Créer une table `permission` en base, ou un écran qui inventerait des permissions : une
+  permission n'existe que parce qu'une ligne de code la vérifie (§8).
+- ❌ Afficher un bouton ou un lien vers une route d'écriture sans garde : l'admin clique et
+  reçoit « Access Denied », ce qui ne lui apprend rien. Utiliser
+  `{% if peut_acceder('nom_de_la_route') %}`, et non un `is_granted()` qui recopie le droit.
+  Garde-fou : `bin/check-boutons.php`, joué par le job CI `csp`.
+- ❌ Redériver le statut de super-admin d'un réglage d'exploitation (`DIAG_EMAIL` ou autre) :
+  c'est un fait porté par le compte.
 
 ### Schéma & données (la prod contient des données réelles — cf. bandeau en tête et §13)
 

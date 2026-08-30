@@ -3,8 +3,10 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Season;
+use App\Enum\Permission;
 use App\Form\SeasonType;
 use App\Repository\SeasonRepository;
+use App\Security\Attribute\AccesLibre;
 use App\Security\CsrfGuard;
 use App\Service\Saison\SeasonContext;
 use App\Service\Saison\SeasonService;
@@ -13,6 +15,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/saisons', name: 'admin_seasons_')]
 class SeasonController extends AbstractController
@@ -27,6 +30,7 @@ class SeasonController extends AbstractController
 
     /** Une carte par saison : c'est la porte d'entrée vers le travail dans une saison. */
     #[Route('', name: 'index', methods: ['GET'])]
+    #[AccesLibre('Sélecteur de saison de travail : navigation, pas configuration.')]
     public function index(): Response
     {
         return $this->render('admin/seasons/index.html.twig', [
@@ -37,6 +41,7 @@ class SeasonController extends AbstractController
 
     // Renommage et suppression : accessible même quand aucune saison n'existe encore.
     #[Route('/gerer', name: 'list', methods: ['GET'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function list(): Response
     {
         $seasons = $this->seasonRepo->findAllOrdered();
@@ -67,6 +72,7 @@ class SeasonController extends AbstractController
     }
 
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function new(Request $request): Response
     {
         $season = new Season();
@@ -96,6 +102,7 @@ class SeasonController extends AbstractController
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function edit(Season $season, Request $request): Response
     {
         $form = $this->createForm(SeasonType::class, $season, [
@@ -123,6 +130,7 @@ class SeasonController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'])]
+    #[IsGranted(Permission::SAISON_CONFIGURER->value)]
     public function delete(
         Season $season,
         Request $request,
@@ -161,6 +169,7 @@ class SeasonController extends AbstractController
     }
 
     #[Route('/{id}/switch', name: 'switch', methods: ['POST'])]
+    #[AccesLibre('Changer sa saison de travail est un acte personnel de navigation.')]
     public function switch(Season $season, Request $request): Response
     {
         $this->csrf->valider('season_switch_' . $season->getId(), $request);

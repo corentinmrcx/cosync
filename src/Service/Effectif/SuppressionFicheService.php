@@ -7,8 +7,10 @@ use App\DTO\Effectif\SuppressionFiche;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
 use App\Enum\LicenceStatus;
+use App\Repository\AttestationPaiementRepository;
 use App\Repository\DocumentSignatureRepository;
 use App\Repository\DotationAffectationRepository;
+use App\Repository\EnvoiMailRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TransactionRepository;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
@@ -38,6 +40,8 @@ final class SuppressionFicheService
         private readonly TransactionRepository $transactionRepo,
         private readonly StockMovementRepository $mouvementRepo,
         private readonly DotationAffectationRepository $affectationRepo,
+        private readonly AttestationPaiementRepository $attestationRepo,
+        private readonly EnvoiMailRepository $envoiMailRepo,
     ) {}
 
     /**
@@ -115,6 +119,13 @@ final class SuppressionFicheService
     /** Premier motif rencontré, du plus parlant au plus technique — null si la fiche est vierge. */
     private function motifRefusLicencie(Licencie $licencie): ?string
     {
+        // Le journal d'abord : il connaît tous les mails, y compris ceux qui ne passent
+        // par aucun lien, et il donne la date du dernier plutôt que celle du premier.
+        $dernierMail = $this->envoiMailRepo->dernierEnvoi($licencie);
+        if ($dernierMail !== null) {
+            return sprintf('un mail lui a été envoyé le %s', $dernierMail->format('d/m/Y'));
+        }
+
         $lienEnvoyeLe = $licencie->getLinkSentAt();
         if ($lienEnvoyeLe !== null) {
             return sprintf('son lien d\'inscription lui a été envoyé le %s', $lienEnvoyeLe->format('d/m/Y'));
@@ -147,11 +158,20 @@ final class SuppressionFicheService
             '%d paiement%s est enregistré à son nom' => $this->transactionRepo->count(['licencie' => $licencie]),
             'du matériel lui a été remis (%d mouvement%s de stock)' => $this->mouvementRepo->count(['licencie' => $licencie]),
             'une dotation lui est affectée nominativement (%d affectation%s)' => $this->affectationRepo->count(['licencie' => $licencie]),
+            // Une attestation suppose un paiement, mais celui-ci a pu être supprimé depuis :
+            // sans ce compte, la fiche paraissait vierge et la suppression butait sur la
+            // clé étrangère, avec le message générique du rattrapage pour toute explication.
+            '%d attestation%s de paiement a été émise à son nom' => $this->attestationRepo->count(['licencie' => $licencie]),
         ]);
     }
 
     private function motifRefusDirigeant(Dirigeant $dirigeant): ?string
     {
+        $dernierMail = $this->envoiMailRepo->dernierEnvoi($dirigeant);
+        if ($dernierMail !== null) {
+            return sprintf('un mail lui a été envoyé le %s', $dernierMail->format('d/m/Y'));
+        }
+
         $lienEnvoyeLe = $dirigeant->getLinkSentAt();
         if ($lienEnvoyeLe !== null) {
             return sprintf('son lien lui a été envoyé le %s', $lienEnvoyeLe->format('d/m/Y'));

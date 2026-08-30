@@ -6,6 +6,7 @@ use App\Attribute\CurrentSeason;
 use App\DTO\EnvoiGroupeResultat;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Enum\Permission;
 use App\Repository\LicencieRepository;
 use App\Security\CsrfGuard;
 use App\Service\Boutique\BoutiqueAnnonceService;
@@ -15,6 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Accueil de la boutique du club : son état d'ouverture, son lien, son annonce.
@@ -24,6 +26,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * cet ordre.
  */
 #[Route('/admin/boutique', name: 'admin_boutique_')]
+#[IsGranted(Permission::BOUTIQUE_LIRE->value)]
 class BoutiqueController extends AbstractController
 {
     public function __construct(
@@ -58,6 +61,7 @@ class BoutiqueController extends AbstractController
      * ouverte, et refermer la fait disparaître partout sans effacer le lien.
      */
     #[Route('/ouverture', name: 'ouverture', methods: ['POST'])]
+    #[IsGranted(Permission::BOUTIQUE_GERER->value)]
     public function ouverture(Request $request): Response
     {
         $this->csrf->valider('boutique_ouverture', $request);
@@ -89,6 +93,7 @@ class BoutiqueController extends AbstractController
      * rattrapés. Elle se décide donc ici, après relecture des destinataires.
      */
     #[Route('/annoncer', name: 'annoncer', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::BOUTIQUE_GERER->value)]
     public function annoncer(
         Request $request,
         #[CurrentSeason] Season $season,

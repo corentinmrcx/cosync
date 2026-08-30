@@ -3,9 +3,13 @@
 namespace App\Service\Mail;
 
 use App\Entity\AttestationCle;
+use App\Entity\AttestationPaiement;
 use App\Entity\Detenteur;
 use App\Entity\Dirigeant;
 use App\Entity\Licencie;
+use App\Enum\EtapeRelance;
+use App\Enum\OrigineEnvoi;
+use App\Enum\TypeMail;
 use App\Service\Payment\CotisationResolver;
 use App\Service\Referentiel\ClubSettingsService;
 use Symfony\Component\Mime\Address;
@@ -28,6 +32,8 @@ final class MailerService
     public function sendInscriptionLink(Licencie $licencie): void
     {
         $this->clubMailer->envoyer(
+            TypeMail::INSCRIPTION_LINK,
+            $licencie,
             $this->adresseDe($licencie),
             'Finalisez votre dossier',
             'email/inscription_link.html.twig',
@@ -41,12 +47,33 @@ final class MailerService
     public function sendCompletionLink(Licencie $licencie): void
     {
         $this->clubMailer->envoyer(
+            TypeMail::COMPLETION_LINK,
+            $licencie,
             $this->adresseDe($licencie),
             'Une précision à apporter à votre dossier',
             'email/completion_link.html.twig',
             [
                 'licencie' => $licencie,
                 'url' => $this->lienPublic('public_inscription_completer', $licencie->getUuid()),
+            ],
+        );
+    }
+
+    /**
+     * Demande de signature d'un document ajouté après l'inscription. Distinct du lien
+     * de complétion : celui-là ne redemande aucune autorisation, il ne fait signer.
+     */
+    public function sendSignatureLink(Licencie $licencie): void
+    {
+        $this->clubMailer->envoyer(
+            TypeMail::SIGNATURE_LINK,
+            $licencie,
+            $this->adresseDe($licencie),
+            'Un document à signer',
+            'email/signature_link.html.twig',
+            [
+                'licencie' => $licencie,
+                'url' => $this->lienPublic('public_inscription_signer', $licencie->getUuid()),
             ],
         );
     }
@@ -69,6 +96,8 @@ final class MailerService
         $retenus = $this->piecesJointes->retenir($pdfsJoints);
 
         $this->clubMailer->envoyer(
+            TypeMail::CONFIRMATION,
+            $licencie,
             $this->adresseDe($licencie),
             'Inscription bien reçue',
             'email/inscription_confirmation.html.twig',
@@ -105,6 +134,8 @@ final class MailerService
         }
 
         $this->clubMailer->envoyer(
+            TypeMail::BOUTIQUE,
+            $licencie,
             $this->adresseDe($licencie),
             'La boutique du club',
             'email/boutique.html.twig',
@@ -115,9 +146,54 @@ final class MailerService
         );
     }
 
+    /**
+     * Relance d'une licence non soldée.
+     *
+     * Deux messages, choisis par l'étape : redonner un lien à qui n'a rien rempli, rappeler
+     * un montant à qui a rempli mais pas payé. Un message unique demanderait à moitié la
+     * mauvaise chose à chacune des deux moitiés de la liste.
+     *
+     * L'origine est explicite ici, et nulle part ailleurs : c'est le seul mail du club qui
+     * part tantôt du cron, tantôt d'un admin sur son écran — et l'historique doit dire
+     * lequel des deux a écrit.
+     */
+    public function sendRelance(Licencie $licencie, EtapeRelance $etape, OrigineEnvoi $origine): void
+    {
+        if ($licencie->getEmail() === null) {
+            return;
+        }
+
+        $dossier = $licencie->getDossierClub();
+
+        $this->clubMailer->envoyer(
+            $etape->typeMail(),
+            $licencie,
+            $this->adresseDe($licencie),
+            $etape === EtapeRelance::DOSSIER ? 'Votre inscription n\'est pas terminée' : 'Votre cotisation reste à régler',
+            $etape === EtapeRelance::DOSSIER ? 'email/relance_dossier.html.twig' : 'email/relance_paiement.html.twig',
+            [
+                'licencie' => $licencie,
+                'montant' => $this->cotisationResolver->resolve($licencie),
+                'intentions' => $dossier?->getPaymentIntentions() ?? [],
+                'precisionAutre' => $dossier?->getPaymentAutrePrecision(),
+                'libelleVirement' => $this->cotisationResolver->libelleVirement($licencie),
+                // Le dossier renvoie vers le formulaire, dont le lien vient d'être rouvert ;
+                // le paiement vers la page de confirmation, qui porte le bouton HelloAsso et
+                // n'est protégée par aucun jeton — elle reste donc atteignable indéfiniment.
+                'url' => $this->lienPublic(
+                    $etape === EtapeRelance::DOSSIER ? 'public_inscription_show' : 'public_inscription_confirmation',
+                    $licencie->getUuid(),
+                ),
+            ],
+            origine: $origine,
+        );
+    }
+
     public function sendValidation(Licencie $licencie): void
     {
         $this->clubMailer->envoyer(
+            TypeMail::VALIDATION,
+            $licencie,
             $this->adresseDe($licencie),
             $licencie->getCategory()->isJeune()
                 ? 'Licence de ' . $licencie->getPrenom() . ' validée'
@@ -130,6 +206,8 @@ final class MailerService
     public function sendDirigeantLink(Dirigeant $dirigeant): void
     {
         $this->clubMailer->envoyer(
+            TypeMail::DIRIGEANT_LINK,
+            $dirigeant,
             $this->adresseDe($dirigeant),
             'Finalisez votre dossier dirigeant',
             'email/dirigeant_link.html.twig',
@@ -145,6 +223,8 @@ final class MailerService
         $detenteur = $attestation->getDetenteur();
 
         $this->clubMailer->envoyer(
+            TypeMail::ATTESTATION_CLE,
+            $detenteur,
             $this->adresseDe($detenteur),
             'Attestation de remise de clés à signer',
             'email/attestation_cle_link.html.twig',
@@ -153,6 +233,34 @@ final class MailerService
                 'season' => $attestation->getSeason(),
                 'url' => $this->lienPublic('public_attestation_cle_show', $attestation->getUuid()),
             ],
+        );
+    }
+
+    /**
+     * Envoie une attestation de paiement à qui a réglé la licence.
+     *
+     * Le destinataire est passé explicitement plutôt que lu sur le licencié : le payeur
+     * peut être un parent que FootClubs ne connaît pas, avec sa propre adresse mail.
+     */
+    public function sendAttestationPaiement(
+        AttestationPaiement $attestation,
+        string $email,
+        string $cheminPdf,
+        string $nomFichier,
+    ): void {
+        // Rattaché au licencié, pas au destinataire : c'est son dossier que l'attestation
+        // concerne, et c'est sur sa fiche que l'envoi doit se lire. Le payeur peut être un
+        // parent que CoSync ne connaît que par cette adresse.
+        $this->clubMailer->envoyer(
+            TypeMail::ATTESTATION_PAIEMENT,
+            $attestation->getLicencie(),
+            new Address($email, trim($attestation->getDestinatairePrenom() . ' ' . $attestation->getDestinataireNom())),
+            'Votre attestation de paiement',
+            'email/attestation_paiement.html.twig',
+            [
+                'attestation' => $attestation,
+            ],
+            [$cheminPdf => $nomFichier],
         );
     }
 

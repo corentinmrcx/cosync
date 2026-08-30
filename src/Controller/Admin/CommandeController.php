@@ -7,6 +7,7 @@ use App\Entity\Commande;
 use App\Entity\CommandeLigne;
 use App\Entity\Season;
 use App\Entity\User;
+use App\Enum\Permission;
 use App\Repository\CommandeRepository;
 use App\Security\CsrfGuard;
 use App\Service\Dotation\DotationEcoulementAllocator;
@@ -18,8 +19,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/commandes', name: 'admin_commandes_')]
+#[IsGranted(Permission::COMMANDE_LIRE->value)]
 class CommandeController extends AbstractController
 {
     public function __construct(
@@ -46,6 +49,7 @@ class CommandeController extends AbstractController
     }
 
     #[Route('/generer', name: 'generer', methods: ['POST'])]
+    #[IsGranted(Permission::COMMANDE_GERER->value)]
     public function generer(Request $request, #[CurrentSeason] Season $season): Response
     {
         $this->csrf->valider('commande_generer', $request);
@@ -74,6 +78,7 @@ class CommandeController extends AbstractController
     }
 
     #[Route('/{id}/commander', name: 'commander', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted(Permission::COMMANDE_GERER->value)]
     public function commander(Commande $commande, Request $request): Response
     {
         $this->csrf->valider('commande_commander_' . $commande->getId(), $request);
@@ -92,6 +97,7 @@ class CommandeController extends AbstractController
     }
 
     #[Route('/lignes/{id}/recevoir', name: 'ligne_recevoir', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted(Permission::COMMANDE_GERER->value)]
     public function ligneRecevoir(CommandeLigne $ligne, Request $request, #[CurrentUser] ?User $user): Response
     {
         $this->csrf->valider('commande_ligne_recevoir_' . $ligne->getId(), $request);
@@ -104,6 +110,7 @@ class CommandeController extends AbstractController
     }
 
     #[Route('/lignes/{id}/annuler-reception', name: 'ligne_annuler_reception', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted(Permission::COMMANDE_GERER->value)]
     public function ligneAnnulerReception(CommandeLigne $ligne, Request $request, #[CurrentUser] ?User $user): Response
     {
         $this->csrf->valider('commande_ligne_annuler_' . $ligne->getId(), $request);
@@ -126,6 +133,7 @@ class CommandeController extends AbstractController
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted(Permission::COMMANDE_GERER->value)]
     public function delete(Commande $commande, Request $request): Response
     {
         $this->csrf->valider('commande_delete_' . $commande->getId(), $request);

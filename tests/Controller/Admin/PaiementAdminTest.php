@@ -70,7 +70,7 @@ final class PaiementAdminTest extends WebTestCase
         self::assertCount(0, self::getMailerMessages(), 'Aucun mail de validation tant que le compte n\'y est pas');
     }
 
-    public function testLeSoldeCompletValideLaLicenceEtEnvoieLeMail(): void
+    public function testLeSoldeCompletMarqueLaLicenceAValiderEtEnvoieLeMail(): void
     {
         $client = static::createClient();
         $this->loginAdmin($client);
@@ -79,7 +79,9 @@ final class PaiementAdminTest extends WebTestCase
         $this->payer($client, $uuid, '40');
         $this->payer($client, $uuid, '45');
 
-        self::assertSame(LicenceStatus::VALIDATED, $this->reloadDossier($uuid)->getStatus());
+        // Le solde ne valide pas la licence : il la met « à valider sur FootClubs ». La
+        // validation, elle, se déclare à la main une fois la démarche fédérale faite.
+        self::assertSame(LicenceStatus::A_VALIDER_FFF, $this->reloadDossier($uuid)->getStatus());
 
         $messages = self::getMailerMessages();
         self::assertCount(1, $messages, 'Un seul mail de validation, à l\'atteinte du solde');
@@ -88,8 +90,8 @@ final class PaiementAdminTest extends WebTestCase
         self::assertStringContainsString('validée', $messages[0]->getSubject());
     }
 
-    /** Un trop-perçu vaut solde atteint : la licence est validée, pas bloquée. */
-    public function testUnPaiementSuperieurALaCotisationValideAussi(): void
+    /** Un trop-perçu vaut solde atteint : le dossier avance, il n'est pas bloqué. */
+    public function testUnPaiementSuperieurALaCotisationSoldeAussi(): void
     {
         $client = static::createClient();
         $this->loginAdmin($client);
@@ -97,7 +99,7 @@ final class PaiementAdminTest extends WebTestCase
 
         $this->payer($client, $uuid, '100');
 
-        self::assertSame(LicenceStatus::VALIDATED, $this->reloadDossier($uuid)->getStatus());
+        self::assertSame(LicenceStatus::A_VALIDER_FFF, $this->reloadDossier($uuid)->getStatus());
     }
 
     public function testUnMontantNulOuNegatifEstRefuse(): void
@@ -183,7 +185,7 @@ final class PaiementAdminTest extends WebTestCase
         $transaction = $this->transactionsDe($uuid)[0];
 
         self::assertSame('2025-2026', $transaction->getSeason()->getLabel());
-        self::assertSame(LicenceStatus::VALIDATED, $this->reloadDossier($uuid)->getStatus());
+        self::assertSame(LicenceStatus::A_VALIDER_FFF, $this->reloadDossier($uuid)->getStatus());
     }
 
     /* ── Suppression ── */
@@ -226,7 +228,7 @@ final class PaiementAdminTest extends WebTestCase
 
     /* ── Validation manuelle ── */
 
-    public function testLaValidationManuelleValideSansPaiement(): void
+    public function testLaValidationManuelleSoldeSansPaiement(): void
     {
         $client = static::createClient();
         $this->loginAdmin($client);
@@ -237,7 +239,8 @@ final class PaiementAdminTest extends WebTestCase
         ]);
 
         self::assertResponseRedirects('/admin/effectif/joueurs/' . $uuid);
-        self::assertSame(LicenceStatus::VALIDATED, $this->reloadDossier($uuid)->getStatus());
+        // « Valider quand même » court-circuite le paiement, pas la démarche FFF.
+        self::assertSame(LicenceStatus::A_VALIDER_FFF, $this->reloadDossier($uuid)->getStatus());
         self::assertCount(0, $this->transactionsDe($uuid), 'Valider ne crée aucune transaction fictive');
         self::assertCount(1, self::getMailerMessages());
     }
@@ -305,7 +308,7 @@ final class PaiementAdminTest extends WebTestCase
     private function loginAdmin(KernelBrowser $client, ?string $saisonSelectionnee = null): User
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-paiement@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-paiement@example.test')->setPassword('x');
 
         if ($saisonSelectionnee !== null) {
             $season = $em->getRepository(Season::class)->findOneBy(['label' => $saisonSelectionnee])

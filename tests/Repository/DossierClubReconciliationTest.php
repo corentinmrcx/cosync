@@ -53,6 +53,18 @@ final class DossierClubReconciliationTest extends KernelTestCase
     }
 
     /**
+     * On sort de la réconciliation dès le **solde**, pas à la validation FootClubs : celle-ci
+     * est un geste du club, elle ne dit rien de l'encaissement. Sans cela, chaque dossier payé
+     * resterait interrogé auprès de HelloAsso jusqu'à ce qu'un admin clique.
+     */
+    public function testUnDossierSoldeMaisPasEncoreValideAlaFffNEstPlusReconcilie(): void
+    {
+        $dossier = $this->makeDossier(statut: LicenceStatus::A_VALIDER_FFF);
+
+        self::assertNotContains($dossier->getId(), $this->aReconcilier());
+    }
+
+    /**
      * Le cas que l'ancienne requête ratait : elle écartait tout dossier portant déjà
      * une transaction en ligne. Un licencié dont le premier paiement a échoué
      * partiellement et qui en relance un second n'était jamais rattrapé.

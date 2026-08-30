@@ -267,7 +267,7 @@ final class BoutiqueAnnonceTest extends WebTestCase
     private function loginAdmin(KernelBrowser $client): void
     {
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $user = (new User())->setEmail('admin-boutique-annonce@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-boutique-annonce@example.test')->setPassword('x');
         $em->persist($user);
         $em->flush();
         $client->loginUser($user);

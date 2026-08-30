@@ -91,6 +91,39 @@ textarea.field-input-compact { height: auto; }
     border-color: var(--color-danger);
 }
 
+/* Liste de cases à cocher (multiple + expanded), rendue par le thème de formulaire.
+   Empilées et non en ligne : les libellés sont des phrases de longueur libre, et une
+   rangée horizontale les colle dès qu'il y en a plus de deux. */
+.field-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.field-choice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.field-choice input[type="checkbox"],
+.field-choice input[type="radio"] {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+.field-choice label {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-body);
+    cursor: pointer;
+}
+
 /* Case à cocher alignée avec son libellé, cliquable sur toute la ligne. */
 .field-checkbox {
     display: flex;

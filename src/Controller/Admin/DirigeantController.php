@@ -7,24 +7,29 @@ use App\DTO\DirigeantData;
 use App\DTO\Effectif\ResultatSuppression;
 use App\DTO\EnvoiGroupeResultat;
 use App\DTO\FiltreListe;
+use App\DTO\RelanceResultat;
 use App\Entity\Dirigeant;
 use App\Entity\Season;
 use App\Entity\Team;
 use App\Enum\ChampContact;
 use App\Enum\DirigeantRole;
+use App\Enum\DirigeantStatut;
+use App\Enum\Permission;
 use App\Form\DirigeantType;
 use App\Repository\DirigeantRepository;
 use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
-use App\Security\Voter\SuperAdminVoter;
 use App\Service\Cle\CleRegistrePresenter;
 use App\Service\Dirigeant\DirigeantDossierCompletion;
 use App\Service\Dirigeant\DirigeantFormPrefill;
 use App\Service\Dirigeant\DirigeantService;
+use App\Service\Dirigeant\DirigeantStatutResolver;
 use App\Service\Document\DocumentRequirementResolver;
+use App\Service\Document\SignatureRelanceService;
 use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Licencie\HistoriqueFicheService;
+use App\Service\Mail\DernierContactResolver;
 use App\Service\Mail\DirigeantLinkService;
 use App\Service\Ui\ListFilterMemory;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -35,6 +40,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/effectif/dirigeants', name: 'admin_dirigeants_')]
+#[IsGranted(Permission::EFFECTIF_LIRE->value)]
 class DirigeantController extends AbstractController
 {
     public function __construct(
@@ -45,12 +51,15 @@ class DirigeantController extends AbstractController
         private readonly StockMovementRepository $stockMovementRepo,
         private readonly CleRegistrePresenter $clePresenter,
         private readonly DirigeantLinkService $linkService,
+        private readonly SignatureRelanceService $relanceService,
         private readonly CsrfGuard $csrf,
         private readonly DirigeantFormPrefill $formPrefill,
         private readonly HistoriqueFicheService $historiqueService,
+        private readonly DernierContactResolver $dernierContact,
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DirigeantDossierCompletion $dossierCompletion,
         private readonly SuppressionFicheService $suppressionService,
+        private readonly DirigeantStatutResolver $statutResolver,
     ) {}
 
     #[Route('', name: 'list')]
@@ -60,7 +69,7 @@ class DirigeantController extends AbstractController
     ): Response {
         // Le mode édition n'est pas un filtre : jamais mémorisé, seulement reporté sur la
         // redirection de restauration. Cf. la même règle côté joueurs.
-        $edition = $request->query->getBoolean('edition') && $this->isGranted(SuperAdminVoter::ACCES_DIAGNOSTIC);
+        $edition = $request->query->getBoolean('edition') && $this->isGranted(Permission::EFFECTIF_SUPPRIMER->value);
 
         $restored = $this->filterMemory->restoreOrRemember('dirigeants', $request, ['team', 'role', 'search']);
         if ($restored !== null) {
@@ -92,18 +101,28 @@ class DirigeantController extends AbstractController
             FiltreListe::depuisEnum('role', 'Rôle', 'Tous', DirigeantRole::cases(), $currentRole),
         ];
 
+        $dirigeants = $this->dirigeantRepo->findBySeasonWithFilters(
+            $season,
+            $search ?: null,
+            $currentTeam?->getId(),
+            $currentRole,
+        );
+
         return $this->render('admin/dirigeants/list.html.twig', [
-            'dirigeants' => $this->dirigeantRepo->findBySeasonWithFilters(
-                $season,
-                $search ?: null,
-                $currentTeam?->getId(),
-                $currentRole,
-            ),
+            'dirigeants' => $dirigeants,
+            // Calculés en lot : ligne par ligne, la complétude coûterait deux requêtes
+            // par dirigeant.
+            'statuts' => $this->statutResolver->pourLot($season, $dirigeants),
             'season' => $season,
             'search' => $search,
             'filterGroups' => $filterGroups,
             'activeFilterCount' => FiltreListe::compterActifs($filterGroups),
             'liensEnAttente' => $this->dirigeantRepo->countLienJamaisEnvoye($season),
+            // Signalé au même endroit que les liens jamais envoyés : c'est la même
+            // question — qui reste-t-il à relancer avant que la saison démarre ?
+            'signaturesEnAttente' => count($this->relanceService->dirigeants($season)),
+            // Ne s'adresse à personne : c'est le club qui a une démarche à faire dans FootClubs.
+            'aValiderFff' => count($this->dirigeantsAValiderFff($season)),
             'edition' => $edition,
         ]);
     }
@@ -118,6 +137,7 @@ class DirigeantController extends AbstractController
      * Déclaré avant la route `/{uuid}` : sans cela, « envoyer-liens » serait lu comme un uuid.
      */
     #[Route('/envoyer-liens', name: 'send_links', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendLinks(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -178,8 +198,123 @@ class DirigeantController extends AbstractController
      * Mode édition : mêmes règles et même écran de confirmation que côté joueurs
      * (cf. `SuppressionFicheService`). Déclaré avant `/{uuid}`.
      */
+    /**
+     * Relance groupée des signatures manquantes. Déclaré avant la route `/{uuid}`, et
+     * jumeau exact de l'écran des joueurs : c'est le même geste, seul le mail diffère.
+     */
+    #[Route('/demander-signatures', name: 'request_signatures', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
+    public function requestSignatures(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('demander_signatures_dirigeants', $request);
+
+            $resultat = $this->relanceService->relancerDirigeants(
+                $season,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $resultat->envoyes > 0 ? 'success' : 'info',
+                $this->resumeRelance($resultat),
+            );
+
+            return $this->redirectToRoute('admin_dirigeants_list');
+        }
+
+        $lignes = $this->relanceService->dirigeants($season);
+
+        return $this->render('admin/effectif/demander_signatures.html.twig', [
+            'lignes' => $lignes,
+            'joignables' => $this->relanceService->uuidsJoignables($lignes),
+            'population' => 'dirigeant',
+            'tokenId' => 'demander_signatures_dirigeants',
+            'actionUrl' => $this->generateUrl('admin_dirigeants_request_signatures'),
+            'retourUrl' => $this->generateUrl('admin_dirigeants_list'),
+            'intro' => 'Un dirigeant dont le dossier était déjà complet n\'a plus de lien valide : ajouter un document ne le prévient pas. Chaque personne cochée reçoit son lien de formulaire, rouvert pour 30 jours — elle ne refera que ce qui manque.',
+        ]);
+    }
+
+    /** Le compte rendu nomme ce qui reste à faire à la main : sans email, aucun lien ne part. */
+    private function resumeRelance(RelanceResultat $resultat): string
+    {
+        $resume = sprintf('%d lien%s envoyé%s', $resultat->envoyes, $resultat->envoyes > 1 ? 's' : '', $resultat->envoyes > 1 ? 's' : '');
+
+        if ($resultat->sansEmail > 0) {
+            $resume .= sprintf(', %d dirigeant%s sans adresse email à prévenir autrement', $resultat->sansEmail, $resultat->sansEmail > 1 ? 's' : '');
+        }
+
+        return $resume . '.';
+    }
+
+    /**
+     * Validation groupée dans FootClubs. Déclaré avant la route `/{uuid}` : sans cela,
+     * « valider-footclubs » serait lu comme un uuid. Frère de l'écran joueurs.
+     */
+    #[Route('/valider-footclubs', name: 'validate_fff_bulk', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
+    public function validateFffBulk(
+        Request $request,
+        #[CurrentSeason] Season $season,
+    ): Response {
+        $eligibles = $this->dirigeantsAValiderFff($season);
+
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('valider_footclubs_dirigeants', $request);
+
+            $valides = $this->dirigeantService->validerSurFootclubsEnMasse(
+                $eligibles,
+                array_map(strval(...), $request->request->all('personnes')),
+            );
+
+            $this->addFlash(
+                $valides > 0 ? 'success' : 'info',
+                sprintf('%d licence%s validée%s.', $valides, $valides > 1 ? 's' : '', $valides > 1 ? 's' : ''),
+            );
+
+            return $this->redirectToRoute('admin_dirigeants_list');
+        }
+
+        return $this->render('admin/effectif/valider_footclubs.html.twig', [
+            'personnes' => array_map(
+                static fn (Dirigeant $d): array => [
+                    'uuid' => (string) $d->getUuid(),
+                    'nom' => $d->getNomPrenom(),
+                    'detail' => $d->getRole()->label(),
+                ],
+                $eligibles,
+            ),
+            'population' => 'dirigeant',
+            'tokenId' => 'valider_footclubs_dirigeants',
+            'actionUrl' => $this->generateUrl('admin_dirigeants_validate_fff_bulk'),
+            'retourUrl' => $this->generateUrl('admin_dirigeants_list'),
+        ]);
+    }
+
+    /**
+     * Dirigeants dont il ne reste que la signature dans FootClubs.
+     *
+     * Le statut d'un dirigeant est calculé, jamais stocké : impossible de le filtrer en SQL
+     * comme celui d'un joueur. On passe donc par le résolveur, qui lit la saison en un nombre
+     * de requêtes fixe.
+     *
+     * @return Dirigeant[]
+     */
+    private function dirigeantsAValiderFff(Season $season): array
+    {
+        $dirigeants = $this->dirigeantRepo->findBySeason($season);
+        $statuts = $this->statutResolver->pourLot($season, $dirigeants);
+
+        return array_values(array_filter(
+            $dirigeants,
+            static fn (Dirigeant $d): bool => $statuts[(string) $d->getUuid()] === DirigeantStatut::A_VALIDER_FFF,
+        ));
+    }
+
     #[Route('/supprimer', name: 'delete_confirm', methods: ['POST'])]
-    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    #[IsGranted(Permission::EFFECTIF_SUPPRIMER->value)]
     public function deleteConfirm(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -203,7 +338,7 @@ class DirigeantController extends AbstractController
     }
 
     #[Route('/supprimer/confirmer', name: 'delete', methods: ['POST'])]
-    #[IsGranted(SuperAdminVoter::ACCES_DIAGNOSTIC)]
+    #[IsGranted(Permission::EFFECTIF_SUPPRIMER->value)]
     public function delete(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -248,6 +383,7 @@ class DirigeantController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function new(
         Request $request,
         #[CurrentSeason] Season $season,
@@ -306,6 +442,8 @@ class DirigeantController extends AbstractController
             'dirigeant' => $dirigeant,
             'dotations' => $this->stockMovementRepo->findDotationsByDirigeant($dirigeant),
             'history' => $this->historiqueService->pourDirigeant($dirigeant),
+            // Cf. la fiche licencié : voir la date du dernier mail évite la relance en double.
+            'dernierContact' => $this->dernierContact->pour($dirigeant),
             // Détention et engagement de la saison en une lecture : la fiche affiche
             // ce que le registre des clés sait de cette personne, ou rien.
             'cleRow' => $this->clePresenter->pourDirigeant($dirigeant),
@@ -314,10 +452,12 @@ class DirigeantController extends AbstractController
             'documents' => $this->documentResolver->attendusPourDirigeant($dirigeant),
             'signatures' => $signatures,
             'dossierComplet' => $this->dossierCompletion->isComplete($dirigeant),
+            'statut' => $this->statutResolver->pour($dirigeant),
         ]);
     }
 
     #[Route('/{uuid}/envoyer-lien', name: 'send_link', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function sendLink(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         Request $request,
@@ -334,7 +474,38 @@ class DirigeantController extends AbstractController
         return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
     }
 
+    /** Le club a signé la licence dans FootClubs : dernier état du parcours. */
+    #[Route('/{uuid}/valider-footclubs', name: 'validate_fff', methods: ['POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
+    public function validateFff(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('dirigeant_valider_fff_' . $dirigeant->getUuid(), $request);
+
+        $this->dirigeantService->validerSurFootclubs($dirigeant);
+        $this->addFlash('success', 'Licence de ' . $dirigeant->getNomPrenom() . ' validée.');
+
+        return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
+    }
+
+    /** Sortie de secours d'un clic malheureux : la licence redevient à valider. */
+    #[Route('/{uuid}/annuler-validation-footclubs', name: 'cancel_validate_fff', methods: ['POST'])]
+    #[IsGranted(Permission::LICENCE_VALIDER_FFF->value)]
+    public function cancelValidateFff(
+        #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
+        Request $request,
+    ): Response {
+        $this->csrf->valider('dirigeant_annuler_valider_fff_' . $dirigeant->getUuid(), $request);
+
+        $this->dirigeantService->annulerValidationFootclubs($dirigeant);
+        $this->addFlash('success', 'Validation annulée : la licence est de nouveau à valider sur FootClubs.');
+
+        return $this->redirectToRoute('admin_dirigeants_show', ['uuid' => $dirigeant->getUuid()]);
+    }
+
     #[Route('/{uuid}/modifier', name: 'edit', methods: ['GET', 'POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function edit(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         Request $request,
@@ -382,6 +553,7 @@ class DirigeantController extends AbstractController
     }
 
     #[Route('/{uuid}/coordonnees/{champ}/reprendre-import', name: 'contact_reprendre_import', methods: ['POST'])]
+    #[IsGranted(Permission::EFFECTIF_GERER->value)]
     public function reprendreImportContact(
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
         ChampContact $champ,

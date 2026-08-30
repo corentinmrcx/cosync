@@ -35,7 +35,7 @@
 
     </div>
 
-    {% if seasons is not empty %}
+    {% if seasons is not empty and peut_acceder('admin_seasons_list') %}
         <a href="{{ path('admin_seasons_list') }}" class="dashboard-season-link">Gérer les saisons →</a>
     {% endif %}
 

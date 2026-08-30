@@ -1,17 +1,17 @@
 {# Badge « nouveau licencié / renouvellement ».
    `nature` = App\Enum\NatureLicence ou null (inconnue).
-   `manuelle` = true si la valeur a été corrigée à la main par l'admin. #}
-{% set classes = {
-    'nouvelle_demande': 'badge-status badge-status-sent',
-    'changement_club':  'badge-status badge-status-sent',
-    'renouvellement':   'badge-status badge-status-validated',
-} %}
+   `manuelle` = true si la valeur a été corrigée à la main par l'admin.
+
+   Registre descriptif, pas un état : la nature d'une licence ne se règle pas, elle se
+   constate. Elle portait les couleurs pleines du statut du dossier — deux verts côte à
+   côte, l'un disant « validé », l'autre « renouvellement » : l'œil ne savait plus lequel
+   comptait. Un seul contour neutre pour toutes, le libellé suffit à les distinguer. #}
 {% set labels = {
     'nouvelle_demande': 'Nouveau licencié',
     'changement_club':  'Muté — nouveau au club',
     'renouvellement':   'Renouvellement',
 } %}
-<span class="{{ nature is not null ? (classes[nature.value] ?? 'badge-status') : 'badge-status' }}"
+<span class="badge-status badge-status-nature"
       {% if manuelle|default(false) %}title="Nature corrigée manuellement — les imports ne la modifieront plus"{% endif %}>
     <span class="badge-status-dot"></span>
     {{ nature is not null ? (labels[nature.value] ?? nature.label) : 'Nature inconnue' }}

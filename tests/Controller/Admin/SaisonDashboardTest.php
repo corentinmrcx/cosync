@@ -168,7 +168,7 @@ final class SaisonDashboardTest extends WebTestCase
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
         $this->season = (new Season())->setLabel('2025-2026')->setCotisationDefaut(85);
-        $user = (new User())->setEmail('admin-saison@example.test')->setPassword('x');
+        $user = (new User())->setSuperAdmin(true)->setEmail('admin-saison@example.test')->setPassword('x');
         $user->setSelectedSeason($this->season);
 
         $em->persist($this->season);

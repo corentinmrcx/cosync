@@ -4,10 +4,12 @@ namespace App\Service\Licencie;
 
 use App\DTO\EvenementHistorique;
 use App\Entity\Dirigeant;
+use App\Entity\EnvoiMail;
 use App\Entity\Licencie;
 use App\Entity\Transaction;
 use App\Enum\PaymentMode;
 use App\Repository\AttestationCleRepository;
+use App\Repository\EnvoiMailRepository;
 use App\Service\Cle\DetenteurEffectifResolver;
 use App\Service\Document\DocumentRequirementResolver;
 
@@ -20,6 +22,7 @@ final class HistoriqueFicheService
         private readonly DocumentRequirementResolver $documentResolver,
         private readonly DetenteurEffectifResolver $effectifResolver,
         private readonly AttestationCleRepository $attestationCleRepo,
+        private readonly EnvoiMailRepository $envoiMailRepo,
     ) {}
 
     /**
@@ -35,12 +38,10 @@ final class HistoriqueFicheService
             'Admin',
         )];
 
-        if ($licencie->getLinkSentAt() !== null) {
-            $evenements[] = new EvenementHistorique(
-                $licencie->getLinkSentAt(),
-                'Lien d\'inscription envoyé par email',
-                'Système',
-            );
+        // Un événement par mail réellement parti, et non plus la seule date de `linkSentAt` :
+        // cette colonne est écrasée à chaque renvoi, les relances n'apparaissaient nulle part.
+        foreach ($this->envoiMailRepo->pourLicencie($licencie) as $envoi) {
+            $evenements[] = $this->evenementDeMail($envoi);
         }
 
         $formCompletedAt = $licencie->getDossierClub()?->getFormCompletedAt();
@@ -78,12 +79,8 @@ final class HistoriqueFicheService
             'Admin',
         )];
 
-        if ($dirigeant->getLinkSentAt() !== null) {
-            $evenements[] = new EvenementHistorique(
-                $dirigeant->getLinkSentAt(),
-                'Lien de formulaire envoyé par email',
-                'Système',
-            );
+        foreach ($this->envoiMailRepo->pourDirigeant($dirigeant) as $envoi) {
+            $evenements[] = $this->evenementDeMail($envoi);
         }
 
         if ($dirigeant->getFormCompletedAt() !== null) {
@@ -117,6 +114,15 @@ final class HistoriqueFicheService
         }
 
         return $this->parOrdreChronologique($evenements);
+    }
+
+    private function evenementDeMail(EnvoiMail $envoi): EvenementHistorique
+    {
+        return new EvenementHistorique(
+            $envoi->getSentAt(),
+            $envoi->getType()->label(),
+            $envoi->auteur(),
+        );
     }
 
     /** Aucun dirigeant sur un encaissement en ligne : c'est HelloAsso qui l'a confirmé. */
