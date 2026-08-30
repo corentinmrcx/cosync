@@ -111,7 +111,7 @@ final class PermissionsAccesTest extends WebTestCase
     /** Les comptes et les rôles sont derrière leur propre droit, absent des rôles livrés. */
     public function testLesComptesEtLesRolesRestentFermes(): void
     {
-        $this->connecter([Permission::CLUB_CONFIGURER]);
+        $this->connecter([Permission::CLUB_IDENTITE]);
 
         $this->client->request('GET', '/admin/club/identite');
         self::assertResponseIsSuccessful();
@@ -121,6 +121,76 @@ final class PermissionsAccesTest extends WebTestCase
 
         $this->client->request('GET', '/admin/club/roles');
         self::assertResponseStatusCodeSame(403);
+    }
+
+    /**
+     * Les cinq écrans du club sont indépendants.
+     *
+     * Ils vivaient sous un cran unique : donner le RIB à la trésorerie lui donnait aussi le
+     * signataire des attestations et les référentiels sportifs. Ce test tient le découpage —
+     * c'est le genre de chose qu'un `toutSauf()` malheureux recollerait sans qu'on le voie.
+     */
+    public function testLeRibNOuvrePasLIdentiteNiLesReferentiels(): void
+    {
+        $this->connecter([Permission::CLUB_RIB]);
+
+        $this->client->request('GET', '/admin/club/coordonnees-bancaires');
+        self::assertResponseIsSuccessful();
+
+        $this->client->request('GET', '/admin/club/identite');
+        self::assertResponseStatusCodeSame(403, 'Le signataire des attestations engage l\'association.');
+
+        $this->client->request('GET', '/admin/club/categories-fff');
+        self::assertResponseStatusCodeSame(403);
+
+        $this->client->request('GET', '/admin/club/tailles');
+        self::assertResponseStatusCodeSame(403);
+
+        $this->client->request('GET', '/admin/club/relances');
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    /** Et l'inverse : les référentiels sportifs n'ouvrent ni le RIB ni l'identité. */
+    public function testLesReferentielsNOuvrentPasLesReglagesDeLAssociation(): void
+    {
+        $this->connecter([Permission::CLUB_REFERENTIELS]);
+
+        $this->client->request('GET', '/admin/club/categories-fff');
+        self::assertResponseIsSuccessful();
+
+        $this->client->request('GET', '/admin/club/tailles');
+        self::assertResponseIsSuccessful();
+
+        $this->client->request('GET', '/admin/club/coordonnees-bancaires');
+        self::assertResponseStatusCodeSame(403);
+
+        $this->client->request('GET', '/admin/club/identite');
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    /**
+     * Le hub « Le club » ne montre que les réglages ouverts, et son en-tête disparaît avec
+     * eux : un titre « Réglages du club » suivi du vide se lit comme une panne.
+     */
+    public function testLeHubDuClubNAfficheQueLesReglagesOuverts(): void
+    {
+        $this->connecter([Permission::CLUB_RIB]);
+
+        $crawler = $this->client->request('GET', '/admin/club');
+        $cartes = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
+
+        self::assertSame(['Coordonnées bancaires'], $cartes);
+        self::assertStringNotContainsString('Accès à l\'application', $crawler->html());
+    }
+
+    /** Aucun droit dans le domaine : la porte d'entrée elle-même s'efface. */
+    public function testSansAucunDroitDeClubLaPorteDuHubDisparait(): void
+    {
+        $this->connecter([Permission::EFFECTIF_LIRE]);
+
+        $html = $this->client->request('GET', '/admin/')->html();
+
+        self::assertStringNotContainsString('admin/club', $html);
     }
 
     /**

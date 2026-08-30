@@ -1449,6 +1449,21 @@ Ce qui ne doit pas se défaire :
   connus, à garder en tête plutôt qu'à découvrir : une action de formulaire posée par le
   contrôleur (`createForm(..., ['action' => generateUrl(…)])`) et une garde portée par une
   variable ne se voient pas dans le template — la garde s'y pose à la main.
+- **La maille d'une permission, c'est le geste, pas l'écran de menu.** Le domaine « Le club »
+  n'avait qu'un cran, `club.configurer` : donner le RIB à la trésorerie lui donnait aussi le
+  **signataire des attestations** et les référentiels sportifs. Quatre droits désormais —
+  `club.identite` (raison sociale, SIRET, signataire, paraphe), `club.rib`, `club.relances`,
+  `club.referentiels` (catégories FFF et tailles). La question à se poser devant une
+  permission fourre-tout : *deux fonctions différentes du club voudraient-elles l'une sans
+  l'autre ?* Si oui, elle en fait deux. `Version20260830120000` a converti les rôles existants
+  — la valeur est stockée en clair dans le `json`, une valeur disparue du catalogue est
+  écartée **en silence** par `Permission::depuisValeurs()`.
+- **Une porte de hub se garde par son domaine, pas par la liste de ses droits.**
+  `{% if possede_un_droit('club') %}` sur la navbar et la carte du tableau de bord : la route
+  d'un hub est `#[AccesLibre]`, `peut_acceder()` la déclare donc ouverte — elle l'est, mais
+  elle ne mène à rien quand toutes ses cartes sont fermées. À l'intérieur, la section capture
+  ses cartes (`{% set %}`) et ne s'affiche que si l'une a survécu. Réénumérer les droits à la
+  main dans ces trois endroits en ferait oublier un au prochain réglage ajouté.
 - **Les rôles sont au niveau du club, pas de la saison.** La trésorière l'est toutes les
   saisons ; les cloisonner obligerait à les réaffecter chaque 1ᵉʳ juillet, et le premier oubli
   fermerait l'outil en pleine campagne d'inscriptions.
