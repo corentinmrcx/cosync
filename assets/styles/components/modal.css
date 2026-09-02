@@ -4,6 +4,11 @@
    et trois mécaniques de fermeture. Une seule ici.
    ───────────────────────────────────────────────────────────────────────────── */
 
+/* Le voile est en `position: fixed` : il s'ouvre par-dessus la page, mais il reste déclaré
+   là où le geste se trouve — parfois une cellule de tableau. Il ne doit donc rien hériter
+   de son point de déclaration : `.table-actions` porte `white-space: nowrap`, et le texte
+   de la modale sortait du cadre au lieu de revenir à la ligne, en poussant une barre de
+   défilement dans le corps. Une modale se lit toujours dans la typographie d'une page. */
 .modal-voile {
     position: fixed;
     inset: 0;
@@ -13,6 +18,10 @@
     justify-content: center;
     padding: 1rem;
     background: rgb(0 0 0 / 0.45);
+    white-space: normal;
+    text-align: left;
+    font-size: var(--font-size-base);
+    color: var(--color-text-body);
 }
 
 .modal {
