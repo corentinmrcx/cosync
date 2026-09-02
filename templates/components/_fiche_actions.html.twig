@@ -1,0 +1,67 @@
+{#
+  Zone d'actions d'une fiche (licencié ou dirigeant) : une seule action mise en avant —
+  celle du moment, décidée par FicheActionsResolver — et le reste dans un menu « ⋯ ».
+  L'en-tête en alignait jusqu'à cinq, dont trois en bouton principal : l'écran ne disait
+  plus lequel comptait (§7.6 quater).
+
+  Paramètres attendus :
+    actions (FicheActions)  — principale + secondaires + motif de blocage
+    actionTemplate (string) — le template qui rend un geste de cette population
+                              (admin/licencies/_action.html.twig, admin/dirigeants/_action.html.twig)
+    vars (hash)             — variables propres à la population, repassées telles quelles
+                              au template d'action (licencie, attestations… ou dirigeant)
+#}
+<div class="licencie-show-header-actions">
+    {% if actions.principale %}
+        {% include actionTemplate with vars|merge({
+            action: actions.principale.value,
+            contexte: 'principale',
+        }) only %}
+    {% elseif actions.blocage %}
+        <span class="licencie-show-no-email">{{ actions.blocage }}</span>
+    {% endif %}
+
+    {% if actions.secondaires is not empty %}
+        <div class="fiche-menu"
+             x-data="{ ouvert: false }"
+             @click.outside="ouvert = false"
+             @keydown.escape.window="ouvert = false">
+            {# Voile du panneau en bas d'écran (téléphone) : sans lui, on ne saurait
+               pas comment refermer la feuille autrement qu'en visant le bouton.
+               Invisible au-dessus de 640 px, où le menu reste un simple déroulant. #}
+            <div class="fiche-menu-voile"
+                 x-show="ouvert"
+                 x-transition.opacity
+                 @click="ouvert = false"
+                 x-cloak></div>
+
+            <button type="button"
+                    class="btn btn-secondary fiche-menu-declencheur"
+                    @click="ouvert = !ouvert"
+                    :aria-expanded="ouvert"
+                    aria-haspopup="true"
+                    aria-label="Autres actions">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                </svg>
+            </button>
+
+            <div class="fiche-menu-panneau"
+                 x-show="ouvert"
+                 x-transition:enter="fiche-menu-entre"
+                 x-transition:enter-start="fiche-menu-cache"
+                 x-transition:enter-end="fiche-menu-visible"
+                 x-transition:leave="fiche-menu-sort"
+                 x-transition:leave-start="fiche-menu-visible"
+                 x-transition:leave-end="fiche-menu-cache"
+                 x-cloak>
+                {% for action in actions.secondaires %}
+                    {% include actionTemplate with vars|merge({
+                        action: action.value,
+                        contexte: 'menu',
+                    }) only %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>

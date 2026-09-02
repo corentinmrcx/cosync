@@ -1,22 +1,26 @@
 <?php declare(strict_types=1);
 
-namespace App\Service\Licencie;
+namespace App\Service\Effectif;
 
-use App\DTO\Licencie\FicheActions;
+use App\DTO\Effectif\FicheActions;
+use App\Entity\Dirigeant;
 use App\Entity\Licencie;
+use App\Enum\DirigeantStatut;
 use App\Enum\FicheAction;
 use App\Enum\LicenceStatus;
 use Symfony\Bundle\SecurityBundle\Security;
 
 /**
- * Quelle action la fiche d'un licencié met-elle en avant, et lesquelles range-t-elle ?
+ * Quelle action une fiche — licencié ou dirigeant — met-elle en avant, et lesquelles range-t-elle ?
  *
  * **Une seule action principale, celle du moment.** C'est la première étape non franchie du
  * parcours : envoyer le lien, compléter, faire signer, valider à la FFF. Le reste reste
  * accessible, mais dans un menu — un écran qui propose cinq boutons ne dit plus lequel compte.
  *
- * La règle vit ici et non dans le template : c'est du métier (l'ordre du parcours, les
- * conditions de chaque geste), et Twig ne doit pas en porter (§7, §10).
+ * La règle vit ici et non dans les templates : c'est du métier (l'ordre du parcours, les
+ * conditions de chaque geste), et Twig ne doit pas en porter (§7, §10). Les deux populations
+ * partagent le même tri — comme pour {@see SuppressionFicheService}, le dupliquer ferait
+ * diverger les deux fiches au premier changement, et c'est justement l'écart qu'on corrige.
  */
 final class FicheActionsResolver
 {
@@ -29,7 +33,7 @@ final class FicheActionsResolver
      * le plus tôt. Une relance qui part par mail passe donc avant la validation FootClubs,
      * qui n'attend que le club et peut se faire n'importe quand.
      */
-    private const ORDRE_PARCOURS = [
+    private const PARCOURS_LICENCIE = [
         FicheAction::ENVOYER_LIEN,
         FicheAction::COMPLETER_AUTORISATIONS,
         FicheAction::DEMANDER_SIGNATURE,
@@ -38,7 +42,7 @@ final class FicheActionsResolver
     ];
 
     /** Ordre du menu : le geste courant d'abord, le geste destructeur en dernier. */
-    private const ORDRE_MENU = [
+    private const MENU_LICENCIE = [
         FicheAction::MODIFIER,
         FicheAction::ENVOYER_LIEN,
         FicheAction::COMPLETER_AUTORISATIONS,
@@ -49,15 +53,50 @@ final class FicheActionsResolver
         FicheAction::ANNULER_VALIDATION_FFF,
     ];
 
-    public function pour(
+    /** Le parcours d'un dirigeant est plus court : pas de paiement, pas d'attestation. */
+    private const PARCOURS_DIRIGEANT = [
+        FicheAction::ENVOYER_LIEN,
+        FicheAction::VALIDER_FFF,
+    ];
+
+    private const MENU_DIRIGEANT = [
+        FicheAction::MODIFIER,
+        FicheAction::ENVOYER_LIEN,
+        FicheAction::VALIDER_FFF,
+        FicheAction::ANNULER_VALIDATION_FFF,
+    ];
+
+    public function pourLicencie(
         Licencie $licencie,
         bool $autorisationsManquantes,
         bool $signatureManquante,
         bool $attestationPossible,
     ): FicheActions {
-        $applicables = $this->applicables($licencie, $autorisationsManquantes, $signatureManquante, $attestationPossible);
-        $joignable = $licencie->getEmail() !== null;
+        return $this->trier(
+            $this->applicablesLicencie($licencie, $autorisationsManquantes, $signatureManquante, $attestationPossible),
+            self::PARCOURS_LICENCIE,
+            self::MENU_LICENCIE,
+            joignable: $licencie->getEmail() !== null,
+        );
+    }
 
+    public function pourDirigeant(Dirigeant $dirigeant, DirigeantStatut $statut): FicheActions
+    {
+        return $this->trier(
+            $this->applicablesDirigeant($statut),
+            self::PARCOURS_DIRIGEANT,
+            self::MENU_DIRIGEANT,
+            joignable: $dirigeant->getEmail() !== null,
+        );
+    }
+
+    /**
+     * @param FicheAction[] $applicables
+     * @param FicheAction[] $ordreParcours
+     * @param FicheAction[] $ordreMenu
+     */
+    private function trier(array $applicables, array $ordreParcours, array $ordreMenu, bool $joignable): FicheActions
+    {
         // Un geste que le compte n'a pas le droit de jouer disparaît, sans motif : ce n'est pas
         // une étape bloquée, c'est un pan de l'application qu'il ne possède pas (§7.6 quater).
         $applicables = array_values(array_filter(
@@ -68,7 +107,7 @@ final class FicheActionsResolver
         $principale = null;
         $blocage = null;
 
-        foreach (self::ORDRE_PARCOURS as $action) {
+        foreach ($ordreParcours as $action) {
             if (!in_array($action, $applicables, true)) {
                 continue;
             }
@@ -85,7 +124,7 @@ final class FicheActionsResolver
         }
 
         $secondaires = [];
-        foreach (self::ORDRE_MENU as $action) {
+        foreach ($ordreMenu as $action) {
             if ($action === $principale || !in_array($action, $applicables, true)) {
                 continue;
             }
@@ -105,7 +144,7 @@ final class FicheActionsResolver
      *
      * @return FicheAction[]
      */
-    private function applicables(
+    private function applicablesLicencie(
         Licencie $licencie,
         bool $autorisationsManquantes,
         bool $signatureManquante,
@@ -140,6 +179,35 @@ final class FicheActionsResolver
         }
         if ($attestationPossible) {
             $actions[] = FicheAction::ATTESTATION_PAIEMENT;
+        }
+
+        return $actions;
+    }
+
+    /** @return FicheAction[] */
+    private function applicablesDirigeant(DirigeantStatut $statut): array
+    {
+        $actions = [FicheAction::MODIFIER];
+
+        // Le lien couvre aussi le document ajouté en cours de saison : il rouvre le même
+        // formulaire public, où ne restent que les étapes manquantes. Une licence
+        // administrative, elle, n'attend aucun lien (cf. §4).
+        $enAttenteDeDossier = in_array($statut, [
+            DirigeantStatut::LIEN_NON_ENVOYE,
+            DirigeantStatut::LIEN_ENVOYE,
+            DirigeantStatut::DOCUMENT_A_SIGNER,
+        ], true);
+        if ($enAttenteDeDossier) {
+            $actions[] = FicheAction::ENVOYER_LIEN;
+        }
+
+        // Une licence administrative n'attend ni lien ni document — mais elle existe bien à
+        // la FFF, le club la signe donc comme les autres.
+        if ($statut === DirigeantStatut::A_VALIDER_FFF || $statut === DirigeantStatut::LICENCE_ADMINISTRATIVE) {
+            $actions[] = FicheAction::VALIDER_FFF;
+        }
+        if ($statut === DirigeantStatut::VALIDE) {
+            $actions[] = FicheAction::ANNULER_VALIDATION_FFF;
         }
 
         return $actions;

@@ -185,69 +185,11 @@
             </p>
         </div>
 
-        {#
-           Une seule action mise en avant — celle du moment, décidée par FicheActionsResolver —
-           et le reste dans un menu. L'en-tête en alignait jusqu'à cinq, dont trois en bouton
-           principal : l'écran ne disait plus lequel comptait.
-        #}
-        <div class="licencie-show-header-actions">
-            {% if actions.principale %}
-                {% include 'admin/licencies/_action.html.twig' with {
-                    action: actions.principale.value,
-                    licencie: licencie,
-                    attestations: attestations,
-                    contexte: 'principale',
-                } only %}
-            {% elseif actions.blocage %}
-                <span class="licencie-show-no-email">{{ actions.blocage }}</span>
-            {% endif %}
-
-            {% if actions.secondaires is not empty %}
-                <div class="fiche-menu"
-                     x-data="{ ouvert: false }"
-                     @click.outside="ouvert = false"
-                     @keydown.escape.window="ouvert = false">
-                    {# Voile du panneau en bas d'écran (téléphone) : sans lui, on ne saurait
-                       pas comment refermer la feuille autrement qu'en visant le bouton.
-                       Invisible au-dessus de 640 px, où le menu reste un simple déroulant. #}
-                    <div class="fiche-menu-voile"
-                         x-show="ouvert"
-                         x-transition.opacity
-                         @click="ouvert = false"
-                         x-cloak></div>
-
-                    <button type="button"
-                            class="btn btn-secondary fiche-menu-declencheur"
-                            @click="ouvert = !ouvert"
-                            :aria-expanded="ouvert"
-                            aria-haspopup="true"
-                            aria-label="Autres actions">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-                        </svg>
-                    </button>
-
-                    <div class="fiche-menu-panneau"
-                         x-show="ouvert"
-                         x-transition:enter="fiche-menu-entre"
-                         x-transition:enter-start="fiche-menu-cache"
-                         x-transition:enter-end="fiche-menu-visible"
-                         x-transition:leave="fiche-menu-sort"
-                         x-transition:leave-start="fiche-menu-visible"
-                         x-transition:leave-end="fiche-menu-cache"
-                         x-cloak>
-                        {% for action in actions.secondaires %}
-                            {% include 'admin/licencies/_action.html.twig' with {
-                                action: action.value,
-                                licencie: licencie,
-                                attestations: attestations,
-                                contexte: 'menu',
-                            } only %}
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-        </div>
+        {% include 'components/_fiche_actions.html.twig' with {
+            actions: actions,
+            actionTemplate: 'admin/licencies/_action.html.twig',
+            vars: { licencie: licencie, attestations: attestations },
+        } only %}
     </div>
 
     <div class="licencie-show-grid">
@@ -558,26 +500,59 @@
                         <td class="licencie-show-dd-empty" data-label="Archivage">
                             {{ a.estArchivee ? 'Sur Drive' : 'Upload en attente' }}
                         </td>
-                        <td class="attestations-actions table-actions">
-                            {# Régénéré depuis les valeurs figées : le fichier local disparaît
-                               une fois l'archivage Drive réussi. #}
-                            <a href="{{ path('admin_attestation_paiement_download', {uuid: a.uuid}) }}"
-                               class="btn btn-secondary btn-sm" target="_blank">
-                                {{ ui.icon('download', 13) }}
-                                Télécharger
-                            </a>
-                            <form method="post"
-                                  action="{{ path('admin_attestation_paiement_resend', {uuid: a.uuid}) }}"
-                                  class="attestations-resend"
-                                  onsubmit="return confirm('Renvoyer cette attestation ?')">
-                                <input type="hidden" name="_token" value="{{ csrf_token('attestation_paiement_resend_' ~ a.uuid) }}">
-                                <input type="email" name="email" class="field-input attestations-resend-email"
-                                       value="{{ a.envoyeeA ?? licencie.email }}" placeholder="adresse@exemple.fr" required>
-                                <button type="submit" class="btn btn-secondary btn-sm">
+                        <td class="table-actions" x-data="{ envoi: false }">
+                            <div class="table-actions-cellule">
+                                {# Régénéré depuis les valeurs figées : le fichier local disparaît
+                                   une fois l'archivage Drive réussi. #}
+                                <a href="{{ path('admin_attestation_paiement_download', {uuid: a.uuid}) }}"
+                                   class="btn btn-secondary btn-sm" target="_blank">
+                                    {{ ui.icon('download', 13) }}
+                                    Télécharger
+                                </a>
+                                <button type="button" class="btn btn-secondary btn-sm" @click="envoi = true">
                                     {{ ui.icon('send', 13) }}
                                     Envoyer
                                 </button>
-                            </form>
+                            </div>
+
+                            {# L'adresse se saisit dans une modale, pas dans la cellule : le payeur
+                               n'est pas toujours le licencié, l'adresse doit rester corrigeable au
+                               moment de l'envoi — mais un champ posé dans la ligne élargissait la
+                               colonne pour tout le monde. Une modale et non un menu « ⋯ » : ce
+                               dernier est un panneau en position absolue, que le `.table-wrapper`
+                               rognerait (cf. planning/_actions.html.twig). #}
+                            <div x-show="envoi" class="modal-voile"
+                                 @click.self="envoi = false"
+                                 @keydown.escape.window="envoi = false"
+                                 x-cloak>
+                                <div class="modal">
+                                    <div class="modal-header">
+                                        <h2 class="modal-titre">Envoyer l'attestation</h2>
+                                        <button type="button" class="modal-fermer" @click="envoi = false">✕</button>
+                                    </div>
+                                    <form method="post"
+                                          action="{{ path('admin_attestation_paiement_resend', {uuid: a.uuid}) }}"
+                                          class="modal-corps">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('attestation_paiement_resend_' ~ a.uuid) }}">
+                                        <p class="attestations-envoi-rappel">
+                                            Attestation du {{ a.generatedAt|date('d/m/Y') }} au nom de
+                                            <strong>{{ a.destinataireComplet }}</strong>,
+                                            pour {{ a.montant|number_format(2, ',', ' ') }} €.
+                                        </p>
+                                        <div class="field">
+                                            <label class="field-label" for="attestation-email-{{ a.uuid }}">Adresse d'envoi *</label>
+                                            <input type="email" id="attestation-email-{{ a.uuid }}" name="email"
+                                                   class="field-input"
+                                                   value="{{ a.envoyeeA ?? licencie.email }}"
+                                                   placeholder="adresse@exemple.fr" required>
+                                        </div>
+                                        <div class="modal-actions">
+                                            <button type="button" class="btn btn-ghost" @click="envoi = false">Annuler</button>
+                                            <button type="submit" class="btn btn-primary">Envoyer</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

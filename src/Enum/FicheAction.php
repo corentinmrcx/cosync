@@ -3,15 +3,17 @@
 namespace App\Enum;
 
 /**
- * Les gestes possibles depuis la fiche d'un licencié.
+ * Les gestes possibles depuis la fiche d'un licencié ou d'un dirigeant.
  *
  * L'en-tête de la fiche en affichait jusqu'à cinq côte à côte, dont trois en `btn-primary` :
  * l'écran ne disait plus ce qu'il attendait. Cet enum sert à trier — une action mise en avant,
- * le reste dans un menu ({@see \App\Service\Licencie\FicheActionsResolver}).
+ * le reste dans un menu ({@see \App\Service\Effectif\FicheActionsResolver}). Le dirigeant n'en
+ * joue qu'un sous-ensemble : pas de paiement, pas d'attestation.
  *
- * **Les libellés ne sont pas ici** mais dans `admin/licencies/_action.html.twig`, avec le
- * balisage : celui de l'attestation change selon qu'il en existe déjà (« Attestation de
- * paiement » / « Nouvelle attestation »), et deux sources de vérité pour un même texte se
+ * **Les libellés ne sont pas ici** mais dans `admin/licencies/_action.html.twig` et
+ * `admin/dirigeants/_action.html.twig`, avec le balisage : celui de l'attestation change selon
+ * qu'il en existe déjà (« Attestation de paiement » / « Nouvelle attestation »), celui du lien
+ * dirigeant selon que le jeton court encore, et deux sources de vérité pour un même texte se
  * seraient contredites au premier changement de mot.
  */
 enum FicheAction: string
