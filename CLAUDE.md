@@ -1738,8 +1738,26 @@ Peupler les référentiels (catégories FFF, rôles dirigeants) via migration **
 `SeedReferentialCommand` (idempotente). Ne jamais en dépendre d'une purge — la purge (`PurgeService`)
 les **conserve** et reste réservée au **mode beta**.
 
+### La donnée du club ne passe pas par une migration
+
+Un référentiel vaut pour toute base ; **l'inventaire du local de Soudron n'existe qu'une fois**.
+Porté par une migration, il était rejoué sur chaque base construite depuis zéro — dont la base de
+test de la CI, qui héritait de 87 articles et 95 mouvements avant le premier test. Treize tests
+sont tombés : ceux qui interrogent le stock entier, et — plus retors — ceux qui insèrent après
+`PurgeServiceTest`, dont le `setval(sequence, 1, false)` **n'est pas annulé** par la transaction
+de `dama/doctrine-test-bundle` alors que les lignes semées, elles, sont restaurées. Les ids
+repartaient de 1 et percutaient le semis.
+
+Une reprise de données est donc une **commande console idempotente**, lancée à la main une fois
+sur la prod — `InventaireAout2026Command` en est le modèle : garde-fous avant la première
+écriture (catégories et auteur présents, sinon `FAILURE`), création gardée par « n'existe pas
+déjà », entrée de stock gardée par « aucun mouvement encore ». Le critère de tri : *cette donnée
+aurait-elle un sens dans une base neuve ?* Si non, ce n'est pas une migration.
+
 ### Ce que Claude Code ne doit jamais faire (schéma)
 - ❌ `doctrine:schema:update --force` sur une base contenant des données
 - ❌ Modifier une migration déjà appliquée en prod
 - ❌ `ADD COLUMN NOT NULL` sans DEFAULT ni backfill sur une table non vide
 - ❌ Proposer un `DROP` de colonne/table sans avoir signalé la perte de données
+- ❌ Semer de la donnée du club (inventaire, effectif, paiements) depuis une migration : elle
+  atterrirait dans toute base neuve, à commencer par celle de la CI (cf. ci-dessus)

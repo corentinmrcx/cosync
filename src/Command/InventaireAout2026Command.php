@@ -1,22 +1,33 @@
 <?php declare(strict_types=1);
 
-namespace DoctrineMigrations;
+namespace App\Command;
 
-use Doctrine\DBAL\Schema\Schema;
-use Doctrine\Migrations\AbstractMigration;
+use Doctrine\DBAL\Connection;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Reprise de l'inventaire papier d'août 2026 — matériel, accessoires et pharmacie.
  *
  * Les feuilles « Maillot de match » et « vetement neuf » du classeur ont déjà été saisies à la
- * main dans l'application (articles 1 à 38, mouvements du 15/08/2026) : cette migration ne les
- * touche pas. Elle ne reprend que les trois feuilles jamais saisies — MATERIEL, MATERIEL PAS
- * NEUF et PHARMACIE — en suivant la nomenclature des articles existants (nom · marque ·
- * couleur, couleurs capitalisées, détails d'état dans la note de l'article).
+ * main dans l'application (articles 1 à 38, mouvements du 15/08/2026) : cette reprise ne les
+ * touche pas. Elle ne porte que les trois feuilles jamais saisies — MATERIEL, MATERIEL PAS NEUF
+ * et PHARMACIE — en suivant la nomenclature des articles existants (nom · marque · couleur,
+ * couleurs capitalisées, détails d'état dans la note de l'article).
  *
- * NON DESTRUCTIF et rejouable sans doublon : chaque article n'est créé que s'il n'existe pas
- * déjà (même nom, même marque, même couleur), et son entrée d'inventaire n'est posée que si
- * l'article n'a encore aucun mouvement — un article déjà géré entre-temps n'est jamais réécrit.
+ * ⚠️ Ceci est une commande, et non une migration, délibérément. Un inventaire n'est ni du schéma
+ * ni un référentiel (§13) : c'est la donnée d'un club à une date. Portée par une migration, elle
+ * était rejouée sur **toute** base construite en repartant de zéro — dont la base de test de la
+ * CI, qui héritait alors de 87 articles et 95 mouvements avant le premier test. Ne pas l'y
+ * remettre : le stock de Soudron n'a rien à faire dans une base neuve.
+ *
+ * Idempotente : chaque article n'est créé que s'il n'existe pas déjà (même nom, même marque,
+ * même couleur), et son entrée d'inventaire n'est posée que si l'article n'a encore aucun
+ * mouvement — un article déjà géré entre-temps n'est jamais réécrit. La commande se relance donc
+ * sans risque de doublon.
  *
  * Choix de reprise, quand le classeur disait plus que le modèle :
  * - les états (« neuf », « utilisé », lieu de rangement) vont dans la note de l'article ;
@@ -27,11 +38,19 @@ use Doctrine\Migrations\AbstractMigration;
  *   la chasuble Errea « taille adulte » n'a pas de déclinaison, sa note le dit ;
  * - deux articles sont créés sans stock : le ballon T4 Protouch (compté à zéro) et les
  *   pansements en vrac (« tout plein », quantité jamais comptée).
+ *
+ * Il n'y a pas de marche arrière : le stock est dérivé des mouvements, et des mouvements ont pu
+ * s'ajouter depuis (dotations, corrections). Un article entré à tort se retire depuis l'écran de
+ * gestion du stock, qui sait dire ce qui est supprimable et ce qui doit s'archiver.
  */
-final class Version20260902210000 extends AbstractMigration
+#[AsCommand(
+    name: 'app:inventaire:aout-2026',
+    description: 'Reprise de l\'inventaire d\'août 2026 : matériel, accessoires et pharmacie (les vêtements étaient déjà saisis)',
+)]
+final class InventaireAout2026Command extends Command
 {
     private const DATE_INVENTAIRE = '2026-08-31 12:00:00';
-    private const CREATED_BY_EMAIL = 'corentinmarcoux51@gmail.com';
+    private const AUTEUR_EMAIL = 'corentinmarcoux51@gmail.com';
 
     private const MATERIEL = 'Accessoire & Matériel';
     private const PHARMACIE = 'Pharmacie';
@@ -142,84 +161,166 @@ final class Version20260902210000 extends AbstractMigration
         ['Bande extensible grande', null, null, self::PHARMACIE, null, null, [[10, null]]],
     ];
 
-    public function getDescription(): string
+    public function __construct(private readonly Connection $connection)
     {
-        return 'Reprise de l\'inventaire d\'août 2026 : matériel, accessoires et pharmacie (les vêtements étaient déjà saisis)';
+        parent::__construct();
     }
 
-    public function up(Schema $schema): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        foreach (self::ARTICLES as [$nom, $marque, $couleur, $categorie, $typeVetement, $note, $mouvements]) {
-            // L'article n'est créé que s'il n'existe pas déjà sous la même désignation
-            // (nom · marque · couleur) : la migration reste rejouable sans doublon.
-            $this->addSql(
-                <<<'SQL'
-                    INSERT INTO stock_item (nom, marque, couleur, kind, type_vetement, note, actif, category_id)
-                    SELECT :nom, :marque, :couleur, 'equipement', :type_vetement, :note, true,
-                           (SELECT id FROM stock_category WHERE name = :categorie)
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM stock_item
-                        WHERE nom = :nom
-                          AND marque IS NOT DISTINCT FROM :marque
-                          AND couleur IS NOT DISTINCT FROM :couleur
-                    )
-                    SQL,
-                [
-                    'nom' => $nom,
-                    'marque' => $marque,
-                    'couleur' => $couleur,
-                    'type_vetement' => $typeVetement,
-                    'note' => $note,
-                    'categorie' => $categorie,
-                ],
-            );
+        $io = new SymfonyStyle($input, $output);
 
-            if ($mouvements === []) {
-                continue;
+        // Les deux garde-fous sont posés avant la première écriture. Sans eux, la reprise
+        // passerait quand même : la catégorie et l'auteur sont résolus par sous-requête et
+        // vaudraient NULL. On se retrouverait avec 87 articles sans catégorie, invisibles là
+        // où le club les cherche, et 95 entrées de stock que personne n'a signées.
+        $manquantes = $this->categoriesManquantes();
+        if ($manquantes !== []) {
+            $io->error(sprintf(
+                'Catégories de stock absentes : %s. Les créer depuis /admin/stock/categories avant de relancer.',
+                implode(', ', $manquantes),
+            ));
+
+            return Command::FAILURE;
+        }
+
+        if (!$this->auteurExiste()) {
+            $io->error(sprintf('Aucun compte %s : c\'est lui qui signe les entrées d\'inventaire.', self::AUTEUR_EMAIL));
+
+            return Command::FAILURE;
+        }
+
+        // Tout ou rien : la reprise pose 172 instructions, et un inventaire à moitié saisi est
+        // pire que pas d'inventaire du tout — le stock afficherait des quantités fausses sans
+        // que rien ne signale l'interruption. Une panne en cours de route rend la base intacte,
+        // et il n'y a qu'à relancer.
+        /** @var array{0: int, 1: int} $comptes */
+        $comptes = $this->connection->transactional(function (): array {
+            $articles = 0;
+            $mouvements = 0;
+
+            foreach (self::ARTICLES as [$nom, $marque, $couleur, $categorie, $typeVetement, $note, $lignes]) {
+                $articles += $this->creerArticle($nom, $marque, $couleur, $categorie, $typeVetement, $note);
+
+                if ($lignes !== []) {
+                    $mouvements += $this->creerEntrees($nom, $marque, $couleur, $lignes);
+                }
             }
 
-            // Toutes les déclinaisons d'un article partent dans un seul INSERT, gardé par
-            // « aucun mouvement encore » : un article déjà géré entre-temps n'est pas réécrit.
-            $lignes = [];
-            $params = [
-                'date' => self::DATE_INVENTAIRE,
-                'email' => self::CREATED_BY_EMAIL,
+            return [$articles, $mouvements];
+        });
+
+        [$articles, $mouvements] = $comptes;
+
+        if ($articles === 0 && $mouvements === 0) {
+            $io->success('Inventaire d\'août 2026 déjà repris : rien à faire.');
+
+            return Command::SUCCESS;
+        }
+
+        $io->success(sprintf(
+            'Inventaire d\'août 2026 repris : %d article(s) créé(s), %d entrée(s) de stock.',
+            $articles,
+            $mouvements,
+        ));
+
+        return Command::SUCCESS;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function categoriesManquantes(): array
+    {
+        $attendues = [self::MATERIEL, self::PHARMACIE];
+
+        $connues = $this->connection->fetchFirstColumn('SELECT name FROM stock_category');
+
+        return array_values(array_diff($attendues, $connues));
+    }
+
+    private function auteurExiste(): bool
+    {
+        return (bool) $this->connection->fetchOne(
+            'SELECT 1 FROM "user" WHERE email = :email',
+            ['email' => self::AUTEUR_EMAIL],
+        );
+    }
+
+    /**
+     * L'article n'est créé que s'il n'existe pas déjà sous la même désignation
+     * (nom · marque · couleur) : la reprise reste rejouable sans doublon.
+     */
+    private function creerArticle(
+        string $nom,
+        ?string $marque,
+        ?string $couleur,
+        string $categorie,
+        ?string $typeVetement,
+        ?string $note,
+    ): int {
+        return (int) $this->connection->executeStatement(
+            <<<'SQL'
+                INSERT INTO stock_item (nom, marque, couleur, kind, type_vetement, note, actif, category_id)
+                SELECT :nom, :marque, :couleur, 'equipement', :type_vetement, :note, true,
+                       (SELECT id FROM stock_category WHERE name = :categorie)
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM stock_item
+                    WHERE nom = :nom
+                      AND marque IS NOT DISTINCT FROM :marque
+                      AND couleur IS NOT DISTINCT FROM :couleur
+                )
+                SQL,
+            [
                 'nom' => $nom,
                 'marque' => $marque,
                 'couleur' => $couleur,
-            ];
-            foreach ($mouvements as $index => [$quantite, $taille]) {
-                $lignes[] = sprintf('(CAST(:q%1$d AS INT), CAST(:t%1$d AS VARCHAR))', $index);
-                $params['q' . $index] = $quantite;
-                $params['t' . $index] = $taille;
-            }
-
-            $this->addSql(
-                sprintf(
-                    <<<'SQL'
-                        INSERT INTO stock_movement (quantite, taille, type, source, created_at, item_id, created_by_id)
-                        SELECT v.quantite, v.taille, 'entree', 'manuel', :date, i.id,
-                               (SELECT id FROM "user" WHERE email = :email)
-                        FROM stock_item i
-                        CROSS JOIN (VALUES %s) AS v(quantite, taille)
-                        WHERE i.nom = :nom
-                          AND i.marque IS NOT DISTINCT FROM :marque
-                          AND i.couleur IS NOT DISTINCT FROM :couleur
-                          AND NOT EXISTS (SELECT 1 FROM stock_movement m WHERE m.item_id = i.id)
-                        SQL,
-                    implode(', ', $lignes),
-                ),
-                $params,
-            );
-        }
+                'type_vetement' => $typeVetement,
+                'note' => $note,
+                'categorie' => $categorie,
+            ],
+        );
     }
 
-    public function down(Schema $schema): void
+    /**
+     * Toutes les déclinaisons d'un article partent dans un seul INSERT, gardé par « aucun
+     * mouvement encore » : un article déjà géré entre-temps n'est pas réécrit.
+     *
+     * @param list<array{0: int, 1: ?string}> $lignes
+     */
+    private function creerEntrees(string $nom, ?string $marque, ?string $couleur, array $lignes): int
     {
-        // Le stock est dérivé des mouvements, et des mouvements ont pu s'ajouter depuis
-        // (dotations, corrections) : défaire la reprise supprimerait plus que ce qu'elle a
-        // créé. Un article entré à tort se retire depuis l'écran de gestion du stock, qui
-        // sait dire ce qui est supprimable et ce qui doit s'archiver.
-        $this->throwIrreversibleMigrationException('Reprise d\'inventaire : se corrige depuis l\'écran de gestion du stock, pas par un rollback.');
+        $valeurs = [];
+        $params = [
+            'date' => self::DATE_INVENTAIRE,
+            'email' => self::AUTEUR_EMAIL,
+            'nom' => $nom,
+            'marque' => $marque,
+            'couleur' => $couleur,
+        ];
+
+        foreach ($lignes as $index => [$quantite, $taille]) {
+            $valeurs[] = sprintf('(CAST(:q%1$d AS INT), CAST(:t%1$d AS VARCHAR))', $index);
+            $params['q' . $index] = $quantite;
+            $params['t' . $index] = $taille;
+        }
+
+        return (int) $this->connection->executeStatement(
+            sprintf(
+                <<<'SQL'
+                    INSERT INTO stock_movement (quantite, taille, type, source, created_at, item_id, created_by_id)
+                    SELECT v.quantite, v.taille, 'entree', 'manuel', CAST(:date AS TIMESTAMP), i.id,
+                           (SELECT id FROM "user" WHERE email = :email)
+                    FROM stock_item i
+                    CROSS JOIN (VALUES %s) AS v(quantite, taille)
+                    WHERE i.nom = :nom
+                      AND i.marque IS NOT DISTINCT FROM :marque
+                      AND i.couleur IS NOT DISTINCT FROM :couleur
+                      AND NOT EXISTS (SELECT 1 FROM stock_movement m WHERE m.item_id = i.id)
+                    SQL,
+                implode(', ', $valeurs),
+            ),
+            $params,
+        );
     }
 }
