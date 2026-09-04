@@ -27,11 +27,14 @@
             } only %}
         {% endfor %}
 
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'plus',
-            label: 'Nouvelle saison',
-            route: 'admin_seasons_new'
-        } only %}
+        {# Créer une saison est réservé : sans le droit, pas de carte plutôt qu'un 403. #}
+        {% if peut_acceder('admin_seasons_new') %}
+            {% include 'components/hub-card.html.twig' with {
+                icon: 'plus',
+                label: 'Nouvelle saison',
+                route: 'admin_seasons_new'
+            } only %}
+        {% endif %}
 
     </div>
 

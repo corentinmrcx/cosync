@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/club/identite', name: 'admin_club_identite_')]
-#[IsGranted(Permission::CLUB_CONFIGURER->value)]
+#[IsGranted(Permission::CLUB_IDENTITE->value)]
 class ClubIdentiteController extends AbstractController
 {
     public function __construct(

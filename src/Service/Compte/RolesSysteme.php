@@ -46,6 +46,9 @@ final class RolesSysteme
                 Permission::PAIEMENT_ATTESTER,
                 Permission::LICENCE_VALIDER_FFF,
                 Permission::SAISON_LIRE,
+                // Le compte de l'association est le sien : c'est elle qui corrige un RIB
+                // erroné, et le licencié le lit sur son formulaire d'inscription.
+                Permission::CLUB_RIB,
             ],
         ];
     }

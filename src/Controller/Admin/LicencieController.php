@@ -35,9 +35,9 @@ use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Document\SignatureCompletionService;
 use App\Service\Document\SignatureRelanceService;
 use App\Service\Dotation\DotationSuiviPresenter;
+use App\Service\Effectif\FicheActionsResolver;
 use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Inscription\AutorisationCompletionService;
-use App\Service\Licencie\FicheActionsResolver;
 use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Licencie\LicencieService;
 use App\Service\Licencie\PaiementService;
@@ -636,7 +636,7 @@ class LicencieController extends AbstractController
             'attestationBlocage' => $attestationBlocage,
             // Une action mise en avant, les autres dans un menu : l'en-tête en alignait
             // jusqu'à cinq, dont trois en « bouton principal ».
-            'actions' => $this->ficheActions->pour(
+            'actions' => $this->ficheActions->pourLicencie(
                 $licencie,
                 autorisationsManquantes: $autorisationsManquantes,
                 signatureManquante: $signatureManquante,

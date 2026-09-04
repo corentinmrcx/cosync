@@ -62,7 +62,10 @@ enum Permission: string
     case SAISON_CONFIGURER = 'saison.configurer';
 
     // — Le club —
-    case CLUB_CONFIGURER = 'club.configurer';
+    case CLUB_IDENTITE = 'club.identite';
+    case CLUB_RIB = 'club.rib';
+    case CLUB_RELANCES = 'club.relances';
+    case CLUB_REFERENTIELS = 'club.referentiels';
     case UTILISATEUR_GERER = 'utilisateur.gerer';
 
     // — Diagnostic —
@@ -91,7 +94,8 @@ enum Permission: string
 
             self::SAISON_LIRE, self::SAISON_CONFIGURER => DomainePermission::SAISON,
 
-            self::CLUB_CONFIGURER, self::UTILISATEUR_GERER => DomainePermission::CLUB,
+            self::CLUB_IDENTITE, self::CLUB_RIB, self::CLUB_RELANCES,
+            self::CLUB_REFERENTIELS, self::UTILISATEUR_GERER => DomainePermission::CLUB,
 
             self::DIAGNOSTIC_ACCEDER => DomainePermission::DIAGNOSTIC,
         };
@@ -133,7 +137,10 @@ enum Permission: string
             self::SAISON_LIRE => 'Consulter les réglages de la saison',
             self::SAISON_CONFIGURER => 'Configurer les saisons',
 
-            self::CLUB_CONFIGURER => 'Configurer le club',
+            self::CLUB_IDENTITE => 'Identité de l\'association',
+            self::CLUB_RIB => 'Coordonnées bancaires',
+            self::CLUB_RELANCES => 'Relances automatiques',
+            self::CLUB_REFERENTIELS => 'Catégories FFF et tailles',
             self::UTILISATEUR_GERER => 'Gérer les comptes et les rôles',
 
             self::DIAGNOSTIC_ACCEDER => 'Accéder au diagnostic',
@@ -177,7 +184,10 @@ enum Permission: string
             self::SAISON_LIRE => 'Voir les cotisations, les équipes et les documents à signer.',
             self::SAISON_CONFIGURER => 'Modifier les cotisations et les équipes, gérer les documents, créer une saison.',
 
-            self::CLUB_CONFIGURER => 'Identité de l\'association, RIB, relances automatiques, catégories FFF et tailles.',
+            self::CLUB_IDENTITE => 'Raison sociale, adresse, SIRET, et le signataire des attestations — ce qui engage l\'association.',
+            self::CLUB_RIB => 'Changer le RIB proposé au licencié pour régler par virement.',
+            self::CLUB_RELANCES => 'Allumer la relance automatique, régler son délai et son plafond.',
+            self::CLUB_REFERENTIELS => 'Entretenir les catégories FFF et le référentiel des tailles.',
             self::UTILISATEUR_GERER => 'Créer des comptes, changer leurs rôles, définir les rôles eux-mêmes.',
 
             self::DIAGNOSTIC_ACCEDER => 'Purge des données, mode bêta, mails de test. Réservé au super-admin.',

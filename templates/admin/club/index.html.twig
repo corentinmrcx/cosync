@@ -13,48 +13,53 @@
    « Rôles » entre les tailles et les catégories FFF. #}
 <div class="section-home-page">
 
-    {% if is_granted('club.configurer') %}
+    {# Chaque carte porte sa permission et disparaît toute seule ; on capture la grille pour
+       n'écrire l'en-tête que si au moins une a survécu. Répéter la liste des droits dans une
+       condition marcherait aujourd'hui et se tromperait au prochain réglage ajouté — un titre
+       « Réglages du club » suivi du vide se lit comme une panne. #}
+    {% set reglages %}
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'shield',
+            label: 'Identité de l\'association',
+            route: 'admin_club_identite_edit',
+            permission: 'club.identite'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'bank',
+            label: 'Coordonnées bancaires',
+            route: 'admin_club_rib',
+            permission: 'club.rib'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'send',
+            label: 'Relances automatiques',
+            route: 'admin_club_relances',
+            permission: 'club.relances'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'tag',
+            label: 'Catégories FFF',
+            route: 'admin_categories_index',
+            permission: 'club.referentiels'
+        } only %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'ruler',
+            label: 'Tailles',
+            route: 'admin_tailles_index',
+            permission: 'club.referentiels'
+        } only %}
+    {% endset %}
+
+    {% if reglages|trim is not empty %}
         <div class="section-home-section">
             <div class="section-home-section-header">
                 <h2 class="section-home-section-title">Réglages du club</h2>
             </div>
-
-            <div class="dashboard-hub">
-                {% include 'components/hub-card.html.twig' with {
-                    icon: 'shield',
-                    label: 'Identité de l\'association',
-                    route: 'admin_club_identite_edit',
-                    permission: 'club.configurer'
-                } only %}
-
-                {% include 'components/hub-card.html.twig' with {
-                    icon: 'bank',
-                    label: 'Coordonnées bancaires',
-                    route: 'admin_club_rib',
-                    permission: 'club.configurer'
-                } only %}
-
-                {% include 'components/hub-card.html.twig' with {
-                    icon: 'send',
-                    label: 'Relances automatiques',
-                    route: 'admin_club_relances',
-                    permission: 'club.configurer'
-                } only %}
-
-                {% include 'components/hub-card.html.twig' with {
-                    icon: 'tag',
-                    label: 'Catégories FFF',
-                    route: 'admin_categories_index',
-                    permission: 'club.configurer'
-                } only %}
-
-                {% include 'components/hub-card.html.twig' with {
-                    icon: 'ruler',
-                    label: 'Tailles',
-                    route: 'admin_tailles_index',
-                    permission: 'club.configurer'
-                } only %}
-            </div>
+            <div class="dashboard-hub">{{ reglages }}</div>
         </div>
     {% endif %}
 
@@ -65,19 +70,19 @@
             </div>
 
             <div class="dashboard-hub">
-                {% include 'components/hub-card.html.twig' with {
-                    icon: 'users',
-                    label: 'Utilisateurs',
-                    route: 'admin_users_list',
-                    permission: 'utilisateur.gerer'
-                } only %}
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'users',
+            label: 'Utilisateurs',
+            route: 'admin_users_list',
+            permission: 'utilisateur.gerer'
+        } only %}
 
-                {% include 'components/hub-card.html.twig' with {
-                    icon: 'shield',
-                    label: 'Rôles',
-                    route: 'admin_roles_index',
-                    permission: 'utilisateur.gerer'
-                } only %}
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'shield',
+            label: 'Rôles',
+            route: 'admin_roles_index',
+            permission: 'utilisateur.gerer'
+        } only %}
             </div>
         </div>
     {% endif %}

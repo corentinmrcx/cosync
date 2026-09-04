@@ -1,0 +1,53 @@
+{# droits-verifies-cote-serveur: FicheActionsResolver filtre déjà sur FicheAction::permission() #}
+{#
+  Un geste de la fiche dirigeant, rendu soit en bouton d'en-tête, soit en ligne de menu.
+
+  Le même balisage sert les deux contextes : dupliquer chaque action une fois en bouton et
+  une fois en ligne de menu ferait diverger les deux au premier changement d'intitulé ou de
+  jeton CSRF. C'est `FicheActionsResolver` qui décide laquelle passe où, jamais ce fichier.
+
+  Paramètres attendus :
+    action (string)    — valeur de l'enum FicheAction
+    dirigeant (Dirigeant)
+    contexte (string)  — 'principale' (bouton d'en-tête) | 'menu' (ligne de menu)
+#}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% set enMenu = contexte == 'menu' %}
+{% set classe = enMenu ? 'fiche-menu-item' : 'btn btn-primary' %}
+
+{% if action == 'modifier' %}
+    <a href="{{ path('admin_dirigeants_edit', {uuid: dirigeant.uuid}) }}"
+       class="{{ enMenu ? 'fiche-menu-item' : 'btn btn-secondary' }}">
+        {{ ui.icon('edit', 14) }} Modifier
+    </a>
+
+{% elseif action == 'envoyer_lien' %}
+    <form method="post" action="{{ path('admin_dirigeants_send_link', {uuid: dirigeant.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_send_link_' ~ dirigeant.uuid) }}">
+        <button type="submit" class="{{ classe }}">
+            {{ ui.icon('send', 14) }}
+            {{ dirigeant.formTokenValid ? 'Renvoyer le lien' : 'Envoyer le lien' }}
+        </button>
+    </form>
+
+{% elseif action == 'valider_fff' %}
+    {# Une licence administrative n'attend ni lien ni document — mais elle existe bien à la
+       FFF, elle se valide donc comme les autres. #}
+    <form method="post" action="{{ path('admin_dirigeants_validate_fff', {uuid: dirigeant.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_valider_fff_' ~ dirigeant.uuid) }}">
+        <button type="submit" class="{{ classe }}">
+            {{ ui.icon('check', 14) }} Valider sur FootClubs
+        </button>
+    </form>
+
+{% elseif action == 'annuler_validation_fff' %}
+    {# Défait un état enregistré, d'où le registre rouge (§7.6 bis). #}
+    <form method="post" action="{{ path('admin_dirigeants_cancel_validate_fff', {uuid: dirigeant.uuid}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('dirigeant_annuler_valider_fff_' ~ dirigeant.uuid) }}">
+        <button type="submit" class="{{ enMenu ? 'fiche-menu-item fiche-menu-item-danger' : 'btn btn-danger' }}"
+                onclick="return confirm('Annuler la validation FootClubs de {{ dirigeant.nomPrenom }} ?')">
+            {{ ui.icon('x-circle', 14) }} Annuler la validation
+        </button>
+    </form>
+{% endif %}

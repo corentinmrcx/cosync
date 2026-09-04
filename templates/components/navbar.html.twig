@@ -22,7 +22,7 @@
 
             <div class="navbar-dropdown-section">
                 <a href="{{ path('admin_seasons_index') }}" class="navbar-dropdown-item">Saisons</a>
-                {% if is_granted('club.configurer') or is_granted('utilisateur.gerer') %}
+                {% if possede_un_droit('club') %}
                     <a href="{{ path('admin_club_index') }}" class="navbar-dropdown-item">Le club</a>
                 {% endif %}
             </div>

@@ -1,12 +1,14 @@
 <?php declare(strict_types=1);
 
-namespace App\Tests\Service\Licencie;
+namespace App\Tests\Service\Effectif;
 
+use App\Entity\Dirigeant;
 use App\Entity\DossierClub;
 use App\Entity\Licencie;
+use App\Enum\DirigeantStatut;
 use App\Enum\FicheAction;
 use App\Enum\LicenceStatus;
-use App\Service\Licencie\FicheActionsResolver;
+use App\Service\Effectif\FicheActionsResolver;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
 
@@ -15,7 +17,8 @@ use Symfony\Bundle\SecurityBundle\Security;
  *
  * L'en-tête alignait jusqu'à cinq boutons, dont trois en « bouton principal » : plus rien ne
  * disait ce que l'écran attendait. La règle — une seule action mise en avant, la première
- * étape non franchie du parcours — vit dans ce résolveur, ces tests la tiennent.
+ * étape non franchie du parcours — vit dans ce résolveur, ces tests la tiennent, pour les
+ * deux populations : le tri est le même, seuls les parcours diffèrent.
  */
 final class FicheActionsResolverTest extends TestCase
 {
@@ -33,7 +36,7 @@ final class FicheActionsResolverTest extends TestCase
 
     public function testUnDossierImporteMetEnAvantLEnvoiDuLien(): void
     {
-        $actions = $this->resolver->pour(
+        $actions = $this->resolver->pourLicencie(
             $this->licencie(LicenceStatus::IMPORTED),
             autorisationsManquantes: false,
             signatureManquante: false,
@@ -46,7 +49,7 @@ final class FicheActionsResolverTest extends TestCase
 
     public function testUnDossierSoldeMetEnAvantLaValidationFootclubs(): void
     {
-        $actions = $this->resolver->pour(
+        $actions = $this->resolver->pourLicencie(
             $this->licencie(LicenceStatus::A_VALIDER_FFF),
             autorisationsManquantes: false,
             signatureManquante: false,
@@ -63,7 +66,7 @@ final class FicheActionsResolverTest extends TestCase
      */
     public function testUneRelancePasseAvantLaValidationFootclubs(): void
     {
-        $actions = $this->resolver->pour(
+        $actions = $this->resolver->pourLicencie(
             $this->licencie(LicenceStatus::A_VALIDER_FFF),
             autorisationsManquantes: false,
             signatureManquante: true,
@@ -77,7 +80,7 @@ final class FicheActionsResolverTest extends TestCase
     /** Défaire une validation ne se propose jamais en premier plan. */
     public function testAnnulerLaValidationResteDansLeMenu(): void
     {
-        $actions = $this->resolver->pour(
+        $actions = $this->resolver->pourLicencie(
             $this->licencie(LicenceStatus::VALIDATED),
             autorisationsManquantes: false,
             signatureManquante: false,
@@ -94,7 +97,7 @@ final class FicheActionsResolverTest extends TestCase
      */
     public function testSansEmailLeMotifRemplaceLaction(): void
     {
-        $actions = $this->resolver->pour(
+        $actions = $this->resolver->pourLicencie(
             $this->licencie(LicenceStatus::LINK_SENT, email: null),
             autorisationsManquantes: true,
             signatureManquante: false,
@@ -111,7 +114,7 @@ final class FicheActionsResolverTest extends TestCase
     {
         $licencie = (new Licencie())->setEmail('kevin@example.test');
 
-        $actions = $this->resolver->pour(
+        $actions = $this->resolver->pourLicencie(
             $licencie,
             autorisationsManquantes: false,
             signatureManquante: false,
@@ -121,11 +124,75 @@ final class FicheActionsResolverTest extends TestCase
         self::assertSame(FicheAction::ENVOYER_LIEN, $actions->principale);
     }
 
+    // — Dirigeants : même tri, parcours plus court —
+
+    public function testUnDirigeantJamaisContacteMetEnAvantLEnvoiDuLien(): void
+    {
+        $actions = $this->resolver->pourDirigeant($this->dirigeant(), DirigeantStatut::LIEN_NON_ENVOYE);
+
+        self::assertSame(FicheAction::ENVOYER_LIEN, $actions->principale);
+        self::assertSame([FicheAction::MODIFIER], $actions->secondaires);
+    }
+
+    /**
+     * Un document ajouté en cours de saison se fait signer en renvoyant le même lien : le
+     * formulaire public ne redemande que les étapes manquantes.
+     */
+    public function testUnDocumentASignerRemetLeLienEnAvant(): void
+    {
+        $actions = $this->resolver->pourDirigeant($this->dirigeant(), DirigeantStatut::DOCUMENT_A_SIGNER);
+
+        self::assertSame(FicheAction::ENVOYER_LIEN, $actions->principale);
+    }
+
+    public function testUnDossierDirigeantCompletMetEnAvantLaValidationFootclubs(): void
+    {
+        $actions = $this->resolver->pourDirigeant($this->dirigeant(), DirigeantStatut::A_VALIDER_FFF);
+
+        self::assertSame(FicheAction::VALIDER_FFF, $actions->principale);
+        self::assertSame([FicheAction::MODIFIER], $actions->secondaires);
+    }
+
+    /**
+     * Une licence administrative n'attend ni lien ni document — mais elle existe bien à la
+     * FFF, elle se valide donc comme les autres. Surtout, aucun envoi de lien ne se propose :
+     * `DirigeantLinkService::send()` le refuserait.
+     */
+    public function testUneLicenceAdministrativeSeValideSansJamaisProposerLeLien(): void
+    {
+        $actions = $this->resolver->pourDirigeant($this->dirigeant(), DirigeantStatut::LICENCE_ADMINISTRATIVE);
+
+        self::assertSame(FicheAction::VALIDER_FFF, $actions->principale);
+        self::assertNotContains(FicheAction::ENVOYER_LIEN, $actions->secondaires);
+    }
+
+    public function testAnnulerLaValidationDunDirigeantResteDansLeMenu(): void
+    {
+        $actions = $this->resolver->pourDirigeant($this->dirigeant(), DirigeantStatut::VALIDE);
+
+        self::assertNull($actions->principale);
+        self::assertSame([FicheAction::MODIFIER, FicheAction::ANNULER_VALIDATION_FFF], $actions->secondaires);
+    }
+
+    public function testSansEmailLeMotifRemplaceLactionDirigeant(): void
+    {
+        $actions = $this->resolver->pourDirigeant($this->dirigeant(email: null), DirigeantStatut::LIEN_ENVOYE);
+
+        self::assertNull($actions->principale);
+        self::assertSame('Pas d\'email renseigné', $actions->blocage);
+        self::assertSame([FicheAction::MODIFIER], $actions->secondaires);
+    }
+
     private function licencie(LicenceStatus $statut, ?string $email = 'kevin@example.test'): Licencie
     {
         $licencie = (new Licencie())->setEmail($email);
         $licencie->setDossierClub((new DossierClub())->setLicencie($licencie)->setStatus($statut));
 
         return $licencie;
+    }
+
+    private function dirigeant(?string $email = 'josiane@example.test'): Dirigeant
+    {
+        return (new Dirigeant())->setEmail($email);
     }
 }

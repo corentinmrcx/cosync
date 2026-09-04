@@ -21,12 +21,12 @@ use App\Repository\StockMovementRepository;
 use App\Repository\TeamRepository;
 use App\Security\CsrfGuard;
 use App\Service\Cle\CleRegistrePresenter;
-use App\Service\Dirigeant\DirigeantDossierCompletion;
 use App\Service\Dirigeant\DirigeantFormPrefill;
 use App\Service\Dirigeant\DirigeantService;
 use App\Service\Dirigeant\DirigeantStatutResolver;
 use App\Service\Document\DocumentRequirementResolver;
 use App\Service\Document\SignatureRelanceService;
+use App\Service\Effectif\FicheActionsResolver;
 use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Mail\DernierContactResolver;
@@ -57,9 +57,9 @@ class DirigeantController extends AbstractController
         private readonly HistoriqueFicheService $historiqueService,
         private readonly DernierContactResolver $dernierContact,
         private readonly DocumentRequirementResolver $documentResolver,
-        private readonly DirigeantDossierCompletion $dossierCompletion,
         private readonly SuppressionFicheService $suppressionService,
         private readonly DirigeantStatutResolver $statutResolver,
+        private readonly FicheActionsResolver $ficheActions,
     ) {}
 
     #[Route('', name: 'list')]
@@ -437,6 +437,7 @@ class DirigeantController extends AbstractController
         #[MapEntity(mapping: ['uuid' => 'uuid'])] Dirigeant $dirigeant,
     ): Response {
         $signatures = $this->documentResolver->signaturesParDocumentPourDirigeant($dirigeant);
+        $statut = $this->statutResolver->pour($dirigeant);
 
         return $this->render('admin/dirigeants/show.html.twig', [
             'dirigeant' => $dirigeant,
@@ -451,8 +452,10 @@ class DirigeantController extends AbstractController
             // une liste figée, elle suit ce que la saison demande à ce dirigeant.
             'documents' => $this->documentResolver->attendusPourDirigeant($dirigeant),
             'signatures' => $signatures,
-            'dossierComplet' => $this->dossierCompletion->isComplete($dirigeant),
-            'statut' => $this->statutResolver->pour($dirigeant),
+            'statut' => $statut,
+            // Une action mise en avant, les autres dans un menu — même motif que la fiche
+            // licencié (§7.6 quater).
+            'actions' => $this->ficheActions->pourDirigeant($dirigeant, $statut),
         ]);
     }
 
