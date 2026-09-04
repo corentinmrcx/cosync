@@ -33,13 +33,19 @@
 
     </div>
 
-    {# — Réglages de la saison — #}
+    {# — Réglages de la saison —
+       Un bloc dont aucun lien n'est accessible n'est plus qu'un titre orphelin : on masque
+       la section entière, chaque lien gardant par ailleurs sa propre garde de route. #}
+    {% set reglages_saison = peut_acceder('admin_cotisations_index')
+        or peut_acceder('admin_equipes_index')
+        or peut_acceder('admin_documents_list') %}
+    {% if reglages_saison %}
     <div class="saison-section">
         <div class="saison-section-header">
             <h2 class="saison-section-title">Réglages de la saison</h2>
         </div>
         <div class="quicklink-grid">
-            {% if is_granted('saison.lire') %}
+            {% if peut_acceder('admin_cotisations_index') %}
             <a href="{{ path('admin_cotisations_index') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('euro', 20) }}</span>
                 <span class="quicklink-body">
@@ -49,7 +55,7 @@
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
             {% endif %}
-            {% if is_granted('saison.lire') %}
+            {% if peut_acceder('admin_equipes_index') %}
             <a href="{{ path('admin_equipes_index') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('shield', 20) }}</span>
                 <span class="quicklink-body">
@@ -59,7 +65,7 @@
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
             {% endif %}
-            {% if is_granted('saison.lire') %}
+            {% if peut_acceder('admin_documents_list') %}
             <a href="{{ path('admin_documents_list') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('file-text', 20) }}</span>
                 <span class="quicklink-body">
@@ -71,14 +77,17 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
     {# — Raccourcis hors saison : le stock physique et les clés se gèrent au niveau du club — #}
+    {% set raccourcis_club = peut_acceder('admin_stock_dashboard') or peut_acceder('admin_cles_index') %}
+    {% if raccourcis_club %}
     <div class="saison-section">
         <div class="saison-section-header">
             <h2 class="saison-section-title">Géré au niveau du club</h2>
         </div>
         <div class="quicklink-grid">
-            {% if is_granted('stock.lire') %}
+            {% if peut_acceder('admin_stock_dashboard') %}
             <a href="{{ path('admin_stock_dashboard') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('box', 20) }}</span>
                 <span class="quicklink-body">
@@ -88,7 +97,7 @@
                 <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
             </a>
             {% endif %}
-            {% if is_granted('cle.lire') %}
+            {% if peut_acceder('admin_cles_index') %}
             <a href="{{ path('admin_cles_index') }}" class="quicklink">
                 <span class="quicklink-icon">{{ ui.icon('key', 20) }}</span>
                 <span class="quicklink-body">
@@ -100,6 +109,7 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
 </div>
 {% endblock %}

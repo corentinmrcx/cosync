@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/club/categories-fff', name: 'admin_categories_')]
-#[IsGranted(Permission::CLUB_CONFIGURER->value)]
+#[IsGranted(Permission::CLUB_REFERENTIELS->value)]
 class CategoryController extends AbstractController
 {
     public function __construct(

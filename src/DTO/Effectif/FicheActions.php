@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace App\DTO\Licencie;
+namespace App\DTO\Effectif;
 
 use App\Enum\FicheAction;
 
 /**
- * Ce que l'en-tête d'une fiche licencié doit afficher : une action mise en avant, les autres
- * derrière un menu.
+ * Ce que l'en-tête d'une fiche — licencié ou dirigeant — doit afficher : une action mise en
+ * avant, les autres derrière un menu.
  */
 final class FicheActions
 {

@@ -54,9 +54,10 @@
             permission: 'planning.lire'
         } only %}
 
-        {# Le hub du club rassemble deux domaines distincts : la configuration et les comptes.
-           Une carte ne prend qu'une permission, d'où la condition ici. #}
-        {% if is_granted('club.configurer') or is_granted('utilisateur.gerer') %}
+        {# Le hub du club rassemble plusieurs sujets — identité, RIB, relances, référentiels,
+           comptes — et une carte ne prend qu'une permission. C'est donc le domaine qui
+           répond : la carte s'affiche dès qu'un de ses écrans est ouvert. #}
+        {% if possede_un_droit('club') %}
             {% include 'components/hub-card.html.twig' with {
                 icon: 'gear',
                 label: 'Le club',

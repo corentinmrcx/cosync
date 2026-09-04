@@ -141,8 +141,10 @@ prod-migrate:
 	$(COMPOSE_PROD) exec php php bin/console doctrine:migrations:migrate --no-interaction
 
 # Affiche le SQL sans l'appliquer — à lire avant tout déploiement de migration
+# -vv : sans lui, `--dry-run` annonce « 3 sql queries » sans les montrer. Or c'est
+# précisément le SQL qu'on vient relire avant de toucher la prod (§13).
 prod-migrate-dry:
-	$(COMPOSE_PROD) exec php php bin/console doctrine:migrations:migrate --no-interaction --dry-run
+	$(COMPOSE_PROD) exec php php bin/console doctrine:migrations:migrate --no-interaction --dry-run -vv
 
 prod-bash:
 	$(COMPOSE_PROD) exec php sh

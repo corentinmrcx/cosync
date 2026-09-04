@@ -2,6 +2,7 @@
 
 namespace App\Twig;
 
+use App\Enum\DomainePermission;
 use App\Service\Compte\RoutePermissionResolver;
 use Symfony\Bundle\SecurityBundle\Security;
 use Twig\Extension\AbstractExtension;
@@ -33,6 +34,7 @@ final class PermissionExtension extends AbstractExtension
     {
         return [
             new TwigFunction('peut_acceder', $this->peutAcceder(...)),
+            new TwigFunction('possede_un_droit', $this->possedeUnDroit(...)),
         ];
     }
 
@@ -45,5 +47,31 @@ final class PermissionExtension extends AbstractExtension
         }
 
         return true;
+    }
+
+    /**
+     * Le compte a-t-il au moins un droit dans ce domaine ?
+     *
+     * Pour la porte d'entrée d'un hub, dont la route est `#[AccesLibre]` et que
+     * `peut_acceder()` déclare donc ouverte à tous : elle l'est, mais elle ne mène à rien
+     * quand toutes ses cartes sont fermées. Énumérer les permissions à la main dans la
+     * navbar et le tableau de bord ferait oublier l'une d'elles au prochain ajout — c'est
+     * le domaine qui répond, et il se met à jour tout seul.
+     */
+    public function possedeUnDroit(string $domaine): bool
+    {
+        $domaine = DomainePermission::tryFrom($domaine);
+
+        if ($domaine === null) {
+            return false;
+        }
+
+        foreach ($domaine->permissions() as $permission) {
+            if ($this->security->isGranted($permission->value)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

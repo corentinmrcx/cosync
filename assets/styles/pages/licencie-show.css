@@ -657,8 +657,9 @@
 }
 
 /* ── Attestations de paiement ──
-   Le renvoi se fait depuis la ligne elle-même : l'adresse du payeur n'est pas
-   toujours celle du licencié, elle doit rester corrigeable au moment de l'envoi. */
+   L'adresse du payeur n'est pas toujours celle du licencié : elle reste corrigeable
+   au moment de l'envoi, mais depuis une modale. Saisie dans la ligne, elle élargissait
+   la colonne d'actions pour toutes les lignes du tableau. */
 .attestations-table {
     margin-top: 0.5rem;
 }
@@ -668,32 +669,9 @@
     font-size: var(--font-size-xs);
 }
 
-.attestations-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.attestations-resend {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-}
-
-/* Calé sur .btn-sm — mêmes padding, police et hauteur de ligne. Un champ plus haut
-   que les boutons de sa rangée se voit immédiatement, et la règle du projet veut
-   qu'une même rangée partage sa taille. Sélecteur typé pour l'emporter sur la
-   hauteur fixe de `input.field-input`. */
-input.attestations-resend-email {
-    /* Largeur souhaitée, pas imposée : dans une carte étroite le champ se réduit au lieu
-       de pousser le bouton hors de l'écran. */
-    flex: 1 1 12.5rem;
-    width: auto;
-    min-width: 0;
-    height: auto;
-    padding: 0.35rem 0.625rem;
-    font-size: var(--font-size-xs);
-    line-height: 1.2;
+/* De quel document on parle : la modale s'ouvre depuis une ligne, mais elle la recouvre. */
+.attestations-envoi-rappel {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
 }

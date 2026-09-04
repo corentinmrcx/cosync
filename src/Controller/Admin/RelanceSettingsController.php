@@ -13,7 +13,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** Réglages de la relance automatique — l'interrupteur du robot et ses deux bornes. */
 #[Route('/admin/club/relances', name: 'admin_club_relances')]
-#[IsGranted(Permission::CLUB_CONFIGURER->value)]
+#[IsGranted(Permission::CLUB_RELANCES->value)]
 class RelanceSettingsController extends AbstractController
 {
     public function __construct(

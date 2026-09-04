@@ -12,7 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/club/coordonnees-bancaires', name: 'admin_club_rib')]
-#[IsGranted(Permission::CLUB_CONFIGURER->value)]
+#[IsGranted(Permission::CLUB_RIB->value)]
 class ClubSettingsController extends AbstractController
 {
     public function __construct(
