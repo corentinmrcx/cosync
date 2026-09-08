@@ -109,22 +109,58 @@
                             <td class="stock-mouvements-by">{{ m.createdBy ? m.createdBy.email : '—' }}</td>
                             <td class="stock-mouvements-action">
                                 {% if m.source.value == 'manuel' and peut_acceder('admin_stock_mouvements_correct') %}
-                                    <div class="stock-mouvements-actions-cellule">
-                                        <button type="button" class="stock-mouvements-corriger"
-                                                title="Corriger la quantité ou la taille"
-                                                @click="ouvrir({{ {
-                                                    action: path('admin_stock_mouvements_correct', {id: m.id}),
-                                                    article: m.item.nom,
-                                                    quantite: m.quantite,
-                                                    taille: m.taille,
-                                                    options: taillesParArticle[m.item.id]|default([]),
-                                                    token: csrf_token('correct_stock_movement_' ~ m.id),
-                                                }|json_encode|e('html_attr') }})">Modifier</button>
-                                        <form method="post" action="{{ path('admin_stock_mouvements_delete', {id: m.id}) }}"
-                                              onsubmit="return confirm('Supprimer ce mouvement ? Le stock sera recalculé.')">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_movement_' ~ m.id) }}">
-                                            <button type="submit" class="stock-mouvements-delete" title="Supprimer ce mouvement">Supprimer</button>
-                                        </form>
+                                    {# Menu « ⋯ » : deux gestes en clair élargissaient la colonne d'autant, sur un
+                                       tableau qu'on lit d'abord pour ce qui s'est passé. Le panneau est ancré en
+                                       position fixe (`menuLigne`), sans quoi le `.table-wrapper` le rognerait. #}
+                                    <div class="fiche-menu fiche-menu-ligne"
+                                         x-data="menuLigne()"
+                                         @click.outside="fermerMenu()"
+                                         @keydown.escape.window="fermerMenu()"
+                                         @scroll.window.capture="fermerMenu()">
+                                        <div class="fiche-menu-voile" x-show="ouvert" x-transition.opacity @click="fermerMenu()" x-cloak></div>
+
+                                        <button type="button"
+                                                class="btn btn-secondary btn-sm fiche-menu-declencheur"
+                                                @click="basculer()"
+                                                x-ref="declencheur"
+                                                :aria-expanded="ouvert"
+                                                aria-haspopup="true"
+                                                aria-label="Actions sur ce mouvement">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                                            </svg>
+                                        </button>
+
+                                        {# Le menu se referme sur le geste qu'on vient d'y prendre : posé sur le
+                                           panneau, l'écoute vaut pour ses deux lignes sans alourdir aucune des deux. #}
+                                        <div class="fiche-menu-panneau fiche-menu-panneau-ancre"
+                                             x-ref="panneau"
+                                             :style="ancrage"
+                                             @click="fermerMenu()"
+                                             x-show="ouvert"
+                                             x-transition:enter="fiche-menu-entre"
+                                             x-transition:enter-start="fiche-menu-cache"
+                                             x-transition:enter-end="fiche-menu-visible"
+                                             x-transition:leave="fiche-menu-sort"
+                                             x-transition:leave-start="fiche-menu-visible"
+                                             x-transition:leave-end="fiche-menu-cache"
+                                             x-cloak>
+                                            <button type="button" class="fiche-menu-item"
+                                                    @click="ouvrir({{ {
+                                                        action: path('admin_stock_mouvements_correct', {id: m.id}),
+                                                        article: m.item.nom,
+                                                        quantite: m.quantite,
+                                                        taille: m.taille,
+                                                        options: taillesParArticle[m.item.id]|default([]),
+                                                        token: csrf_token('correct_stock_movement_' ~ m.id),
+                                                    }|json_encode|e('html_attr') }})">Modifier la quantité ou la taille</button>
+
+                                            <form method="post" action="{{ path('admin_stock_mouvements_delete', {id: m.id}) }}"
+                                                  onsubmit="return confirm('Supprimer ce mouvement ? Le stock sera recalculé.')">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete_stock_movement_' ~ m.id) }}">
+                                                <button type="submit" class="fiche-menu-item fiche-menu-item-danger">Supprimer ce mouvement</button>
+                                            </form>
+                                        </div>
                                     </div>
                                 {% else %}
                                     <span class="stock-mouvements-locked" title="Corrigez depuis l'écran dotation ou commande">—</span>

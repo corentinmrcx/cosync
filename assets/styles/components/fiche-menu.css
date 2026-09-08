@@ -79,6 +79,36 @@
 
 
 
+/*
+  — Variante « ligne de tableau » —
+
+  Le panneau ci-dessus est en position absolue : dans un `.table-wrapper`, qui porte
+  `overflow-x: auto`, il se ferait rogner par le cadre. Ancré, il passe en position fixe et
+  ses coordonnées sont calculées à l'ouverture par `menuLigne()` — plus rien ne le découpe.
+  Le reste ne bouge pas : mêmes lignes de menu, même feuille en bas d'écran sur téléphone.
+*/
+
+.fiche-menu-ligne {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Le déclencheur d'une ligne se met au pas des autres gestes du tableau, pas à celui du
+   bouton d'en-tête d'une fiche. */
+.fiche-menu-ligne .fiche-menu-declencheur {
+    padding: 0.25rem;
+    aspect-ratio: 1;
+}
+
+.fiche-menu-panneau-ancre {
+    position: fixed;
+    top: 0;
+    right: auto;
+    left: 0;
+    z-index: 100;
+    min-width: 12rem;
+}
+
 /* Le voile n'existe que sur téléphone, où le panneau devient une feuille en bas d'écran. */
 .fiche-menu-voile { display: none; }
 

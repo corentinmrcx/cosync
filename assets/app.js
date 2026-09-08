@@ -23,6 +23,8 @@ import { listeTriable } from './js/liste-triable.js';
 import { dotationCibles } from './js/dotation-cibles.js';
 import { ecoulementForm } from './js/ecoulement-form.js';
 import { rolePermissions } from './js/role-permissions.js';
+import { occupationGrille } from './js/occupation-grille.js';
+import { menuLigne } from './js/menu-ligne.js';
 
 Alpine.data('inscriptionForm', inscriptionForm);
 Alpine.data('completionForm', completionForm);
@@ -42,6 +44,8 @@ Alpine.data('listeTriable', listeTriable);
 Alpine.data('dotationCibles', dotationCibles);
 Alpine.data('ecoulementForm', ecoulementForm);
 Alpine.data('rolePermissions', rolePermissions);
+Alpine.data('occupationGrille', occupationGrille);
+Alpine.data('menuLigne', menuLigne);
 
 Alpine.plugin(collapse);
 

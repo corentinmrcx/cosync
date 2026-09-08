@@ -236,44 +236,7 @@
 
 .stock-mouvements-action { text-align: right; white-space: nowrap; }
 
-.stock-mouvements-delete {
-    padding: 0.25rem 0.5rem;
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    color: var(--color-danger);
-    background: none;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-family: var(--font-sans);
-    transition: background 0.12s, border-color 0.12s;
-}
-
-.stock-mouvements-delete:hover { background: var(--color-danger-bg); border-color: var(--color-danger); }
-
 .stock-mouvements-locked { color: var(--color-text-disabled); }
-
-.stock-mouvements-actions-cellule {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.375rem;
-}
-
-.stock-mouvements-corriger {
-    padding: 0.25rem 0.5rem;
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    color: var(--color-text-body);
-    background: none;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-family: var(--font-sans);
-    transition: background 0.12s, border-color 0.12s;
-}
-
-.stock-mouvements-corriger:hover { background: var(--color-bg-muted); border-color: var(--color-border-strong); }
 
 /* Ce qu'une correction a changé, sous la ligne qu'elle a changée. */
 .stock-mouvements-correction {
