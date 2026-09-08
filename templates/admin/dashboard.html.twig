@@ -18,13 +18,20 @@
         </div>
     {% endif %}
 
-    <div class="dashboard-hub">
+    {# — La porte d'entrée quotidienne, avant tout le reste —
+       Reprendre la saison en cours et « Changer de saison » mènent au même écran : la
+       première par sa route directe, la seconde après un détour par la liste. Sans
+       hiérarchie entre les deux, la carte du hub captait le clic. D'où la bannière en
+       tête, seule de son espèce, et la carte reléguée en fin de grille sous un libellé
+       qui dit qu'elle sert à changer, pas à entrer. #}
+    {% if navbar_current_season %}
+        <a href="{{ path('admin_saison_dashboard') }}" class="dashboard-saison-hero">
+            <span class="dashboard-saison-hero-title">Reprendre la saison {{ navbar_current_season.label }}</span>
+            <span class="dashboard-saison-hero-arrow">{{ ui.icon('arrow-right', 20) }}</span>
+        </a>
+    {% endif %}
 
-        {% include 'components/hub-card.html.twig' with {
-            icon: 'calendar',
-            label: 'Saisons',
-            route: 'admin_seasons_index'
-        } only %}
+    <div class="dashboard-hub">
 
         {% include 'components/hub-card.html.twig' with {
             icon: 'box',
@@ -65,16 +72,13 @@
             } only %}
         {% endif %}
 
-    </div>
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'calendar',
+            label: 'Changer de saison',
+            route: 'admin_seasons_index'
+        } only %}
 
-    {% if navbar_current_season %}
-        <div class="quicklink-grid dashboard-season">
-            <a href="{{ path('admin_saison_dashboard') }}" class="quicklink">
-                <span class="quicklink-title">Reprendre la saison {{ navbar_current_season.label }}</span>
-                <span class="quicklink-arrow">{{ ui.icon('arrow-right') }}</span>
-            </a>
-        </div>
-    {% endif %}
+    </div>
 
     <a href="{{ path('admin_documentation') }}" class="dashboard-doc-fab" title="Documentation">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
