@@ -5,7 +5,6 @@ namespace App\Service\Dotation;
 use App\Entity\DotationBesoin;
 use App\Entity\Licencie;
 use App\Entity\StockItem;
-use App\Enum\DotationBesoinStatut;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -39,8 +38,9 @@ final class DotationChoixService
             throw new \DomainException('Cet article n\'appartient à aucun choix : il n\'y a rien à corriger.');
         }
 
-        if ($besoin->getStatut() === DotationBesoinStatut::DONNE) {
-            throw new \DomainException('Cet article a déjà été remis. Annulez d\'abord la remise pour changer l\'option.');
+        $motif = $besoin->getStatut()->motifDeBlocage('changer l\'option');
+        if ($motif !== null) {
+            throw new \DomainException($motif);
         }
 
         $licencie = $besoin->getLicencie();

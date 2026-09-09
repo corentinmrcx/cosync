@@ -15,5 +15,6 @@ final class DotationSuiviGroupe
         public readonly array $besoins,
         public readonly int $total,
         public readonly int $restants,
+        public readonly int $prepares,
     ) {}
 }

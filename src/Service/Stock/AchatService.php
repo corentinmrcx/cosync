@@ -92,7 +92,7 @@ final class AchatService
     {
         $cumul = [];
 
-        foreach ($this->besoinRepository->findADonnerBySeason($season) as $besoin) {
+        foreach ($this->besoinRepository->findNonRemisBySeason($season) as $besoin) {
             $item = $besoin->getArticleServi();
             $cle = $item->getId() . '|' . ($besoin->getTaille() ?? '');
 

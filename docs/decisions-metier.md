@@ -16,7 +16,7 @@ sont assumés, pas à « corriger ».
 - [Dossier club — « payé » et « validé » sont deux faits](#dossier-club--payé-et-validé-sont-deux-faits)
 - [Tailles — référentiel, deux publics, grilles fournisseur](#tailles--référentiel-deux-publics-grilles-fournisseur)
 - [Stock — écoulement, notes, correction, retrait](#stock--écoulement-notes-correction-retrait)
-- [Dotations — qui reçoit quel kit, flocage](#dotations--qui-reçoit-quel-kit-flocage)
+- [Dotations — qui reçoit quel kit, préparation, flocage](#dotations--qui-reçoit-quel-kit-préparation-flocage)
 - [Dirigeants — licence administrative](#dirigeants--licence-administrative)
 - [Attestations de paiement](#attestations-de-paiement)
 - [Mails — journal, relance automatique](#mails--journal-relance-automatique)
@@ -277,7 +277,7 @@ le remplacer par un `confirm()` : lui seul sait dire lequel des deux va se produ
 
 ---
 
-## Dotations — qui reçoit quel kit, flocage
+## Dotations — qui reçoit quel kit, préparation, flocage
 
 **Une personne relève d'un seul modèle de dotation.** `DotationResolver::resolveModele()` retient
 la cible la plus spécifique — individu > équipe > catégorie FFF ou rôle dirigeant > défaut saison —
@@ -298,6 +298,72 @@ le résolveur s'y est aligné, pas l'inverse.
 mettait deux kits sans rapport dans le même tableau, et renvoyait le reste de l'encadrement dans un
 « Sans équipe » qu'on lisait comme un oubli d'affectation. Une personne à la fois joueuse et
 dirigeante tient **deux blocs de lignes** — c'est bien deux kits qu'elle reçoit.
+
+### Préparé — le sac est fait, il n'est pas parti
+
+Entre « à donner » et « donné », le club a une étape qui durait des semaines sans exister nulle
+part : les sacs se remplissent équipe par équipe en août, les licenciés viennent les chercher au
+fil des entraînements. Le suivi ne connaissait que « Marquer remis », et l'écran ne distinguait
+donc pas un carton pas encore ouvert d'un sac posé sur l'étagère au nom de quelqu'un.
+
+**`DotationBesoinStatut::PREPARE` ne déplace rien — il gèle.** C'est là tout son intérêt. Une ligne
+« à donner » est rattrapée par trois automates à chaque affichage du suivi : `syncTaillesFromDossiers()`
+réaligne sa taille sur le dossier, `DotationEcoulementAllocator` rearbitre le carton qui la sert,
+`purgerBesoinsObsoletes()` la supprime si le kit a changé. Sur un sac déjà fait, les trois font dire
+au suivi autre chose que ce que le sac contient. Le point de lecture unique est
+`DotationBesoinStatut::suitLeRecalcul()`, vrai du seul `A_DONNER` — ne jamais réécrire
+`=== A_DONNER` en face d'un automate.
+
+- **Le stock ne bouge qu'à la remise.** Un sac préparé est encore dans l'armoire du club, et
+  `AchatService` doit continuer à compter sa ligne : l'écarter la ferait passer pour servie alors
+  que le stock la compte disponible, et le club sous-commanderait d'autant. D'où
+  `findNonRemisBySeason()` — « pas encore remis », et non « à donner ».
+- **Les unités d'un sac préparé sont réservées avant tout arbitrage.** `allouer()` fait une
+  première passe sur les lignes préparées pour retirer leurs unités du pool, *avant* de servir les
+  autres. Sans elle, la dernière paire d'un stock en écoulement — celle qui dort dans le sac du
+  second inscrit — se voyait repromettre au premier, qui est servi en premier : deux lignes, un
+  seul carton, aucune erreur levée.
+- **`DotationProvenanceResolver` sert dans le même ordre, et pour la même raison.** Trois vestes en
+  M au local, quatre licenciés qui en attendent une, les trois derniers inscrits déjà en sac : la
+  répartition par identifiant annonçait « Stock » au premier, qui serait allé chercher une veste
+  dans une armoire vidée par les sacs des trois autres. Les préparés passent devant ; la pastille
+  « À commander » tombe sur celui pour qui il ne reste effectivement rien. Le **compte**, lui, ne
+  dépend d'aucun ordre : `AchatService` cumule les besoins non remis et en retranche le stock —
+  une veste à commander, avant comme après la préparation.
+- **Ce que la préparation fige, c'est le contenu**, pas la ligne entière : l'option retenue, le
+  carton servi et le texte floqué ne se corrigent plus (`motifDeBlocage()` porte la phrase et le
+  geste à défaire). La **taille**, elle, reste corrigeable à tout statut — comme après une remise,
+  où le service rejoue le mouvement de stock : dire qu'on échange le 128 contre un 140 est un fait,
+  pas un oubli.
+- **Le flocage se commande bien avant le sac** : une ligne préparée sort donc de la liste de
+  flocage, sinon le vêtement repartirait chez le floqueur une seconde fois.
+- **Le verrou a sa sortie** — « Dé-préparer », qui repasse la ligne à « à donner » et rend la main
+  aux automates. C'est la règle générale des verrous du projet.
+- **Annuler une remise ramène à « à donner », pas à « préparé »** : on ne sait pas si le sac existe
+  encore, et reposer un verrou que l'admin n'a pas demandé lui cacherait une taille devenue fausse.
+- **`marquerRemis()` accepte les deux amonts.** L'écran impose le parcours — la fiche met en avant
+  la première étape non franchie, « Préparer » puis « Marquer remis » — mais rien dans le domaine ne
+  dépend d'un sac qui aurait existé avant : une dotation attrapée dans l'armoire pour quelqu'un qui
+  passe se remet d'un geste.
+
+Le geste a **sa propre permission**, `dotation.preparer`, impliquée par `dotation.gerer` : remplir
+les sacs au local et remettre l'équipement en décrémentant le stock sont deux fonctions que le club
+peut confier à deux personnes différentes.
+
+**La colonne d'actions ne porte que l'étape suivante**, décidée par
+`DotationLigneActionsResolver` : « Préparer », puis « Marquer remis », puis plus rien. Les aligner
+faisait varier la largeur de la colonne d'une ligne à l'autre et mettait sur le même plan avancer
+et annuler.
+
+**Le retour en arrière n'est pas une troisième action, c'est le badge qu'on reprend** :
+« Dé-préparer » et « Annuler la remise » sont une petite icône ↺ collée au badge de statut, avec
+son infobulle. Le geste défait ce que le badge affiche, il vit donc contre lui — exactement comme
+le crayon qui corrige une taille vit contre la taille, dans ce même tableau. Un clic, aucun calque.
+Deux détours écartés en chemin : un second bouton dans la colonne (elle changeait de largeur), et
+un menu « ⋯ » (le panneau `fiche-menu` est en position absolue et se fait rogner par
+l'`overflow-x` du `.table-wrapper` — le planning l'avait déjà appris —, et une modale pour un
+« Dé-préparer » est hors de proportion). Les boutons de ligne sont en `btn-secondary`, comme
+partout ailleurs dans l'app : six `btn-primary` empilés dans une colonne n'indiquent plus rien.
 
 ### Flocage — le club peut saisir ce que le licencié n'a pas pu dire
 
@@ -874,7 +940,13 @@ User.superAdmin   // passe-partout
   fourre-tout : *deux fonctions différentes du club voudraient-elles l'une sans l'autre ?* Si oui,
   elle en fait deux. `Version20260830120000` a converti les rôles existants — la valeur est stockée
   en clair dans le `json`, une valeur disparue du catalogue est écartée **en silence** par
-  `Permission::depuisValeurs()`.
+  `Permission::depuisValeurs()`. Même raisonnement pour `dotation.preparer`, séparé de
+  `dotation.gerer` : remplir les sacs au local et remettre l'équipement en décrémentant le stock
+  sont deux gestes que le club peut confier à deux personnes.
+- **Une permission ajoutée à un geste déjà couvert doit être impliquée par celle qui le couvrait.**
+  Faute de quoi le déploiement retire aux rôles en place un droit qu'ils avaient : `dotation.gerer`
+  implique `dotation.preparer`, sinon les rôles existants se retrouvaient, au premier déploiement,
+  autorisés à remettre une dotation sans pouvoir cliquer sur le seul bouton que l'écran leur propose.
 - **Une porte de hub se garde par son domaine, pas par la liste de ses droits.**
   `possede_un_droit('club')` sur la navbar et la carte du tableau de bord : la route d'un hub est
   `#[AccesLibre]`, `peut_acceder()` la déclare donc ouverte — elle l'est, mais elle ne mène à rien

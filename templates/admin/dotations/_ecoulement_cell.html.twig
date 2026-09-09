@@ -7,7 +7,8 @@
 
    `besoin` = App\Entity\DotationBesoin, `articles` = [article du kit, ...articles d'écoulement]. #}
 {% if articles|length > 1 %}
-    {% set estDonne = besoin.statut.value == 'donne' %}
+    {# Préparé comme remis : le carton est ouvert, on ne rechoisit plus lequel. #}
+    {% set fige = besoin.statut.contenuFige %}
 
     <div class="dot-ecoulement" x-data="{ editing: false }">
         <div x-show="!editing" class="dot-ecoulement-display">
@@ -21,7 +22,7 @@
                 <span class="dot-ecoulement-lock" title="Article fixé à la main : l'arbitrage automatique ne le change plus">📌</span>
             {% endif %}
 
-            {% if not estDonne and peut_acceder('admin_dotations_besoin_article') %}
+            {% if not fige and peut_acceder('admin_dotations_besoin_article') %}
                 <button type="button" class="dot-option-pen" @click="editing = true"
                         title="Choisir l'article servi" aria-label="Choisir l'article servi">
                     {{ ui.icon('edit', 14) }}
@@ -29,7 +30,7 @@
             {% endif %}
         </div>
 
-        {% if not estDonne and peut_acceder('admin_dotations_besoin_article') %}
+        {% if not fige and peut_acceder('admin_dotations_besoin_article') %}
             <form x-show="editing" x-cloak method="post"
                   action="{{ path('admin_dotations_besoin_article', {id: besoin.id}) }}"
                   class="dot-option-form">

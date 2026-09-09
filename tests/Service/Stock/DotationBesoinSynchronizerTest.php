@@ -384,8 +384,8 @@ final class DotationBesoinSynchronizerTest extends StockIntegrationTestCase
         // Sans kit applicable → null
         self::assertNull($this->suivi()->avancementDe($sansKit));
 
-        // Kit applicable mais pas encore matérialisé → a_preparer
-        self::assertSame(DotationAvancementStatut::A_PREPARER, $this->suivi()->avancementDe($prevu)?->statut);
+        // Kit applicable mais pas encore matérialisé → prévue
+        self::assertSame(DotationAvancementStatut::PREVUE, $this->suivi()->avancementDe($prevu)?->statut);
 
         // Besoins matérialisés, rien donné → attente
         $this->synchronizer()->recomputeForLicencie($prevu);

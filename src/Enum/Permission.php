@@ -33,6 +33,7 @@ enum Permission: string
 
     // — Dotations —
     case DOTATION_LIRE = 'dotation.lire';
+    case DOTATION_PREPARER = 'dotation.preparer';
     case DOTATION_GERER = 'dotation.gerer';
     case DOTATION_CONFIGURER = 'dotation.configurer';
 
@@ -53,7 +54,7 @@ enum Permission: string
     case BOUTIQUE_LIRE = 'boutique.lire';
     case BOUTIQUE_GERER = 'boutique.gerer';
 
-    // — Planning des matchs —
+    // — Plannings : matchs à domicile et occupation des terrains —
     case PLANNING_LIRE = 'planning.lire';
     case PLANNING_GERER = 'planning.gerer';
 
@@ -80,7 +81,8 @@ enum Permission: string
             self::PAIEMENT_LIRE, self::PAIEMENT_ENCAISSER,
             self::PAIEMENT_ATTESTER, self::LICENCE_VALIDER_FFF => DomainePermission::PAIEMENT,
 
-            self::DOTATION_LIRE, self::DOTATION_GERER, self::DOTATION_CONFIGURER => DomainePermission::DOTATION,
+            self::DOTATION_LIRE, self::DOTATION_PREPARER,
+            self::DOTATION_GERER, self::DOTATION_CONFIGURER => DomainePermission::DOTATION,
 
             self::STOCK_LIRE, self::STOCK_GERER, self::STOCK_CONFIGURER => DomainePermission::STOCK,
 
@@ -115,6 +117,7 @@ enum Permission: string
             self::LICENCE_VALIDER_FFF => 'Valider une licence dans FootClubs',
 
             self::DOTATION_LIRE => 'Consulter les dotations',
+            self::DOTATION_PREPARER => 'Préparer les sacs',
             self::DOTATION_GERER => 'Gérer les dotations',
             self::DOTATION_CONFIGURER => 'Configurer les kits',
 
@@ -131,8 +134,8 @@ enum Permission: string
             self::BOUTIQUE_LIRE => 'Consulter la boutique',
             self::BOUTIQUE_GERER => 'Gérer la boutique',
 
-            self::PLANNING_LIRE => 'Consulter le planning des matchs',
-            self::PLANNING_GERER => 'Gérer le planning des matchs',
+            self::PLANNING_LIRE => 'Consulter les plannings',
+            self::PLANNING_GERER => 'Gérer les plannings',
 
             self::SAISON_LIRE => 'Consulter les réglages de la saison',
             self::SAISON_CONFIGURER => 'Configurer les saisons',
@@ -162,7 +165,8 @@ enum Permission: string
             self::LICENCE_VALIDER_FFF => 'Marquer une licence comme signée dans FootClubs, et défaire ce marquage.',
 
             self::DOTATION_LIRE => 'Voir le suivi, les kits et le flocage.',
-            self::DOTATION_GERER => 'Remettre un équipement, corriger une taille ou un flocage, relancer le calcul.',
+            self::DOTATION_PREPARER => 'Marquer une dotation prête à être remise, et défaire ce marquage. Ne touche pas au stock — c\'est le geste de celui qui remplit les sacs au local.',
+            self::DOTATION_GERER => 'Remettre un équipement, corriger une taille ou un flocage, relancer le calcul. Inclut la préparation.',
             self::DOTATION_CONFIGURER => 'Créer et modifier les kits et leurs affectations.',
 
             self::STOCK_LIRE => 'Voir l\'inventaire, les articles et l\'historique des mouvements.',
@@ -178,8 +182,8 @@ enum Permission: string
             self::BOUTIQUE_LIRE => 'Voir l\'état de la boutique et son lien.',
             self::BOUTIQUE_GERER => 'Ouvrir ou fermer la boutique, changer le lien, annoncer aux licenciés.',
 
-            self::PLANNING_LIRE => 'Voir les matchs à domicile de la saison.',
-            self::PLANNING_GERER => 'Ajouter, modifier et synchroniser les matchs.',
+            self::PLANNING_LIRE => 'Voir les matchs à domicile de la saison et la grille d\'occupation des terrains.',
+            self::PLANNING_GERER => 'Ajouter, modifier et synchroniser les matchs ; composer la grille d\'occupation et le référentiel des terrains.',
 
             self::SAISON_LIRE => 'Voir les cotisations, les équipes et les documents à signer.',
             self::SAISON_CONFIGURER => 'Modifier les cotisations et les équipes, gérer les documents, créer une saison.',
@@ -238,8 +242,12 @@ enum Permission: string
             self::PAIEMENT_ATTESTER => [self::PAIEMENT_LIRE],
             self::LICENCE_VALIDER_FFF => [self::EFFECTIF_LIRE],
 
-            self::DOTATION_GERER,
+            self::DOTATION_PREPARER,
             self::DOTATION_CONFIGURER => [self::DOTATION_LIRE],
+            // Celui qui remet passe forcément par le sac : lui redemander la case
+            // « préparer » ferait apparaître, au premier déploiement, des rôles qui remettent
+            // sans pouvoir préparer — c'est-à-dire des rôles cassés.
+            self::DOTATION_GERER => [self::DOTATION_PREPARER],
 
             self::STOCK_GERER,
             self::STOCK_CONFIGURER => [self::STOCK_LIRE],

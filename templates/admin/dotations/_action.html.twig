@@ -1,0 +1,57 @@
+{# droits-verifies-cote-serveur: DotationLigneActionsResolver filtre déjà sur DotationLigneAction::permission() #}
+{#
+  Un geste d'une ligne du suivi.
+
+  Deux contextes, deux registres :
+    'principale' — l'étape suivante du parcours, en bouton dans la colonne d'actions ;
+    'retour'     — ce qui défait l'état affiché, en petite icône contre le badge de statut,
+                   même geste que le crayon qui corrige une taille dans ce même tableau.
+                   Pas d'infobulle : elle doublait le badge d'à côté en trois fois plus de mots,
+                   sur une ligne qu'on relit six fois par personne. L'`aria-label` reste.
+
+  Un seul fichier pour les deux : la route et le jeton CSRF d'un geste ne doivent exister
+  qu'une fois, sinon ils divergent au premier renommage.
+
+  Paramètres attendus :
+    action (string)         — valeur de l'enum DotationLigneAction
+    besoin (DotationBesoin)
+    contexte (string)       — 'principale' | 'retour'
+#}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% if action == 'preparer' %}
+    <form method="post" action="{{ path('admin_dotations_besoin_preparer', {id: besoin.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_preparer_' ~ besoin.id) }}">
+        <button type="submit" class="btn btn-secondary btn-sm"
+                title="L'article est sorti du carton et mis de côté — le stock ne bougera qu'à la remise">
+            Préparer
+        </button>
+    </form>
+
+{% elseif action == 'remettre' %}
+    <form method="post" action="{{ path('admin_dotations_besoin_remise', {id: besoin.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_remise_' ~ besoin.id) }}">
+        <button type="submit" class="btn btn-secondary btn-sm"
+                title="Sort l'article du stock au nom de cette personne">
+            Marquer remis
+        </button>
+    </form>
+
+{% elseif action == 'depreparer' %}
+    <form method="post" action="{{ path('admin_dotations_besoin_depreparer', {id: besoin.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_depreparer_' ~ besoin.id) }}">
+        <button type="submit" class="dot-statut-retour"
+                aria-label="Défaire la préparation">
+            {{ ui.icon('history', 14) }}
+        </button>
+    </form>
+
+{% elseif action == 'annuler_remise' %}
+    <form method="post" action="{{ path('admin_dotations_besoin_annuler', {id: besoin.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_annuler_' ~ besoin.id) }}">
+        <button type="submit" class="dot-statut-retour dot-statut-retour-danger"
+                aria-label="Annuler la remise">
+            {{ ui.icon('history', 14) }}
+        </button>
+    </form>
+{% endif %}

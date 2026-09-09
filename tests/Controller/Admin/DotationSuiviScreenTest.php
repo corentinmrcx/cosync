@@ -173,6 +173,54 @@ final class DotationSuiviScreenTest extends WebTestCase
         );
     }
 
+    /**
+     * L'écran ne propose qu'une chose par ligne : l'étape suivante. Tant que le sac n'est pas
+     * fait, « Marquer remis » n'a rien à y faire — le club a commencé à préparer les dotations
+     * bien avant de les remettre, et rien ne le disait. Le geste qui revient en arrière, lui,
+     * n'est pas un troisième bouton : il vit contre le badge, comme le crayon d'une taille.
+     */
+    public function testLaLigneProposeUneSeuleEtapeEtSonRetour(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $besoin = $this->makeBesoin($this->makeItem('Maillot'))->setLicencie($this->makeLicencie(null));
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/admin/dotations/suivi');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(
+            ['Préparer'],
+            $crawler->filter('.dot-table-action button')->each(static fn ($n): string => trim($n->text())),
+            'Un seul bouton dans la colonne d\'actions, celui de l\'étape du moment.',
+        );
+        self::assertCount(0, $crawler->filter('.dot-statut-retour'), 'Rien de franchi, rien à défaire.');
+
+        $token = $crawler->filter('form[action$="/preparer"] input[name="_token"]')->attr('value');
+        $client->request('POST', '/admin/dotations/besoins/' . $besoin->getId() . '/preparer', ['_token' => $token]);
+
+        self::assertResponseRedirects('/admin/dotations/suivi');
+        $crawler = $client->request('GET', '/admin/dotations/suivi');
+
+        self::assertStringContainsString('Préparé', $crawler->html(), 'Le badge dit où en est la ligne.');
+        self::assertSame(
+            ['Marquer remis'],
+            $crawler->filter('.dot-table-action button')->each(static fn ($n): string => trim($n->text())),
+            'L\'étape suivante prend la place, elle ne s\'ajoute pas à côté.',
+        );
+        self::assertCount(
+            1,
+            $crawler->filter('.dot-statut-ligne .dot-statut-retour'),
+            'Le verrou a sa sortie, contre le badge qu\'elle défait.',
+        );
+        self::assertStringNotContainsString(
+            'dot-provenance',
+            $crawler->html(),
+            'Le sac est fait : d\'où vient l\'article ne regarde plus personne.',
+        );
+    }
+
     private function makeItem(string $nom): StockItem
     {
         $item = (new StockItem())->setNom($nom)->setTypeVetement(StockItemVetementType::HAUT);
