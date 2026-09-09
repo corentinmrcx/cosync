@@ -2,7 +2,7 @@
 
 {% block title %}Attestation de remise de clés — Foyer de Soudron{% endblock %}
 
-{% block page_attributs %} x-data="attestationCleForm()"{% endblock %}
+{% block page_attributs %} x-data="attestationCleForm({ aReglement: {{ (season.attestationCleText is not empty)|json_encode }} })"{% endblock %}
 
 {% block entete_droite %}
     <span class="inscription-header-step">Saison {{ season.label }}</span>
@@ -13,8 +13,6 @@
 {% endblock %}
 
 {% block contenu %}
-    {# — Header — #}
-
     <form method="post" action="{{ path('public_attestation_cle_submit', {uuid: attestation.uuid}) }}"
           @submit="submitting = true">
         <input type="hidden" name="_token" value="{{ csrf_token('attestation_cle_submit') }}">
@@ -22,35 +20,33 @@
 
         <div class="inscription-card">
             <h1 class="inscription-step-title">Attestation de remise de clés</h1>
-            <p class="inscription-step-intro">
-                Voici le document que vous vous apprêtez à signer. Il sera archivé par le club
-                et peut être transmis à la mairie sur demande.
+
+            {# L'engagement rédigé par le club se lit dans son cadre, déroulé jusqu'en bas
+               avant de pouvoir cocher — même barrière que les formulaires licencié et
+               dirigeant. La formule reprise du registre le conclut, juste au-dessus de la
+               signature. #}
+            {% if season.attestationCleText %}
+                <div class="attestation-cle-engagement"
+                     x-ref="reglement"
+                     @scroll="onReglementScroll($event)">
+                    {{ season.attestationCleText|raw }}
+                </div>
+
+                <p class="inscription-reglement-scroll-hint" x-show="!scrolled">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    Faites défiler le document jusqu'en bas pour continuer.
+                </p>
+            {% endif %}
+
+            <p class="attestation-cle-statement">
+                Je soussigné·e <strong>{{ detenteur.prenom }} {{ detenteur.nom }}</strong>,
+                reconnais avoir reçu <strong>{{ nbCles }} clé{{ nbCles > 1 ? 's' : '' }}</strong>
+                du local du Foyer de Soudron{% if remiseLe %} le <strong>{{ remiseLe|date('d/m/Y') }}</strong>{% endif %},
+                pour la saison <strong>{{ season.label }}</strong>.
             </p>
 
-            {# L'engagement rédigé par le club vient en premier : c'est ce qui se lit,
-               la formule reprise du registre venant le conclure juste au-dessus de la
-               signature. #}
-            <div class="attestation-cle-document">
-                <p class="attestation-cle-document-titre">
-                    Attestation de remise de clés — saison {{ season.label }}
-                </p>
-
-                {% if season.attestationCleText %}
-                    <div class="attestation-cle-engagement">
-                        {{ season.attestationCleText|raw }}
-                    </div>
-                {% endif %}
-
-                <p class="attestation-cle-statement">
-                    Je soussigné·e <strong>{{ detenteur.prenom }} {{ detenteur.nom }}</strong>,
-                    reconnais avoir reçu <strong>{{ nbCles }} clé{{ nbCles > 1 ? 's' : '' }}</strong>
-                    du local du Foyer de Soudron{% if remiseLe %} le <strong>{{ remiseLe|date('d/m/Y') }}</strong>{% endif %},
-                    pour la saison <strong>{{ season.label }}</strong>.
-                </p>
-            </div>
-
-            <label class="inscription-checkbox-row">
-                <input type="checkbox" x-model="hasRead">
+            <label class="inscription-checkbox-row" :class="{ 'inscription-checkbox-disabled': !scrolled }">
+                <input type="checkbox" x-model="hasRead" :disabled="!scrolled">
                 <span class="inscription-checkbox-text">
                     {# Sans engagement rédigé par le club, ne pas faire accepter des conditions invisibles. #}
                     {{ season.attestationCleText

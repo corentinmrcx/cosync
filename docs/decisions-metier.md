@@ -680,6 +680,12 @@ AttestationCle // append-only : detenteur, season, signed_at, nb_cles, drive_pat
   précédente. Les deux PDF font foi à leur date.
 - La campagne de renouvellement est **manuelle** (`AttestationCleService::lancerCampagne`). Aucun
   mail ne part sans décision de l'admin.
+- Le formulaire public suit la même ossature que les signatures licencié / dirigeant : titre,
+  règlement dans son cadre défilant, puis la formule reprise du registre au-dessus de la signature.
+  **Dès que le club a rédigé un `attestationCleText`, sa lecture s'impose** — la case « J'atteste »
+  reste bloquée tant que le règlement n'a pas été déroulé jusqu'en bas (`attestationCleForm`,
+  drapeau `scrolled`). Sans texte rédigé, rien à lire : la case est libre et n'engage que
+  l'exactitude de ce qui précède, jamais des conditions invisibles.
 
 ---
 

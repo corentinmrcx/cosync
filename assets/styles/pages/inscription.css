@@ -363,26 +363,43 @@
     background: var(--color-bg-subtle);
 }
 
+/* Le HTML rendu ici sort de l'éditeur riche : sans ces règles, il retombe sur les
+   défauts du navigateur — et le reset global (`* { margin: 0; padding: 0 }`) a retiré
+   le retrait des puces, qui débordent alors à gauche du cadre. Mêmes règles que
+   `.editeur-riche-apercu`, pour que le signataire lise ce que l'admin a écrit. */
 .inscription-reglement h1,
 .inscription-reglement h2,
-.inscription-reglement h3 {
+.inscription-reglement h3,
+.attestation-cle-engagement h1,
+.attestation-cle-engagement h2,
+.attestation-cle-engagement h3 {
     font-weight: 700;
     color: var(--color-text-base);
     margin-top: 0.875rem;
     margin-bottom: 0.25rem;
 }
 
-.inscription-reglement h1 { font-size: var(--font-size-base); }
-.inscription-reglement h2 { font-size: var(--font-size-sm); }
-.inscription-reglement h3 { font-size: var(--font-size-sm); }
+.inscription-reglement h1,
+.attestation-cle-engagement h1 { font-size: var(--font-size-base); }
 
-.inscription-reglement p { margin-bottom: 0.5rem; }
+.inscription-reglement h2,
+.attestation-cle-engagement h2 { font-size: var(--font-size-sm); }
+
+.inscription-reglement h3,
+.attestation-cle-engagement h3 { font-size: var(--font-size-sm); }
+
+.inscription-reglement p,
+.attestation-cle-engagement p { margin-bottom: 0.5rem; }
 
 .inscription-reglement ul,
-.inscription-reglement ol {
+.inscription-reglement ol,
+.attestation-cle-engagement ul,
+.attestation-cle-engagement ol {
     padding-left: 1.25rem;
     margin-bottom: 0.5rem;
 }
+
+.attestation-cle-engagement li { margin-bottom: 0.2rem; }
 
 .inscription-reglement-empty {
     color: var(--color-text-muted);
@@ -896,29 +913,32 @@
 }
 
 /* — Attestation de remise de clés — */
-/* Le signataire doit voir le document, pas une case à cocher : le bloc reprend
-   mot pour mot ce que contiendra le PDF signé. */
-.attestation-cle-document {
-    margin-bottom: 1.25rem;
-    padding: 1.1rem 1.25rem;
-    background: var(--color-bg-page);
-    border: 1px solid var(--color-border-strong);
+/* Même ossature que les autres formulaires de signature : le titre d'étape, puis
+   le règlement dans son cadre défilant, puis la formule reprise du registre juste
+   au-dessus de la signature. Pas de carte « document » englobante — le règlement
+   et la formule portent déjà chacun leur encadré. */
+
+/* Le club rédige ici un règlement entier : il se fait défiler dans son propre cadre,
+   comme le règlement intérieur côté inscription — sinon c'est toute la page qui
+   défile et la signature disparaît sous la ligne de flottaison. */
+.attestation-cle-engagement {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+    font-size: var(--font-size-sm);
+    line-height: 1.65;
+    color: var(--color-text-body);
 }
 
-.attestation-cle-document-titre {
-    margin: 0 0 0.9rem;
-    padding-bottom: 0.6rem;
-    border-bottom: 1px solid var(--color-border);
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--color-text-muted);
-}
+.attestation-cle-engagement > *:first-child { margin-top: 0; }
+.attestation-cle-engagement > *:last-child { margin-bottom: 0; }
 
 .attestation-cle-statement {
-    margin: 0;
+    margin: 0 0 1.25rem;
     padding: 0.9rem 1rem;
     background: var(--color-bg-subtle);
     border-left: 3px solid var(--color-primary);
@@ -926,18 +946,4 @@
     font-size: var(--font-size-base);
     line-height: 1.7;
     color: var(--color-text-body);
-}
-
-.attestation-cle-engagement {
-    margin-bottom: 1rem;
-    font-size: var(--font-size-sm);
-    line-height: 1.65;
-    color: var(--color-text-body);
-}
-
-.inscription-step-intro {
-    margin: 0 0 1.25rem;
-    font-size: var(--font-size-sm);
-    line-height: 1.6;
-    color: var(--color-text-muted);
 }

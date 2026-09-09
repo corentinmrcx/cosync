@@ -55,14 +55,30 @@ final class AttestationCleFormControllerTest extends WebTestCase
         self::assertStringContainsString('reconnais avoir reçu', $html, 'Le document reste affiché.');
     }
 
-    public function testLeRecepisseNImposePasDeLectureAvantDeCocher(): void
+    /**
+     * Dès que le club a rédigé un règlement, sa lecture s'impose avant la case
+     * « J'atteste » — même barrière que les formulaires licencié et dirigeant.
+     */
+    public function testUnEngagementRedigeSeLitDansSonCadreAvantDeCocher(): void
     {
         $client = static::createClient();
         $attestation = $this->createAttestation();
 
         $crawler = $client->request('GET', '/attestation-cle/' . $attestation->getUuid());
 
-        self::assertCount(0, $crawler->filter('[x-ref="reglementEl"]'), 'Pas de zone de lecture imposée.');
+        self::assertCount(1, $crawler->filter('[x-ref="reglement"]'), 'Le règlement a sa zone de lecture.');
+        self::assertStringContainsString('Faites défiler', $crawler->html());
+        self::assertStringContainsString(':disabled="!scrolled"', $crawler->html(), 'La case reste bloquée avant le bas du règlement.');
+    }
+
+    public function testSansEngagementAucuneLectureNEstImposee(): void
+    {
+        $client = static::createClient();
+        $attestation = $this->createAttestation(engagement: null);
+
+        $crawler = $client->request('GET', '/attestation-cle/' . $attestation->getUuid());
+
+        self::assertCount(0, $crawler->filter('[x-ref="reglement"]'), 'Rien à lire, pas de zone imposée.');
         self::assertStringNotContainsString('Faites défiler', $crawler->html());
     }
 
