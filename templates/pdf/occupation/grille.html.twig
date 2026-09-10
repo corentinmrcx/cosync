@@ -1,0 +1,198 @@
+{# Grille d'occupation des terrains remise à la mairie.
+
+   ⚠️ **A4 paysage.** Sept colonnes de jours sur une feuille portrait donneraient des
+   colonnes de trois centimètres, où « Terrain d'entraînement 1 » ne tient pas. Le
+   `@page` ci-dessous redéclare donc l'orientation et resserre les marges du gabarit
+   partagé, dont ce document reprend par ailleurs l'en-tête à deux logos.
+
+   ⚠️ **Positionnement absolu, pas de <table> pour la grille.** DomPDF ajoute marges et
+   rembourrages à la hauteur de ligne d'un tableau : la grille sortirait de la page et se
+   ferait rejeter sur une seconde feuille, la première blanche. Le défaut est invisible à
+   l'écran, il ne se voit qu'à l'impression — c'est déjà arrivé sur le tirage duo du flyer.
+
+   Les cotes en millimètres viennent d'`OccupationPdfService` ; les fractions posées dans
+   chaque bloc viennent d'`OccupationGrilleGeometrie`, le même calcul que l'écran
+   d'administration. C'est ce qui fait que la mairie reçoit la grille que l'admin a
+   composée, et non une seconde mise en page qui aurait dérivé. #}
+{% extends 'pdf/_layout.html.twig' %}
+
+{% block titre_document %}Occupation des terrains — {{ club.associationNom|default('Foyer de Soudron') }} — saison {{ season.label }}{% endblock %}
+
+{% block titre %}Occupation des terrains{% endblock %}
+
+{% block sous_titre %}
+    {{ club.associationNom|default('Foyer de Soudron') }} — saison {{ season.label }}
+    <span class="entete-mention">Semaine type — créneaux réservés sauf changement</span>
+{% endblock %}
+
+{% block styles %}
+    /* Paysage, et des marges plus larges que celles du gabarit portrait : une feuille
+       punaisée au mur se lit mieux avec du blanc autour de la grille. */
+    @page { size: A4 landscape; margin: 14mm 16mm; }
+
+    /* Du blanc des quatre côtés : l'en-tête, la grille et le pied partagent cette largeur,
+       ils restent donc alignés entre eux tout en respirant dans la feuille. */
+    body { padding: 8mm 10mm; }
+
+    /* En-tête resserré : les logos d'une A4 portrait mangeraient un cinquième de la
+       hauteur utile d'une paysage, où la grille a besoin de toute la place. */
+    .header { margin-bottom: 7.5mm; }
+    .header td { padding: 0 0 4mm; }
+    .header-logo { width: 16mm; height: 16mm; }
+    .header-title h1 { font-size: 18px; margin-bottom: 2px; }
+
+    .entete-mention {
+        display: block;
+        margin-top: 1.5mm;
+        font-size: 9px;
+        font-weight: 400;
+        color: #555;
+    }
+
+    /* La grille occupe toute la largeur du corps — donc exactement celle du filet de
+       l'en-tête au-dessus. Ses colonnes sont en pourcentages pour cette raison. */
+    .grille { position: relative; width: 100%; }
+
+    /* `border-top` sur les colonnes plutôt qu'un filet à part : la bande des jours se ferme
+       ainsi par le haut, et le cadre de la grille est complet sur ses quatre côtés. */
+    .colonne { position: absolute; top: 0; border-top: 0.25mm solid #d8d8d8; border-left: 0.25mm solid #d8d8d8; }
+    .colonne-weekend { background: #fafafa; }
+    .colonne-derniere { border-right: 0.25mm solid #d8d8d8; }
+
+    .jour {
+        position: absolute;
+        text-align: center;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #111;
+    }
+
+    /* Trait plein à l'heure : la demi-heure n'est pas graduée sur le papier, elle
+       ajouterait quatorze filets pour une précision que personne ne lit à la règle. */
+    .trait { position: absolute; height: 0.2mm; background: #e2e2e2; }
+    .trait-haut { background: #b8b8b8; }
+
+    /*
+     * Calé à droite, un peu avant la grille : à gauche de son couloir, le libellé se
+     * retrouvait à un centimètre de la ligne qu'il désigne ; collé au filet, il le touchait.
+     *
+     * ⚠️ Le blanc vient du bord `right`, **jamais d'un `padding-right`** : DomPDF pose le
+     * rembourrage à l'extérieur de la largeur déclarée, si bien que le texte se retrouvait
+     * aligné sur la bordure de la grille au lieu de s'en écarter — même travers que pour la
+     * largeur des blocs.
+     */
+    .heure { position: absolute; text-align: right; white-space: nowrap; font-size: 8px; color: #777; }
+
+    /*
+     * ⚠️ Un bloc est posé par `left` **et** `right`, jamais par `width`.
+     *
+     * DomPDF n'applique pas le `box-sizing: border-box` du gabarit : il ajoute le filet de
+     * gauche et le rembourrage à la largeur demandée. Un bloc réglé sur la largeur de sa
+     * colonne en débordait donc de près de trois millimètres, et deux jours voisins se
+     * touchaient — corriger en retranchant un pourcentage revenait à deviner une largeur de
+     * page qu'on ne connaît pas. Avec deux bords, la largeur est déduite : le bloc tombe
+     * exactement entre eux, filet et rembourrage compris, quelle que soit la feuille.
+     * (Vérifié au pixel sur un rendu à 300 dpi : un demi-millimètre de blanc de chaque côté.)
+     */
+    .bloc {
+        position: absolute;
+        overflow: hidden;
+        padding: 0.8mm 1.2mm;
+        border-left: 0.7mm solid #999;
+    }
+
+    .bloc-equipe { font-size: 8.5px; font-weight: 700; color: #111; }
+    .bloc-horaire { font-size: 7.5px; color: #333; }
+    /* Sur une seule ligne, quitte à être coupé en largeur : replié, il ajoutait une ligne
+       qui ne tenait pas dans la hauteur du bloc et se retrouvait tranchée par le milieu. */
+    .bloc-terrain { font-size: 7px; color: #555; white-space: nowrap; }
+    .bloc-manque { font-style: italic; color: #999; }
+
+    /* ── Pied ── */
+
+    /* Centrées sous la grille, comme à l'écran : alignées à gauche, elles pendaient sous une
+       feuille dont tout le reste est centré. */
+    .legende { margin-top: 5mm; text-align: center; font-size: 8.5px; color: #444; }
+    .legende .pastille { display: inline-block; width: 3.5mm; height: 2.2mm; margin-right: 1.2mm; }
+    .legende .item { margin: 0 4mm; }
+
+    .genere {
+        position: fixed;
+        right: 0;
+        bottom: 6mm;
+        left: 0;
+        padding-top: 3mm;
+        border-top: 0.25mm solid #ddd;
+        text-align: center;
+        font-size: 8px;
+        color: #aaa;
+    }
+
+    .vide { padding: 35mm 0; text-align: center; font-style: italic; color: #888; }
+{% endblock %}
+
+{% block corps %}
+
+    {% if grille.estVide %}
+        <p class="vide">Aucun créneau n'est réservé pour cette saison.</p>
+    {% else %}
+        <div class="grille" style="height: {{ hauteurGrille + hauteurEntete }}mm">
+
+            {# — Colonnes des sept jours — #}
+            {% for colonne in grille.colonnes %}
+                {% set gauche = largeurAxe + loop.index0 * largeurColonne %}
+                <div class="colonne{{ colonne.jour.estWeekend ? ' colonne-weekend' : '' }}{{ loop.last ? ' colonne-derniere' : '' }}"
+                     style="left: {{ gauche|round(3) }}%; width: {{ largeurColonne|round(3) }}%; height: {{ hauteurGrille + hauteurEntete }}mm"></div>
+                <div class="jour" style="left: {{ gauche|round(3) }}%; width: {{ largeurColonne|round(3) }}%; top: 1mm">
+                    {{ colonne.jour.libelle }}
+                </div>
+            {% endfor %}
+
+            {# — Graduations horaires — #}
+            {% for minute in grille.plage.graduations %}
+                {% set haut = hauteurEntete + (minute - grille.plage.debut) * hauteurGrille / grille.plage.duree %}
+                <div class="trait{{ loop.first ? ' trait-haut' : '' }}"
+                     style="top: {{ haut|round(2) }}mm; left: {{ largeurAxe|round(3) }}%; width: {{ (largeurColonne * 7)|round(3) }}%"></div>
+                {# Le libellé se pose au-dessus de son trait plutôt qu'à cheval : centré, le
+                   dernier se serait fait couper par le bas de la grille. #}
+                <div class="heure" style="top: {{ (haut - 2.6)|round(2) }}mm; left: 0; right: {{ (100 - largeurAxe + 1.3)|round(3) }}%">{{ (minute // 60) }}h</div>
+            {% endfor %}
+
+            {# — Les créneaux — #}
+            {% for colonne in grille.colonnes %}
+                {% set gaucheColonne = largeurAxe + loop.index0 * largeurColonne %}
+                {% for bloc in colonne.blocs %}
+                    {% set usage = bloc.creneau.usage %}
+                    <div class="bloc"
+                         style="top: {{ (hauteurEntete + bloc.haut * hauteurGrille)|round(2) }}mm;
+                                height: {{ (bloc.hauteur * hauteurGrille - 0.5)|round(2) }}mm;
+                                left: {{ (gaucheColonne + bloc.gauche * largeurColonne + 0.2)|round(3) }}%;
+                                right: {{ (100 - gaucheColonne - (bloc.gauche + bloc.largeur) * largeurColonne + 0.2)|round(3) }}%;
+                                background: {{ usage.couleurFond }}; border-left-color: {{ usage.couleurTrait }}">
+                        <div class="bloc-equipe{{ bloc.creneau.equipe ? '' : ' bloc-manque' }}">{{ bloc.creneau.libelleEquipe }}</div>
+                        <div class="bloc-horaire">{{ bloc.creneau.libelleHoraire }}</div>
+                        {% if not bloc.estCourt %}
+                            <div class="bloc-terrain">{{ bloc.creneau.espace.nom }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+        </div>
+
+        <div class="legende">
+            {% for usage in usages %}
+                <span class="item"><span class="pastille" style="background: {{ usage.couleurFond }}; border-left: 0.7mm solid {{ usage.couleurTrait }}"></span>{{ usage.libelle }}</span>
+            {% endfor %}
+        </div>
+
+    {% endif %}
+
+    <div class="genere">
+        Document généré automatiquement par CoSync — {{ club.associationNom|default('Foyer de Soudron') }}.
+        Saison {{ season.label }}. Édité le {{ genereLe|date_fr }} à {{ genereLe|date('H\\hi') }}.
+    </div>
+
+{% endblock %}

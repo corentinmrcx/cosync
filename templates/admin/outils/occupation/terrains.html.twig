@@ -1,0 +1,194 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Terrains du complexe{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Outils', route: 'admin_outils_index' },
+    { label: 'Occupation des terrains', route: 'admin_occupation_index' },
+    { label: 'Terrains' }
+] } %}
+
+<div class="occupation-page" x-data="terrainsEcran({
+        urlNouveau: '{{ peut_acceder('admin_occupation_terrain_new') ? path('admin_occupation_terrain_new') : '' }}',
+        urlRenommer: '{{ peut_acceder('admin_occupation_terrain_rename') ? path('admin_occupation_terrain_rename', {id: '__ID__'}) : '' }}',
+     })">
+
+    <div class="occupation-header">
+        <h1 class="occupation-title">Terrains du complexe</h1>
+        {% if peut_acceder('admin_occupation_terrain_new') %}
+            <div class="occupation-header-actions">
+                <button type="button" class="btn btn-primary" @click="ouvrirAjout()">{{ ui.icon('plus') }} Ajouter un terrain</button>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if terrains is empty %}
+        <p class="occupation-vide">Aucun terrain décrit pour le moment.</p>
+    {% else %}
+        <div class="table-wrapper table-cartes">
+            <table class="table resp-table">
+                <thead>
+                    <tr>
+                        <th>Terrain</th>
+                        <th class="occupation-col-etat">État</th>
+                        <th class="occupation-col-reserv">Créneaux</th>
+                        <th class="occupation-col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for terrain in terrains %}
+                        {% set reserves = reservations[terrain.id]|default(0) %}
+                        <tr{{ terrain.actif ? '' : ' class="occupation-ligne-retiree"' }}>
+                            <td class="carte-titre">{{ terrain.nom }}</td>
+                            <td data-label="État" class="occupation-col-etat">
+                                {% if terrain.actif %}
+                                    <span class="occupation-etat occupation-etat-actif">En service</span>
+                                {% else %}
+                                    <span class="occupation-etat occupation-etat-retire">Retiré</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Créneaux" class="occupation-col-reserv">{{ reserves }}</td>
+                            <td data-label="Actions" class="occupation-col-actions">
+                                {# Les gestes d'un terrain n'ont pas d'ordre — renommer, retirer,
+                                   supprimer — et trois boutons en clair élargiraient la colonne
+                                   d'autant. Panneau ancré en position fixe (`menuLigne`), sans quoi
+                                   le `.table-wrapper` le rognerait. #}
+                                <div class="fiche-menu fiche-menu-ligne"
+                                     x-data="menuLigne()"
+                                     @click.outside="fermerMenu()"
+                                     @keydown.escape.window="fermerMenu()"
+                                     @scroll.window.capture="fermerMenu()">
+                                    <div class="fiche-menu-voile" x-show="ouvert" x-transition.opacity @click="fermerMenu()" x-cloak></div>
+
+                                    <button type="button"
+                                            class="btn btn-secondary btn-sm fiche-menu-declencheur"
+                                            @click="basculer()"
+                                            x-ref="declencheur"
+                                            :aria-expanded="ouvert"
+                                            aria-haspopup="true"
+                                            aria-label="Actions sur {{ terrain.nom }}">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                                        </svg>
+                                    </button>
+
+                                    <div class="fiche-menu-panneau fiche-menu-panneau-ancre"
+                                         x-ref="panneau"
+                                         :style="ancrage"
+                                         @click="fermerMenu()"
+                                         x-show="ouvert"
+                                         x-transition:enter="fiche-menu-entre"
+                                         x-transition:enter-start="fiche-menu-cache"
+                                         x-transition:enter-end="fiche-menu-visible"
+                                         x-transition:leave="fiche-menu-sort"
+                                         x-transition:leave-start="fiche-menu-visible"
+                                         x-transition:leave-end="fiche-menu-cache"
+                                         x-cloak>
+
+                                        {% if peut_acceder('admin_occupation_terrain_rename') %}
+                                            <button type="button" class="fiche-menu-item"
+                                                    data-id="{{ terrain.id }}"
+                                                    data-nom="{{ terrain.nom }}"
+                                                    data-token="{{ csrf_token('occupation_terrain_' ~ terrain.id) }}"
+                                                    @click="ouvrirRenommage($el)">
+                                                {{ ui.icon('edit', 15) }} Renommer
+                                            </button>
+                                        {% endif %}
+
+                                        {% if peut_acceder('admin_occupation_terrain_toggle') %}
+                                            <form method="post" action="{{ path('admin_occupation_terrain_toggle', {id: terrain.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('occupation_terrain_' ~ terrain.id) }}">
+                                                <button type="submit" class="fiche-menu-item">
+                                                    {{ ui.icon(terrain.actif ? 'eye-off' : 'eye', 15) }}
+                                                    {{ terrain.actif ? 'Retirer du service' : 'Remettre en service' }}
+                                                </button>
+                                            </form>
+                                        {% endif %}
+
+                                        {# Un terrain déjà réservé ne se supprime pas : la ligne
+                                           disparaît du menu plutôt que d'annoncer un refus après le clic. #}
+                                        {% if peut_acceder('admin_occupation_terrain_delete') and reserves == 0 %}
+                                            <form method="post" action="{{ path('admin_occupation_terrain_delete', {id: terrain.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('occupation_terrain_' ~ terrain.id) }}">
+                                                <button type="submit" class="fiche-menu-item fiche-menu-item-danger">
+                                                    {{ ui.icon('trash', 15) }} Supprimer
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <p class="occupation-legende-texte">
+            Un terrain <strong>retiré du service</strong> n'est plus proposé à la réservation, mais les
+            créneaux qui le nomment — ceux des saisons passées compris — continuent de l'afficher.
+            C'est la sortie prévue pour un terrain qui ne sert plus : la suppression, elle, n'est
+            possible que tant qu'aucun créneau ne s'y appuie.
+        </p>
+    {% endif %}
+
+    {# ── Ajouter un terrain ── #}
+    {% if peut_acceder('admin_occupation_terrain_new') %}
+        <div class="modal-voile" x-show="ajoutOuvert" x-cloak @keydown.escape.window="fermer()">
+            <div class="modal" @click.outside="fermer()">
+                <div class="modal-header">
+                    <h3 class="modal-titre">Nouveau terrain</h3>
+                    <button type="button" class="modal-fermer" @click="fermer()">✕</button>
+                </div>
+                <form id="terrain-form-nouveau" :action="urlNouveau" method="post">
+                    <input type="hidden" name="_token" value="{{ csrf_token('occupation_terrain_nouveau') }}">
+                    <div class="modal-corps">
+                        <div class="field">
+                            <label class="field-label" for="terrain-nouveau-nom">Nom du terrain</label>
+                            <input type="text" id="terrain-nouveau-nom" name="nom" class="field-input" maxlength="80" required
+                                   x-model="nom" x-ref="champAjout" placeholder="ex : Terrain d'entraînement 3">
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-ghost" @click="fermer()">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ── Renommer ── #}
+    {% if peut_acceder('admin_occupation_terrain_rename') %}
+        <div class="modal-voile" x-show="renommageOuvert" x-cloak @keydown.escape.window="fermer()">
+            <div class="modal" @click.outside="fermer()">
+                <div class="modal-header">
+                    <h3 class="modal-titre">Renommer le terrain</h3>
+                    <button type="button" class="modal-fermer" @click="fermer()">✕</button>
+                </div>
+                <form :action="urlRenommer" method="post">
+                    <input type="hidden" name="_token" :value="token">
+                    <div class="modal-corps">
+                        <div class="field">
+                            <label class="field-label" for="terrain-renommage-nom">Nom du terrain</label>
+                            <input type="text" id="terrain-renommage-nom" name="nom" class="field-input" maxlength="80" required
+                                   x-model="nom" x-ref="champRenommage">
+                            <span class="field-hint">
+                                Le nouveau nom s'applique partout, y compris aux créneaux des saisons passées.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-ghost" @click="fermer()">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Renommer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -169,7 +169,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin: 0 0 1.25rem;
+    /* Aucune marge : les deux écrans qui l'emploient le posent dans une `.season-form-card`,
+       dont le `gap` espace déjà les blocs. La marge s'y ajoutait et faisait un trou. */
     padding: 0.75rem 1rem;
     background: var(--color-info-bg);
     border-radius: var(--radius-md);

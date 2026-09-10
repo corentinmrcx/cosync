@@ -92,6 +92,9 @@ final class AccesAdminTest extends WebTestCase
             '/admin/outils/planning-matchs/reglages',
             '/admin/outils/planning-matchs/coller',
             '/admin/outils/planning-matchs/generer',
+            '/admin/outils/occupation-terrains',
+            '/admin/outils/occupation-terrains/terrains',
+            '/admin/outils/occupation-terrains/generer',
         ];
 
         foreach ($urls as $url) {

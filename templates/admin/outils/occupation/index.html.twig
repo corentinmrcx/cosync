@@ -1,0 +1,274 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Occupation des terrains{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Outils', route: 'admin_outils_index' },
+    { label: 'Occupation des terrains' }
+] } %}
+
+{% set terrainDefaut = terrains|first %}
+
+{# Les URL d'écriture sont posées dans le x-data derrière `peut_acceder` : un compte en
+   lecture reçoit une chaîne vide, la modale ne s'ouvre pas et rien ne poste. #}
+<div class="occupation-page"
+     @pointermove.window="suivreGlisse($event)"
+     @pointerup.window="finirGlisse()"
+     x-data="occupationGrille({
+        urlNouveau: '{{ peut_acceder('admin_occupation_new') ? path('admin_occupation_new') : '' }}',
+        urlModifier: '{{ peut_acceder('admin_occupation_edit') ? path('admin_occupation_edit', {id: '__ID__'}) : '' }}',
+        urlSupprimer: '{{ peut_acceder('admin_occupation_delete') ? path('admin_occupation_delete', {id: '__ID__'}) : '' }}',
+        debut: {{ grille.plage.debut }},
+        fin: {{ grille.plage.fin }},
+        terrainParDefaut: '{{ terrainDefaut ? terrainDefaut.id : '' }}',
+     })">
+
+    <div class="occupation-header">
+        <h1 class="occupation-title">Occupation des terrains</h1>
+        <div class="occupation-header-actions">
+            {% if peut_acceder('admin_occupation_new') and terrains is not empty and equipes is not empty %}
+                <button type="button" class="btn btn-secondary" @click="ouvrirCreation()">{{ ui.icon('plus') }} Ajouter un créneau</button>
+            {% endif %}
+            {% if peut_acceder('admin_occupation_terrains') %}
+                <a href="{{ path('admin_occupation_terrains') }}" class="btn btn-secondary">{{ ui.icon('layers') }} Terrains</a>
+            {% endif %}
+            {% if peut_acceder('admin_occupation_generate') %}
+                <a href="{{ path('admin_occupation_generate') }}" class="btn btn-primary">{{ ui.icon('printer') }} Générer le document</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {# — Ce qui manque pour composer une grille — #}
+    {% if terrains is empty %}
+        <div class="occupation-bandeau occupation-bandeau-alerte">
+            <span>Aucun terrain n'est encore décrit : la grille n'a nulle part où poser un créneau.</span>
+            {% if peut_acceder('admin_occupation_terrains') %}
+                <a href="{{ path('admin_occupation_terrains') }}" class="btn btn-secondary btn-sm">Décrire les terrains</a>
+            {% endif %}
+        </div>
+    {% elseif equipes is empty %}
+        <div class="occupation-bandeau occupation-bandeau-alerte">
+            <span>Aucune équipe n'est configurée pour cette saison : un créneau se réserve toujours au nom d'une équipe.</span>
+            {% if peut_acceder('admin_equipes_index') %}
+                <a href="{{ path('admin_equipes_index') }}" class="btn btn-secondary btn-sm">Configurer les équipes</a>
+            {% endif %}
+        </div>
+    {% elseif creneaux is empty and peut_acceder('admin_occupation_reprise') %}
+        {# La reprise ne s'offre que sur une grille vide : le service refuse d'écrire
+           par-dessus une grille composée, qui se retrouverait en double. #}
+        <div class="occupation-bandeau">
+            <span>La grille est vide. Reprenez celle de la saison précédente pour n'avoir que les changements à saisir.</span>
+            <form method="post" action="{{ path('admin_occupation_reprise') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('occupation_reprise') }}">
+                <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon('refresh') }} Reprendre la saison précédente</button>
+            </form>
+        </div>
+    {% endif %}
+
+    {# ── La grille, en semaine ──
+       Les blocs sont posés en pourcentages calculés côté serveur (OccupationGrilleGeometrie),
+       les mêmes qui deviennent des millimètres sur le PDF de la mairie. #}
+    <div class="occupation-semaine">
+
+    {# La hauteur se compte en heures, pas en cadre : à amplitude fixe, un cadre fixe écrase
+       les bandes et le texte des blocs en sort. #}
+    <div class="occupation-grille"
+         style="--occupation-pas: {{ (6000 / grille.plage.duree)|round(4) }}%; --occupation-heures: {{ (grille.plage.duree / 60)|round }}">
+
+        <div class="occupation-coin"></div>
+        {% for colonne in grille.colonnes %}
+            <div class="occupation-entete">{{ colonne.jour.libelle }}</div>
+        {% endfor %}
+
+        {# Les graduations extrêmes se rangent **dans** la grille : centrée sur son trait,
+           la première sortait par le haut et la dernière se faisait couper par le bas. #}
+        <div class="occupation-axe">
+            {% for minute in grille.plage.graduations %}
+                <span class="occupation-axe-heure{{ loop.first ? ' occupation-axe-heure-premiere' }}{{ loop.last ? ' occupation-axe-heure-derniere' }}"
+                      style="top: {{ ((minute - grille.plage.debut) * 100 / grille.plage.duree)|round(3) }}%">
+                    {{ (minute // 60) }}h
+                </span>
+            {% endfor %}
+        </div>
+
+        {% for colonne in grille.colonnes %}
+            <div class="occupation-piste{{ colonne.jour.estWeekend ? ' occupation-piste-weekend' : '' }}"
+                 data-jour="{{ colonne.jour.value }}"
+                 @pointerdown="commencerGlisse($event, '{{ colonne.jour.value }}')">
+
+                {% for bloc in colonne.blocs %}
+                    <button type="button"
+                            class="occupation-bloc occupation-bloc-{{ bloc.creneau.usage.value }}{{ bloc.estCourt ? ' occupation-bloc-court' : '' }}"
+                            style="top: {{ bloc.hautPourcent }}%; height: calc({{ bloc.hauteurPourcent }}% - 2px); left: {{ bloc.gauchePourcent }}%; width: calc({{ bloc.largeurPourcent }}% - 3px);"
+                            data-id="{{ bloc.creneau.id }}"
+                            data-jour="{{ bloc.creneau.jour.value }}"
+                            data-debut="{{ bloc.creneau.heureDebut }}"
+                            data-fin="{{ bloc.creneau.heureFin }}"
+                            data-equipe="{{ bloc.creneau.equipe ? bloc.creneau.equipe.id : '' }}"
+                            data-espace="{{ bloc.creneau.espace.id }}"
+                            data-usage="{{ bloc.creneau.usage.value }}"
+                            data-token="{{ csrf_token('occupation_supprimer_' ~ bloc.creneau.id) }}"
+                            @click.stop="ouvrirEdition($el)">
+                        <span class="occupation-bloc-equipe{{ bloc.creneau.equipe ? '' : ' occupation-bloc-manque' }}">{{ bloc.creneau.libelleEquipe }}</span>
+                        <span class="occupation-bloc-horaire">{{ bloc.creneau.libelleHoraire }}</span>
+                        <span class="occupation-bloc-terrain">{{ bloc.creneau.espace.nom }}</span>
+                    </button>
+                {% endfor %}
+
+                <div class="occupation-apercu" x-show="glisse && glisse.jour === '{{ colonne.jour.value }}'"
+                     :style="apercuStyle" x-cloak></div>
+            </div>
+        {% endfor %}
+
+    </div>
+
+    <div class="occupation-legende">
+        {% for usage in usages %}
+            <span class="occupation-legende-item">
+                <span class="occupation-pastille occupation-pastille-{{ usage.value }}"></span>{{ usage.libelle }}
+            </span>
+        {% endfor %}
+    </div>
+
+    </div>{# fin de la semaine #}
+
+    {# — La même semaine, en liste : sous 640 px, sept colonnes horaires ne sont pas
+         lisibles, et un glissé au doigt donnerait des créneaux de travers. — #}
+    <div class="occupation-liste">
+        {% for colonne in grille.colonnes %}
+            {% if not colonne.estVide %}
+                <div class="occupation-jour">
+                    <h2 class="occupation-jour-titre">{{ colonne.jour.libelle }}</h2>
+                    {% for bloc in colonne.blocs %}
+                        <div class="occupation-ligne occupation-ligne-{{ bloc.creneau.usage.value }}">
+                            <span class="occupation-ligne-horaire">{{ bloc.creneau.libelleHoraire }}</span>
+                            <span class="occupation-ligne-equipe{{ bloc.creneau.equipe ? '' : ' occupation-bloc-manque' }}">{{ bloc.creneau.libelleEquipe }}</span>
+                            <span class="occupation-ligne-meta">{{ bloc.creneau.espace.nom }} · {{ bloc.creneau.usage.libelle }}</span>
+                            {% if peut_acceder('admin_occupation_edit') %}
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        data-id="{{ bloc.creneau.id }}"
+                                        data-jour="{{ bloc.creneau.jour.value }}"
+                                        data-debut="{{ bloc.creneau.heureDebut }}"
+                                        data-fin="{{ bloc.creneau.heureFin }}"
+                                        data-equipe="{{ bloc.creneau.equipe ? bloc.creneau.equipe.id : '' }}"
+                                        data-espace="{{ bloc.creneau.espace.id }}"
+                                        data-usage="{{ bloc.creneau.usage.value }}"
+                                        data-token="{{ csrf_token('occupation_supprimer_' ~ bloc.creneau.id) }}"
+                                        @click="ouvrirEdition($el)">Modifier</button>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        {% if grille.estVide %}
+            <p class="occupation-vide">Aucun créneau n'est encore posé pour cette saison.</p>
+        {% endif %}
+    </div>
+
+    {# — Volume hebdomadaire —
+       Un bilan qu'on consulte, pas une clé de lecture de la grille : il se range à part, et
+       sur une seule ligne avec la légende il la poussait hors de vue. #}
+    {% if heuresParTerrain is not empty %}
+        <div class="occupation-volumes">
+            <h2 class="occupation-volumes-titre">Occupation hebdomadaire</h2>
+            <div class="occupation-volumes-liste">
+                {% for terrain, heures in heuresParTerrain %}
+                    <div class="occupation-volume">
+                        <span class="occupation-volume-terrain">{{ terrain }}</span>
+                        <span class="occupation-volume-heures">{{ heures|number_format(heures == heures|round ? 0 : 1, ',', ' ') }} h</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {# ── Modale de saisie ──
+       Un seul balisage pour la création et la modification : deux formulaires jumeaux
+       divergeraient au premier champ ajouté. #}
+    {% if peut_acceder('admin_occupation_new') %}
+    <div class="modal-voile" x-show="modalOuverte" x-cloak @keydown.escape.window="fermer()">
+        <div class="modal" @click.outside="fermer()">
+            <div class="modal-header">
+                <h3 class="modal-titre" x-text="mode === 'edition' ? 'Modifier le créneau' : 'Nouveau créneau'"></h3>
+                <button type="button" class="modal-fermer" @click="fermer()">✕</button>
+            </div>
+
+            {# Formulaire de suppression sorti du formulaire principal : les formulaires
+               ne s'imbriquent pas. Le bouton du pied le vise par son attribut `form`. #}
+            <form id="occupation-supprimer" method="post" :action="urlSupprimer">
+                <input type="hidden" name="_token" :value="tokenSupprimer">
+            </form>
+
+            <form id="occupation-form" :action="urlEnregistrer" method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('occupation_creneau') }}">
+
+                <div class="modal-corps">
+                    <div class="field">
+                        <label class="field-label" for="occupation-jour">Jour</label>
+                        <select id="occupation-jour" name="jour" class="field-input" x-model="jour" required>
+                            {% for jour in jours %}
+                                <option value="{{ jour.value }}">{{ jour.libelle }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="occupation-modal-horaires">
+                        <div class="field">
+                            <label class="field-label" for="occupation-debut">Début</label>
+                            <input type="time" id="occupation-debut" name="heureDebut" class="field-input"
+                                   step="900" x-model="heureDebut" required>
+                        </div>
+                        <div class="field">
+                            <label class="field-label" for="occupation-fin">Fin</label>
+                            <input type="time" id="occupation-fin" name="heureFin" class="field-input"
+                                   step="900" x-model="heureFin" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="occupation-equipe">Équipe</label>
+                        <select id="occupation-equipe" name="equipe" class="field-input" x-model="equipe" required>
+                            <option value="">—</option>
+                            {% for equipe in equipes %}
+                                <option value="{{ equipe.id }}">{{ equipe.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="occupation-terrain">Terrain</label>
+                        <select id="occupation-terrain" name="espace" class="field-input" x-model="espace" required>
+                            {% for terrain in terrains %}
+                                <option value="{{ terrain.id }}">{{ terrain.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label class="field-label" for="occupation-usage">Usage</label>
+                        <select id="occupation-usage" name="usage" class="field-input" x-model="usage" required>
+                            {% for usage in usages %}
+                                <option value="{{ usage.value }}">{{ usage.libelle }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" form="occupation-supprimer" class="btn btn-danger"
+                            x-show="mode === 'edition'">Supprimer</button>
+                    <button type="button" class="btn btn-ghost" @click="fermer()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

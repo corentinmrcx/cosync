@@ -58,6 +58,7 @@
 @import './pages/attestation-paiement.css';
 @import './pages/club-identite.css';
 @import './pages/planning.css';
+@import './pages/occupation.css';
 
 :root {
     /* — Identité club — */
