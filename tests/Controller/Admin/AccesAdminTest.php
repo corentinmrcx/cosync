@@ -71,6 +71,8 @@ final class AccesAdminTest extends WebTestCase
             '/admin/documentation',
             '/admin/diagnostic',
             '/admin/cles',
+            '/admin/cles/detenteurs',
+            '/admin/cles/mouvements',
             '/admin/cles/attestation',
             '/admin/cles/attestation/apercu',
             '/admin/cles/attestation/recapitulatif',

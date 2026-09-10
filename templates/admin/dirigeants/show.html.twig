@@ -199,7 +199,7 @@
 
             {% if cleRow and cleRow.estDetenteur() %}
                 <p class="licencie-show-card-note">
-                    Détient {{ cleRow.detention.solde }} clé{{ cleRow.detention.solde > 1 ? 's' : '' }} du local{% if peut_acceder('admin_cles_index') %} — <a href="{{ path('admin_cles_index') }}">voir le registre</a>{% endif %}
+                    Détient {{ cleRow.detention.solde }} clé{{ cleRow.detention.solde > 1 ? 's' : '' }} du local{% if peut_acceder('admin_cles_detenteurs') %} — <a href="{{ path('admin_cles_detenteurs') }}">voir le registre</a>{% endif %}
                 </p>
             {% endif %}
         </div>

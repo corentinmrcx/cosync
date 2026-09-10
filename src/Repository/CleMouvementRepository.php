@@ -65,17 +65,41 @@ class CleMouvementRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
-    /** @return CleMouvement[] derniers mouvements du club, toutes personnes confondues */
-    public function findRecents(int $limit): array
+    /**
+     * Une page de l'historique du club, du plus récent au plus ancien.
+     *
+     * L'écran des mouvements montre **tout** l'historique, pas les derniers en date :
+     * une restitution ou une perte n'apparaît nulle part ailleurs, la tronquer les
+     * ferait disparaître dès le mouvement suivant.
+     *
+     * @return array{mouvements: CleMouvement[], total: int}
+     */
+    public function findPage(int $page, int $parPage): array
     {
-        return $this->createQueryBuilder('m')
+        $total = (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $mouvements = $this->createQueryBuilder('m')
             ->join('m.detenteur', 'd')
             ->addSelect('d')
             ->orderBy('m.dateMouvement', 'DESC')
             ->addOrderBy('m.id', 'DESC')
-            ->setMaxResults($limit)
+            ->setFirstResult(($page - 1) * $parPage)
+            ->setMaxResults($parPage)
             ->getQuery()
             ->getResult();
+
+        return ['mouvements' => $mouvements, 'total' => $total];
+    }
+
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     public function countByDetenteur(Detenteur $detenteur): int

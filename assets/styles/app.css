@@ -15,6 +15,7 @@
 @import './components/fiche-dernier-contact.css';
 @import './components/text-combobox.css';
 @import './components/list-toolbar.css';
+@import './components/pagination.css';
 @import './components/loader.css';
 @import './components/custom-select.css';
 @import './components/stock-ui.css';

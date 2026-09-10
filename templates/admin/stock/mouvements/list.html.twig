@@ -218,16 +218,14 @@
             </form>
         </div>
 
-        {% if pages > 1 %}
-            <div class="stock-mouvements-pagination">
-                {% for p in 1..pages %}
-                    <a
-                        href="{{ path('admin_stock_mouvements_list', filters|merge({page: p})) }}"
-                        class="stock-mouvements-page-btn {{ p == page ? 'active' : '' }}"
-                    >{{ p }}</a>
-                {% endfor %}
-            </div>
-        {% endif %}
+        {# Les filtres actifs suivent la page : `filters` plutôt que la query brute, qui
+           trimballerait aussi le `page` qu'on est en train de remplacer. #}
+        {% include 'components/_pagination.html.twig' with {
+            route: 'admin_stock_mouvements_list',
+            page: page,
+            pages: pages,
+            params: filters,
+        } only %}
     {% endif %}
 
 </div>

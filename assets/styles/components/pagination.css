@@ -1,0 +1,50 @@
+/* ============================================================
+   Pagination d'une liste (`components/_pagination.html.twig`).
+
+   La page courante est un <span>, pas un lien : on ne clique pas vers là où
+   l'on est déjà. Elle porte la couleur club, le reste reste neutre — dans une
+   rangée de dix numéros, seul celui-là a quelque chose à dire.
+
+   Les cibles font 2rem de côté : on pagine au pouce, au local.
+   ============================================================ */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.pagination-lien {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-page);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-body);
+    text-decoration: none;
+}
+
+a.pagination-lien:hover {
+    background: var(--color-bg-subtle);
+    border-color: var(--color-border-strong);
+}
+
+.pagination-lien-actif {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-weight: 700;
+}
+
+.pagination-ellipse {
+    padding: 0 0.15rem;
+    color: var(--color-text-muted);
+}

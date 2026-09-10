@@ -175,34 +175,11 @@
         <div class="licencies-footer">
             <p class="licencies-count">{{ total }} licencié{{ total > 1 ? 's' : '' }}</p>
 
-            {% if pages > 1 %}
-                <nav class="licencies-pagination">
-                    {% if page > 1 %}
-                        <a href="{{ path('admin_licencies_list', app.request.query.all|merge({page: page - 1})) }}"
-                           class="licencies-page-btn">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 18 9 12 15 6"/>
-                            </svg>
-                        </a>
-                    {% endif %}
-
-                    {% for p in 1..pages %}
-                        <a href="{{ path('admin_licencies_list', app.request.query.all|merge({page: p})) }}"
-                           class="licencies-page-btn {{ p == page ? 'licencies-page-btn-active' : '' }}">
-                            {{ p }}
-                        </a>
-                    {% endfor %}
-
-                    {% if page < pages %}
-                        <a href="{{ path('admin_licencies_list', app.request.query.all|merge({page: page + 1})) }}"
-                           class="licencies-page-btn">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                        </a>
-                    {% endif %}
-                </nav>
-            {% endif %}
+            {% include 'components/_pagination.html.twig' with {
+                route: 'admin_licencies_list',
+                page: page,
+                pages: pages,
+            } only %}
         </div>
     {% endif %}
 

@@ -172,6 +172,10 @@ est trop large porte **son propre** défilement.
 - Les listes qu'on **consulte** passent en cartes sous 640 px (`.table-cartes` + `data-label`,
   `carte-titre`, `carte-meta`). Les tableaux **denses** (mouvements de stock, commandes) gardent
   leur défilement : empilés, ils perdent la comparaison ligne à ligne.
+- **Une liste qui pagine inclut `components/_pagination.html.twig`** (`route`, `page`, `pages`,
+  `params` pour les filtres à conserver). Trois listes en avaient chacune le sien : la mécanique se
+  relisait à trois endroits et divergeait à chaque retouche. Au-delà de cinq pages les numéros sont
+  fenêtrés — tout afficher débordait de la largeur du téléphone.
 - Cause n°1 des débordements : un enfant de grille/flex vaut `min-width: auto`. Réflexes —
   `minmax(0, 1fr)` plutôt que `1fr`, `min-width: 0` sur ce qui doit rétrécir, `flex-wrap: wrap` sur
   toute rangée `space-between` titre + bouton.
