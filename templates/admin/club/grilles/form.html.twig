@@ -67,11 +67,8 @@
             <p><strong>Rattachée à aucun article — elle ne traduit rien.</strong> Tant qu'un
             article du stock ne la porte pas, la taille déclarée sort telle quelle : la dotation
             et le bon de commande demandent une déclinaison qui n'existe à aucun carton.</p>
-            <p>Le rattachement se fait depuis l'article, pas d'ici :
-            <strong>Stock → l'article → Modifier → champ « Grille de tailles »</strong>.
-            {% if peut_acceder('admin_stock_gestion') %}
-                <a href="{{ path('admin_stock_gestion') }}">Ouvrir la gestion du stock</a>
-            {% endif %}</p>
+            <p>Le rattachement se fait depuis l'article :
+            <strong>Stock → l'article → Modifier → champ « Grille de tailles »</strong>.</p>
         </div>
     {% else %}
         <p class="grille-usage">
