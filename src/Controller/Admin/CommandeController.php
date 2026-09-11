@@ -12,6 +12,7 @@ use App\Repository\CommandeRepository;
 use App\Security\CsrfGuard;
 use App\Service\Dotation\DotationEcoulementAllocator;
 use App\Service\Pdf\BonCommandePdfService;
+use App\Service\Stock\AchatMotifPresenter;
 use App\Service\Stock\AchatService;
 use App\Service\Stock\CommandeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,6 +29,7 @@ class CommandeController extends AbstractController
     public function __construct(
         private readonly CsrfGuard $csrf,
         private readonly AchatService $achatService,
+        private readonly AchatMotifPresenter $motifPresenter,
         private readonly CommandeService $commandeService,
         private readonly CommandeRepository $commandeRepository,
         private readonly BonCommandePdfService $pdfService,
@@ -43,7 +45,7 @@ class CommandeController extends AbstractController
 
         return $this->render('admin/commandes/index.html.twig', [
             'season' => $season,
-            'aCommander' => $this->achatService->computeACommander($season),
+            'aCommander' => $this->motifPresenter->decorer($this->achatService->computeACommander($season)),
             'commandes' => $this->commandeRepository->findBySeason($season),
         ]);
     }
