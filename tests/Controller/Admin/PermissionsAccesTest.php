@@ -204,7 +204,7 @@ final class PermissionsAccesTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/');
         $cartes = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
 
-        self::assertContains('Saisons', $cartes, 'La bascule de saison reste un point de navigation.');
+        self::assertContains('Changer de saison', $cartes, 'La bascule de saison reste un point de navigation.');
         self::assertNotContains('Stock', $cartes);
         self::assertNotContains('Clés', $cartes);
         self::assertNotContains('Boutique', $cartes);

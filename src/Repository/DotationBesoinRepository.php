@@ -43,8 +43,17 @@ class DotationBesoinRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /** @return DotationBesoin[] Besoins « à donner » de la saison, article + fournisseur préchargés. */
-    public function findADonnerBySeason(Season $season): array
+    /**
+     * Besoins **pas encore remis** de la saison — « à donner » et « préparés » —, article et
+     * fournisseur préchargés.
+     *
+     * Les préparés en font partie et ce n'est pas un détail : leur sortie de stock n'est pas
+     * faite, l'armoire les compte encore. Les écarter ferait croire aux achats qu'ils sont
+     * servis alors que le stock les compte disponibles, et le club sous-commanderait d'autant.
+     *
+     * @return DotationBesoin[]
+     */
+    public function findNonRemisBySeason(Season $season): array
     {
         return $this->createQueryBuilder('b')
             ->leftJoin('b.stockItem', 'i')->addSelect('i')
@@ -52,9 +61,9 @@ class DotationBesoinRepository extends ServiceEntityRepository
             ->leftJoin('b.articleEcoulement', 'e')->addSelect('e')
             ->leftJoin('e.fournisseur', 'ef')->addSelect('ef')
             ->where('b.season = :season')
-            ->andWhere('b.statut = :statut')
+            ->andWhere('b.statut != :remis')
             ->setParameter('season', $season)
-            ->setParameter('statut', DotationBesoinStatut::A_DONNER)
+            ->setParameter('remis', DotationBesoinStatut::DONNE)
             ->getQuery()
             ->getResult();
     }

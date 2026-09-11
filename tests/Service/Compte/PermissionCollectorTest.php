@@ -53,6 +53,19 @@ final class PermissionCollectorTest extends TestCase
         self::assertContains(Permission::EFFECTIF_LIRE, $accordees);
     }
 
+    /**
+     * Celui qui remet une dotation est passé par le sac. Sans cette implication, le premier
+     * déploiement aurait laissé les rôles existants remettre des équipements sans pouvoir les
+     * préparer — c'est-à-dire sans pouvoir cliquer sur le seul bouton que l'écran leur propose.
+     */
+    public function testRemettreUneDotationSupposePouvoirLaPreparer(): void
+    {
+        $accordees = $this->collector->completer([Permission::DOTATION_GERER]);
+
+        self::assertContains(Permission::DOTATION_PREPARER, $accordees);
+        self::assertContains(Permission::DOTATION_LIRE, $accordees, 'Et la lecture suit, en chaîne.');
+    }
+
     /** L'ordre rendu est celui du catalogue, pas celui de la saisie : c'est lui que les écrans affichent. */
     public function testLOrdreRenduEstCeluiDuCatalogue(): void
     {

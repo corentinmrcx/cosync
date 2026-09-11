@@ -8,8 +8,10 @@ namespace App\Enum;
 enum DotationAvancementStatut: string
 {
     /** Un kit s'applique, mais les besoins ne sont pas encore matérialisés (personne non validée). */
-    case A_PREPARER = 'a_preparer';
+    case PREVUE = 'prevue';
     case ATTENTE = 'attente';
+    /** Tout est mis de côté, rien n'est encore parti : il ne reste qu'à la remettre. */
+    case PREPAREE = 'preparee';
     case PARTIELLE = 'partielle';
     case REMISE = 'remise';
 
@@ -17,8 +19,9 @@ enum DotationAvancementStatut: string
     {
         return match ($this) {
             self::REMISE => 'validated',
+            self::PREPAREE => 'a-valider',
             self::PARTIELLE, self::ATTENTE => 'completed',
-            self::A_PREPARER => 'sent',
+            self::PREVUE => 'sent',
         };
     }
 }

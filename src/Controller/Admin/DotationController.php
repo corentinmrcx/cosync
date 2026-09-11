@@ -25,8 +25,10 @@ use App\Service\Dotation\DotationEcoulementAllocator;
 use App\Service\Dotation\DotationEcoulementService;
 use App\Service\Dotation\DotationFlocageService;
 use App\Service\Dotation\DotationGroupeReglagesFactory;
+use App\Service\Dotation\DotationLigneActionsResolver;
 use App\Service\Dotation\DotationModeleFormContext;
 use App\Service\Dotation\DotationModeleService;
+use App\Service\Dotation\DotationPreparationService;
 use App\Service\Dotation\DotationProvenanceResolver;
 use App\Service\Dotation\DotationRemiseService;
 use App\Service\Dotation\DotationSuiviPresenter;
@@ -51,8 +53,10 @@ class DotationController extends AbstractController
         private readonly DotationEcoulementAllocator $ecoulementAllocator,
         private readonly DotationEcoulementService $ecoulementService,
         private readonly DotationFlocageService $flocageService,
+        private readonly DotationLigneActionsResolver $ligneActions,
         private readonly DotationProvenanceResolver $provenance,
         private readonly DotationSuiviPresenter $suivi,
+        private readonly DotationPreparationService $preparationService,
         private readonly DotationRemiseService $remiseService,
         private readonly DotationModeleService $modeleService,
         private readonly DotationAffectationService $affectationService,
@@ -361,6 +365,7 @@ class DotationController extends AbstractController
             'optionsParBesoin' => $this->choixService->optionsParBesoin($groupes),
             'articlesParBesoin' => $this->ecoulementService->articlesParBesoin($groupes),
             'taillesParBesoin' => $this->suivi->taillesParBesoin($groupes),
+            'actionsParBesoin' => $this->ligneActions->parBesoin($groupes),
             'flocagesParBesoin' => $this->flocageService->reglagesParBesoin($groupes),
             // Après l'arbitrage : la provenance se lit sur l'article servi, pas sur celui du kit.
             'provenanceParBesoin' => $this->provenance->parBesoin($season),
@@ -461,6 +466,35 @@ class DotationController extends AbstractController
             'season' => $season,
             'besoins' => $this->suivi->flocages($season),
         ]);
+    }
+
+    /** Le sac est fait : la ligne est gelée, le stock ne bouge pas encore. */
+    #[Route('/besoins/{id}/preparer', name: 'besoin_preparer', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_PREPARER->value)]
+    public function besoinPreparer(DotationBesoin $besoin, Request $request): Response
+    {
+        $this->csrf->valider('dotation_besoin_preparer_' . $besoin->getId(), $request);
+
+        try {
+            $this->preparationService->preparer($besoin);
+            $this->addFlash('success', sprintf('Dotation préparée pour %s.', $besoin->getNomPrenom()));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_dotations_suivi');
+    }
+
+    #[Route('/besoins/{id}/depreparer', name: 'besoin_depreparer', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_PREPARER->value)]
+    public function besoinDepreparer(DotationBesoin $besoin, Request $request): Response
+    {
+        $this->csrf->valider('dotation_besoin_depreparer_' . $besoin->getId(), $request);
+
+        $this->preparationService->annulerPreparation($besoin);
+        $this->addFlash('success', 'Préparation annulée.');
+
+        return $this->redirectToRoute('admin_dotations_suivi');
     }
 
     #[Route('/besoins/{id}/remise', name: 'besoin_remise', methods: ['POST'])]

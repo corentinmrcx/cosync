@@ -21,6 +21,13 @@
             permission: 'planning.lire'
         } only %}
 
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'clock',
+            label: 'Occupation des terrains',
+            route: 'admin_occupation_index',
+            permission: 'planning.lire'
+        } only %}
+
     </div>
 
 </div>

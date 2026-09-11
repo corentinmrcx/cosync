@@ -62,9 +62,22 @@ final class DotationEcoulementAllocator
     {
         $this->pool = [];
         $changed = false;
+        $besoins = $this->besoinsAServir($season);
 
-        foreach ($this->besoinsAServir($season) as $besoin) {
-            $changed = $this->arbitrer($besoin) || $changed;
+        // Les sacs déjà faits passent avant tout le monde, quel que soit l'ordre d'inscription :
+        // leurs unités sont physiquement engagées, elles ne peuvent plus arbitrer une autre
+        // ligne. Sans cette première passe, un besoin encore libre — inscrit plus tôt — se
+        // voyait promettre la paire qui dort déjà dans le sac de quelqu'un d'autre.
+        foreach ($besoins as $besoin) {
+            if ($besoin->getStatut()->estPrepare()) {
+                $this->reserver($besoin);
+            }
+        }
+
+        foreach ($besoins as $besoin) {
+            if (!$besoin->getStatut()->estPrepare()) {
+                $changed = $this->arbitrer($besoin) || $changed;
+            }
         }
 
         if ($changed) {
@@ -74,13 +87,14 @@ final class DotationEcoulementAllocator
 
     /**
      * Besoins encore à remettre, dans l'ordre de leur création. Les besoins déjà donnés sont
-     * hors sujet : leur sortie de stock est faite, elle est déjà déduite du pool.
+     * hors sujet : leur sortie de stock est faite, elle est déjà déduite du pool. Les besoins
+     * préparés, eux, sont bien là — leur sortie n'est pas faite, le pool les compte encore.
      *
      * @return list<DotationBesoin>
      */
     private function besoinsAServir(Season $season): array
     {
-        $besoins = $this->besoinRepository->findADonnerBySeason($season);
+        $besoins = $this->besoinRepository->findNonRemisBySeason($season);
         usort($besoins, static fn (DotationBesoin $a, DotationBesoin $b): int => $a->getId() <=> $b->getId());
 
         return $besoins;
@@ -145,6 +159,20 @@ final class DotationEcoulementAllocator
         }
 
         return null;
+    }
+
+    /**
+     * Retire du pool les unités d'un besoin préparé, sans rien rearbitrer : la ligne garde le
+     * carton qu'on a réellement ouvert. La taille est celle figée sur elle — l'étiquette de ce
+     * carton-là, pas celle que la grille proposerait aujourd'hui.
+     */
+    private function reserver(DotationBesoin $besoin): void
+    {
+        $article = $besoin->getArticleServi();
+        $cle = $besoin->getTaille() ?? '';
+        $restant = $this->poolDe($article)[$cle] ?? 0;
+
+        $this->pool[$article->getId()][$cle] = max(0, $restant - $besoin->getQuantite());
     }
 
     /** Le stock de ce substitut couvre-t-il ce besoin ? Si oui, les unités sont réservées. */

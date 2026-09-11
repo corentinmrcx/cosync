@@ -152,6 +152,16 @@ serveur** (c'est du métier : `FicheActionsResolver` rend un `FicheActions`). Le
 (`admin/licencies/_action.html.twig`, paramètre `contexte`). Une action **injouable** (pas
 d'adresse email, dossier incomplet) affiche son **motif** au lieu de disparaître en silence.
 
+**Dans un tableau, la colonne d'actions ne porte que l'étape suivante**
+(`DotationLigneActionsResolver`) : deux boutons côte à côte font varier la largeur de la colonne
+d'une ligne à l'autre et mettent « avancer » au même rang qu'« annuler ». Un geste qui **défait**
+un état se pose **contre la valeur qu'il défait** — la petite icône collée au badge, comme le
+crayon collé à la taille qu'il corrige. Quand la ligne porte des gestes **sans ordre** (corriger,
+supprimer un mouvement), le menu `⋯` s'y invite par la variante `fiche-menu-ligne` +
+`fiche-menu-panneau-ancre` : ⚠️ le panneau ordinaire est en position absolue et se fait rogner par
+l'`overflow-x` du `.table-wrapper` — ancré, `menuLigne()` le rend en position fixe et lui calcule
+ses coordonnées à l'ouverture. Une modale pour un geste d'une ligne reste hors de proportion.
+
 ### Mobile — la page ne défile jamais horizontalement
 
 L'outil se consulte au local, téléphone en main. Rien ne dépasse de la largeur de l'écran ; ce qui
@@ -162,6 +172,10 @@ est trop large porte **son propre** défilement.
 - Les listes qu'on **consulte** passent en cartes sous 640 px (`.table-cartes` + `data-label`,
   `carte-titre`, `carte-meta`). Les tableaux **denses** (mouvements de stock, commandes) gardent
   leur défilement : empilés, ils perdent la comparaison ligne à ligne.
+- **Une liste qui pagine inclut `components/_pagination.html.twig`** (`route`, `page`, `pages`,
+  `params` pour les filtres à conserver). Trois listes en avaient chacune le sien : la mécanique se
+  relisait à trois endroits et divergeait à chaque retouche. Au-delà de cinq pages les numéros sont
+  fenêtrés — tout afficher débordait de la largeur du téléphone.
 - Cause n°1 des débordements : un enfant de grille/flex vaut `min-width: auto`. Réflexes —
   `minmax(0, 1fr)` plutôt que `1fr`, `min-width: 0` sur ce qui doit rétrécir, `flex-wrap: wrap` sur
   toute rangée `space-between` titre + bouton.
@@ -193,6 +207,14 @@ des rôles qui ne protègent rien.
   d'héritage entre rôles ; la seule hiérarchie est interne à un domaine (`Permission::implique()`).
 - **La maille d'une permission, c'est le geste, pas l'écran de menu.** Devant une permission
   fourre-tout : *deux fonctions différentes du club voudraient-elles l'une sans l'autre ?*
+- **Toute action ajoutée se demande sa permission** — la même question, posée à l'endroit : *une
+  fonction du club voudrait-elle ce geste sans le reste du domaine ?* Si oui, **nouveau cas dans
+  `Permission`** (domaine, libellé, description, `implique()`) ; sinon on réutilise l'existante.
+  Ni l'un ni l'autre par défaut : une permission de plus qui ne sépare rien alourdit l'écran des
+  rôles, une permission de moins met deux responsabilités dans la même case.
+  ⚠️ Un geste **déjà couvert** qui gagne sa permission doit être **impliqué par celle qui le
+  couvrait** (`dotation.gerer` → `dotation.preparer`), sinon le déploiement retire aux rôles en
+  place un droit qu'ils avaient.
 - **`User.superAdmin` est un fait porté par le compte**, jamais dérivé d'un réglage d'exploitation
   (`DIAG_EMAIL` ou autre). Il en reste toujours au moins un.
 
@@ -216,6 +238,11 @@ Chacun a déjà cassé quelque chose sans lever d'erreur.
   est saisi en admin mais aucune logique ne le lit.
 - **« A payé » se lit `LicenceStatus::estSolde()` / `DossierClub::estSoldee()`**, jamais
   `=== VALIDATED` : payé et validé-FootClubs sont deux faits distincts.
+- **« Dotation pas encore remise » se lit `DotationBesoinStatut::resteAServir()`**, jamais
+  `=== A_DONNER` : depuis la préparation, une ligne peut n'être ni à donner ni donnée. L'écarter
+  des achats la ferait passer pour servie alors que le stock la compte encore — le club
+  sous-commanderait. En face d'un automate, c'est `suitLeRecalcul()` (vrai du seul `A_DONNER`) qui
+  répond : un sac préparé ne se laisse plus rattraper.
 - **ICU réduit à l'anglais dans l'image PHP** : `NumberFormatter::SPELLOUT` et
   `IntlDateFormatter('fr_FR')` rendent de l'anglais **sans erreur**. Utiliser
   `MontantEnLettresFormatter` et `DateFrancaiseFormatter`, écrits à la main.

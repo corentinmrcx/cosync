@@ -5,7 +5,6 @@ namespace App\Service\Dotation;
 use App\DTO\DotationFlocageReglages;
 use App\DTO\DotationSuiviGroupe;
 use App\Entity\DotationBesoin;
-use App\Enum\DotationBesoinStatut;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -82,16 +81,18 @@ final class DotationFlocageService
     /**
      * Fixe (ou efface) à la main le texte à floquer d'un besoin.
      *
-     * Refusé une fois l'article remis : le vêtement est déjà floqué, et le texte porté par le
-     * besoin est la trace de ce qui a réellement été donné.
+     * Refusé dès la préparation : le flocage se fait à la commande, bien avant le sac. Le
+     * texte porté par un besoin préparé ou remis est la trace de ce qui a réellement été
+     * marqué sur le vêtement, pas une intention qu'on peut encore corriger.
      *
-     * @throws \DomainException si le besoin est déjà donné, si son article ne se floque pas,
-     *                          ou si le texte dépasse la longueur permise par le kit
+     * @throws \DomainException si le besoin est préparé ou donné, si son article ne se floque
+     *                          pas, ou si le texte dépasse la longueur permise par le kit
      */
     public function changer(DotationBesoin $besoin, ?string $texte): void
     {
-        if ($besoin->getStatut() === DotationBesoinStatut::DONNE) {
-            throw new \DomainException('Cet article a déjà été remis : son flocage ne peut plus être modifié.');
+        $motif = $besoin->getStatut()->motifDeBlocage('corriger son flocage');
+        if ($motif !== null) {
+            throw new \DomainException($motif);
         }
 
         $reglages = $this->reglagesPour($besoin);
