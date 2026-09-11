@@ -101,8 +101,7 @@ final class DotationProvenanceResolver
         $besoins = $this->besoinRepository->findNonRemisBySeason($season);
         usort(
             $besoins,
-            static fn (DotationBesoin $a, DotationBesoin $b): int
-                => [!$a->getStatut()->estPrepare(), $a->getId()] <=> [!$b->getStatut()->estPrepare(), $b->getId()],
+            static fn (DotationBesoin $a, DotationBesoin $b): int => [!$a->getStatut()->estPrepare(), $a->getId()] <=> [!$b->getStatut()->estPrepare(), $b->getId()],
         );
 
         return $besoins;
