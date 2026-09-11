@@ -1,0 +1,483 @@
+/* ── Occupation des terrains ───────────────────────────────────────────────────
+   La semaine type remise à la mairie.
+
+   La grille est une **grille CSS de huit colonnes** (l'axe des heures, puis les sept
+   jours), dont la seconde rangée porte toute la hauteur. Les blocs y sont posés en
+   pourcentages calculés côté serveur : aucune ligne de ce fichier ne décide où tombe un
+   créneau, sans quoi l'écran et le PDF de la mairie divergeraient.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/*
+ * Même gabarit que `.planning-page`, `.cles-page` ou `.dot-page` : une colonne de flex dont
+ * le `gap` fait tout le rythme vertical. Aucun enfant ne porte de marge — c'est ce qui fait
+ * qu'un bloc retiré de la page ne laisse pas un trou et n'oblige à retoucher personne.
+ */
+.occupation-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    /* Un enfant de flex vaut min-width: auto : sans ce 0, la grille élargirait la page. */
+    min-width: 0;
+}
+
+.occupation-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.occupation-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.occupation-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.occupation-bandeau {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+}
+
+.occupation-bandeau-alerte {
+    border-color: var(--color-warning);
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+/* ── La grille ── */
+
+/* La légende explique la grille : elles restent serrées l'une contre l'autre, plus près que
+   le rythme de la page ne les mettrait. */
+.occupation-semaine {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.occupation-grille {
+    /*
+     * Hauteur d'une heure, et non hauteur totale : l'échelle de l'écran va de 8h à 22h,
+     * quatorze heures. Fixer la hauteur du cadre écrasait chaque bande à mesure que
+     * l'amplitude s'élargissait — les blocs devenaient illisibles et leur texte sortait.
+     * `--occupation-heures` est posé par le serveur, qui seul connaît l'amplitude.
+     */
+    --occupation-heure: 3.25rem;
+
+    display: grid;
+    grid-template-columns: 2.75rem repeat(7, minmax(0, 1fr));
+    grid-template-rows: auto calc(var(--occupation-heure) * var(--occupation-heures));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-page);
+    overflow: hidden;
+}
+
+.occupation-entete {
+    padding: 0.5rem 0.25rem;
+    border-left: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-subtle);
+    text-align: center;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-base);
+}
+
+.occupation-coin {
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-subtle);
+}
+
+.occupation-axe {
+    position: relative;
+    background: var(--color-bg-subtle);
+}
+
+.occupation-axe-heure {
+    position: absolute;
+    right: 0.375rem;
+    transform: translateY(-50%);
+    font-size: var(--font-size-2xs);
+    color: var(--color-text-muted);
+}
+
+/* Centrées sur leur trait, la première sortait par le haut de la grille et la dernière se
+   faisait couper par le bas : elles se rangent du seul côté où il y a de la place. */
+.occupation-axe-heure-premiere { transform: translateY(0); }
+.occupation-axe-heure-derniere { transform: translateY(-100%); }
+
+/*
+ * Les filets horaires sont un fond répété, pas des éléments : leur pas est le même partout,
+ * et `--occupation-pas` — un pourcentage posé par le serveur — suffit à le régler quelle
+ * que soit l'amplitude de la journée.
+ */
+.occupation-piste {
+    position: relative;
+    border-left: 1px solid var(--color-border);
+    background-image: linear-gradient(to bottom, var(--color-border) 0 1px, transparent 1px);
+    background-size: 100% var(--occupation-pas);
+    cursor: crosshair;
+}
+
+.occupation-piste-weekend {
+    background-color: var(--color-bg-subtle);
+}
+
+/*
+ * Le plus petit bloc courant fait une heure, soit `--occupation-heure` : ses trois lignes
+ * doivent y tenir. D'où l'interligne serré et le rembourrage compté — 13 + 11 + 11 px à
+ * 1,25 d'interligne plus 6 px de rembourrage font 48 px, sous les 52 disponibles.
+ */
+.occupation-bloc {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    padding: 0.1875rem 0.375rem;
+    line-height: 1.25;
+    border: none;
+    border-left: 3px solid var(--color-text-muted);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-muted);
+    text-align: left;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.occupation-bloc-entrainement {
+    border-left-color: var(--color-info);
+    background: var(--color-info-bg);
+}
+
+.occupation-bloc-match {
+    border-left-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.occupation-bloc-evenement {
+    border-left-color: var(--color-warning);
+    background: var(--color-warning-bg);
+}
+
+.occupation-bloc-equipe {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.occupation-bloc-horaire {
+    font-size: var(--font-size-2xs);
+    color: var(--color-text-body);
+}
+
+.occupation-bloc-terrain {
+    font-size: var(--font-size-2xs);
+    color: var(--color-text-muted);
+}
+
+/* Un bloc court n'a la place que de son intitulé : le reste sortirait du cadre. */
+.occupation-bloc-court .occupation-bloc-terrain {
+    display: none;
+}
+
+/*
+ * Entre 640 et 1024 px, une colonne fait moins de cent pixels : « Terrain d'honneur —
+ * moitié 1 » s'y replie sur trois lignes et pousse l'horaire hors du bloc. Le terrain se
+ * lit alors en ouvrant le créneau, comme sur téléphone.
+ */
+@media (max-width: 1023px) {
+    .occupation-bloc-terrain {
+        display: none;
+    }
+}
+
+.occupation-bloc-manque {
+    font-style: italic;
+    color: var(--color-text-disabled);
+}
+
+.occupation-apercu {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-light);
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* ── La même semaine en liste, pour le téléphone ── */
+
+.occupation-liste {
+    display: none;
+}
+
+.occupation-jour {
+    margin-bottom: 1rem;
+}
+
+.occupation-jour-titre {
+    margin-bottom: 0.5rem;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-base);
+}
+
+.occupation-ligne {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.125rem 0.75rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-text-muted);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-page);
+}
+
+.occupation-ligne-entrainement { border-left-color: var(--color-info); }
+.occupation-ligne-match { border-left-color: var(--color-primary); }
+.occupation-ligne-evenement { border-left-color: var(--color-warning); }
+
+.occupation-ligne-horaire {
+    grid-column: 1;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.occupation-ligne-equipe {
+    grid-column: 1;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+}
+
+.occupation-ligne-meta {
+    grid-column: 1;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.occupation-ligne .btn {
+    grid-column: 2;
+    grid-row: 1 / -1;
+}
+
+.occupation-vide {
+    padding: 2rem 0;
+    text-align: center;
+    font-style: italic;
+    color: var(--color-text-muted);
+}
+
+/* ── Légende et volume ── */
+
+/* La légende sert à lire la grille : centrée sous elle, et jamais poussée hors de vue par le
+   bilan des heures, qui est une autre affaire. */
+.occupation-legende {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.occupation-legende-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.occupation-pastille {
+    display: inline-block;
+    width: 1rem;
+    height: 0.625rem;
+    border-left: 3px solid var(--color-text-muted);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-muted);
+}
+
+.occupation-pastille-entrainement {
+    border-left-color: var(--color-info);
+    background: var(--color-info-bg);
+}
+
+.occupation-pastille-match {
+    border-left-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.occupation-pastille-evenement {
+    border-left-color: var(--color-warning);
+    background: var(--color-warning-bg);
+}
+
+.occupation-volumes {
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+}
+
+.occupation-volumes-titre {
+    margin-bottom: 0.75rem;
+    text-align: center;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+}
+
+/*
+ * Des pastilles, et non des lignes « nom … valeur » dans une grille : un nom long s'y
+ * repliait sur deux lignes pendant que sa valeur restait accrochée à la première, et les
+ * filets de soulignement s'arrêtaient chacun à une hauteur différente. Une pastille prend
+ * la largeur de son contenu, se replie proprement et se centre dans la carte.
+ */
+.occupation-volumes-liste {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 0.75rem;
+}
+
+.occupation-volume {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-bg-page);
+}
+
+.occupation-volume-terrain {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+}
+
+.occupation-volume-heures {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+/* ── Modale ── */
+
+.occupation-modal-horaires {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.75rem;
+}
+
+/* ── Référentiel des terrains ── */
+
+.occupation-etat {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-2xs);
+    font-weight: 700;
+}
+
+.occupation-etat-actif {
+    background: var(--color-status-validated-bg);
+    color: var(--color-status-validated);
+}
+
+.occupation-etat-retire {
+    background: var(--color-bg-muted);
+    color: var(--color-text-muted);
+}
+
+.occupation-ligne-retiree {
+    color: var(--color-text-muted);
+}
+
+.occupation-col-etat { width: 8rem; }
+.occupation-col-reserv { width: 6rem; }
+
+.occupation-col-actions {
+    width: 6rem;
+    text-align: center;
+}
+
+.occupation-col-actions .fiche-menu-ligne {
+    justify-content: center;
+}
+
+.occupation-legende-texte {
+    max-width: 80ch;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.occupation-alerte {
+    font-size: var(--font-size-sm);
+    color: var(--color-warning-text);
+}
+
+/*
+ * Le glissé ne confisque le geste vertical qu'à partir du bureau. Sur une tablette,
+ * `touch-action: none` sur toute la hauteur de la grille empêcherait de faire défiler la
+ * page au-delà : on n'atteindrait plus ni la légende ni les totaux. Là, le créneau
+ * s'ajoute par le bouton.
+ */
+@media (min-width: 1024px) {
+    .occupation-piste {
+        touch-action: none;
+    }
+}
+
+/* ── Sous 640 px : la grille horaire cède la place à la liste ──
+   Sept colonnes horaires ne se lisent pas sur un téléphone, et un glissé au doigt y
+   donnerait des créneaux de travers. La saisie passe alors par le bouton et la modale. */
+@media (max-width: 640px) {
+    .occupation-page {
+        padding: 1rem;
+    }
+
+    .occupation-grille {
+        display: none;
+    }
+
+    .occupation-liste {
+        display: block;
+    }
+
+    .occupation-col-actions {
+        width: auto;
+    }
+
+    .occupation-col-actions .fiche-menu-ligne {
+        justify-content: flex-end;
+    }
+}

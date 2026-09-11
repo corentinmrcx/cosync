@@ -1,0 +1,59 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Générer la grille d'occupation{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Outils', route: 'admin_outils_index' },
+    { label: 'Occupation des terrains', route: 'admin_occupation_index' },
+    { label: 'Générer' }
+] } %}
+
+<div class="season-form-page">
+
+    <form method="post" action="{{ path('admin_occupation_generate') }}" target="_blank" class="season-form-card">
+        <input type="hidden" name="_token" value="{{ csrf_token('occupation_generer') }}">
+
+        <h1 class="season-form-header">Générer la grille d'occupation</h1>
+
+        <hr class="season-form-divider">
+
+        {# Ce qui manquerait sur le document se dit **avant** de l'imprimer : découvrir un
+           « Équipe à compléter » sur la feuille remise à la mairie est l'aller-retour qu'on évite. #}
+        <div class="planning-compte {{ grille.estVide ? 'planning-compte-vide' : '' }}">
+            <span class="planning-compte-texte">
+                {% if grille.estVide %}
+                    Aucun créneau n'est posé : le document sortirait vide.
+                {% else %}
+                    {{ grille.nombreCreneaux }} créneau{{ grille.nombreCreneaux > 1 ? 'x' : '' }} sur la semaine,
+                    de {{ (grille.plage.debut // 60) }}h à {{ (grille.plage.fin // 60) }}h.
+                {% endif %}
+            </span>
+        </div>
+
+        {% if incomplets is not empty %}
+            <p class="occupation-alerte">
+                {{ incomplets|length }} créneau{{ incomplets|length > 1 ? 'x' : '' }} sans équipe :
+                {% for creneau in incomplets %}
+                    {{ creneau.jour.libelle|lower }} {{ creneau.libelleHoraire }}{{ not loop.last ? ', ' : '' }}
+                {% endfor %}.
+                Ils s'imprimeront « à compléter ».
+            </p>
+        {% endif %}
+
+        <hr class="season-form-divider">
+
+        <div class="season-form-checkbox">
+            <input type="checkbox" id="archiver" name="archiver" value="1">
+            <label for="archiver">Archiver une copie sur le Drive du club</label>
+        </div>
+
+        <div class="season-form-actions">
+            <button type="submit" class="btn btn-primary">Générer le PDF</button>
+            <a href="{{ path('admin_occupation_index') }}" class="btn btn-ghost">Annuler</a>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

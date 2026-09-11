@@ -14,7 +14,8 @@ use Doctrine\ORM\EntityManagerInterface;
 /**
  * Remise effective d'une dotation : ce qui sort réellement du stock, et la taille à laquelle
  * il en sort. Le texte à floquer relève de DotationFlocageService — il se règle sur le kit,
- * pas sur le mouvement de stock.
+ * pas sur le mouvement de stock ; la mise de côté qui précède relève de
+ * DotationPreparationService, qui ne touche justement pas au stock.
  */
 final class DotationRemiseService
 {
@@ -23,10 +24,16 @@ final class DotationRemiseService
         private readonly EntityManagerInterface $em,
     ) {}
 
-    /** Marque un besoin comme remis : crée le mouvement de sortie et passe le statut à « donné ». */
+    /**
+     * Marque un besoin comme remis : crée le mouvement de sortie et passe le statut à « donné ».
+     *
+     * Accepte les deux amonts. L'écran fait passer par la préparation, mais le service ne
+     * l'exige pas : une dotation attrapée dans l'armoire pour quelqu'un qui passe se remet
+     * d'un geste, et rien dans le domaine ne dépend d'un sac qui aurait existé avant.
+     */
     public function marquerRemis(DotationBesoin $besoin, ?User $user): void
     {
-        if ($besoin->getStatut() === DotationBesoinStatut::DONNE) {
+        if ($besoin->getStatut()->estRemis()) {
             return;
         }
 
@@ -37,10 +44,16 @@ final class DotationRemiseService
         $this->em->flush();
     }
 
-    /** Annule une remise : repasse le besoin à « à donner » et supprime le mouvement de sortie. */
+    /**
+     * Annule une remise : repasse le besoin à « à donner » et supprime le mouvement de sortie.
+     *
+     * « À donner » et non « préparé », même si la ligne en venait : le sac, on ne sait pas
+     * s'il existe encore. Repartir de l'état le plus ouvert rend la main à l'automate et ne
+     * pose aucun verrou que l'admin n'a pas demandé — un clic sur « Préparer » le remet.
+     */
     public function annulerRemise(DotationBesoin $besoin): void
     {
-        if ($besoin->getStatut() !== DotationBesoinStatut::DONNE) {
+        if (!$besoin->getStatut()->estRemis()) {
             return;
         }
 
@@ -65,7 +78,7 @@ final class DotationRemiseService
     {
         $taille = trim((string) $taille) ?: null;
 
-        if ($besoin->getStatut() === DotationBesoinStatut::DONNE && $taille !== $besoin->getTaille()) {
+        if ($besoin->getStatut()->estRemis() && $taille !== $besoin->getTaille()) {
             $this->rejouerMouvement($besoin, $taille, $user);
         }
 

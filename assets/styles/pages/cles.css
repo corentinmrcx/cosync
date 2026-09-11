@@ -1,41 +1,8 @@
-/* — Club house : registre des clés et attestation de remise — */
-.cles-page {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    max-width: 1100px;
-    margin: 0 auto;
-    width: 100%;
-}
+/* — Club house : registre des clés et attestation de remise —
 
-/* — Header — */
-.cles-header {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: flex-start;
-    justify-content: space-between;
-}
-
-.cles-title {
-    margin: 0;
-    font-size: var(--font-size-2xl);
-    font-weight: 800;
-    color: var(--color-text-base);
-}
-
-.cles-subtitle {
-    margin: 0.25rem 0 0;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-}
-
-.cles-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
+   Les trois écrans (accueil, détenteurs, mouvements) empruntent leur page, leur en-tête et
+   leurs sections au composant `section-home` : c'est le gabarit des accueils de section de
+   l'application. Ne restent ici que les pièces propres aux clés. */
 
 .cles-btn-link {
     background: none;
@@ -53,31 +20,19 @@
     color: var(--color-primary-dark);
 }
 
-/* — Sections — */
-.cles-section {
+/* — Pied de l'historique : ce qu'on regarde, et où l'on en est dedans. — */
+.cles-mouvements-pied {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    background: var(--color-bg-page);
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-lg);
-    padding: 1.25rem;
-    box-shadow: var(--shadow-card);
-}
-
-.cles-section-header {
-    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
     gap: 0.75rem;
 }
 
-.cles-section-title {
+.cles-mouvements-total {
     margin: 0;
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    color: var(--color-text-base);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
 }
 
 .cles-empty {
@@ -115,11 +70,13 @@
     font-weight: 700;
 }
 
-.cles-row-actions {
+/* Sous le nom : qualité et alerte « hors effectif », solidaires, jamais séparées d'une ligne. */
+.cles-sous-nom {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 0.4rem;
-    justify-content: flex-end;
+    margin: 0.1rem 0;
 }
 
 /* — Badges — */
@@ -162,46 +119,11 @@
     color: var(--color-warning);
 }
 
-/* Détient des clés sans figurer à l'effectif de la saison : l'alerte suit la ligne */
+/* Détient des clés sans figurer à l'effectif de la saison : l'écart est porté par le
+   `gap` de `.cles-sous-nom`. */
 .cles-badge-hors-effectif {
-    margin-left: 0.4rem;
     background: var(--color-warning-bg);
     color: var(--color-warning);
-}
-
-/* — Campagne de signature de la saison — */
-.cles-campagne {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1rem 1.25rem;
-    background: var(--color-bg-subtle);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-}
-
-.cles-campagne-alerte {
-    background: var(--color-warning-bg);
-    border-color: var(--color-warning);
-}
-
-.cles-campagne-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.cles-campagne-title {
-    font-weight: 700;
-    color: var(--color-text-base);
-}
-
-.cles-campagne-text {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-body);
 }
 
 /* — Modales : voile, cadre et champs viennent des composants communs. Reste ici
@@ -342,10 +264,6 @@
 
 /* — Téléphone — le registre se consulte au local, l'écran doit respirer sans déborder. */
 @media (max-width: 640px) {
-    .cles-page { padding: 1rem; gap: 1rem; }
-    .cles-section { padding: 1rem; }
-
-    /* Les boutons d'une ligne passent sous la carte : ils s'alignent à gauche comme le
-       reste, plutôt que collés au bord droit d'une colonne qui n'existe plus. */
-    .cles-row-actions { justify-content: flex-start; }
+    /* Le pied de l'historique s'empile : total au-dessus, pagination centrée en dessous. */
+    .cles-mouvements-pied { justify-content: center; }
 }

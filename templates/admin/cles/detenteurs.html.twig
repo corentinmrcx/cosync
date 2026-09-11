@@ -1,0 +1,249 @@
+{% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
+
+{% block title %}CoSync — Détenteurs de clés{% endblock %}
+
+{# Le badge dit l'état de l'engagement de la saison affichée, pas celui du registre. #}
+{% set classesAttestation = {
+    'signee': 'cles-badge-signee',
+    'a_renouveler': 'cles-badge-renouveler',
+    'lien_envoye': 'cles-badge-attente',
+    'non_signee': 'cles-badge-manquante',
+} %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Clés', route: 'admin_cles_index' },
+    { label: 'Détenteurs' }
+] } %}
+
+<div class="section-home-page" x-data="{ modaleOuverte: false, personne: '', typeMouvement: 'remise' }">
+
+    <div class="section-home-header">
+        <div>
+            <h1 class="section-home-title">Détenteurs</h1>
+            <p class="section-home-subtitle">
+                Qui détient des clés, depuis quand, et où en est son attestation {{ season.label }}.
+            </p>
+        </div>
+    </div>
+
+    {# — Recherche, filtres, action — #}
+    {% embed 'components/list-toolbar.html.twig' with {
+        search: search,
+        searchPlaceholder: 'Rechercher une personne…',
+        filterGroups: filterGroups,
+        activeCount: activeFilterCount,
+        resetUrl: path('admin_cles_detenteurs', {statut: '', search: ''}),
+        formId: 'cles'
+    } %}
+        {% block actions %}
+            {# L'import de macro du template parent ne traverse pas l'embed : SVG inline.
+               « Personne extérieure », geste rare, est dans le « ⋯ » de l'accueil Clés. #}
+            {% if peut_acceder('admin_cles_mouvement') %}
+            <button type="button" class="btn btn-primary" @click="modaleOuverte = true; personne = ''; typeMouvement = 'remise'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Remettre une clé
+            </button>
+            {% endif %}
+        {% endblock %}
+    {% endembed %}
+
+    {# Registre consulté au local, téléphone en main : en cartes sur petit écran.
+       Les `data-label` des cellules deviennent les intitulés de chaque ligne de carte. #}
+    {% if lignes is empty %}
+        <p class="cles-empty">Aucune personne ne correspond à cette recherche.</p>
+    {% else %}
+        <div class="table-wrapper table-cartes">
+            <table class="table resp-table">
+                <thead>
+                    <tr>
+                        <th>Personne</th>
+                        <th>Clés</th>
+                        <th>Attestation {{ season.label }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in lignes %}
+                        {% set detenteur = ligne.detenteur() %}
+                        {% set etat = ligne.etatAttestation() %}
+                        {% set qualite = ligne.dirigeantSaison ? ligne.dirigeantSaison.role.label() : detenteur.qualite %}
+                        <tr>
+                            <td class="carte-titre">
+                                <span class="cles-nom">{{ detenteur.nomPrenom }}</span>
+                                {% if qualite or ligne.horsEffectif() %}
+                                    <span class="cles-sous-nom">
+                                        {% if qualite %}<span class="cles-meta">{{ qualite }}</span>{% endif %}
+                                        {% if ligne.horsEffectif() %}
+                                            <span class="cles-badge-hors-effectif" title="Détient des clés sans figurer à l'effectif de la saison">
+                                                Hors effectif
+                                            </span>
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                                {% if detenteur.email %}
+                                    <span class="cles-meta">{{ detenteur.email }}</span>
+                                {% endif %}
+                                {% if ligne.estDetenteur() and ligne.detention.detenteurDepuis %}
+                                    <span class="cles-meta">Détenteur depuis le {{ ligne.detention.detenteurDepuis|date('d/m/Y') }}</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Clés">
+                                {% if ligne.estDetenteur() %}
+                                    <span class="cles-count">{{ ligne.detention.solde }}</span>
+                                {% else %}
+                                    <span class="cles-meta">Aucune</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Attestation">
+                                {% if ligne.estDetenteur() %}
+                                    <span class="{{ classesAttestation[etat.value] }}">
+                                        {{ etat.label() }}{% if etat.value == 'signee' %} le {{ ligne.signedAt()|date('d/m/Y') }}{% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="cles-meta">Sans objet</span>
+                                {% endif %}
+                            </td>
+                            <td class="table-actions">
+                                {% set peutRenvoyer = ligne.attendSignature() and detenteur.email and peut_acceder('admin_cles_demander_signature') %}
+                                {% if peutRenvoyer or peut_acceder('admin_cles_mouvement') %}
+                                    {# Menu « ⋯ » : « Renvoyer le lien » + « Mouvement » côte à côte élargissaient la
+                                       colonne d'une ligne à l'autre. Panneau ancré en position fixe (`menuLigne`),
+                                       sinon le `.table-wrapper` le rognerait et ferait une barre de défilement. #}
+                                    <div class="fiche-menu fiche-menu-ligne"
+                                         x-data="menuLigne()"
+                                         @click.outside="fermerMenu()"
+                                         @keydown.escape.window="fermerMenu()"
+                                         @scroll.window.capture="fermerMenu()">
+                                        <div class="fiche-menu-voile" x-show="ouvert" x-transition.opacity @click="fermerMenu()" x-cloak></div>
+
+                                        <button type="button"
+                                                class="btn btn-secondary btn-sm fiche-menu-declencheur"
+                                                @click="basculer()"
+                                                x-ref="declencheur"
+                                                :aria-expanded="ouvert"
+                                                aria-haspopup="true"
+                                                aria-label="Actions sur ce détenteur">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                                            </svg>
+                                        </button>
+
+                                        <div class="fiche-menu-panneau fiche-menu-panneau-ancre"
+                                             x-ref="panneau"
+                                             :style="ancrage"
+                                             @click="fermerMenu()"
+                                             x-show="ouvert"
+                                             x-transition:enter="fiche-menu-entre"
+                                             x-transition:enter-start="fiche-menu-cache"
+                                             x-transition:enter-end="fiche-menu-visible"
+                                             x-transition:leave="fiche-menu-sort"
+                                             x-transition:leave-start="fiche-menu-visible"
+                                             x-transition:leave-end="fiche-menu-cache"
+                                             x-cloak>
+                                            {% if peutRenvoyer %}
+                                                {# garde : peutRenvoyer inclut peut_acceder('admin_cles_demander_signature') #}
+                                                <form method="post" action="{{ path('admin_cles_demander_signature', {id: detenteur.id}) }}">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('cle_demander_signature_' ~ detenteur.id) }}">
+                                                    <button type="submit" class="fiche-menu-item">
+                                                        {{ ui.icon('send', 14) }}
+                                                        {{ etat.value == 'lien_envoye' ? 'Renvoyer le lien' : 'Envoyer le lien' }}
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            {% if peut_acceder('admin_cles_mouvement') %}
+                                                <button type="button" class="fiche-menu-item"
+                                                        @click="modaleOuverte = true; personne = 'detenteur:{{ detenteur.id }}'; typeMouvement = 'remise'">
+                                                    {{ ui.icon('key', 14) }}
+                                                    Enregistrer un mouvement
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {# — Modale de saisie d'un mouvement — #}
+    {% if peut_acceder('admin_cles_mouvement') %}
+    <div class="modal-voile" x-show="modaleOuverte" x-cloak @click.self="modaleOuverte = false">
+        <form method="post" action="{{ path('admin_cles_mouvement') }}" class="modal">
+            <div class="modal-header">
+                <h2 class="modal-titre">Enregistrer un mouvement de clé</h2>
+                <button type="button" class="modal-fermer" @click="modaleOuverte = false">✕</button>
+            </div>
+
+            <div class="modal-corps">
+                <p class="cles-modal-hint">
+                    L'historique n'est jamais modifié : une erreur se corrige par un mouvement inverse.
+                </p>
+
+                <input type="hidden" name="_token" value="{{ csrf_token('cle_mouvement') }}">
+
+                <div class="field">
+                    <label class="field-label" for="cle-personne">Personne</label>
+                    <select name="personne" id="cle-personne" class="field-input" x-model="personne" required>
+                        <option value="">— Sélectionner —</option>
+                        {% if candidats.detenteurs is not empty %}
+                            <optgroup label="Au registre des clés">
+                                {% for candidat in candidats.detenteurs %}
+                                    <option value="{{ candidat.reference }}">{{ candidat.label }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endif %}
+                        {% if candidats.dirigeants is not empty %}
+                            <optgroup label="Dirigeants de la saison {{ season.label }}">
+                                {% for candidat in candidats.dirigeants %}
+                                    <option value="{{ candidat.reference }}">{{ candidat.label }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="cle-type">Type de mouvement</label>
+                    <select name="type" id="cle-type" class="field-input" x-model="typeMouvement" required>
+                        <option value="remise">Remise</option>
+                        <option value="restitution">Restitution</option>
+                        <option value="perte">Perte</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="cle-quantite">Nombre de clés</label>
+                    <input type="number" name="quantite" id="cle-quantite" class="field-input" value="1" min="1" required>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="cle-date">Date</label>
+                    <input type="date" name="date_mouvement" id="cle-date" class="field-input"
+                           value="{{ 'now'|date('Y-m-d') }}" required>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="cle-note">Note (facultatif)</label>
+                    <input type="text" name="note" id="cle-note" class="field-input"
+                           placeholder="Ex. : clé du portail arrière">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" @click="modaleOuverte = false">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

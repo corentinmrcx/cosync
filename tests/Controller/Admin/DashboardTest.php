@@ -24,13 +24,15 @@ final class DashboardTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
 
-        $labels = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
-        self::assertSame(['Saisons', 'Stock', 'Clés', 'Boutique', 'Outils', 'Le club'], $labels);
+        // La reprise de saison passe avant la grille : c'est elle qu'on vient chercher, et
+        // « Changer de saison » ferme la marche pour ne plus capter le clic à sa place.
+        $banniere = $crawler->filter('a.dashboard-saison-hero');
+        self::assertCount(1, $banniere);
+        self::assertStringContainsString('2025-2026', $banniere->text());
+        self::assertSame('/admin/saison', $banniere->attr('href'));
 
-        $raccourci = $crawler->filter('.dashboard-season a.quicklink');
-        self::assertCount(1, $raccourci);
-        self::assertStringContainsString('2025-2026', $raccourci->text());
-        self::assertSame('/admin/saison', $raccourci->attr('href'));
+        $labels = $crawler->filter('.hub-card-label')->each(static fn ($n) => trim($n->text()));
+        self::assertSame(['Stock', 'Clés', 'Boutique', 'Outils', 'Le club', 'Changer de saison'], $labels);
     }
 
     public function testSansSaisonLeRaccourciCedeLaPlaceAUneInvitation(): void
@@ -46,7 +48,7 @@ final class DashboardTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/');
 
         self::assertResponseIsSuccessful();
-        self::assertCount(0, $crawler->filter('.dashboard-season'));
+        self::assertCount(0, $crawler->filter('.dashboard-saison-hero'));
         self::assertStringContainsString('Aucune saison configurée', (string) $client->getResponse()->getContent());
     }
 

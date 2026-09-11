@@ -7,7 +7,6 @@ use App\Entity\DotationBesoin;
 use App\Entity\Licencie;
 use App\Entity\Season;
 use App\Entity\StockItem;
-use App\Enum\DotationBesoinStatut;
 use App\Repository\DirigeantRepository;
 use App\Repository\DotationBesoinRepository;
 use App\Repository\LicencieRepository;
@@ -78,13 +77,16 @@ final class DotationBesoinSynchronizer
     /**
      * Met à jour silencieusement les tailles depuis le dossier en cours pour tous les besoins
      * « à donner » non verrouillés manuellement. Appelé à l'affichage du suivi.
+     *
+     * Un besoin préparé en est exclu, comme un besoin donné : le sac est fait, réécrire sa
+     * taille depuis le dossier ferait dire au suivi autre chose que ce qu'il contient.
      */
     public function syncTaillesFromDossiers(Season $season): void
     {
         $changed = false;
 
         foreach ($this->besoinRepository->findBySeason($season) as $besoin) {
-            if ($besoin->getStatut() !== DotationBesoinStatut::A_DONNER || $besoin->isTailleManuelle()) {
+            if (!$besoin->getStatut()->suitLeRecalcul() || $besoin->isTailleManuelle()) {
                 continue;
             }
 
@@ -193,7 +195,7 @@ final class DotationBesoinSynchronizer
     private function trouverBesoinAMettreAJour(array $besoins): ?DotationBesoin
     {
         foreach ($besoins as $besoin) {
-            if ($besoin->getStatut() === DotationBesoinStatut::A_DONNER) {
+            if ($besoin->getStatut()->suitLeRecalcul()) {
                 return $besoin;
             }
         }
@@ -281,7 +283,7 @@ final class DotationBesoinSynchronizer
         foreach ($existants as $besoin) {
             $emplacement = $this->emplacementDe($besoin->getGroupeChoix(), $besoin->getStockItem());
 
-            if ($besoin->getStatut() === DotationBesoinStatut::A_DONNER && !isset($emplacementsResolus[$emplacement])) {
+            if ($besoin->getStatut()->suitLeRecalcul() && !isset($emplacementsResolus[$emplacement])) {
                 $this->em->remove($besoin);
             }
         }

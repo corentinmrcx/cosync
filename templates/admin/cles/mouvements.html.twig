@@ -1,0 +1,67 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Mouvements de clés{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Clés', route: 'admin_cles_index' },
+    { label: 'Mouvements' }
+] } %}
+
+<div class="section-home-page">
+
+    <div class="section-home-header">
+        <div>
+            <h1 class="section-home-title">Mouvements</h1>
+            <p class="section-home-subtitle">
+                L'historique complet du club, du plus récent au plus ancien. Il n'est jamais
+                modifié : une erreur se corrige par un mouvement inverse.
+            </p>
+        </div>
+    </div>
+
+    {% if mouvements is empty %}
+        <p class="cles-empty">Aucun mouvement enregistré pour l'instant.</p>
+    {% else %}
+        {# Tableau dense qu'on lit ligne à ligne : il garde son défilement plutôt que
+           de s'empiler en cartes, qui ferait perdre la comparaison d'une ligne à l'autre. #}
+        <div class="table-wrapper">
+            <table class="table resp-table">
+                <thead>
+                    <tr>
+                        <th>Personne</th>
+                        <th>Mouvement</th>
+                        <th>Quantité</th>
+                        <th>Date</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mouvement in mouvements %}
+                        <tr>
+                            <td>{{ mouvement.detenteur.nomPrenom }}</td>
+                            <td><span class="cles-badge-{{ mouvement.type.value }}">{{ mouvement.type.label }}</span></td>
+                            <td>{{ mouvement.quantite }}</td>
+                            <td>{{ mouvement.dateMouvement|date('d/m/Y') }}</td>
+                            <td>{{ mouvement.note ?: '—' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="cles-mouvements-pied">
+            <p class="cles-mouvements-total">
+                {{ total }} mouvement{{ total > 1 ? 's' }} — page {{ page }} sur {{ pages }}
+            </p>
+            {% include 'components/_pagination.html.twig' with {
+                route: 'admin_cles_mouvements',
+                page: page,
+                pages: pages,
+            } only %}
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

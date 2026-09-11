@@ -5,7 +5,7 @@
    select toujours ouvert alourdirait chaque ligne du tableau.
 
    `besoin` = App\Entity\DotationBesoin, `options` = StockItem[] proposés à cette personne. #}
-{% if options|length > 1 and besoin.statut.value != 'donne' %}
+{% if options|length > 1 and not besoin.statut.contenuFige %}
     <div x-data="{ editing: false }" class="dot-option-edit">
         <div x-show="!editing" class="dot-option-display">
             <span class="dot-item-nom">{{ besoin.stockItem.nom }}</span>

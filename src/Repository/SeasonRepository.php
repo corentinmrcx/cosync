@@ -41,6 +41,24 @@ class SeasonRepository extends ServiceEntityRepository
             ->getSingleScalarResult() > 0;
     }
 
+    /**
+     * La saison qui précède celle-ci, au sens du label (« 2025-2026 » avant « 2026-2027 »).
+     *
+     * Le label et non `createdAt` : une saison ancienne saisie après coup pour rattraper un
+     * historique porterait une date de création plus récente que la saison en cours, et la
+     * reprise de grille irait chercher ses créneaux dans le mauvais millésime.
+     */
+    public function findPrecedente(Season $season): ?Season
+    {
+        return $this->createQueryBuilder('s')
+            ->where('s.label < :label')
+            ->setParameter('label', $season->getLabel())
+            ->orderBy('s.label', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /** @return Season[] */
     public function findAllOrdered(): array
     {

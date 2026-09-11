@@ -23,6 +23,11 @@ use App\Repository\StockMovementRepository;
  * avec une seule paire restante et trois personnes qui l'attendent, un test ligne à ligne
  * annoncerait trois fois « Stock » et enverrait deux dirigeants chercher un carton vide.
  *
+ * Une ligne **préparée** compte dans cette répartition et sert même en premier : son article
+ * est dans un sac, il ne sortira plus du stock pour quelqu'un d'autre — mais aucun mouvement
+ * ne l'a encore déduit, l'armoire le compte toujours. Sa propre pastille, elle, ne s'affiche
+ * pas : d'où venait l'article ne regarde plus personne une fois le sac fait.
+ *
  * Les besoins déjà donnés sont hors sujet : leur sortie de stock est faite, elle est déjà
  * déduite du pool.
  */
@@ -79,16 +84,25 @@ final class DotationProvenanceResolver
     }
 
     /**
-     * Besoins à remettre, dans l'ordre de leur création — le même que celui de
-     * l'allocateur d'écoulement, et pour la même raison : deux écrans consécutifs doivent
-     * annoncer la même chose.
+     * Besoins à remettre, **les sacs déjà faits d'abord**, puis l'ordre de leur création —
+     * le même que celui de l'allocateur d'écoulement, et pour la même raison : deux écrans
+     * consécutifs doivent annoncer la même chose.
+     *
+     * Les préparés passent devant parce que leurs articles sont physiquement engagés, quel
+     * que soit l'ordre d'inscription. Trois vestes en M au local, quatre licenciés qui en
+     * attendent une, et les trois derniers inscrits déjà en sac : servir dans l'ordre des
+     * identifiants annonçait « Stock » au premier — qui serait allé chercher une veste dans
+     * une armoire vidée par les sacs des trois autres.
      *
      * @return list<DotationBesoin>
      */
     private function besoinsAServir(Season $season): array
     {
-        $besoins = $this->besoinRepository->findADonnerBySeason($season);
-        usort($besoins, static fn (DotationBesoin $a, DotationBesoin $b): int => $a->getId() <=> $b->getId());
+        $besoins = $this->besoinRepository->findNonRemisBySeason($season);
+        usort(
+            $besoins,
+            static fn (DotationBesoin $a, DotationBesoin $b): int => [!$a->getStatut()->estPrepare(), $a->getId()] <=> [!$b->getStatut()->estPrepare(), $b->getId()],
+        );
 
         return $besoins;
     }

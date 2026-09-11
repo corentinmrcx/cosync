@@ -55,11 +55,14 @@
                 {% else %}
                     <span class="dot-card-count dot-card-count-done">Tout remis</span>
                 {% endif %}
+                {% if groupe.prepares > 0 %}
+                    <span class="dot-card-count dot-card-count-prepare">{{ groupe.prepares }} prêt{{ groupe.prepares > 1 ? 's' }}</span>
+                {% endif %}
                 <span class="dot-card-count">{{ groupe.total }}</span>
             </button>
 
             {# Écran tenu à la main devant les cartons : sur téléphone chaque besoin devient
-               une carte, avec son bouton « Marquer remis » en pleine largeur. #}
+               une carte, avec le bouton de son étape — « Préparer », puis « Marquer remis ». #}
             <div class="table-wrapper table-cartes" x-show="open" x-collapse x-cloak>
                 <table class="table resp-table">
                     <thead>
@@ -95,7 +98,7 @@
                                 </td>
                                 <td data-label="Taille">
                                     {% set options = taillesParBesoin[besoin.id] ?? [] %}
-                                    {% set estDonne = besoin.statut.value == 'donne' %}
+                                    {% set estDonne = besoin.statut.estRemis %}
                                     <div x-data="{ editing: false }" class="dot-taille-edit">
                                         <div x-show="!editing" class="dot-taille-display">
                                             {% if besoin.taille %}
@@ -145,11 +148,31 @@
                                 </td>
                                 <td data-label="Qté">{{ besoin.quantite }}</td>
                                 <td data-label="Statut">
+                                    {% set actions = actionsParBesoin[besoin.id] %}
                                     <div class="dot-statut-cell">
-                                        {% if besoin.statut.value == 'donne' %}
-                                            <span class="dot-badge dot-badge-done">{{ besoin.statut.label }}</span>
-                                        {% else %}
-                                            <span class="dot-badge dot-badge-todo">{{ besoin.statut.label }}</span>
+                                        {# Revenir en arrière, c'est défaire ce que le badge affiche : le geste
+                                           se pose contre lui, pas dans la colonne d'actions, qui ne porte que
+                                           l'étape suivante. Même idiome que le crayon de la colonne Taille. #}
+                                        <div class="dot-statut-ligne">
+                                            {% if besoin.statut.estRemis %}
+                                                <span class="dot-badge dot-badge-done">{{ besoin.statut.label }}</span>
+                                            {% elseif besoin.statut.estPrepare %}
+                                                <span class="dot-badge dot-badge-prepare">{{ besoin.statut.label }}</span>
+                                            {% else %}
+                                                <span class="dot-badge dot-badge-todo">{{ besoin.statut.label }}</span>
+                                            {% endif %}
+
+                                            {% if actions.retour %}
+                                                {% include 'admin/dotations/_action.html.twig' with {
+                                                    besoin: besoin,
+                                                    action: actions.retour.value,
+                                                    contexte: 'retour',
+                                                } only %}
+                                            {% endif %}
+                                        </div>
+
+                                        {# Le sac est fait : d'où vient l'article ne regarde plus personne. #}
+                                        {% if not besoin.statut.contenuFige %}
                                             {% include 'admin/dotations/_provenance_cell.html.twig' with {
                                                 besoin: besoin,
                                                 provenance: provenanceParBesoin[besoin.id] ?? null,
@@ -158,19 +181,18 @@
                                     </div>
                                 </td>
                                 <td class="dot-table-action table-actions">
-                                    {% if besoin.statut.value == 'donne' %}
-                                        {% if peut_acceder('admin_dotations_besoin_annuler') %}
-                                        <form method="post" action="{{ path('admin_dotations_besoin_annuler', {id: besoin.id}) }}" style="display:inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_annuler_' ~ besoin.id) }}">
-                                            <button type="submit" class="btn btn-danger btn-sm">Annuler</button>
-                                        </form>
+                                    {# `table-actions-cellule` cale le bouton à droite de la
+                                       colonne — sur téléphone, où la ligne devient une carte,
+                                       la même classe le renvoie à gauche sous le reste. #}
+                                    <div class="table-actions-cellule">
+                                        {% if actions.principale %}
+                                            {% include 'admin/dotations/_action.html.twig' with {
+                                                besoin: besoin,
+                                                action: actions.principale.value,
+                                                contexte: 'principale',
+                                            } only %}
                                         {% endif %}
-                                    {% elseif peut_acceder('admin_dotations_besoin_remise') %}
-                                        <form method="post" action="{{ path('admin_dotations_besoin_remise', {id: besoin.id}) }}" style="display:inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_remise_' ~ besoin.id) }}">
-                                            <button type="submit" class="btn btn-primary btn-sm">Marquer remis</button>
-                                        </form>
-                                    {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}

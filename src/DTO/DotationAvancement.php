@@ -12,6 +12,7 @@ final class DotationAvancement
     public function __construct(
         public readonly DotationAvancementStatut $statut,
         public readonly int $donnes,
+        public readonly int $prepares,
         public readonly int $total,
     ) {}
 
@@ -20,8 +21,9 @@ final class DotationAvancement
         return match ($this->statut) {
             DotationAvancementStatut::REMISE => 'Dotation remise',
             DotationAvancementStatut::PARTIELLE => sprintf('Dotation %d/%d', $this->donnes, $this->total),
+            DotationAvancementStatut::PREPAREE => 'Dotation prête',
             DotationAvancementStatut::ATTENTE => 'Dotation à remettre',
-            DotationAvancementStatut::A_PREPARER => 'Dotation prévue',
+            DotationAvancementStatut::PREVUE => 'Dotation prévue',
         };
     }
 }

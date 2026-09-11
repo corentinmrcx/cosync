@@ -26,13 +26,19 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Registre des clés du local. Le registre lui-même est au niveau du club — un
- * trousseau ne change pas de main au 1er juillet — tandis que le bloc attestations
- * porte sur la saison sélectionnée dans la navbar, l'engagement étant annuel.
+ * trousseau ne change pas de main au 1er juillet — tandis que les attestations
+ * portent sur la saison sélectionnée dans la navbar, l'engagement étant annuel.
+ *
+ * Trois écrans, comme le stock : un accueil de section qui ne porte que ce qui appelle
+ * une action et les accès rapides, le registre des détenteurs, et l'historique complet
+ * des mouvements.
  */
 #[Route('/admin/cles', name: 'admin_cles_')]
 #[IsGranted(Permission::CLE_LIRE->value)]
 class CleController extends AbstractController
 {
+    private const MOUVEMENTS_PAR_PAGE = 25;
+
     public function __construct(
         private readonly CleRegistreService $registre,
         private readonly CleRegistrePresenter $presenter,
@@ -44,14 +50,35 @@ class CleController extends AbstractController
         private readonly CsrfGuard $csrf,
     ) {}
 
+    /**
+     * Accueil de la section : ce qui appelle une action, et les deux accès. Aucune
+     * synthèse chiffrée pour elle-même — un compteur qu'on ne suit pas dans le temps
+     * n'est pas un indicateur, il occupe l'écran sans rien décider.
+     */
     #[Route('', name: 'index', methods: ['GET'])]
-    public function index(
+    public function index(#[CurrentSeason] Season $season): Response
+    {
+        $this->licenceSync->pourSaison($season);
+
+        $lignes = $this->presenter->lignes($season);
+
+        return $this->render('admin/cles/index.html.twig', [
+            'season' => $season,
+            'stats' => $this->presenter->stats($lignes),
+            'nbEnAttente' => count($this->presenter->enAttenteDeSignature($lignes)),
+            'nbMouvements' => $this->registre->compterMouvements(),
+        ]);
+    }
+
+    /** Le registre : qui détient quoi, et où en est son engagement de la saison. */
+    #[Route('/detenteurs', name: 'detenteurs', methods: ['GET'])]
+    public function detenteurs(
         Request $request,
         #[CurrentSeason] Season $season,
     ): Response {
         $restored = $this->filterMemory->restoreOrRemember('cles', $request, ['statut', 'search']);
         if ($restored !== null) {
-            return $this->redirectToRoute('admin_cles_index', $restored);
+            return $this->redirectToRoute('admin_cles_detenteurs', $restored);
         }
 
         $search = trim((string) $request->query->get('search', ''));
@@ -61,13 +88,10 @@ class CleController extends AbstractController
 
         $lignes = $this->presenter->lignes($season);
 
-        return $this->render('admin/cles/index.html.twig', [
+        return $this->render('admin/cles/detenteurs.html.twig', [
             'season' => $season,
-            'stats' => $this->presenter->stats($lignes),
             'lignes' => $this->presenter->filtrer($lignes, $search, $statut),
             'candidats' => $this->presenter->candidats($season, $lignes),
-            'nbEnAttente' => count($this->presenter->enAttenteDeSignature($lignes)),
-            'recents' => $this->registre->getMouvementsRecents(5),
             'search' => $search,
             'filterGroups' => [FiltreListe::depuisEnum(
                 'statut',
@@ -77,6 +101,26 @@ class CleController extends AbstractController
                 $statut,
             )],
             'activeFilterCount' => ($search !== '' ? 1 : 0) + ($statut !== null ? 1 : 0),
+        ]);
+    }
+
+    /**
+     * L'historique complet, paginé. Une restitution et une perte n'apparaissent nulle
+     * part ailleurs : s'en tenir aux derniers en date les ferait disparaître.
+     */
+    #[Route('/mouvements', name: 'mouvements', methods: ['GET'])]
+    public function mouvements(Request $request): Response
+    {
+        $page = max(1, (int) $request->query->get('page', 1));
+
+        ['mouvements' => $mouvements, 'total' => $total] = $this->registre
+            ->getMouvementsPage($page, self::MOUVEMENTS_PAR_PAGE);
+
+        return $this->render('admin/cles/mouvements.html.twig', [
+            'mouvements' => $mouvements,
+            'total' => $total,
+            'page' => $page,
+            'pages' => max(1, (int) ceil($total / self::MOUVEMENTS_PAR_PAGE)),
         ]);
     }
 
@@ -91,7 +135,7 @@ class CleController extends AbstractController
         if ($type === null) {
             $this->addFlash('error', 'Mouvement invalide.');
 
-            return $this->redirectToRoute('admin_cles_index');
+            return $this->redirectToRoute('admin_cles_detenteurs');
         }
 
         $dateRaw = trim((string) $request->request->get('date_mouvement', ''));
@@ -120,7 +164,7 @@ class CleController extends AbstractController
             $this->addFlash('error', 'Date de mouvement invalide.');
         }
 
-        return $this->redirectToRoute('admin_cles_index');
+        return $this->redirectToRoute('admin_cles_detenteurs');
     }
 
     #[Route('/detenteurs/exterieur', name: 'detenteur_exterieur', methods: ['POST'])]
@@ -135,7 +179,7 @@ class CleController extends AbstractController
         if ($nom === '' || $prenom === '') {
             $this->addFlash('error', 'Le nom et le prénom sont obligatoires.');
 
-            return $this->redirectToRoute('admin_cles_index');
+            return $this->redirectToRoute('admin_cles_detenteurs');
         }
 
         try {
@@ -152,7 +196,7 @@ class CleController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_cles_index');
+        return $this->redirectToRoute('admin_cles_detenteurs');
     }
 
     /** Envoi groupé du lien de signature — déclenché à la main, jamais automatiquement. */
@@ -208,7 +252,7 @@ class CleController extends AbstractController
         if ($detenteur === null) {
             $this->addFlash('error', 'Détenteur introuvable.');
 
-            return $this->redirectToRoute('admin_cles_index');
+            return $this->redirectToRoute('admin_cles_detenteurs');
         }
 
         try {
@@ -218,6 +262,6 @@ class CleController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_cles_index');
+        return $this->redirectToRoute('admin_cles_detenteurs');
     }
 }

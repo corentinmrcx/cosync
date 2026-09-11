@@ -100,10 +100,19 @@ final class CleRegistreService
         return $this->mouvementRepo->findByDetenteur($detenteur);
     }
 
-    /** @return CleMouvement[] */
-    public function getMouvementsRecents(int $limit): array
+    /**
+     * Une page de l'historique du club, du plus récent au plus ancien.
+     *
+     * @return array{mouvements: CleMouvement[], total: int}
+     */
+    public function getMouvementsPage(int $page, int $parPage): array
     {
-        return $this->mouvementRepo->findRecents($limit);
+        return $this->mouvementRepo->findPage($page, $parPage);
+    }
+
+    public function compterMouvements(): int
+    {
+        return $this->mouvementRepo->countAll();
     }
 
     public function getSolde(Detenteur $detenteur): int

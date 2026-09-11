@@ -4,7 +4,6 @@ namespace App\Service\Dotation;
 
 use App\Entity\DotationBesoin;
 use App\Entity\StockItem;
-use App\Enum\DotationBesoinStatut;
 use App\Repository\StockItemRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -35,12 +34,13 @@ final class DotationEcoulementService
     /**
      * @param string $choix `auto`, l'id de l'article du kit, ou celui d'un article d'écoulement
      *
-     * @throws \DomainException si l'article a déjà été remis ou si le choix n'en est pas un
+     * @throws \DomainException si la ligne est préparée ou remise, ou si le choix n'en est pas un
      */
     public function fixerArticle(DotationBesoin $besoin, string $choix): void
     {
-        if ($besoin->getStatut() === DotationBesoinStatut::DONNE) {
-            throw new \DomainException('Cet article a déjà été remis. Annulez d\'abord la remise pour changer l\'article servi.');
+        $motif = $besoin->getStatut()->motifDeBlocage('changer l\'article servi');
+        if ($motif !== null) {
+            throw new \DomainException($motif);
         }
 
         if ($choix === self::AUTO) {

@@ -45,19 +45,23 @@ final class DotationSuiviPresenter
         // Besoins pas encore matérialisés (licencié non validé) : on regarde si un kit s'applique.
         if ($besoins === []) {
             return $this->resolver->resolveDotation($licencie) !== []
-                ? new DotationAvancement(DotationAvancementStatut::A_PREPARER, 0, 0)
+                ? new DotationAvancement(DotationAvancementStatut::PREVUE, 0, 0, 0)
                 : null;
         }
 
         $total = count($besoins);
         $donnes = count(array_filter($besoins, $this->estDonne(...)));
+        $prepares = count(array_filter($besoins, $this->estPrepare(...)));
 
-        return new DotationAvancement($this->statutPour($donnes, $total), $donnes, $total);
+        return new DotationAvancement($this->statutPour($donnes, $prepares, $total), $donnes, $prepares, $total);
     }
 
     /**
      * Besoins encore à donner qui portent un texte de flocage : la liste à transmettre au
      * floqueur. Triée par personne, comme le suivi.
+     *
+     * Une ligne préparée en sort, au même titre qu'une ligne remise : le flocage se commande
+     * bien avant que le sac ne se fasse, la laisser dans la liste la ferait floquer deux fois.
      *
      * @return list<DotationBesoin>
      */
@@ -73,8 +77,8 @@ final class DotationSuiviPresenter
     /**
      * Besoins de la saison regroupés par équipe, l'encadrement à part. Dans chaque groupe, les
      * personnes sont triées par nom (tri du repository), mais celles entièrement servies passent
-     * en fin de liste, et chez une personne partiellement servie les lignes déjà remises passent
-     * sous les autres : l'écran sert à préparer ce qui reste à remettre.
+     * en fin de liste, et chez une personne les lignes remontent dans l'ordre du parcours — à
+     * donner, préparé, donné : l'écran sert à préparer ce qui reste à remettre.
      *
      * @return list<DotationSuiviGroupe>
      */
@@ -84,7 +88,7 @@ final class DotationSuiviPresenter
 
         foreach ($this->besoinsParGroupeEtPersonne($season) as $equipe => $personnes) {
             $ordonnes = $this->aplatir($this->personnesNonServiesDAbord(
-                array_map($this->remisesEnFin(...), $personnes),
+                array_map($this->parAvancement(...), $personnes),
             ));
 
             $groupes[] = new DotationSuiviGroupe(
@@ -92,6 +96,7 @@ final class DotationSuiviPresenter
                 $ordonnes,
                 count($ordonnes),
                 count(array_filter($ordonnes, fn (DotationBesoin $besoin): bool => !$this->estDonne($besoin))),
+                count(array_filter($ordonnes, $this->estPrepare(...))),
             );
         }
 
@@ -193,21 +198,32 @@ final class DotationSuiviPresenter
     }
 
     /**
-     * Lignes d'une même personne : ce qui reste à remettre d'abord, ce qui est déjà remis à la
-     * fin. Le tri de PHP étant stable, l'ordre du repository survit à l'intérieur de chaque bloc.
+     * Lignes d'une même personne, dans l'ordre du parcours : ce qui reste à sortir du carton,
+     * puis ce qui est préparé, puis ce qui est parti. Le tri de PHP étant stable, l'ordre du
+     * repository survit à l'intérieur de chaque bloc.
      *
      * @param list<DotationBesoin> $besoins
      *
      * @return list<DotationBesoin>
      */
-    private function remisesEnFin(array $besoins): array
+    private function parAvancement(array $besoins): array
     {
         usort(
             $besoins,
-            fn (DotationBesoin $a, DotationBesoin $b): int => $this->estDonne($a) <=> $this->estDonne($b),
+            fn (DotationBesoin $a, DotationBesoin $b): int => $this->rang($a) <=> $this->rang($b),
         );
 
         return $besoins;
+    }
+
+    /** Rang de la ligne dans le parcours : à donner, préparé, donné. */
+    private function rang(DotationBesoin $besoin): int
+    {
+        return match ($besoin->getStatut()) {
+            DotationBesoinStatut::A_DONNER => 0,
+            DotationBesoinStatut::PREPARE => 1,
+            DotationBesoinStatut::DONNE => 2,
+        };
     }
 
     /**
@@ -234,15 +250,26 @@ final class DotationSuiviPresenter
 
     private function estDonne(DotationBesoin $besoin): bool
     {
-        return $besoin->getStatut() === DotationBesoinStatut::DONNE;
+        return $besoin->getStatut()->estRemis();
     }
 
-    private function statutPour(int $donnes, int $total): DotationAvancementStatut
+    private function estPrepare(DotationBesoin $besoin): bool
+    {
+        return $besoin->getStatut()->estPrepare();
+    }
+
+    /**
+     * « Prête » ne se dit que d'une dotation entièrement mise de côté et pas encore entamée :
+     * dès qu'une ligne est partie, c'est la remise qui intéresse le club, et le badge compte
+     * les lignes remises plutôt que celles qui attendent.
+     */
+    private function statutPour(int $donnes, int $prepares, int $total): DotationAvancementStatut
     {
         return match (true) {
             $donnes === $total => DotationAvancementStatut::REMISE,
-            $donnes === 0 => DotationAvancementStatut::ATTENTE,
-            default => DotationAvancementStatut::PARTIELLE,
+            $donnes > 0 => DotationAvancementStatut::PARTIELLE,
+            $prepares === $total => DotationAvancementStatut::PREPAREE,
+            default => DotationAvancementStatut::ATTENTE,
         };
     }
 }

@@ -34,17 +34,57 @@
     white-space: nowrap;
 }
 
-/* Reprise de la saison sous les cartes — aligné sur la largeur de la grille du hub */
-.dashboard-season {
+/* — Reprise de la saison : la porte d'entrée du tableau de bord —
+   Elle passe avant la grille et prend l'accent du club. C'est la seule zone accentuée de
+   l'écran : les cartes du hub restent neutres, sans quoi on retomberait sur six portes
+   d'égale importance et le clic repartirait au hasard. Largeur alignée sur la grille. */
+.dashboard-saison-hero {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
     max-width: 860px;
     width: 100%;
-    margin: 1.5rem auto 0;
+    margin: 0 auto 1.5rem;
+    padding: 1.125rem 1.25rem;
+    background: var(--color-primary-light);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
-/* Le lien occupe toute la largeur de la grille : sans cela, le max-width du composant
-   .quicklink (420 px) le laisserait à mi-largeur des cartes du hub. */
-.dashboard-season .quicklink {
-    max-width: none;
+.dashboard-saison-hero:hover {
+    box-shadow: var(--shadow-card);
+    transform: translateY(-1px);
+}
+
+/* min-width: 0 — sans quoi le libellé d'une saison longue pousserait la bannière hors de
+   l'écran plutôt que de revenir à la ligne (§5, enfant de flex à min-width: auto). */
+.dashboard-saison-hero-title {
+    min-width: 0;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-text-base);
+}
+
+.dashboard-saison-hero-arrow {
+    margin-left: auto;
+    color: var(--color-primary);
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.dashboard-saison-hero:hover .dashboard-saison-hero-arrow {
+    transform: translateX(2px);
+}
+
+@media (min-width: 640px) {
+    .dashboard-saison-hero {
+        padding: 1.375rem 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-saison-hero-title { font-size: var(--font-size-2xl); }
 }
 
 /* Lien secondaire sous les cartes (gérer les saisons) */

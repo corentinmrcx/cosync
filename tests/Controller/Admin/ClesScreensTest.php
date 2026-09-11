@@ -25,12 +25,14 @@ final class ClesScreensTest extends WebTestCase
 
     private ?Season $season = null;
 
-    public function testLesDeuxEcransRepondent(): void
+    public function testLesEcransRepondent(): void
     {
         $client = static::createClient();
         $this->loginAdmin($client);
 
-        foreach (['/admin/cles', '/admin/cles/attestation'] as $url) {
+        $urls = ['/admin/cles', '/admin/cles/detenteurs', '/admin/cles/mouvements', '/admin/cles/attestation'];
+
+        foreach ($urls as $url) {
             $client->request('GET', $url);
             self::assertResponseIsSuccessful(sprintf('L\'écran %s doit répondre.', $url));
         }
@@ -44,7 +46,7 @@ final class ClesScreensTest extends WebTestCase
         $detenteur = $this->makeDetenteur('DUPONT', 'Thomas');
         $this->makeMouvement($detenteur, CleMouvementType::REMISE, 2, '2026-01-10');
 
-        $crawler = $client->request('GET', '/admin/cles');
+        $crawler = $client->request('GET', '/admin/cles/detenteurs');
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('DUPONT Thomas', $crawler->html());
@@ -58,7 +60,7 @@ final class ClesScreensTest extends WebTestCase
         $this->loginAdmin($client);
 
         $detenteur = $this->makeDetenteur();
-        $crawler = $client->request('GET', '/admin/cles');
+        $crawler = $client->request('GET', '/admin/cles/detenteurs');
         $token = $crawler->filter('form[action$="cles/mouvement"] input[name="_token"]')->attr('value');
 
         $client->request('POST', '/admin/cles/mouvement', [
@@ -69,7 +71,7 @@ final class ClesScreensTest extends WebTestCase
             'date_mouvement' => '2026-03-15',
         ]);
 
-        self::assertResponseRedirects('/admin/cles');
+        self::assertResponseRedirects('/admin/cles/detenteurs');
         self::assertSame(2, $this->soldeDe($detenteur));
     }
 
@@ -83,7 +85,7 @@ final class ClesScreensTest extends WebTestCase
         $this->loginAdmin($client);
 
         $dirigeant = $this->makeDirigeant('BERNARD', 'Alice');
-        $crawler = $client->request('GET', '/admin/cles');
+        $crawler = $client->request('GET', '/admin/cles/detenteurs');
         $token = $crawler->filter('form[action$="cles/mouvement"] input[name="_token"]')->attr('value');
 
         $client->request('POST', '/admin/cles/mouvement', [
@@ -94,7 +96,7 @@ final class ClesScreensTest extends WebTestCase
             'date_mouvement' => '2026-03-15',
         ]);
 
-        self::assertResponseRedirects('/admin/cles');
+        self::assertResponseRedirects('/admin/cles/detenteurs');
 
         $em = $this->em();
         $em->clear();
@@ -112,7 +114,7 @@ final class ClesScreensTest extends WebTestCase
         $detenteur = $this->makeDetenteur();
         $this->makeMouvement($detenteur, CleMouvementType::REMISE, 1, '2026-01-10');
 
-        $crawler = $client->request('GET', '/admin/cles');
+        $crawler = $client->request('GET', '/admin/cles/detenteurs');
         $token = $crawler->filter('form[action$="cles/mouvement"] input[name="_token"]')->attr('value');
 
         $client->request('POST', '/admin/cles/mouvement', [
@@ -123,7 +125,7 @@ final class ClesScreensTest extends WebTestCase
             'date_mouvement' => '2026-03-15',
         ]);
 
-        self::assertResponseRedirects('/admin/cles');
+        self::assertResponseRedirects('/admin/cles/detenteurs');
         self::assertSame(1, $this->soldeDe($detenteur), 'Le solde ne doit pas bouger.');
     }
 
@@ -139,9 +141,9 @@ final class ClesScreensTest extends WebTestCase
             'personne' => 'detenteur:' . $detenteur->getId(),
             'type' => 'remise',
             'quantite' => '1',
-        ], [], ['HTTP_REFERER' => '/admin/cles']);
+        ], [], ['HTTP_REFERER' => '/admin/cles/detenteurs']);
 
-        self::assertResponseRedirects('/admin/cles');
+        self::assertResponseRedirects('/admin/cles/detenteurs');
         self::assertSame(0, $this->soldeDe($detenteur));
     }
 
@@ -153,14 +155,14 @@ final class ClesScreensTest extends WebTestCase
         $detenteur = $this->makeDetenteur();
         $this->makeMouvement($detenteur, CleMouvementType::REMISE, 1, '2026-01-10');
 
-        $crawler = $client->request('GET', '/admin/cles');
+        $crawler = $client->request('GET', '/admin/cles/detenteurs');
         $token = $crawler->filter('form[action$="attestation/demander"] input[name="_token"]')->attr('value');
 
         $client->request('POST', '/admin/cles/detenteurs/' . $detenteur->getId() . '/attestation/demander', [
             '_token' => $token,
         ]);
 
-        self::assertResponseRedirects('/admin/cles');
+        self::assertResponseRedirects('/admin/cles/detenteurs');
 
         $attestation = $this->derniereAttestationDe($detenteur);
 
@@ -208,7 +210,7 @@ final class ClesScreensTest extends WebTestCase
             'qualite' => 'Mairie de Soudron',
         ]);
 
-        self::assertResponseRedirects('/admin/cles');
+        self::assertResponseRedirects('/admin/cles/detenteurs');
 
         $em = $this->em();
         $em->clear();
@@ -216,6 +218,35 @@ final class ClesScreensTest extends WebTestCase
 
         self::assertNotNull($detenteur);
         self::assertSame('Mairie de Soudron', $detenteur->getQualite());
+    }
+
+    /**
+     * L'historique garde **tout** : une restitution et une perte n'apparaissent nulle part
+     * ailleurs, s'en tenir aux derniers en date les ferait disparaître au mouvement suivant.
+     */
+    public function testLHistoriquePagineEtNOublieAucunMouvement(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $detenteur = $this->makeDetenteur('ANCIEN', 'Registre');
+
+        // 26 mouvements : une page pleine (25) et un débordement.
+        for ($i = 1; $i <= 13; ++$i) {
+            $this->makeMouvement($detenteur, CleMouvementType::REMISE, 1, sprintf('2026-01-%02d', $i));
+            $this->makeMouvement($detenteur, CleMouvementType::RESTITUTION, 1, sprintf('2026-02-%02d', $i));
+        }
+
+        $crawler = $client->request('GET', '/admin/cles/mouvements');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(25, $crawler->filter('tbody tr'), 'La première page est pleine.');
+        self::assertStringContainsString('26 mouvements', $crawler->html());
+
+        $suivante = $client->request('GET', '/admin/cles/mouvements?page=2');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $suivante->filter('tbody tr'), 'Le 26e mouvement est sur la page suivante.');
     }
 
     /** L'aperçu rend le vrai gabarit de l'attestation : c'est ce qui garde le PDF signé testé. */
