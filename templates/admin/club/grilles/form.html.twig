@@ -3,11 +3,14 @@
 
   Paramètres :
     grille       (GrilleTaille)
+    articles     (StockItem[]) articles du stock qui portent cette grille — ce qu'elle traduit
     cibles       (Taille[])  tout le référentiel de l'échelle — les libellés fournisseur
     declarables  (Taille[])  ce qu'une personne peut déclarer — les tailles couvrables
     nonCouvertes (string[])  tailles déclarables qu'aucune ligne ne traduit encore
 #}
 {% extends 'admin/layout.html.twig' %}
+
+{% import 'components/_stock_item_label.html.twig' as article %}
 
 {% set optionsCouvertures = declarables|map(t => {value: t.id, label: t.libelle}) %}
 {% set dejaCibles = grille.libellesCibles %}
@@ -53,6 +56,31 @@
             {% endif %}
         </div>
     </div>
+
+    {# Une grille ne traduit que ce qu'un article lui demande de traduire. Remplie mais
+       rattachée à aucun article, elle ne fait rien du tout — et c'est précisément ici, sur
+       l'écran où on la remplit, que l'oubli passait inaperçu : on vérifiait ses six lignes,
+       on repartait satisfait, le bon de commande continuait de demander du « 46 » pendant
+       que le stock dormait sous le « 44 » du fournisseur. #}
+    {% if articles is empty %}
+        <div class="grille-alerte">
+            <p><strong>Rattachée à aucun article — elle ne traduit rien.</strong> Tant qu'un
+            article du stock ne la porte pas, la taille déclarée sort telle quelle : la dotation
+            et le bon de commande demandent une déclinaison qui n'existe à aucun carton.</p>
+            <p>Le rattachement se fait depuis l'article, pas d'ici :
+            <strong>Stock → l'article → Modifier → champ « Grille de tailles »</strong>.
+            {% if peut_acceder('admin_stock_gestion') %}
+                <a href="{{ path('admin_stock_gestion') }}">Ouvrir la gestion du stock</a>
+            {% endif %}</p>
+        </div>
+    {% else %}
+        <p class="grille-usage">
+            Traduit les tailles de
+            {% for item in articles %}
+                <strong>{{ article.label(item) }}</strong>{% if not loop.last %}, {% endif %}
+            {%- endfor %}.
+        </p>
+    {% endif %}
 
     {# Information, pas alerte : ne rien traduire est le cas normal. Un fournisseur qui vend
        ses vestes enfant en « 140 » et ses vestes adulte en « L » n'a besoin d'une grille que

@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\GrilleTaille;
 use App\Entity\StockItem;
 use App\Enum\StockItemKind;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -54,6 +55,26 @@ class StockItemRepository extends ServiceEntityRepository
     public function countSubstituts(StockItem $officiel): int
     {
         return $this->count(['remplaceArticle' => $officiel]);
+    }
+
+    /**
+     * Articles qui portent cette grille — ce qu'elle traduit réellement.
+     *
+     * Les archivés compris : un article sorti du catalogue garde son stock rangé sous les
+     * déclinaisons de la grille, et c'est ce qui empêche de la supprimer.
+     *
+     * @return list<StockItem>
+     */
+    public function findByGrille(GrilleTaille $grille): array
+    {
+        return $this->createQueryBuilder('i')
+            ->where('i.grilleTaille = :grille')
+            ->setParameter('grille', $grille)
+            ->orderBy('i.nom', 'ASC')
+            ->addOrderBy('i.marque', 'ASC')
+            ->addOrderBy('i.couleur', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
     /**
