@@ -64,7 +64,7 @@ final class DashboardTest extends WebTestCase
         // Les grilles de tailles ne sont pas une entrée de plus : elles traduisent le
         // référentiel des tailles et se rejoignent depuis son écran.
         self::assertSame(
-            ['Identité de l\'association', 'Coordonnées bancaires', 'Relances automatiques', 'Catégories FFF', 'Tailles', 'Utilisateurs', 'Rôles'],
+            ['Identité de l\'association', 'Coordonnées bancaires', 'Relances automatiques', 'Catégories FFF', 'Tailles', 'Fonctions', 'Utilisateurs', 'Rôles'],
             $labels,
         );
     }

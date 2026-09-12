@@ -52,6 +52,13 @@
             route: 'admin_tailles_index',
             permission: 'club.referentiels'
         } only %}
+
+        {% include 'components/hub-card.html.twig' with {
+            icon: 'clipboard-list',
+            label: 'Fonctions',
+            route: 'admin_fonctions_index',
+            permission: 'club.referentiels'
+        } only %}
     {% endset %}
 
     {% if reglages|trim is not empty %}

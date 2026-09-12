@@ -1,0 +1,42 @@
+/* — Référentiel des fonctions (/admin/club/fonctions) —
+     La liste reprend la mise en page commune des référentiels (dot-*) ; seuls les
+     éléments propres aux fonctions sont définis ici. */
+
+.fonction-meta {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.fonction-badge-equipe {
+    display: inline-block;
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-muted);
+    color: var(--color-text-body);
+    font-weight: 600;
+}
+
+/* Fonction portée par un dirigeant : le bouton reste visible pour dire pourquoi c'est refusé. */
+.fonction-btn-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.fonction-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-body);
+    white-space: nowrap;
+}
+
+.fonction-form {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fonction-form .field-input { flex: 1 1 12rem; min-width: 0; }

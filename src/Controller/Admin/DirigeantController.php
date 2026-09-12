@@ -31,7 +31,9 @@ use App\Service\Effectif\SuppressionFicheService;
 use App\Service\Licencie\HistoriqueFicheService;
 use App\Service\Mail\DernierContactResolver;
 use App\Service\Mail\DirigeantLinkService;
+use App\Service\Referentiel\FonctionPresenter;
 use App\Service\Ui\ListFilterMemory;
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -60,6 +62,7 @@ class DirigeantController extends AbstractController
         private readonly SuppressionFicheService $suppressionService,
         private readonly DirigeantStatutResolver $statutResolver,
         private readonly FicheActionsResolver $ficheActions,
+        private readonly FonctionPresenter $fonctionPresenter,
     ) {}
 
     #[Route('', name: 'list')]
@@ -402,6 +405,7 @@ class DirigeantController extends AbstractController
                     'form' => $form,
                     'dirigeant' => null,
                     'roleOptions' => DirigeantRole::options(),
+                    'fonctionOptions' => $this->fonctionPresenter->options(),
                     'licenciesSizes' => $this->formPrefill->parUuid($season),
                 ]);
             }
@@ -428,6 +432,7 @@ class DirigeantController extends AbstractController
             'form' => $form,
             'dirigeant' => null,
             'roleOptions' => DirigeantRole::options(),
+            'fonctionOptions' => $this->fonctionPresenter->options(),
             'licenciesSizes' => $this->formPrefill->parUuid($season),
         ]);
     }
@@ -441,6 +446,9 @@ class DirigeantController extends AbstractController
 
         return $this->render('admin/dirigeants/show.html.twig', [
             'dirigeant' => $dirigeant,
+            // Le nom de l'équipe entre dans certaines fonctions : la mise en forme est du
+            // métier, elle se fait ici et pas dans le template.
+            'fonctions' => $this->fonctionPresenter->libelles($dirigeant),
             'dotations' => $this->stockMovementRepo->findDotationsByDirigeant($dirigeant),
             'history' => $this->historiqueService->pourDirigeant($dirigeant),
             // Cf. la fiche licencié : voir la date du dernier mail évite la relance en double.
@@ -525,6 +533,9 @@ class DirigeantController extends AbstractController
         $data->telephone = $dirigeant->getTelephone();
         $data->dateNaissance = $dirigeant->getDateNaissance();
         $data->role = $dirigeant->getRole();
+        // Copie : hydrate() vide la collection du DTO, et la partager avec celle du
+        // dirigeant reviendrait à effacer ses fonctions avant même d'avoir lu le formulaire.
+        $data->fonctions = new ArrayCollection($dirigeant->getFonctions()->toArray());
         $data->tailleHaut = $dirigeant->getTailleHaut();
         $data->tailleBas = $dirigeant->getTailleBas();
         $data->pointure = $dirigeant->getPointure();
@@ -551,6 +562,7 @@ class DirigeantController extends AbstractController
             'form' => $form,
             'dirigeant' => $dirigeant,
             'roleOptions' => DirigeantRole::options(),
+            'fonctionOptions' => $this->fonctionPresenter->options(),
             'licenciesSizes' => $this->formPrefill->parUuid($season),
         ]);
     }

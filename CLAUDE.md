@@ -236,6 +236,12 @@ Chacun a déjà cassé quelque chose sans lever d'erreur.
 
 - **`Category::isJeune()`, jamais `isEcoleFoot`** pour décider d'un comportement : `is_ecole_foot`
   est saisi en admin mais aucune logique ne le lit.
+- **`DirigeantRole` groupe, `Fonction` nomme.** Le rôle dit ce que l'application doit à la
+  personne (kit, charte, filtre) ; ce qu'elle *fait* et qu'on déclare à un tiers est une
+  `Fonction`, référentiel de club, plusieurs par fiche. Ne jamais imprimer `role.label()` sur un
+  document sortant : `RESPONSABLE_FOOT` couvre tout le bureau du foot sans titrer personne.
+  Passer par `DetenteurFonctionResolver` / `FonctionPresenter`. Et ne pas ajouter de cas au rôle
+  pour nommer quelqu'un — chacun devient une cible de plus dans les dotations et les documents.
 - **« A payé » se lit `LicenceStatus::estSolde()` / `DossierClub::estSoldee()`**, jamais
   `=== VALIDATED` : payé et validé-FootClubs sont deux faits distincts.
 - **« Dotation pas encore remise » se lit `DotationBesoinStatut::resteAServir()`**, jamais
@@ -292,3 +298,8 @@ ou un fix. Nommage : `type: description courte` (`feat`, `fix`, `refactor`, `sty
 
 **Jamais** : commit direct sur `main`/`production`, `push --force` sur une branche protégée,
 plusieurs features sans rapport dans un même commit.
+
+⚠️ **Ne jamais commiter sans qu'on l'ait demandé.** Le travail se termine sur un arbre modifié
+et un compte rendu de ce qui a changé ; c'est Corentin qui décide de ce qui entre dans
+l'historique, et quand. Vaut aussi pour `git add`, `push`, et pour la création d'une branche.
+Et pour les commits, ne jamais te mettre coauteur. Et un commit en une ligne ou deux grand max. 

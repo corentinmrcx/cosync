@@ -143,7 +143,7 @@ enum Permission: string
             self::CLUB_IDENTITE => 'Identité de l\'association',
             self::CLUB_RIB => 'Coordonnées bancaires',
             self::CLUB_RELANCES => 'Relances automatiques',
-            self::CLUB_REFERENTIELS => 'Catégories FFF et tailles',
+            self::CLUB_REFERENTIELS => 'Catégories FFF, tailles et fonctions',
             self::UTILISATEUR_GERER => 'Gérer les comptes et les rôles',
 
             self::DIAGNOSTIC_ACCEDER => 'Accéder au diagnostic',
@@ -191,7 +191,7 @@ enum Permission: string
             self::CLUB_IDENTITE => 'Raison sociale, adresse, SIRET, et le signataire des attestations — ce qui engage l\'association.',
             self::CLUB_RIB => 'Changer le RIB proposé au licencié pour régler par virement.',
             self::CLUB_RELANCES => 'Allumer la relance automatique, régler son délai et son plafond.',
-            self::CLUB_REFERENTIELS => 'Entretenir les catégories FFF et le référentiel des tailles.',
+            self::CLUB_REFERENTIELS => 'Entretenir les catégories FFF, le référentiel des tailles et celui des fonctions du club.',
             self::UTILISATEUR_GERER => 'Créer des comptes, changer leurs rôles, définir les rôles eux-mêmes.',
 
             self::DIAGNOSTIC_ACCEDER => 'Purge des données, mode bêta, mails de test. Réservé au super-admin.',

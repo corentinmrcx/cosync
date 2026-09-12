@@ -25,6 +25,7 @@ final class AttestationCleRecapPdfService
             'rows' => $rows,
             'saisonLabel' => $season->getLabel(),
             'logoDataUrl' => $this->assets->logoClub(),
+            'foyerLogoDataUrl' => $this->assets->logoFoyer(),
             'generatedAt' => new \DateTimeImmutable(),
         ]);
     }

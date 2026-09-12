@@ -18,6 +18,7 @@ sont assumés, pas à « corriger ».
 - [Stock — écoulement, notes, correction, retrait](#stock--écoulement-notes-correction-retrait)
 - [Dotations — qui reçoit quel kit, préparation, flocage](#dotations--qui-reçoit-quel-kit-préparation-flocage)
 - [Dirigeants — licence administrative](#dirigeants--licence-administrative)
+- [Rôle et fonction — l'application groupe, le club nomme](#rôle-et-fonction--lapplication-groupe-le-club-nomme)
 - [Attestations de paiement](#attestations-de-paiement)
 - [Mails — journal, relance automatique](#mails--journal-relance-automatique)
 - [ClubSettings — identité de l'association](#clubsettings--identité-de-lassociation)
@@ -417,6 +418,55 @@ oublier l'un des trois.
 
 ---
 
+## Rôle et fonction — l'application groupe, le club nomme
+
+Deux questions différentes, longtemps posées au même champ :
+
+| Question | Où ça vit | Ce que ça déclenche |
+|---|---|---|
+| Qu'est-ce que l'application **doit** à cette personne ? | `DirigeantRole`, enum fermé de trois cas | Un kit (`DotationAffectation.role`), une charte à signer (`DocumentSignable.roles`), un filtre d'effectif |
+| Qu'est-ce que cette personne **fait** ? | `Fonction`, référentiel de club, plusieurs par fiche | Rien — c'est une déclaration, elle sort sur les documents remis à un tiers |
+
+Le déclencheur : la mairie demande la fonction des détenteurs de clés. Le récapitulatif ne
+disposait que du rôle, et `RESPONSABLE_FOOT` **groupe** les membres du bureau du foot sans en
+titrer aucun. Le document annonçait donc quatre « Responsable foot » là où le club n'a qu'un
+responsable de section — le reste étant coordinateur général, en charge de l'école de foot,
+entraîneur.
+
+**Pourquoi pas des cas de plus dans l'enum.** Les intitulés officiels sont individuels
+(« Entraîneur des U16 et contribue à l'organisation du foot ») : on aurait obtenu quinze cas
+utilisés une fois chacun — de la saisie libre déguisée — et quinze cibles de plus dans l'écran
+d'affectation des dotations et dans le ciblage des documents, là où trois ont un sens. Le rôle
+est resté à trois cas ; seul son libellé d'écran est passé à « Bureau du foot », qui ne titre
+personne.
+
+- **Plusieurs fonctions par fiche.** Marlène est en charge de l'école de foot *et* contribue à
+  l'organisation : c'est exactement ce qu'un libellé unique ne savait pas dire. Elles s'affichent
+  dans l'ordre du référentiel, séparées par ` · ` (`FonctionPresenter`).
+- **`Fonction.porteEquipe` reprend l'équipe de la fiche** au lieu de la recopier dans le libellé :
+  une seule entrée « Entraîneur » rend « Entraîneur U16 », « Entraîneur Séniors », et suit le
+  dirigeant qui change d'équipe l'année suivante. Choisir des libellés qui **tiennent seuls** :
+  sans équipe sur la fiche, le libellé nu s'affiche (« Entraîneur des » serait cassé).
+- **Les fonctions vivent sur le `Dirigeant`, donc par saison**, comme le rôle, et comme lui
+  l'import FootClubs n'y touche jamais. Le document de cette saison ne doit pas afficher les
+  fonctions de la précédente ; en contrepartie elles se reposent chaque année.
+- **Le libellé d'une fonction se corrige librement**, contrairement à celui d'une taille : il
+  n'est recopié nulle part, tout ce qui l'affiche le relit. En revanche une fonction **portée par
+  quelqu'un ne se supprime plus** — elle disparaîtrait des fiches et du récapitulatif sans que
+  rien ne le dise.
+- **`DetenteurFonctionResolver` décide de ce qui s'imprime**, dans cet ordre : fonctions déclarées
+  → `Detenteur.qualite` (« Mairie de Soudron », pour qui n'est pas à l'effectif) → repli **dérivé**
+  du rôle, jamais son libellé d'écran. Le repli n'est jamais vide : une case blanche sur un
+  document officiel se lit comme un oubli.
+- La phrase est calculée **une fois**, dans `CleRegistrePresenter`, et portée par
+  `CleRegistreRow.fonction` : l'écran du registre et le récapitulatif de la mairie la lisent au
+  même endroit. Deux calculs auraient fini par diverger, et l'écran aurait annoncé « Bureau du
+  foot » pendant que le document nommait « Coordinateur général ».
+- La liste de départ est posée par `app:seed-referential`, idempotente ; l'affectation aux
+  personnes se fait à la main sur les fiches.
+
+---
+
 ## Attestations de paiement
 
 Un employeur ou un CE rembourse tout ou partie d'une licence sur présentation d'une attestation.
@@ -680,12 +730,30 @@ AttestationCle // append-only : detenteur, season, signed_at, nb_cles, drive_pat
 - `Detenteur` n'est **pas** un `Dirigeant` : ce dernier est cloisonné par saison et ne fournit donc
   aucune identité stable. Le rapprochement des deux se fait dans `DetenteurEffectifResolver`, sur le
   numéro de licence puis sur le nom.
+- **Seule une personne extérieure se corrige au registre** (`/admin/cles/detenteurs/{id}/modifier`).
+  La `qualite` en est la raison d'être : c'est elle qui s'imprime en face d'un extérieur sur le
+  récapitulatif de la mairie, et sans écran pour la poser, une fiche créée sans elle restait
+  « Détenteur extérieur au club » définitivement.
+  Une fiche **rattachée à l'effectif est refusée** — pas seulement masquée : son identité
+  appartient à la fiche dirigeant, que `DetenteurService::depuisDirigeant()` réécrit à chaque
+  mouvement et que l'import réaligne. Un nom corrigé ici serait écrasé sans prévenir, ou pire,
+  survivrait et **décrocherait la fiche du registre**, dont le rapprochement retombe sur le nom
+  faute de licence.
+  Le test est `DetenteurEffectifResolver::estRattacheALEffectif()`, et il ignore la saison à
+  dessein : un ex-dirigeant hors effectif cette année revient au prochain import, et sa fiche
+  redevient alors alimentée par l'effectif. C'est pourquoi `CleRegistreRow` porte
+  `rattacheALEffectif` (le club, toutes saisons) **en plus** de `dirigeantSaison` (la saison
+  affichée) : deux faits voisins, deux usages.
 - Un détenteur qui n'est plus à l'effectif **reste visible**, en alerte « hors effectif ». Ses clés
   sont dehors : le faire disparaître serait mentir.
 - `AttestationCle` est append-only : une re-signature ajoute une ligne, elle n'écrase pas la
   précédente. Les deux PDF font foi à leur date.
 - La campagne de renouvellement est **manuelle** (`AttestationCleService::lancerCampagne`). Aucun
   mail ne part sans décision de l'admin.
+- Le **récapitulatif remis à la mairie** porte la fonction de chaque détenteur, résolue par
+  `DetenteurFonctionResolver` — cf. [Rôle et fonction](#rôle-et-fonction--lapplication-groupe-le-club-nomme).
+  Il suit le gabarit commun des PDF (`pdf/_layout.html.twig`, les deux logos) : un document qui
+  sort du club se reconnaît à son en-tête.
 - Le formulaire public suit la même ossature que les signatures licencié / dirigeant : titre,
   règlement dans son cadre défilant, puis la formule reprise du registre au-dessus de la signature.
   **Dès que le club a rédigé un `attestationCleText`, sa lecture s'impose** — la case « J'atteste »

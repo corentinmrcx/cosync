@@ -119,6 +119,30 @@
             </div>
         </div>
 
+        {# Le rôle dit ce que l'application doit à la personne, la fonction dit ce qu'elle
+           fait — c'est la seconde qui sort sur les documents remis à un tiers. Les coches
+           sont rendues par le composant Alpine ; le widget Symfony est marqué rendu pour que
+           form_end() ne les affiche pas une seconde fois. #}
+        {% do form.fonctions.setRendered %}
+        <div class="field">
+            <span class="field-label">Fonctions</span>
+            {% include 'components/multi-select.html.twig' with {
+                ms_name: field_name(form.fonctions) ~ '[]',
+                ms_options: fonctionOptions,
+                ms_selected: form.fonctions.vars.value,
+                ms_placeholder: '— Aucune fonction déclarée —',
+                ms_unite: 'fonctions',
+                ms_recherche: true,
+            } %}
+            <p class="field-hint">
+                Ce que la personne fait, tel qu'on le déclare à la mairie ou au conseil
+                d'administration. « (+ équipe) » signale une fonction suivie du nom de
+                l'équipe choisie ci-dessus. Le référentiel se règle dans
+                <em>Le club → Fonctions</em>.
+            </p>
+            {{ form_errors(form.fonctions) }}
+        </div>
+
         <hr class="season-form-divider">
 
         {# ── Licence administrative ──

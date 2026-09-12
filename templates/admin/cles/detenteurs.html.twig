@@ -71,7 +71,10 @@
                     {% for ligne in lignes %}
                         {% set detenteur = ligne.detenteur() %}
                         {% set etat = ligne.etatAttestation() %}
-                        {% set qualite = ligne.dirigeantSaison ? ligne.dirigeantSaison.role.label() : detenteur.qualite %}
+                        {# La même phrase que le récapitulatif remis à la mairie : le rôle du
+                           dirigeant groupe, il ne nomme pas — l'écran ne doit pas dire « Bureau
+                           du foot » là où le document dit « Coordinateur général ». #}
+                        {% set qualite = ligne.fonction %}
                         <tr>
                             <td class="carte-titre">
                                 <span class="cles-nom">{{ detenteur.nomPrenom }}</span>
@@ -110,7 +113,10 @@
                             </td>
                             <td class="table-actions">
                                 {% set peutRenvoyer = ligne.attendSignature() and detenteur.email and peut_acceder('admin_cles_demander_signature') %}
-                                {% if peutRenvoyer or peut_acceder('admin_cles_mouvement') %}
+                                {# Seule une personne extérieure se modifie ici : celle de l'effectif
+                                   tient son identité de sa fiche dirigeant, et le contrôleur refuse. #}
+                                {% set peutModifier = not ligne.rattacheALEffectif and peut_acceder('admin_cles_detenteur_modifier') %}
+                                {% if peutRenvoyer or peutModifier or peut_acceder('admin_cles_mouvement') %}
                                     {# Menu « ⋯ » : « Renvoyer le lien » + « Mouvement » côte à côte élargissaient la
                                        colonne d'une ligne à l'autre. Panneau ancré en position fixe (`menuLigne`),
                                        sinon le `.table-wrapper` le rognerait et ferait une barre de défilement. #}
@@ -161,6 +167,13 @@
                                                     {{ ui.icon('key', 14) }}
                                                     Enregistrer un mouvement
                                                 </button>
+                                            {% endif %}
+                                            {% if peutModifier %}
+                                                {# garde : peutModifier inclut peut_acceder('admin_cles_detenteur_modifier') #}
+                                                <a href="{{ path('admin_cles_detenteur_modifier', {id: detenteur.id}) }}" class="fiche-menu-item">
+                                                    {{ ui.icon('edit', 14) }}
+                                                    Modifier la fiche
+                                                </a>
                                             {% endif %}
                                         </div>
                                     </div>

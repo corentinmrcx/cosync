@@ -6,10 +6,13 @@ use App\Entity\AttestationCle;
 use App\Entity\CleMouvement;
 use App\Entity\Detenteur;
 use App\Entity\Dirigeant;
+use App\Entity\Fonction;
 use App\Entity\Season;
 use App\Entity\User;
 use App\Enum\CleMouvementType;
+use App\Enum\DirigeantRole;
 use App\Repository\AttestationCleRepository;
+use App\Service\Cle\AttestationCleRecapService;
 use App\Tests\Support\EditeurRicheAssertions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -218,6 +221,147 @@ final class ClesScreensTest extends WebTestCase
 
         self::assertNotNull($detenteur);
         self::assertSame('Mairie de Soudron', $detenteur->getQualite());
+    }
+
+    /**
+     * La qualité est ce qui s'imprime en face d'un extérieur sur le récapitulatif de la
+     * mairie. Sans écran pour la poser après coup, une fiche entrée sans elle restait
+     * « Détenteur extérieur au club » définitivement.
+     */
+    public function testLaQualiteDUnDetenteurExterieurSeCorrigeApresCoup(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $detenteur = $this->makeDetenteur('COMMUNE', 'Soudron');
+        $this->makeMouvement($detenteur, CleMouvementType::REMISE, 1, '2025-09-01');
+
+        $url = '/admin/cles/detenteurs/' . $detenteur->getId() . '/modifier';
+        $crawler = $client->request('GET', $url);
+        self::assertResponseIsSuccessful();
+
+        $client->request('POST', $url, [
+            '_token' => $crawler->filter('form input[name="_token"]')->attr('value'),
+            'nom' => 'COMMUNE',
+            'prenom' => 'Soudron',
+            'qualite' => 'Mairie de Soudron',
+            'email' => 'mairie@soudron.test',
+            'telephone' => '',
+        ]);
+
+        self::assertResponseRedirects('/admin/cles/detenteurs');
+
+        $em = $this->em();
+        $em->clear();
+        self::assertSame(
+            'Mairie de Soudron',
+            $em->getRepository(Detenteur::class)->find($detenteur->getId())->getQualite(),
+        );
+
+        // Et c'est bien elle qui part sur le document remis à la mairie.
+        $lignes = self::getContainer()->get(AttestationCleRecapService::class)->buildRows($this->season);
+        self::assertSame('Mairie de Soudron', $lignes[0]->fonction);
+    }
+
+    /**
+     * Une fiche rattachée à l'effectif tient son identité de sa fiche dirigeant, réécrite à
+     * chaque mouvement et réalignée par l'import. La corriger ici la ferait diverger de
+     * FootClubs — et comme le rapprochement retombe sur le nom faute de licence, la fiche
+     * décrocherait du registre. L'écran ne le propose pas, et le contrôleur le refuse.
+     */
+    public function testUnDetenteurDeLEffectifNeSeModifiePasDepuisLeRegistre(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $this->makeDirigeant('MARCOUX', 'Corentin');
+        $detenteur = $this->makeDetenteur('MARCOUX', 'Corentin');
+        $this->makeMouvement($detenteur, CleMouvementType::REMISE, 1, '2025-09-01');
+
+        $url = '/admin/cles/detenteurs/' . $detenteur->getId() . '/modifier';
+
+        $crawler = $client->request('GET', '/admin/cles/detenteurs');
+        self::assertCount(
+            0,
+            $crawler->filter('a[href="' . $url . '"]'),
+            'Le registre ne doit pas offrir un geste que le contrôleur refusera.',
+        );
+
+        $client->request('GET', $url);
+        self::assertResponseRedirects('/admin/cles/detenteurs');
+    }
+
+    /**
+     * Même un ex-dirigeant, absent de l'effectif de la saison : il revient au prochain
+     * import, et son nom corrigé entre-temps décrocherait sa fiche du registre.
+     */
+    public function testUnAncienDirigeantHorsEffectifResteProtege(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        // Dirigeant d'une autre saison : hors de l'effectif affiché, mais du club quand même.
+        $ancienne = (new Season())->setLabel('2024-2025')->setCotisationDefaut(80);
+        $this->em()->persist($ancienne);
+        $parti = (new Dirigeant())->setNom('PARTI')->setPrenom('Jean')->setSeason($ancienne);
+        $this->em()->persist($parti);
+        $this->em()->flush();
+
+        $detenteur = $this->makeDetenteur('PARTI', 'Jean');
+        $this->makeMouvement($detenteur, CleMouvementType::REMISE, 1, '2025-09-01');
+
+        $client->request('GET', '/admin/cles/detenteurs/' . $detenteur->getId() . '/modifier');
+
+        self::assertResponseRedirects('/admin/cles/detenteurs');
+    }
+
+    /** Deux fiches pour une personne répartiraient ses clés sur deux lignes du registre. */
+    public function testRenommerUnDetenteurVersUnHomonymeDuRegistreEstRefuse(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $this->makeDetenteur('MARTIN', 'Kevin');
+        $autre = $this->makeDetenteur('COMMUNE', 'Soudron');
+
+        $url = '/admin/cles/detenteurs/' . $autre->getId() . '/modifier';
+        $crawler = $client->request('GET', $url);
+
+        $client->request('POST', $url, [
+            '_token' => $crawler->filter('form input[name="_token"]')->attr('value'),
+            'nom' => 'MARTIN',
+            'prenom' => 'Kevin',
+        ]);
+
+        $em = $this->em();
+        $em->clear();
+        self::assertSame('COMMUNE', $em->getRepository(Detenteur::class)->find($autre->getId())->getNom());
+    }
+
+    /**
+     * L'écran et le récapitulatif doivent dire la même chose : le rôle d'un dirigeant
+     * groupe — quatre personnes partagent « Bureau du foot » — là où la fonction nomme.
+     */
+    public function testLeRegistreAfficheLaFonctionEtNonLeRoleDuDirigeant(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $dirigeant = $this->makeDirigeant('MARCOUX', 'Corentin');
+        $dirigeant->setRole(DirigeantRole::RESPONSABLE_FOOT);
+
+        $fonction = (new Fonction())->setLibelle('Coordinateur général')->setPorteEquipe(false)->setPosition(0);
+        $this->em()->persist($fonction);
+        $dirigeant->addFonction($fonction);
+
+        $detenteur = $this->makeDetenteur('MARCOUX', 'Corentin');
+        $this->em()->flush();
+        $this->makeMouvement($detenteur, CleMouvementType::REMISE, 1, '2025-09-01');
+
+        $crawler = $client->request('GET', '/admin/cles/detenteurs');
+
+        self::assertStringContainsString('Coordinateur général', $crawler->filter('table')->text());
+        self::assertStringNotContainsString('Bureau du foot', $crawler->filter('table')->text());
     }
 
     /**
