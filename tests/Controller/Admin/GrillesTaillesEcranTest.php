@@ -107,6 +107,9 @@ final class GrillesTaillesEcranTest extends WebTestCase
         $client = $this->loginAdmin();
         $grille = $this->creerGrille('Chaussettes Nike', TailleType::POINTURE);
         $this->ajouterLigne($client, $grille, '43-46', ['43', '44']);
+        // Grille en service : c'est bien ce qui passe sans traduction qu'on regarde ici, pas
+        // une grille branchée nulle part — celle-là a son alerte, et pour une autre raison.
+        $this->rattacher($grille);
 
         $crawler = $client->request('GET', '/admin/club/grilles-tailles/' . $grille->getId());
 
@@ -127,6 +130,58 @@ final class GrillesTaillesEcranTest extends WebTestCase
             'Servies telles quelles',
             $html,
             'Sur une grille vide, tout passe tel quel par construction : lister l\'échelle entière serait du bruit.',
+        );
+    }
+
+    /**
+     * Trois grilles parfaitement remplies, rattachées à aucun article, ont traversé une saison
+     * sans rien traduire : le club a commandé 80 articles au lieu de 55. L'information était
+     * pourtant à l'écran — en gris, dans la même phrase que « Pointure · 6 lignes ». C'est
+     * l'habillage qui a failli, pas le calcul.
+     */
+    public function testUneGrilleRattacheeAAucunArticleSeVoitCommeUneAnomalie(): void
+    {
+        $client = $this->loginAdmin();
+        $grille = $this->creerGrille('Chaussettes Erima', TailleType::POINTURE);
+        $this->ajouterLigne($client, $grille, '43-46', ['43', '44']);
+
+        $liste = $client->request('GET', '/admin/club/grilles-tailles');
+
+        self::assertCount(1, $liste->filter('.grille-badge-orpheline'));
+        self::assertStringContainsString(
+            'elle ne traduit rien',
+            $liste->filter('.grille-badge-orpheline')->text(),
+            'Le fait brut ne suffit pas : c\'est la conséquence qui n\'a pas été comprise.',
+        );
+
+        $fiche = $client->request('GET', '/admin/club/grilles-tailles/' . $grille->getId());
+
+        self::assertCount(
+            1,
+            $fiche->filter('.grille-alerte'),
+            'L\'écran où l\'on remplit la grille est celui où l\'oubli passait inaperçu.',
+        );
+        self::assertStringContainsString(
+            'Grille de tailles',
+            $fiche->filter('.grille-alerte')->text(),
+            'La marche à suivre, pas seulement le constat : le rattachement se fait depuis l\'article.',
+        );
+    }
+
+    public function testUneGrilleEnServiceDitCeQuElleTraduit(): void
+    {
+        $client = $this->loginAdmin();
+        $grille = $this->creerGrille('Chaussettes Erima', TailleType::POINTURE);
+
+        $this->rattacher($grille);
+
+        $fiche = $client->request('GET', '/admin/club/grilles-tailles/' . $grille->getId());
+
+        self::assertCount(0, $fiche->filter('.grille-alerte'));
+        self::assertStringContainsString(
+            'Chaussettes · Erima · Noir',
+            $fiche->filter('.grille-usage')->text(),
+            'Plusieurs articles portent le même nom : la désignation complète est la règle (§5).',
         );
     }
 
@@ -176,6 +231,24 @@ final class GrillesTaillesEcranTest extends WebTestCase
                 $couvertes,
             ),
         ]);
+    }
+
+    /** Article du stock qui porte la grille : c'est ce rattachement qui la fait traduire. */
+    private function rattacher(GrilleTaille $grille): StockItem
+    {
+        $article = (new StockItem())
+            ->setNom('Chaussettes')
+            ->setMarque('Erima')
+            ->setCouleur('Noir')
+            ->setTypeVetement(StockItemVetementType::CHAUSSURES);
+        // Une requête HTTP a pu réinitialiser le gestionnaire : on rattache la grille telle
+        // qu'il la connaît maintenant, pas l'instance créée avant l'appel.
+        $article->setGrilleTaille($this->em->getReference(GrilleTaille::class, $grille->getId()));
+
+        $this->em->persist($article);
+        $this->em->flush();
+
+        return $article;
     }
 
     private function creerGrille(string $nom, TailleType $type): GrilleTaille

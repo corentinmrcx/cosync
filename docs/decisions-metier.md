@@ -177,6 +177,12 @@ StockItem          // grilleTaille: ?GrilleTaille
 - **`grilleTaille` nullable = pas de traduction**, et c'est le cas courant : le maillot adulte se
   vend dans les tailles du formulaire. On ne crée une grille que quand le fournisseur a son propre
   barème.
+- **Une grille que ne porte aucun article ne traduit rien**, et c'est l'oubli le plus coûteux :
+  trois grilles parfaitement remplies ont traversé une saison sans être rattachées à un article,
+  le club a commandé 80 chaussettes au lieu de 55. Le fait était pourtant à l'écran — « Aucun
+  article », en gris, au même rang que « Pointure · 6 lignes ». Une anomalie habillée en état
+  normal n'est pas une information : la liste et l'écran de remplissage la disent maintenant avec
+  sa conséquence, et le rattachement se fait depuis la fiche de l'article.
 - **Une taille déclarée mène à un seul libellé.** `GrilleTailleService` refuse le chevauchement :
   deux plages pour une même pointure rendraient la traduction indécidable.
 - **Une grille ne traduit que ce qu'elle mentionne** : une taille qu'aucune ligne ne couvre passe

@@ -69,12 +69,16 @@
                             <span class="grille-meta">
                                 {{ grille.type.label() }}
                                 · {{ grille.valeurs|length }} ligne{{ grille.valeurs|length > 1 ? 's' : '' }}
-                                {% if articles %}
-                                    · {{ articles }} article{{ articles > 1 ? 's' : '' }}
-                                {% else %}
-                                    · <span class="grille-badge-libre">Aucun article</span>
-                                {% endif %}
+                                {% if articles %} · {{ articles }} article{{ articles > 1 ? 's' : '' }}{% endif %}
                             </span>
+                            {# Le fait brut — « Aucun article », en gris, dans la même phrase que
+                               « Pointure · 6 lignes » — se lisait comme un état normal. Trois grilles
+                               parfaitement remplies mais branchées nulle part ont ainsi traversé une
+                               saison entière sans rien traduire : le déclaré sortait tel quel au bon de
+                               commande pendant que le stock dormait sous l'étiquette du fournisseur. #}
+                            {% if not articles %}
+                                <span class="grille-badge-orpheline">Rattachée à aucun article — elle ne traduit rien</span>
+                            {% endif %}
                         </div>
                         <div class="dot-list-actions">
                             <a href="{{ path('admin_grilles_show', {id: grille.id}) }}" class="btn btn-secondary btn-sm">Modifier</a>

@@ -9,20 +9,30 @@
     color: var(--color-text-muted);
 }
 
-.grille-badge-libre,
+/* Une grille que ne porte aucun article ne traduit rien : c'est une anomalie, pas une
+   disponibilité. Elle sort donc de la phrase de métadonnées — elle se lisait au même rang
+   que « Pointure · 6 lignes » — et prend sa ligne, dans le registre de l'alerte. */
+.grille-badge-orpheline {
+    display: inline-block;
+    margin-top: 0.2rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+/* Une ligne qui ne couvre rien ne traduit rien non plus, mais l'anomalie ne porte que sur
+   elle : elle reste dans la phrase de sa ligne. Texte en --color-warning-text, l'ambre de
+   --color-warning ne se lisant pas sur son propre fond. */
 .grille-badge-vide {
     display: inline-block;
     padding: 0.05rem 0.4rem;
     border-radius: var(--radius-sm);
-    background: var(--color-bg-muted);
-    color: var(--color-text-body);
-    font-weight: 600;
-}
-
-/* Une ligne qui ne couvre rien ne traduit rien : elle mérite d'être signalée. */
-.grille-badge-vide {
     background: var(--color-warning-bg);
-    color: var(--color-warning);
+    color: var(--color-warning-text);
+    font-weight: 600;
 }
 
 /* Grille en service : le bouton reste visible pour dire pourquoi c'est refusé. */
@@ -32,7 +42,10 @@
 }
 
 .grille-alerte {
-    margin: 0 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
     padding: 0.65rem 0.85rem;
     border-left: 3px solid var(--color-warning);
     border-radius: var(--radius-sm);
@@ -41,10 +54,25 @@
     font-size: var(--font-size-sm);
 }
 
+.grille-alerte p { margin: 0; }
+
+/* Ce que la grille traduit réellement : l'écran de remplissage ne le disait pas, et une
+   grille remplie se vérifiait ligne à ligne sans qu'on apprenne jamais qu'elle n'était
+   branchée nulle part. */
+.grille-usage {
+    margin: 0;
+    padding: 0.65rem 0.85rem;
+    border-left: 3px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-muted);
+    color: var(--color-text-body);
+    font-size: var(--font-size-sm);
+}
+
 /* Ce qui passe sans traduction est le cas normal : registre de l'information, pas de
    l'alerte. En orange, l'écran réclamait une ligne « L couvre L » qui n'apprend rien. */
 .grille-info {
-    margin: 0 0 1rem;
+    margin: 0;
     padding: 0.65rem 0.85rem;
     border-left: 3px solid var(--color-info);
     border-radius: var(--radius-sm);
