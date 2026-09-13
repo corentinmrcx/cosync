@@ -22,6 +22,21 @@ final class CleRegistreRow
         public readonly ?Dirigeant $dirigeantSaison,
         /** La dernière attestation de la saison affichée — null si aucune n'a jamais été demandée */
         public readonly ?AttestationCle $attestation,
+        /**
+         * Ce que la personne fait dans le club, tel qu'on l'écrit à un tiers — résolu par
+         * {@see \App\Service\Cle\DetenteurFonctionResolver}. Calculé ici plutôt que dans
+         * chaque template : l'écran et le récapitulatif de la mairie doivent dire la même
+         * chose, faute de quoi l'un annonce « Bureau du foot » pendant que l'autre nomme.
+         */
+        public readonly string $fonction = '',
+        /**
+         * Cette personne appartient-elle au club, toutes saisons confondues ? Distinct de
+         * `dirigeantSaison`, qui ne parle que de la saison affichée : un ex-dirigeant en est
+         * absent, et sa fiche n'en reste pas moins tenue par l'effectif dès qu'un import le
+         * ramène. C'est ce fait-là, et non celui de la saison, qui décide si l'identité se
+         * corrige au registre.
+         */
+        public readonly bool $rattacheALEffectif = false,
     ) {}
 
     public function detenteur(): Detenteur

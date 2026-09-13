@@ -3,10 +3,12 @@
 namespace App\Form;
 
 use App\DTO\DirigeantData;
+use App\Entity\Fonction;
 use App\Entity\Licencie;
 use App\Entity\Team;
 use App\Enum\DirigeantRole;
 use App\Enum\TailleType;
+use App\Repository\FonctionRepository;
 use App\Repository\LicencieRepository;
 use App\Repository\TeamRepository;
 use App\Service\Referentiel\TailleReferentiel;
@@ -28,6 +30,7 @@ class DirigeantType extends AbstractType
 {
     public function __construct(
         private readonly TailleReferentiel $tailles,
+        private readonly FonctionRepository $fonctions,
     ) {}
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -73,6 +76,18 @@ class DirigeantType extends AbstractType
                 'label' => 'Rôle',
                 'required' => true,
                 'choice_label' => static fn (DirigeantRole $role) => $role->label(),
+            ])
+            ->add('fonctions', EntityType::class, [
+                'class' => Fonction::class,
+                'label' => 'Fonctions',
+                'multiple' => true,
+                'expanded' => true,
+                'required' => false,
+                'by_reference' => false,
+                'choices' => $this->fonctions->findAllOrdered(),
+                'choice_label' => static fn (Fonction $f): string => $f->isPorteEquipe()
+                    ? $f->getLibelle() . ' (+ équipe)'
+                    : $f->getLibelle(),
             ])
             ->add('team', EntityType::class, [
                 'class' => Team::class,

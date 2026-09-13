@@ -102,6 +102,55 @@ final class DetenteurEffectifResolver
     }
 
     /**
+     * Les identités connues de l'effectif, toutes saisons confondues, en clés de tableau —
+     * un lot à charger une fois pour toute une liste.
+     *
+     * @return array<string, true>
+     */
+    public function identitesDeLEffectif(): array
+    {
+        $identites = [];
+
+        foreach ($this->dirigeantRepo->identitesToutesSaisons() as $ligne) {
+            $numLicence = $ligne['numLicence'];
+
+            if ($numLicence !== null && $numLicence !== '') {
+                $identites['licence:' . $numLicence] = true;
+            }
+
+            $identites['nom:' . self::cleIdentite($ligne['nom'], $ligne['prenom'])] = true;
+        }
+
+        return $identites;
+    }
+
+    /**
+     * Cette fiche du registre appartient-elle à quelqu'un du club ?
+     *
+     * C'est ce qui sépare une **personne extérieure** — mairie, entreprise d'entretien — d'un
+     * dirigeant : la première ne tient son identité que du registre, la seconde de sa fiche
+     * d'effectif, réalignée à chaque mouvement ({@see DetenteurService::depuisDirigeant()}) et
+     * à chaque import. Corriger un nom de dirigeant ici le ferait diverger de FootClubs, et
+     * le rapprochement par le nom décrocherait la fiche du registre.
+     *
+     * La question ignore la saison à dessein : quelqu'un hors effectif cette année peut
+     * revenir au prochain import, et sa fiche redeviendrait alimentée par l'effectif.
+     *
+     * @param array<string, true>|null $identites lot déjà chargé par {@see identitesDeLEffectif()}
+     */
+    public function estRattacheALEffectif(Detenteur $detenteur, ?array $identites = null): bool
+    {
+        $identites ??= $this->identitesDeLEffectif();
+        $numLicence = $detenteur->getNumLicence();
+
+        if ($numLicence !== null && $numLicence !== '' && isset($identites['licence:' . $numLicence])) {
+            return true;
+        }
+
+        return isset($identites['nom:' . self::cleIdentite($detenteur->getNom(), $detenteur->getPrenom())]);
+    }
+
+    /**
      * Clé de rapprochement quand le numéro de licence manque.
      *
      * Les accents sont repliés : l'export FootClubs écrit « Marlene » là où la saisie

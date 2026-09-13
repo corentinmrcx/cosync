@@ -85,6 +85,60 @@ final class DetenteurService
     }
 
     /**
+     * Correction de la fiche d'une **personne extérieure** au club : identité, qualité,
+     * coordonnées.
+     *
+     * La **qualité** en est la raison d'être. C'est elle qui s'imprime en face d'un
+     * extérieur sur le récapitulatif remis à la mairie ; sans moyen de la poser après coup,
+     * une fiche créée dans l'urgence restait « Détenteur extérieur au club » pour toujours.
+     *
+     * Une fiche rattachée à l'effectif est **refusée**, et pas seulement masquée à l'écran :
+     * son identité et ses coordonnées appartiennent à la fiche dirigeant, qui les réécrit à
+     * chaque mouvement ({@see depuisDirigeant()}) et que l'import FootClubs réaligne. Un nom
+     * corrigé ici serait écrasé sans prévenir — ou pire, survivrait et décrocherait la fiche
+     * du registre, dont le rapprochement retombe sur le nom faute de licence.
+     *
+     * @throws \DomainException fiche rattachée à l'effectif, nom ou prénom vide,
+     *                          ou identité déjà tenue par une autre fiche
+     */
+    public function modifier(
+        Detenteur $detenteur,
+        string $nom,
+        string $prenom,
+        ?string $qualite,
+        ?string $email,
+        ?string $telephone,
+    ): void {
+        if ($this->effectifResolver->estRattacheALEffectif($detenteur)) {
+            throw new \DomainException(sprintf('%s figure à l\'effectif du club : sa fiche se corrige côté dirigeant, sinon le registre et FootClubs divergeraient.', $detenteur->getNomPrenom()));
+        }
+
+        $nom = trim($nom);
+        $prenom = trim($prenom);
+
+        if ($nom === '' || $prenom === '') {
+            throw new \DomainException('Le nom et le prénom sont obligatoires.');
+        }
+
+        // Même garde qu'à la création : deux fiches pour une personne répartiraient ses
+        // clés sur deux lignes du registre, et le total dirait faux.
+        $homonyme = $this->effectifResolver->detenteurParNom($nom, $prenom);
+
+        if ($homonyme !== null && $homonyme->getId() !== $detenteur->getId()) {
+            throw new \DomainException(sprintf('%s %s figure déjà au registre des clés.', $nom, $prenom));
+        }
+
+        $detenteur
+            ->setNom($nom)
+            ->setPrenom($prenom)
+            ->setQualite($qualite)
+            ->setEmail($email)
+            ->setTelephone($telephone);
+
+        $this->em->flush();
+    }
+
+    /**
      * Détenteur extérieur à l'effectif : mairie, entreprise d'entretien, association
      * qui utilise le local.
      *

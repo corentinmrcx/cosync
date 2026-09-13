@@ -36,6 +36,8 @@ final class AttestationCleRecapService
             static fn (CleRegistreRow $ligne): AttestationCleRecapRow => new AttestationCleRecapRow(
                 nom: $ligne->detenteur()->getNom(),
                 prenom: $ligne->detenteur()->getPrenom(),
+                // La mairie veut savoir à quel titre la personne détient un trousseau.
+                fonction: $ligne->fonction,
                 nbCles: $ligne->detention->solde,
                 signedAt: $ligne->signedAt(),
                 aRenouveler: !$ligne->attestationAJour() && $ligne->signedAt() !== null,

@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Enum\DirigeantRole;
 use App\Repository\DirigeantRepository;
 use App\Service\Drive\DrivePath;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
@@ -47,6 +49,24 @@ class Dirigeant
 
     #[ORM\Column(length: 32, enumType: DirigeantRole::class, options: ['default' => 'dirigeant'])]
     private DirigeantRole $role = DirigeantRole::DIRIGEANT;
+
+    /**
+     * Ce que la personne fait dans le club, tel qu'on le déclare à un tiers. Distinct du
+     * rôle ci-dessus, qui dit ce que l'application lui doit — cf. {@see Fonction}.
+     *
+     * Plusieurs, parce qu'une même personne encadre une équipe *et* contribue à
+     * l'organisation. Rattachées au dirigeant, donc à la saison : les fonctions changent
+     * d'une année sur l'autre, et le document de cette saison ne doit pas afficher celles
+     * de la précédente. L'import FootClubs n'y touche jamais, comme au rôle.
+     *
+     * @var Collection<int, Fonction>
+     */
+    #[ORM\ManyToMany(targetEntity: Fonction::class)]
+    #[ORM\JoinTable(name: 'dirigeant_fonction')]
+    #[ORM\JoinColumn(name: 'dirigeant_uuid', referencedColumnName: 'uuid', onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'fonction_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\OrderBy(['position' => 'ASC', 'id' => 'ASC'])]
+    private Collection $fonctions;
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $tailleHaut = null;
@@ -148,6 +168,7 @@ class Dirigeant
     {
         $this->uuid = Uuid::v4();
         $this->importedAt = new \DateTimeImmutable();
+        $this->fonctions = new ArrayCollection();
     }
 
     public function getUuid(): Uuid
@@ -264,6 +285,28 @@ class Dirigeant
     public function setRole(DirigeantRole $role): static
     {
         $this->role = $role;
+
+        return $this;
+    }
+
+    /** @return Collection<int, Fonction> */
+    public function getFonctions(): Collection
+    {
+        return $this->fonctions;
+    }
+
+    public function addFonction(Fonction $fonction): static
+    {
+        if (!$this->fonctions->contains($fonction)) {
+            $this->fonctions->add($fonction);
+        }
+
+        return $this;
+    }
+
+    public function removeFonction(Fonction $fonction): static
+    {
+        $this->fonctions->removeElement($fonction);
 
         return $this;
     }
