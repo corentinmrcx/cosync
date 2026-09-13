@@ -183,6 +183,28 @@ class DirigeantRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /**
+     * Les identités de tout l'effectif, **toutes saisons confondues**.
+     *
+     * Sert à savoir si une fiche du registre des clés appartient à quelqu'un du club. La
+     * question ignore la saison à dessein : un dirigeant absent cette année peut revenir au
+     * prochain import, et sa fiche redeviendrait alors alimentée par l'effectif.
+     *
+     * Trois colonnes scalaires plutôt que des entités : on ne compare que des chaînes.
+     *
+     * @return list<array{numLicence: ?string, nom: string, prenom: string}>
+     */
+    public function identitesToutesSaisons(): array
+    {
+        /** @var list<array{numLicence: ?string, nom: string, prenom: string}> $rows */
+        $rows = $this->createQueryBuilder('d')
+            ->select('DISTINCT d.numLicence AS numLicence', 'd.nom AS nom', 'd.prenom AS prenom')
+            ->getQuery()
+            ->getScalarResult();
+
+        return $rows;
+    }
+
     /** @return list<string> Tailles réellement déclarées par des dirigeants. */
     public function findDistinctTailles(): array
     {

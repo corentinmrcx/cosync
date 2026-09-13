@@ -17,7 +17,12 @@
  */
 export function multiSelect(config = {}) {
     const HAUTEUR_PANNEAU = 260;
-    const chaines = (valeurs) => (valeurs || []).map(String);
+    // Object.values plutôt qu'un tableau supposé : un `|map` Twig sur un tableau indexé
+    // par libellé — les `vars.choices` d'un formulaire, par exemple — arrive ici en objet
+    // JSON. `.map` et `.filter` n'y existent pas, le composant mourait sans un mot et le
+    // champ restait désespérément vide.
+    const liste = (valeurs) => Object.values(valeurs || {});
+    const chaines = (valeurs) => liste(valeurs).map(String);
 
     return {
         open: false,
@@ -25,7 +30,7 @@ export function multiSelect(config = {}) {
         left: 0,
         width: 0,
         recherche: '',
-        options: config.options || [],
+        options: liste(config.options),
         selected: chaines(config.selection),
         verrouillees: chaines(config.verrouillees),
         placeholder: config.placeholder || '— Choisir —',

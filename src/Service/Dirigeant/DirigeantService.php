@@ -152,6 +152,12 @@ final class DirigeantService
         $dirigeant->setTelephone($this->sanitizer->sanitizePhone($data->telephone));
         $dirigeant->setDateNaissance($data->dateNaissance);
         $dirigeant->setRole($data->role ?? DirigeantRole::DIRIGEANT);
+        // Remise à plat plutôt qu'un différentiel : la liste postée fait foi, et une
+        // fonction décochée doit partir aussi sûrement qu'une cochée doit entrer.
+        $dirigeant->getFonctions()->clear();
+        foreach ($data->fonctions as $fonction) {
+            $dirigeant->addFonction($fonction);
+        }
         $dirigeant->setTailleHaut($data->tailleHaut ?: null);
         $dirigeant->setTailleBas($data->tailleBas ?: null);
         $dirigeant->setPointure($data->pointure ?: null);

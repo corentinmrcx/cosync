@@ -49,6 +49,7 @@ final class AccesAdminTest extends WebTestCase
             '/admin/saison/equipes',
             '/admin/club',
             '/admin/club/categories-fff',
+            '/admin/club/fonctions',
             '/admin/club/tailles',
             '/admin/club/tailles/referentiel',
             '/admin/club/grilles-tailles',

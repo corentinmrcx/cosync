@@ -1,0 +1,63 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}CoSync — Modifier {{ detenteur.nomPrenom }}{% endblock %}
+
+{% block content %}
+{% include 'components/breadcrumb.html.twig' with { items: [
+    { label: 'Tableau de bord', route: 'admin_dashboard' },
+    { label: 'Clés', route: 'admin_cles_index' },
+    { label: 'Détenteurs', route: 'admin_cles_detenteurs' },
+    { label: detenteur.nomPrenom }
+] } %}
+
+<div class="season-form-page">
+    <form method="post" action="{{ path('admin_cles_detenteur_modifier', {id: detenteur.id}) }}" class="season-form-card">
+
+        <h1 class="season-form-header">Fiche de {{ detenteur.nomPrenom }}</h1>
+
+        <input type="hidden" name="_token" value="{{ csrf_token('cle_detenteur_modifier_' ~ detenteur.id) }}">
+
+        <hr class="season-form-divider">
+
+        <div class="season-form-row">
+            <div class="field">
+                <label class="field-label" for="detenteur-nom">Nom</label>
+                <input type="text" name="nom" id="detenteur-nom" class="field-input"
+                       value="{{ detenteur.nom }}" maxlength="100" required>
+            </div>
+            <div class="field">
+                <label class="field-label" for="detenteur-prenom">Prénom</label>
+                <input type="text" name="prenom" id="detenteur-prenom" class="field-input"
+                       value="{{ detenteur.prenom }}" maxlength="100" required>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="detenteur-qualite">Qualité</label>
+            <input type="text" name="qualite" id="detenteur-qualite" class="field-input"
+                   value="{{ detenteur.qualite }}" maxlength="150"
+                   placeholder="Ex. : Mairie de Soudron, Entreprise Ménage+">
+        </div>
+
+        <div class="season-form-row">
+            <div class="field">
+                <label class="field-label" for="detenteur-email">Email</label>
+                <input type="email" name="email" id="detenteur-email" class="field-input"
+                       value="{{ detenteur.email }}" maxlength="180"
+                       placeholder="Sans adresse, l'attestation se signe sur place">
+            </div>
+            <div class="field">
+                <label class="field-label" for="detenteur-telephone">Téléphone</label>
+                <input type="text" name="telephone" id="detenteur-telephone" class="field-input"
+                       value="{{ detenteur.telephone }}" maxlength="20">
+            </div>
+        </div>
+
+        <div class="season-form-actions">
+            <a href="{{ path('admin_cles_detenteurs') }}" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

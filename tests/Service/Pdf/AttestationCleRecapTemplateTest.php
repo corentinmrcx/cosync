@@ -30,6 +30,7 @@ final class AttestationCleRecapTemplateTest extends KernelTestCase
             'rows' => $rows,
             'saisonLabel' => '2025-2026',
             'logoDataUrl' => 'data:image/png;base64,iVBORw0KGgo=',
+            'foyerLogoDataUrl' => 'data:image/png;base64,iVBORw0KGgo=',
             'generatedAt' => new \DateTimeImmutable('2026-08-01 10:00:00'),
         ]);
     }
@@ -37,20 +38,22 @@ final class AttestationCleRecapTemplateTest extends KernelTestCase
     public function testLeRecapitulatifNeContientAucuneImageDeSignature(): void
     {
         $html = $this->render([
-            new AttestationCleRecapRow('DUPONT', 'Thomas', 2, new \DateTimeImmutable('2026-07-01')),
-            new AttestationCleRecapRow('MARTIN', 'Kevin', 1, new \DateTimeImmutable('2026-07-15')),
+            new AttestationCleRecapRow('DUPONT', 'Thomas', 'Coordinateur général', 2, new \DateTimeImmutable('2026-07-01')),
+            new AttestationCleRecapRow('MARTIN', 'Kevin', 'Entraîneur U16', 1, new \DateTimeImmutable('2026-07-15')),
         ]);
 
-        self::assertSame(1, substr_count($html, '<img'), 'Seul le logo du club est une image.');
-        self::assertStringNotContainsString('sign-img', $html);
+        self::assertSame(2, substr_count($html, '<img'), 'Seuls les deux logos de l\'en-tête commun sont des images.');
+        // Depuis le passage à l'en-tête commun, la feuille de style du gabarit définit
+        // `.sign-img` pour tous les PDF : c'est l'élément qu'on traque, pas la règle CSS.
+        self::assertStringNotContainsString('class="sign-img"', $html);
         self::assertStringNotContainsString('data:image/png;base64,iVBORw0KGgoAAAANS', $html);
     }
 
     public function testLeRecapitulatifListeNomPrenomClesDateEtStatut(): void
     {
         $html = $this->render([
-            new AttestationCleRecapRow('DUPONT', 'Thomas', 2, new \DateTimeImmutable('2026-07-01')),
-            new AttestationCleRecapRow('MARTIN', 'Kevin', 1, null),
+            new AttestationCleRecapRow('DUPONT', 'Thomas', 'Coordinateur général', 2, new \DateTimeImmutable('2026-07-01')),
+            new AttestationCleRecapRow('MARTIN', 'Kevin', 'Entraîneur U16', 1, null),
         ]);
 
         self::assertStringContainsString('DUPONT', $html);

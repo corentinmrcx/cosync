@@ -15,6 +15,7 @@ use App\Security\CsrfGuard;
 use App\Service\Cle\AttestationCleService;
 use App\Service\Cle\CleRegistrePresenter;
 use App\Service\Cle\CleRegistreService;
+use App\Service\Cle\DetenteurEffectifResolver;
 use App\Service\Cle\DetenteurLicenceSynchronizer;
 use App\Service\Cle\DetenteurService;
 use App\Service\Ui\ListFilterMemory;
@@ -44,6 +45,7 @@ class CleController extends AbstractController
         private readonly CleRegistrePresenter $presenter,
         private readonly DetenteurService $detenteurService,
         private readonly DetenteurLicenceSynchronizer $licenceSync,
+        private readonly DetenteurEffectifResolver $effectifResolver,
         private readonly AttestationCleService $attestations,
         private readonly DetenteurRepository $detenteurRepo,
         private readonly ListFilterMemory $filterMemory,
@@ -165,6 +167,65 @@ class CleController extends AbstractController
         }
 
         return $this->redirectToRoute('admin_cles_detenteurs');
+    }
+
+    /**
+     * Correction de la fiche d'une personne **extérieure** au club. Sa raison d'être est la
+     * **qualité** : c'est elle qui s'imprime en face d'un extérieur sur le récapitulatif
+     * remis à la mairie, et rien ne permettait de la poser après la création — une fiche
+     * entrée dans l'urgence restait « Détenteur extérieur au club » pour toujours.
+     *
+     * Un détenteur de l'effectif n'y entre pas : son identité appartient à sa fiche
+     * dirigeant. Le service le refuse aussi de son côté — masquer n'est pas protéger.
+     *
+     * Un écran à part et non une modale de ligne : cinq champs d'identité ne tiennent pas
+     * dans un panneau de menu.
+     */
+    #[Route('/detenteurs/{id}/modifier', name: 'detenteur_modifier', methods: ['GET', 'POST'], requirements: ['id' => '\\d+'])]
+    #[IsGranted(Permission::CLE_GERER->value)]
+    public function modifierDetenteur(int $id, Request $request): Response
+    {
+        $detenteur = $this->detenteurRepo->find($id);
+
+        if ($detenteur === null) {
+            $this->addFlash('error', 'Cette fiche du registre n\'existe plus.');
+
+            return $this->redirectToRoute('admin_cles_detenteurs');
+        }
+
+        if ($this->effectifResolver->estRattacheALEffectif($detenteur)) {
+            $this->addFlash('error', sprintf(
+                '%s figure à l\'effectif du club : sa fiche se corrige depuis sa fiche de dirigeant. Seules les personnes extérieures se modifient ici.',
+                $detenteur->getNomPrenom(),
+            ));
+
+            return $this->redirectToRoute('admin_cles_detenteurs');
+        }
+
+        if ($request->isMethod('POST')) {
+            $this->csrf->valider('cle_detenteur_modifier_' . $detenteur->getId(), $request);
+
+            try {
+                $this->detenteurService->modifier(
+                    detenteur: $detenteur,
+                    nom: (string) $request->request->get('nom', ''),
+                    prenom: (string) $request->request->get('prenom', ''),
+                    qualite: trim((string) $request->request->get('qualite', '')) ?: null,
+                    email: trim((string) $request->request->get('email', '')) ?: null,
+                    telephone: trim((string) $request->request->get('telephone', '')) ?: null,
+                );
+
+                $this->addFlash('success', sprintf('Fiche de %s mise à jour.', $detenteur->getNomPrenom()));
+
+                return $this->redirectToRoute('admin_cles_detenteurs');
+            } catch (\DomainException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
+        }
+
+        return $this->render('admin/cles/detenteur_modifier.html.twig', [
+            'detenteur' => $detenteur,
+        ]);
     }
 
     #[Route('/detenteurs/exterieur', name: 'detenteur_exterieur', methods: ['POST'])]

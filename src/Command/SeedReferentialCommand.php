@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use App\Entity\Category;
+use App\Entity\Fonction;
 use App\Entity\RoleAcces;
 use App\Entity\Taille;
 use App\Enum\TailleType;
@@ -14,7 +15,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'app:seed-referential', description: 'Initialise les référentiels du club : catégories FFF et tailles (idempotent)')]
+#[AsCommand(name: 'app:seed-referential', description: 'Initialise les référentiels du club : catégories FFF, tailles et fonctions (idempotent)')]
 class SeedReferentialCommand extends Command
 {
     // Codes de catégories FFF — stables entre les saisons.
@@ -55,6 +56,30 @@ class SeedReferentialCommand extends Command
         ['code' => 'FOOTLOISIR', 'label' => 'Foot Loisir',       'ecole' => false],
     ];
 
+    /**
+     * Fonctions du club, telles qu'elles se déclarent à la mairie ou au conseil
+     * d'administration. Liste courte et volontairement grossière : « Dirigeant » englobe
+     * tout ce qui n'appelle pas de mention particulière, et une personne en porte
+     * plusieurs quand il le faut (« Entraîneur U16 » *et* « Organisation foot »).
+     *
+     * `equipe` = le libellé est suivi du nom de l'équipe de la fiche. C'est ce qui dispense
+     * d'entrer « Entraîneur des U16 », « Entraîneur des U11 », « Entraîneur des séniors »,
+     * et ce qui fait suivre la fonction quand le dirigeant change d'équipe.
+     *
+     * L'ordre de cette liste est l'ordre d'affichage initial ; l'admin le change ensuite au
+     * glisser-déposer depuis /admin/club/fonctions, où il ajoute aussi les siennes.
+     */
+    private const FONCTIONS = [
+        ['libelle' => 'Responsable de la section foot',   'equipe' => false],
+        ['libelle' => 'Coordinateur général',             'equipe' => false],
+        ['libelle' => 'Responsable technique école de foot', 'equipe' => false],
+        ['libelle' => 'Entraîneur',                       'equipe' => true],
+        ['libelle' => 'Entraîneur adjoint',               'equipe' => true],
+        ['libelle' => 'Arbitrage',                        'equipe' => false],
+        ['libelle' => 'Organisation foot',                'equipe' => false],
+        ['libelle' => 'Dirigeant',                        'equipe' => false],
+    ];
+
     public function __construct(private readonly EntityManagerInterface $em)
     {
         parent::__construct();
@@ -66,6 +91,7 @@ class SeedReferentialCommand extends Command
 
         $this->seedCategories($io);
         $this->seedTailles($io);
+        $this->seedFonctions($io);
         $this->seedRolesAcces($io);
 
         $this->em->flush();
@@ -91,6 +117,32 @@ class SeedReferentialCommand extends Command
 
             $this->em->persist($cat);
             $io->writeln(sprintf('  Catégorie ajoutée : %s', $data['code']));
+        }
+    }
+
+    /**
+     * Fonctions du club. Idempotent au libellé près : une fonction déjà présente n'est pas
+     * remise à son réglage d'origine, le club l'a peut-être renommée ou décochée depuis.
+     */
+    private function seedFonctions(SymfonyStyle $io): void
+    {
+        $repo = $this->em->getRepository(Fonction::class);
+
+        $position = 0;
+        foreach (self::FONCTIONS as $data) {
+            ++$position;
+
+            if ($repo->findOneBy(['libelle' => $data['libelle']]) !== null) {
+                continue;
+            }
+
+            $fonction = (new Fonction())
+                ->setLibelle($data['libelle'])
+                ->setPorteEquipe($data['equipe'])
+                ->setPosition($position);
+
+            $this->em->persist($fonction);
+            $io->writeln(sprintf('  Fonction ajoutée : %s', $data['libelle']));
         }
     }
 

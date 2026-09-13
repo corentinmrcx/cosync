@@ -25,6 +25,7 @@ final class CleRegistrePresenter
         private readonly AttestationCleRepository $attestationRepo,
         private readonly DetenteurEffectifResolver $effectifResolver,
         private readonly DirigeantRepository $dirigeantRepo,
+        private readonly DetenteurFonctionResolver $fonctionResolver,
     ) {}
 
     /**
@@ -39,13 +40,21 @@ final class CleRegistrePresenter
 
         $effectif = $this->effectifResolver->pourSaison($season, $detenteurs);
         $attestations = $this->attestationRepo->findDernieresParDetenteur($season);
+        // Un seul chargement pour toute la liste : la question se pose à chaque ligne.
+        $identites = $this->effectifResolver->identitesDeLEffectif();
 
         return array_map(
-            static fn ($detention): CleRegistreRow => new CleRegistreRow(
-                detention: $detention,
-                dirigeantSaison: $effectif[$detention->detenteur->getId()] ?? null,
-                attestation: $attestations[$detention->detenteur->getId()] ?? null,
-            ),
+            function ($detention) use ($effectif, $attestations, $identites): CleRegistreRow {
+                $dirigeant = $effectif[$detention->detenteur->getId()] ?? null;
+
+                return new CleRegistreRow(
+                    detention: $detention,
+                    dirigeantSaison: $dirigeant,
+                    attestation: $attestations[$detention->detenteur->getId()] ?? null,
+                    fonction: $this->fonctionResolver->pour($detention->detenteur, $dirigeant),
+                    rattacheALEffectif: $this->effectifResolver->estRattacheALEffectif($detention->detenteur, $identites),
+                );
+            },
             $detentions,
         );
     }
@@ -66,6 +75,9 @@ final class CleRegistrePresenter
             detention: $this->registre->getDetentionDe($detenteur),
             dirigeantSaison: $dirigeant,
             attestation: $this->attestationRepo->findDerniereDe($detenteur, $dirigeant->getSeason()),
+            fonction: $this->fonctionResolver->pour($detenteur, $dirigeant),
+            // On y arrive depuis un dirigeant : la question est déjà tranchée.
+            rattacheALEffectif: true,
         );
     }
 

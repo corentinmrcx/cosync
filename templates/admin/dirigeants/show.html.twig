@@ -91,6 +91,15 @@
                         {{ dirigeant.team ? dirigeant.team.name : '—' }}
                     </dd>
                 </div>
+                {# Ce qu'on déclare à un tiers — la mairie demande la fonction des détenteurs
+                   de clés. Distinct du rôle affiché en tête, qui décide du kit et des
+                   documents à signer. #}
+                <div class="licencie-show-dl-row">
+                    <dt class="licencie-show-dt">Fonctions</dt>
+                    <dd class="{{ fonctions ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">
+                        {{ fonctions ? fonctions|join(' · ') : '—' }}
+                    </dd>
+                </div>
                 <div class="licencie-show-dl-row">
                     <dt class="licencie-show-dt">Profil joueur</dt>
                     <dd class="{{ dirigeant.licencie ? 'licencie-show-dd' : 'licencie-show-dd-empty' }}">

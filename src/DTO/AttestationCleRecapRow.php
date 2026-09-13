@@ -11,6 +11,8 @@ final class AttestationCleRecapRow
     public function __construct(
         public readonly string $nom,
         public readonly string $prenom,
+        /** Ce que la personne fait dans le club — cf. {@see \App\Service\Cle\DetenteurFonctionResolver} */
+        public readonly string $fonction,
         public readonly int $nbCles,
         public readonly ?\DateTimeImmutable $signedAt,
         /** Signée, mais des clés ont été remises depuis : le nombre attesté est dépassé */
