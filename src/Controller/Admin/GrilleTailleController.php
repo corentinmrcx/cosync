@@ -7,6 +7,7 @@ use App\Entity\GrilleTailleValeur;
 use App\Enum\Permission;
 use App\Enum\TailleType;
 use App\Repository\GrilleTailleRepository;
+use App\Repository\StockItemRepository;
 use App\Security\CsrfGuard;
 use App\Service\Referentiel\GrilleTailleService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,6 +28,7 @@ class GrilleTailleController extends AbstractController
         private readonly CsrfGuard $csrf,
         private readonly GrilleTailleService $grilleService,
         private readonly GrilleTailleRepository $repository,
+        private readonly StockItemRepository $itemRepository,
     ) {}
 
     #[Route('', name: 'index', methods: ['GET'])]
@@ -64,8 +66,11 @@ class GrilleTailleController extends AbstractController
     #[Route('/{id}', name: 'show', requirements: ['id' => '\d+'], methods: ['GET'])]
     public function show(GrilleTaille $grille): Response
     {
+        // Ce qu'une grille traduit tient à ce qui la porte : remplie mais rattachée à aucun
+        // article, elle ne traduit rien — et l'écran où on la remplit ne le disait pas.
         return $this->render('admin/club/grilles/form.html.twig', [
             'grille' => $grille,
+            'articles' => $this->itemRepository->findByGrille($grille),
             'cibles' => $this->grilleService->ciblesPossibles($grille->getType()),
             'declarables' => $this->grilleService->declarables($grille->getType()),
             'nonCouvertes' => $this->grilleService->taillesNonCouvertes($grille),
