@@ -26,6 +26,7 @@ import { rolePermissions } from './js/role-permissions.js';
 import { occupationGrille } from './js/occupation-grille.js';
 import { terrainsEcran } from './js/terrains-ecran.js';
 import { menuLigne } from './js/menu-ligne.js';
+import { suiviDotations } from './js/suivi-dotations.js';
 
 Alpine.data('inscriptionForm', inscriptionForm);
 Alpine.data('completionForm', completionForm);
@@ -48,6 +49,7 @@ Alpine.data('rolePermissions', rolePermissions);
 Alpine.data('occupationGrille', occupationGrille);
 Alpine.data('terrainsEcran', terrainsEcran);
 Alpine.data('menuLigne', menuLigne);
+Alpine.data('suiviDotations', suiviDotations);
 
 Alpine.plugin(collapse);
 

@@ -3,13 +3,17 @@
 namespace App\Service\Dotation;
 
 use App\DTO\DotationAvancement;
+use App\DTO\DotationLigneTaille;
 use App\DTO\DotationSuiviGroupe;
 use App\Entity\DotationBesoin;
 use App\Entity\Licencie;
 use App\Entity\Season;
+use App\Entity\StockItem;
 use App\Enum\DotationAvancementStatut;
 use App\Enum\DotationBesoinStatut;
+use App\Enum\StockItemVetementType;
 use App\Repository\DotationBesoinRepository;
+use App\Service\Stock\StockTaillePresenter;
 use App\Service\Stock\StockTailleResolver;
 
 /**
@@ -28,6 +32,7 @@ final class DotationSuiviPresenter
         private readonly DotationBesoinRepository $besoinRepository,
         private readonly DotationResolver $resolver,
         private readonly StockTailleResolver $tailles,
+        private readonly StockTaillePresenter $etiquettes,
     ) {}
 
     /**
@@ -104,12 +109,14 @@ final class DotationSuiviPresenter
     }
 
     /**
-     * Tailles proposées à la correction d'un besoin, article par article : une paire de
-     * chaussettes se corrige en pointures, un maillot en tailles de vêtement.
+     * La taille de chaque ligne telle qu'elle se lit devant les cartons : l'étiquette du
+     * carton, ce que la personne a déclaré quand l'étiquette ne le dit pas, et les
+     * déclinaisons proposées à la correction — en pointures pour des chaussettes, en tailles
+     * de vêtement pour un maillot.
      *
      * @param list<DotationSuiviGroupe> $groupes
      *
-     * @return array<int, list<string>>
+     * @return array<int, DotationLigneTaille>
      */
     public function taillesParBesoin(array $groupes): array
     {
@@ -117,13 +124,63 @@ final class DotationSuiviPresenter
 
         foreach ($groupes as $groupe) {
             foreach ($groupe->besoins as $besoin) {
-                // Options de l'article servi : une ligne couverte par un écoulement se corrige
-                // dans les déclinaisons de CE carton-là, pas dans celles du kit.
-                $out[$besoin->getId()] = $this->tailles->options($besoin->getArticleServi());
+                $out[$besoin->getId()] = $this->ligneTaille($besoin);
             }
         }
 
         return $out;
+    }
+
+    private function ligneTaille(DotationBesoin $besoin): DotationLigneTaille
+    {
+        // Article servi : une ligne couverte par un écoulement se lit et se corrige dans les
+        // déclinaisons de CE carton-là, pas dans celles du kit.
+        $article = $besoin->getArticleServi();
+        $taille = $besoin->getTaille();
+        $etiquette = $taille !== null ? $this->etiquettes->etiquette($article, $taille) : null;
+
+        // Seule une ligne que le recalcul rattrape relit le dossier : relâcher la taille d'un
+        // sac préparé ou remis la laisserait vide.
+        $relachable = $besoin->getStatut()->suitLeRecalcul();
+
+        return new DotationLigneTaille(
+            $etiquette,
+            $this->mentionDeclaree($besoin, $article, $etiquette),
+            array_map(
+                fn (string $valeur): array => ['valeur' => $valeur, 'libelle' => $this->etiquettes->etiquette($article, $valeur)],
+                // La taille en place reste proposée même hors déclinaisons : rouvrir le
+                // sélecteur ne doit pas la faire disparaître.
+                $this->tailles->options($article, $taille !== null ? [$taille] : []),
+            ),
+            // Une taille qui suit le dossier ouvre le sélecteur sur « Automatique » : valider
+            // sans rien toucher ne doit pas la verrouiller en douce.
+            $relachable && !$besoin->isTailleManuelle() ? null : $taille,
+            $relachable,
+        );
+    }
+
+    /**
+     * Ce que la personne a déclaré : « 37-40 » ne dit pas si le joueur chausse du 37 ou du 39, ni
+     * « XS » qu'il a déclaré « 16 ans ».
+     *
+     * Pour un article chaussé, la pointure s'écrit **toujours** : un « 34 » seul ne dit pas s'il
+     * est l'étiquette du carton ou la pointure du joueur — c'est cette confusion-là qui a fait
+     * croire un 39 servi par le carton Nike 34-38. Un « M » sous un « M », lui, n'apprend rien.
+     */
+    private function mentionDeclaree(DotationBesoin $besoin, StockItem $article, ?string $etiquette): ?string
+    {
+        $personne = $besoin->getLicencie() ?? $besoin->getDirigeant();
+        $declaree = $personne !== null ? $this->resolver->tailleDeclaree($personne, $article) : null;
+
+        if ($declaree === null || $declaree === '') {
+            return null;
+        }
+
+        if ($article->getTypeVetement() === StockItemVetementType::CHAUSSURES) {
+            return 'pointure ' . $declaree;
+        }
+
+        return $declaree !== $etiquette ? 'taille ' . $declaree : null;
     }
 
     /**

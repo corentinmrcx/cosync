@@ -203,6 +203,14 @@ StockItem          // grilleTaille: ?GrilleTaille
   parlent déjà « la taille du besoin » et suivent tout seuls.
 - L'ordre d'affichage reste celui du **référentiel**, pas de la grille : les libellés fournisseur
   y figurent déjà, `TailleReferentiel::comparer()` les range sans rien savoir des grilles.
+- **Un libellé qui couvre une plage de pointures s'affiche déplié** (`StockTaillePresenter`) :
+  le « 37 » de l'Erima couvre 37 à 40, et affiché seul il se lisait comme la pointure du joueur —
+  un 39 passait pour un 37, qu'on croyait servi par le carton Nike 34-38. Le suivi écrit donc
+  « 37-40 », la pointure déclarée dessous, et la marque de l'article servi. Les achats, la fiche
+  d'une commande et le bon de commande PDF passent par la même étiquette (fonction Twig
+  `taille_carton()`), motif « Aucun stock en… » compris : c'est ce document-là qui part chez le
+  fournisseur, et « 37-40 » est ce qu'il imprime sur le carton. Le libellé reste la clé du stock
+  et de la ligne de commande : seul l'affichage change.
 
 ---
 
@@ -362,14 +370,23 @@ peut confier à deux personnes différentes.
 faisait varier la largeur de la colonne d'une ligne à l'autre et mettait sur le même plan avancer
 et annuler.
 
-**Le retour en arrière n'est pas une troisième action, c'est le badge qu'on reprend** :
-« Dé-préparer » et « Annuler la remise » sont une petite icône ↺ collée au badge de statut, avec
-son infobulle. Le geste défait ce que le badge affiche, il vit donc contre lui — exactement comme
-le crayon qui corrige une taille vit contre la taille, dans ce même tableau. Un clic, aucun calque.
-Deux détours écartés en chemin : un second bouton dans la colonne (elle changeait de largeur), et
-un menu « ⋯ » (le panneau `fiche-menu` est en position absolue et se fait rogner par
-l'`overflow-x` du `.table-wrapper` — le planning l'avait déjà appris —, et une modale pour un
-« Dé-préparer » est hors de proportion). Les boutons de ligne sont en `btn-secondary`, comme
+**Le retour en arrière n'est pas une troisième action** : « Défaire la préparation » et « Annuler
+la remise » ferment le menu « ⋯ » de la ligne, en rouge sous un filet — ils défont un état
+enregistré. Ils ont d'abord été une icône ↺ collée au badge de statut ; une fois les corrections
+rangées dans le menu, cette icône restait le seul geste posé ailleurs, et tout ce qu'on fait d'une
+ligne qu'on n'avance pas se cherchait à deux endroits. Deux détours écartés en chemin : un second
+bouton dans la colonne (elle changeait de largeur), et une modale pour un « Dé-préparer », hors de
+proportion.
+
+**Les corrections vont au menu « ⋯ » en bout de ligne** (`DotationLigneCorrectionsResolver`) :
+changer l'article choisi, l'article servi, la taille, le texte à floquer. Elles étaient chacune
+un crayon contre sa valeur ; jusqu'à quatre par ligne, et un crayon resté seul sous une marque ne
+disait plus ce qu'il corrigeait. Elles n'ont pas d'ordre, ce ne sont pas des étapes : le menu les
+range, et la saisie s'ouvre toujours **dans la cellule de la valeur** — l'état `correction` est
+porté par la ligne. Le menu et les formulaires lisent la même réponse du resolver, sans quoi un
+article de menu pourrait n'ouvrir rien. Le menu avait d'abord été écarté parce que son panneau se
+faisait rogner par l'`overflow-x` du `.table-wrapper` ; la variante ancrée (`menuLigne()`) a levé
+l'obstacle. Les boutons de ligne sont en `btn-secondary`, comme
 partout ailleurs dans l'app : six `btn-primary` empilés dans une colonne n'indiquent plus rien.
 
 ### Flocage — le club peut saisir ce que le licencié n'a pas pu dire

@@ -154,10 +154,10 @@ d'adresse email, dossier incomplet) affiche son **motif** au lieu de disparaîtr
 
 **Dans un tableau, la colonne d'actions ne porte que l'étape suivante**
 (`DotationLigneActionsResolver`) : deux boutons côte à côte font varier la largeur de la colonne
-d'une ligne à l'autre et mettent « avancer » au même rang qu'« annuler ». Un geste qui **défait**
-un état se pose **contre la valeur qu'il défait** — la petite icône collée au badge, comme le
-crayon collé à la taille qu'il corrige. Quand la ligne porte des gestes **sans ordre** (corriger,
-supprimer un mouvement), le menu `⋯` s'y invite par la variante `fiche-menu-ligne` +
+d'une ligne à l'autre et mettent « avancer » au même rang qu'« annuler ». Le reste va au menu `⋯`
+de la ligne : les gestes **sans ordre** (corriger la taille ou l'article), puis ceux qui **défont**
+un état (annuler une remise, supprimer un mouvement), en bas sous un filet. Il s'y invite par la
+variante `fiche-menu-ligne` +
 `fiche-menu-panneau-ancre` : ⚠️ le panneau ordinaire est en position absolue et se fait rogner par
 l'`overflow-x` du `.table-wrapper` — ancré, `menuLigne()` le rend en position fixe et lui calcule
 ses coordonnées à l'ouverture. Une modale pour un geste d'une ligne reste hors de proportion.

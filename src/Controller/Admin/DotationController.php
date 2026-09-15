@@ -26,6 +26,7 @@ use App\Service\Dotation\DotationEcoulementService;
 use App\Service\Dotation\DotationFlocageService;
 use App\Service\Dotation\DotationGroupeReglagesFactory;
 use App\Service\Dotation\DotationLigneActionsResolver;
+use App\Service\Dotation\DotationLigneCorrectionsResolver;
 use App\Service\Dotation\DotationModeleFormContext;
 use App\Service\Dotation\DotationModeleService;
 use App\Service\Dotation\DotationPreparationService;
@@ -54,6 +55,7 @@ class DotationController extends AbstractController
         private readonly DotationEcoulementService $ecoulementService,
         private readonly DotationFlocageService $flocageService,
         private readonly DotationLigneActionsResolver $ligneActions,
+        private readonly DotationLigneCorrectionsResolver $ligneCorrections,
         private readonly DotationProvenanceResolver $provenance,
         private readonly DotationSuiviPresenter $suivi,
         private readonly DotationPreparationService $preparationService,
@@ -358,15 +360,19 @@ class DotationController extends AbstractController
         $this->ecoulementAllocator->allouer($season);
 
         $groupes = $this->suivi->groupesDeSuivi($season);
+        $options = $this->choixService->optionsParBesoin($groupes);
+        $articles = $this->ecoulementService->articlesParBesoin($groupes);
+        $flocages = $this->flocageService->reglagesParBesoin($groupes);
 
         return $this->render('admin/dotations/suivi.html.twig', [
             'season' => $season,
             'groupes' => $groupes,
-            'optionsParBesoin' => $this->choixService->optionsParBesoin($groupes),
-            'articlesParBesoin' => $this->ecoulementService->articlesParBesoin($groupes),
+            'optionsParBesoin' => $options,
+            'articlesParBesoin' => $articles,
             'taillesParBesoin' => $this->suivi->taillesParBesoin($groupes),
             'actionsParBesoin' => $this->ligneActions->parBesoin($groupes),
-            'flocagesParBesoin' => $this->flocageService->reglagesParBesoin($groupes),
+            'correctionsParBesoin' => $this->ligneCorrections->parBesoin($groupes, $options, $articles, $flocages),
+            'flocagesParBesoin' => $flocages,
             // Après l'arbitrage : la provenance se lit sur l'article servi, pas sur celui du kit.
             'provenanceParBesoin' => $this->provenance->parBesoin($season),
         ]);

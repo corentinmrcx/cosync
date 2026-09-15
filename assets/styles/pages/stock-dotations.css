@@ -608,8 +608,6 @@
 .dot-list-alert { color: var(--color-status-completed); font-weight: 600; }
 /* — Flocage : texte personnalisé porté par un besoin — */
 
-.dot-flocage { margin-top: 0.2rem; }
-
 .dot-flocage-display {
     display: flex;
     align-items: center;
@@ -648,12 +646,6 @@
     color: var(--color-text-base);
 }
 
-.dot-person-role {
-    display: block;
-    font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
-}
-
 .dot-items {
     list-style: none;
     margin: 0;
@@ -684,6 +676,22 @@
     color: var(--color-primary-dark);
     font-size: var(--font-size-xs);
     font-weight: 700;
+    /* « 37-40 » coupé au tiret ne se lit plus comme une plage. */
+    white-space: nowrap;
+}
+
+/* Marque et couleur de l'article servi : ce qui distingue deux « Chaussettes ». */
+.dot-item-details {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* Colonne Article du suivi : nom, marque, écoulement, flocage — espacés par le gap. */
+.dot-article-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
 }
 
 .dot-item-taille-missing {
@@ -714,6 +722,26 @@
     font-size: var(--font-size-sm);
 }
 
+/* L'étiquette du carton, et dessous ce que la personne a déclaré. */
+.dot-taille-valeurs {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+}
+
+.dot-taille-carton {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.dot-taille-declaree {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
 /* Lien d'action quand l'article équipement n'a pas de type de vêtement défini */
 .dot-taille-config {
     font-size: var(--font-size-xs);
@@ -724,36 +752,6 @@
 }
 
 .dot-taille-config:hover { text-decoration: underline; }
-
-/* Crayon de modification : toujours visible, clair */
-/* Les petites corrections d'une ligne : le crayon d'une taille, celui d'un article, et le
-   retour d'un cran contre le badge de statut. Même gabarit pour les trois — c'est ce qui les
-   fait lire comme la même famille de gestes, en retrait du bouton de l'étape suivante. */
-.dot-taille-pen,
-.dot-option-pen,
-.dot-statut-retour {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 1.6rem;
-    height: 1.6rem;
-    padding: 0;
-    cursor: pointer;
-    color: var(--color-text-muted);
-    background: var(--color-bg-muted);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
-}
-
-.dot-taille-pen:hover,
-.dot-option-pen:hover,
-.dot-statut-retour:hover {
-    color: var(--color-primary);
-    background: var(--color-primary-light);
-    border-color: var(--color-primary);
-}
 
 .dot-taille-form,
 .dot-option-form {
@@ -796,10 +794,9 @@
 .dot-option-ok:hover { background: var(--color-success-bg); border-color: var(--color-success); }
 
 /* — Article servi par écoulement de stock (suivi) —
-   Sous le nom de l'article du kit : ce qu'on prend réellement dans l'armoire. Ton d'info,
-   pas d'alerte — un écoulement est le fonctionnement voulu pendant une transition. */
-.dot-ecoulement { margin-top: 0.2rem; }
-
+   Ce qu'on donne ressort : la marque de l'ancien stock en badge. Ce qu'il remplace dans le kit
+   suit en retrait. Ton d'info, pas d'alerte — un écoulement est le fonctionnement voulu pendant
+   une transition. */
 .dot-ecoulement-display {
     display: flex;
     align-items: center;
@@ -815,7 +812,14 @@
     font-weight: 600;
 }
 
-.dot-ecoulement-lock {
+.dot-ecoulement-mention {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* Le même 📌 pour un article et une taille fixés à la main. */
+.dot-ecoulement-lock,
+.dot-taille-lock {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
 }
@@ -826,21 +830,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
-}
-
-/* Le badge et le geste qui le défait, sur la même ligne : l'un dit l'état, l'autre le reprend. */
-.dot-statut-ligne {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-/* Rendre une dotation remet du stock en rayon : le survol le dit, le repos reste discret — la
-   colonne en porterait un par ligne remise, et une rangée de rouge n'alerte plus personne. */
-.dot-statut-retour-danger:hover {
-    color: var(--color-danger);
-    background: var(--color-danger-bg);
-    border-color: var(--color-danger);
 }
 
 .dot-provenance {

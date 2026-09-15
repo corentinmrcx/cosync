@@ -9,10 +9,11 @@
    taille : quand un stock en cours d'écoulement remplace celui du kit, c'est cette
    paire-là qu'il faut aller chercher, pas celle qui est écrite dans le modèle.
 
-   `besoin` = App\Entity\DotationBesoin, `provenance` = App\Enum\DotationProvenance ou null. #}
+   `besoin` = App\Entity\DotationBesoin, `provenance` = App\Enum\DotationProvenance ou null,
+   `taille` = l'étiquette du carton (« 37-40 »), ou null. #}
 {% if provenance is not null %}
     {% set servi = besoin.articleServi %}
-    {% set designation = article.label(servi) ~ (besoin.taille ? ' — taille ' ~ besoin.taille : '') %}
+    {% set designation = article.label(servi) ~ (taille ? ' — taille ' ~ taille : '') %}
 
     <span class="dot-provenance dot-provenance-{{ provenance.value }}"
           title="{{ provenance.explication }} : {{ designation }}">

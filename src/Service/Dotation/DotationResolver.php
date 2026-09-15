@@ -328,11 +328,16 @@ final class DotationResolver
      */
     public function sizeFor(Licencie|Dirigeant $person, StockItem $item): ?string
     {
-        return $this->tailles->traduire($item, $this->tailleDeclaree($person, $item->getTypeVetement()));
+        return $this->tailles->traduire($item, $this->tailleDeclaree($person, $item));
     }
 
-    private function tailleDeclaree(Licencie|Dirigeant $person, ?StockItemVetementType $type): ?string
+    /**
+     * Ce que la personne a déclaré pour cet article, avant toute traduction : le « 39 » que la
+     * grille range sous le « 37 » du carton.
+     */
+    public function tailleDeclaree(Licencie|Dirigeant $person, StockItem $item): ?string
     {
+        $type = $item->getTypeVetement();
         if ($type === null) {
             return null;
         }

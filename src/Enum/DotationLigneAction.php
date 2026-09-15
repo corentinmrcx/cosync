@@ -7,11 +7,10 @@ namespace App\Enum;
  *
  * Deux registres, et l'écran ne les met pas au même endroit : `PREPARER` et `REMETTRE` font
  * **avancer** la ligne — un seul bouton à la fois, celui de l'étape en cours ; `DEPREPARER` et
- * `ANNULER_REMISE` **défont** ce qu'elle affiche, et s'écrivent contre le badge de statut.
+ * `ANNULER_REMISE` **défont** ce qu'elle affiche, et ferment le menu « ⋯ » de la ligne.
  *
  * **Les libellés ne sont pas ici** mais dans `admin/dotations/_action.html.twig`, avec le
- * balisage : un geste de retour n'a pas de texte du tout — juste une icône et son infobulle —
- * et deux sources de vérité pour un même mot se contrediraient au premier changement.
+ * balisage : deux sources de vérité pour un même mot se contrediraient au premier changement.
  */
 enum DotationLigneAction: string
 {
