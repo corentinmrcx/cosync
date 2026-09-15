@@ -55,7 +55,9 @@
                                         <td>
                                             {% include 'admin/commandes/_article_cell.html.twig' with { item: ligne.stockItem } only %}
                                         </td>
-                                        <td>{% if ligne.taille %}<span class="dot-item-taille">{{ ligne.taille }}</span>{% else %}—{% endif %}</td>
+                                        {# L'étiquette du carton (« 37-40 »), pas le libellé du stock : un « 37 » seul
+                                           se lisait comme une pointure. #}
+                                        <td>{% if ligne.taille %}<span class="dot-item-taille">{{ taille_carton(ligne.stockItem, ligne.taille) }}</span>{% else %}—{% endif %}</td>
                                         <td>{{ ligne.besoin }}</td>
                                         <td>{{ ligne.stock }}</td>
                                         <td>{{ ligne.enAttente }}</td>
