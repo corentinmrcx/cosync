@@ -60,7 +60,7 @@
         </form>
 
         {% if tailles is empty %}
-            <p class="dot-empty">Aucune taille. Lancez <code>php bin/console app:seed-referential</code> pour initialiser le référentiel.</p>
+            <p class="dot-empty">Aucune taille.</p>
         {% else %}
             {% if tailles|length > 1 %}
                 <p class="triable-aide">{{ ui.icon('grip', 14) }} Glissez une taille par sa poignée pour changer l'ordre d'affichage.</p>
