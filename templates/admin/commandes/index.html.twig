@@ -23,12 +23,22 @@
     <div class="dot-card">
         <div class="dot-card-header">
             <h2 class="dot-card-title">À commander</h2>
-            {% if aCommander is not empty and peut_acceder('admin_commandes_generer') %}
-                <form method="post" action="{{ path('admin_commandes_generer') }}" style="margin-left:auto">
-                    <input type="hidden" name="_token" value="{{ csrf_token('commande_generer') }}">
-                    <button type="submit" class="btn btn-primary">Générer les bons de commande</button>
-                </form>
-            {% endif %}
+            <div class="cmd-card-actions">
+                {# Reste proposé même sans rien à commander : « le stock couvre toute la saison »
+                   est une conclusion qui se prouve devant un conseil, au même titre qu'un achat. #}
+                {% if peut_acceder('admin_commandes_justificatif') %}
+                    <form method="post" action="{{ path('admin_commandes_justificatif') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('commande_justificatif') }}">
+                        <button type="submit" class="btn btn-secondary">Justificatif de commande</button>
+                    </form>
+                {% endif %}
+                {% if aCommander is not empty and peut_acceder('admin_commandes_generer') %}
+                    <form method="post" action="{{ path('admin_commandes_generer') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('commande_generer') }}">
+                        <button type="submit" class="btn btn-primary">Générer les bons de commande</button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
 
         {% if aCommander is empty %}

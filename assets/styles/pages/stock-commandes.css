@@ -1,5 +1,14 @@
 /* — Commandes (réutilise les classes .dot-* pour la mise en page) — */
 
+/* Les deux sorties de l'écran, poussées à droite du titre. Sous 640 px elles passent à la
+   ligne avec lui — .dot-card-header est déjà en flex-wrap. */
+.cmd-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
 .cmd-fourn-block {
     margin-top: 0.75rem;
 }
