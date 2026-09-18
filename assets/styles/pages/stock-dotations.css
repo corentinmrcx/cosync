@@ -874,6 +874,11 @@
     .dot-header-actions a,
     .dot-header-actions button { justify-content: center; }
 
+    /* Le « ⋯ » ne porte qu'une icône : étiré pleine largeur comme ses voisins, il devenait
+       un carré de la taille de l'écran. Il reste posé à droite, sous les boutons empilés. */
+    .dot-header-actions .fiche-menu { align-self: flex-end; }
+    .dot-header-actions .fiche-menu-declencheur { width: auto; }
+
     /* Formulaires inline (ajout d'article, affectation) en colonne */
     .dot-inline-form,
     .dot-affect-form { flex-direction: column; align-items: stretch; }

@@ -21,8 +21,9 @@
             <h1 class="dot-title">Suivi des dotations</h1>
             <p class="dot-subtitle">Ce que chaque personne doit recevoir et ce qui a déjà été remis.</p>
         </div>
+        {# La liste de flocage est partie sur l'écran des commandes : elle s'envoie au floqueur
+           au moment où l'on commande, cet écran-ci ne sert qu'à remettre. #}
         <div class="dot-header-actions">
-            <a href="{{ path('admin_dotations_flocage') }}" class="btn btn-secondary">Liste de flocage</a>
             {% if peut_acceder('admin_dotations_recalculer') %}
                 <form method="post" action="{{ path('admin_dotations_recalculer') }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('dotation_recalculer') }}">
