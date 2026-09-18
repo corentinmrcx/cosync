@@ -9,9 +9,8 @@ use App\Enum\DotationLigneAction;
  * franchi une — de quoi revenir en arrière.
  *
  * Les deux ne vont pas au même endroit de la ligne. L'étape suivante est une action : elle
- * s'affiche en bouton, dans la colonne d'actions. Le retour, lui, défait un état : il vit
- * **avec le statut**, collé au badge qui l'affiche, comme le crayon vit à côté de la taille
- * qu'il corrige. Les mettre côte à côte faisait varier la largeur de la colonne d'actions
+ * s'affiche en bouton, dans la colonne d'actions. Le retour, lui, défait un état : il ferme le
+ * menu « ⋯ » de la ligne, en rouge sous un filet. Les mettre côte à côte faisait varier la largeur de la colonne d'actions
  * d'une ligne à l'autre et mettait sur le même plan « avancer » et « annuler ».
  */
 final class DotationLigneActions

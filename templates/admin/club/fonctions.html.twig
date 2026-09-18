@@ -54,7 +54,7 @@
         </form>
 
         {% if fonctions is empty %}
-            <p class="dot-empty">Aucune fonction. Lancez <code>php bin/console app:seed-referential</code> pour poser la liste de départ, puis ajustez-la ici.</p>
+            <p class="dot-empty">Aucune fonction.</p>
         {% else %}
             {% if fonctions|length > 1 %}
                 <p class="triable-aide">{{ ui.icon('grip', 14) }} Glissez une fonction par sa poignée pour changer l'ordre d'affichage.</p>

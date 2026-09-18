@@ -16,9 +16,8 @@ use Symfony\Bundle\SecurityBundle\Security;
  * fois, celui de l'étape en cours. La règle vit ici et non dans le template : c'est du métier —
  * l'ordre des étapes et les droits que chacune exige (§5, §7).
  *
- * Le geste de retour ({@see DotationLigneActions}) n'est pas rangé avec lui : il s'affiche
- * contre le badge de statut, parce qu'il ne fait pas avancer la ligne, il défait ce qu'elle
- * affiche.
+ * Le geste de retour ({@see DotationLigneActions}) n'est pas rangé avec lui : il ferme le menu
+ * « ⋯ » de la ligne, parce qu'il ne fait pas avancer la ligne, il défait ce qu'elle affiche.
  */
 final class DotationLigneActionsResolver
 {

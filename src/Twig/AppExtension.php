@@ -57,7 +57,28 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
             new TwigFilter('date_fr_jour_mois', $this->dates->jourEtMois(...)),
             new TwigFilter('date_fr_courte', $this->dates->court(...)),
             new TwigFilter('date_fr_sans_jour', $this->dates->sansJour(...)),
+            new TwigFilter('enumeration', $this->enumerer(...)),
         ];
+    }
+
+    /**
+     * Énumère une liste comme on l'écrit : « Séniors, U13 et U16 ».
+     *
+     * Un `join(', ')` suffit à l'écran, où la liste est une donnée qu'on parcourt. Sur un
+     * document qui sort du club, elle est lue comme une phrase, et le dernier séparateur se
+     * remarque.
+     *
+     * @param list<string> $valeurs
+     */
+    public function enumerer(array $valeurs): string
+    {
+        if (count($valeurs) < 2) {
+            return implode('', $valeurs);
+        }
+
+        $dernier = array_pop($valeurs);
+
+        return implode(', ', $valeurs) . ' et ' . $dernier;
     }
 
     public function getFunctions(): array

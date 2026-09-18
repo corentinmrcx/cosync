@@ -61,12 +61,13 @@
             {# Même désignation qu'à l'écran — nom · marque · couleur (§7.6 ter) : c'est ce
                document qu'on a sous les yeux au moment de commander, et le club a six articles
                nommés « Chaussettes ». La référence catalogue a sa colonne : c'est elle qu'on
-               recopie chez le fournisseur. #}
+               recopie chez le fournisseur. La taille s'écrit comme sur le carton (« 37-40 ») :
+               le libellé du stock, « 37 », se lirait comme une pointure. #}
             {% for ligne in commande.lignes %}
                 <tr>
                     <td>{{ ligne.stockItem.designation }}</td>
                     <td class="ref">{{ ligne.stockItem.refCatalogue ?: '—' }}</td>
-                    <td class="taille">{{ ligne.taille ?: '—' }}</td>
+                    <td class="taille">{{ ligne.taille ? taille_carton(ligne.stockItem, ligne.taille) : '—' }}</td>
                     <td class="qty">{{ ligne.quantite }}</td>
                 </tr>
             {% endfor %}

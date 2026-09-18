@@ -11,10 +11,13 @@ use App\Enum\Permission;
 use App\Repository\CommandeRepository;
 use App\Security\CsrfGuard;
 use App\Service\Dotation\DotationEcoulementAllocator;
+use App\Service\Drive\JustificatifAchatDriveSync;
 use App\Service\Pdf\BonCommandePdfService;
+use App\Service\Pdf\JustificatifAchatPdfService;
 use App\Service\Stock\AchatMotifPresenter;
 use App\Service\Stock\AchatService;
 use App\Service\Stock\CommandeService;
+use App\Service\Stock\JustificatifAchatCollector;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,6 +37,9 @@ class CommandeController extends AbstractController
         private readonly CommandeRepository $commandeRepository,
         private readonly BonCommandePdfService $pdfService,
         private readonly DotationEcoulementAllocator $ecoulementAllocator,
+        private readonly JustificatifAchatCollector $justificatifCollector,
+        private readonly JustificatifAchatPdfService $justificatifPdf,
+        private readonly JustificatifAchatDriveSync $justificatifDriveSync,
     ) {}
 
     #[Route('', name: 'index', methods: ['GET'])]
@@ -47,6 +53,41 @@ class CommandeController extends AbstractController
             'season' => $season,
             'aCommander' => $this->motifPresenter->decorer($this->achatService->computeACommander($season)),
             'commandes' => $this->commandeRepository->findBySeason($season),
+        ]);
+    }
+
+    /**
+     * La pièce que le club présente à son conseil en face d'un devis.
+     *
+     * Reste sous `commande.lire` : c'est un document de lecture, et la fonction qui le porte
+     * au conseil — présidence, trésorerie — n'a pas à pouvoir générer ni passer une commande
+     * pour l'éditer.
+     *
+     * Archivé sans le demander : éditer ce document, c'est le présenter, et une pièce
+     * présentée se classe. L'échec est dit — croire une demande d'achat archivée alors
+     * qu'elle ne l'est pas, c'est précisément le trou que ce document vient boucher.
+     */
+    #[Route('/justificatif', name: 'justificatif', methods: ['POST'])]
+    public function justificatif(Request $request, #[CurrentSeason] Season $season): Response
+    {
+        $this->csrf->valider('commande_justificatif', $request);
+
+        // Même ordre que partout ailleurs : ce qu'un ancien stock couvre ne doit pas se
+        // retrouver dans une demande d'achat portée au conseil.
+        $this->ecoulementAllocator->allouer($season);
+
+        $doc = $this->justificatifCollector->collecter($season);
+        $contenu = $this->justificatifPdf->generate($doc);
+        $nomFichier = $this->justificatifPdf->nomFichier($doc);
+
+        $archive = $this->justificatifDriveSync->archiver($contenu, $nomFichier, $season);
+        $this->addFlash($archive ? 'success' : 'error', $archive
+            ? 'Justificatif archivé sur le Drive du club.'
+            : 'Justificatif généré, mais l\'archivage Drive a échoué. Réessayez depuis cet écran.');
+
+        return new Response($contenu, Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="%s"', $nomFichier),
         ]);
     }
 
