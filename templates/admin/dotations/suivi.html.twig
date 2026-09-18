@@ -1,5 +1,5 @@
 {% extends 'admin/layout.html.twig' %}
-{% import 'components/_icon.html.twig' as ui %}
+{% import 'components/_stock_item_label.html.twig' as article %}
 
 {% block title %}CoSync — Suivi des dotations{% endblock %}
 
@@ -12,15 +12,18 @@
     { label: 'Suivi' }
 ] } %}
 
-<div class="dot-page">
+{# Chaque geste recharge la page : `suiviDotations` note les groupes ouverts et le défilement à
+   l'envoi, et les rend au rechargement — sans quoi on remontait tout en haut après chaque sac. #}
+<div class="dot-page" x-data="suiviDotations()" @submit.capture="memoriser()">
 
     <div class="dot-header">
         <div>
             <h1 class="dot-title">Suivi des dotations</h1>
             <p class="dot-subtitle">Ce que chaque personne doit recevoir et ce qui a déjà été remis.</p>
         </div>
+        {# La liste de flocage est partie sur l'écran des commandes : elle s'envoie au floqueur
+           au moment où l'on commande, cet écran-ci ne sert qu'à remettre. #}
         <div class="dot-header-actions">
-            <a href="{{ path('admin_dotations_flocage') }}" class="btn btn-secondary">Liste de flocage</a>
             {% if peut_acceder('admin_dotations_recalculer') %}
                 <form method="post" action="{{ path('admin_dotations_recalculer') }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('dotation_recalculer') }}">
@@ -40,10 +43,9 @@
     {% endif %}
 
     {% for groupe in groupes %}
-        <div class="dot-card" x-data="{ open: false }"
-             x-init="if (sessionStorage.getItem('dotOpenGroup') === '{{ loop.index }}') { open = true; sessionStorage.removeItem('dotOpenGroup'); }"
-             @submit.capture="sessionStorage.setItem('dotOpenGroup', '{{ loop.index }}')">
+        <div class="dot-card" x-data="{ open: estOuvert({{ groupe.nom|json_encode|e('html_attr') }}) }">
             <button type="button" class="dot-card-header dot-card-toggle" @click="open = !open"
+                    data-groupe="{{ groupe.nom }}"
                     :aria-expanded="open" aria-label="Déplier / replier l'équipe">
                 <svg class="dot-card-chevron" :class="{ 'dot-card-chevron-open': open }"
                      width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -73,36 +75,64 @@
                             <th>Qté</th>
                             <th>Statut</th>
                             <th></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for besoin in groupe.besoins %}
-                            <tr>
+                            {% set corrections = correctionsParBesoin[besoin.id] %}
+                            {% set actions = actionsParBesoin[besoin.id] %}
+                            {# `correction` : la saisie ouverte depuis le menu « ⋯ », dans la cellule de
+                               la valeur qu'elle corrige. Une à la fois par ligne. #}
+                            <tr x-data="{ correction: null }">
                                 <td class="carte-titre">
                                     <span class="dot-person-name">{{ besoin.nomPrenom }}</span>
-                                    <span class="dot-person-role">{{ besoin.roleLabel }}</span>
                                 </td>
                                 <td data-label="Article">
-                                    {% include 'admin/dotations/_option_cell.html.twig' with {
-                                        besoin: besoin,
-                                        options: optionsParBesoin[besoin.id] ?? [],
-                                    } only %}
-                                    {% include 'admin/dotations/_ecoulement_cell.html.twig' with {
-                                        besoin: besoin,
-                                        articles: articlesParBesoin[besoin.id] ?? [],
-                                    } only %}
-                                    {% include 'admin/dotations/_flocage_cell.html.twig' with {
-                                        besoin: besoin,
-                                        reglages: flocagesParBesoin[besoin.id] ?? null,
-                                    } only %}
+                                    {# Plusieurs articles s'appellent « Chaussettes » : sans la marque, on
+                                       ne sait pas quel carton ouvrir. C'est celle de l'article servi. #}
+                                    {% set details = article.details(besoin.articleServi)|trim %}
+                                    <div class="dot-article-cell">
+                                        {% include 'admin/dotations/_option_cell.html.twig' with {
+                                            besoin: besoin,
+                                            options: optionsParBesoin[besoin.id] ?? [],
+                                            corrections: corrections,
+                                        } only %}
+                                        {# Servi par un ancien stock : c'est ce carton-là qu'on ouvre, il ressort. #}
+                                        {% if besoin.estServiParEcoulement %}
+                                            <span class="dot-ecoulement-badge" title="Servi depuis un stock en cours d'écoulement — l'article du kit n'est pas racheté">
+                                                {{- details ?: article.label(besoin.articleServi) -}}
+                                            </span>
+                                        {% elseif details %}
+                                            <span class="dot-item-details">{{ details }}</span>
+                                        {% endif %}
+                                        {% include 'admin/dotations/_ecoulement_cell.html.twig' with {
+                                            besoin: besoin,
+                                            articles: articlesParBesoin[besoin.id] ?? [],
+                                            corrections: corrections,
+                                        } only %}
+                                        {% include 'admin/dotations/_flocage_cell.html.twig' with {
+                                            besoin: besoin,
+                                            reglages: flocagesParBesoin[besoin.id] ?? null,
+                                            corrections: corrections,
+                                        } only %}
+                                    </div>
                                 </td>
                                 <td data-label="Taille">
-                                    {% set options = taillesParBesoin[besoin.id] ?? [] %}
+                                    {% set taille = taillesParBesoin[besoin.id] ?? null %}
                                     {% set estDonne = besoin.statut.estRemis %}
-                                    <div x-data="{ editing: false }" class="dot-taille-edit">
-                                        <div x-show="!editing" class="dot-taille-display">
+                                    <div class="dot-taille-edit">
+                                        <div x-show="correction !== 'taille'" class="dot-taille-display">
+                                            <div class="dot-taille-valeurs">
                                             {% if besoin.taille %}
-                                                <span class="dot-item-taille">{{ besoin.taille }}</span>
+                                                {# L'étiquette du carton (« 37-40 »), pas le libellé du stock : un « 37 »
+                                                   seul se lisait comme la pointure du joueur. #}
+                                                <span class="dot-taille-carton">
+                                                    <span class="dot-item-taille">{{ taille.etiquette ?? besoin.taille }}</span>
+                                                    {% if besoin.tailleManuelle %}
+                                                        <span class="dot-taille-lock" title="Taille fixée à la main : le dossier ne la met plus à jour">📌</span>
+                                                    {% endif %}
+                                                </span>
                                             {% elseif estDonne %}
                                                 <span class="dot-taille-none">—</span>
                                             {% elseif besoin.articleServi.typeVetement %}
@@ -118,64 +148,50 @@
                                             {% else %}
                                                 <span class="dot-taille-none">—</span>
                                             {% endif %}
-                                            {% if peut_acceder('admin_dotations_besoin_taille') %}
-                                            <button type="button" class="dot-taille-pen" @click="editing = true"
-                                                    title="{{ estDonne ? 'Corriger la taille remise (ajuste le stock)' : 'Modifier la taille' }}" aria-label="Modifier la taille">
-                                                {{ ui.icon('edit', 14) }}
-                                            </button>
+                                            {% if taille and taille.declaree %}
+                                                <span class="dot-taille-declaree">{{ taille.declaree }}</span>
                                             {% endif %}
+                                            </div>
                                         </div>
-                                        {% if peut_acceder('admin_dotations_besoin_taille') %}
-                                        <form x-show="editing" x-cloak method="post"
+                                        {# droits-verifies-cote-serveur: DotationLigneCorrectionsResolver filtre déjà sur DotationLigneCorrection::permission() #}
+                                        {% if corrections.propose('taille') %}
+                                        <form x-show="correction === 'taille'" x-cloak method="post"
                                               action="{{ path('admin_dotations_besoin_taille', {id: besoin.id}) }}"
                                               class="dot-taille-form">
                                             <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_taille_' ~ besoin.id) }}">
                                             <select name="taille" class="field-input field-input-compact"
-                                                    x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
-                                                <option value="">— Aucune —</option>
-                                                {% if besoin.taille and besoin.taille not in options %}
-                                                    <option value="{{ besoin.taille }}" selected>{{ besoin.taille }}</option>
-                                                {% endif %}
-                                                {% for t in options %}
-                                                    <option value="{{ t }}"{{ besoin.taille == t ? ' selected' }}>{{ t }}</option>
+                                                    x-init="$watch('correction', v => v === 'taille' && $nextTick(() => $el.focus()))">
+                                                {# Choisir une taille la verrouille ; « Automatique » est la sortie
+                                                   du verrou. « — Aucune — » ne le disait pas. #}
+                                                <option value="">{{ taille and taille.relachable ? 'Automatique (taille du dossier)' : '— Aucune —' }}</option>
+                                                {% for option in taille.options ?? [] %}
+                                                    <option value="{{ option.valeur }}"{{ option.valeur is same as(taille.selection) ? ' selected' }}>{{ option.libelle }}</option>
                                                 {% endfor %}
                                             </select>
                                             <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
-                                            <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
+                                            <button type="button" class="btn btn-ghost btn-sm" @click="correction = null" title="Annuler">✕</button>
                                         </form>
                                         {% endif %}
                                     </div>
                                 </td>
                                 <td data-label="Qté">{{ besoin.quantite }}</td>
                                 <td data-label="Statut">
-                                    {% set actions = actionsParBesoin[besoin.id] %}
                                     <div class="dot-statut-cell">
-                                        {# Revenir en arrière, c'est défaire ce que le badge affiche : le geste
-                                           se pose contre lui, pas dans la colonne d'actions, qui ne porte que
-                                           l'étape suivante. Même idiome que le crayon de la colonne Taille. #}
-                                        <div class="dot-statut-ligne">
-                                            {% if besoin.statut.estRemis %}
-                                                <span class="dot-badge dot-badge-done">{{ besoin.statut.label }}</span>
-                                            {% elseif besoin.statut.estPrepare %}
-                                                <span class="dot-badge dot-badge-prepare">{{ besoin.statut.label }}</span>
-                                            {% else %}
-                                                <span class="dot-badge dot-badge-todo">{{ besoin.statut.label }}</span>
-                                            {% endif %}
-
-                                            {% if actions.retour %}
-                                                {% include 'admin/dotations/_action.html.twig' with {
-                                                    besoin: besoin,
-                                                    action: actions.retour.value,
-                                                    contexte: 'retour',
-                                                } only %}
-                                            {% endif %}
-                                        </div>
+                                        {# Revenir en arrière se fait depuis le menu « ⋯ » de la ligne. #}
+                                        {% if besoin.statut.estRemis %}
+                                            <span class="dot-badge dot-badge-done">{{ besoin.statut.label }}</span>
+                                        {% elseif besoin.statut.estPrepare %}
+                                            <span class="dot-badge dot-badge-prepare">{{ besoin.statut.label }}</span>
+                                        {% else %}
+                                            <span class="dot-badge dot-badge-todo">{{ besoin.statut.label }}</span>
+                                        {% endif %}
 
                                         {# Le sac est fait : d'où vient l'article ne regarde plus personne. #}
                                         {% if not besoin.statut.contenuFige %}
                                             {% include 'admin/dotations/_provenance_cell.html.twig' with {
                                                 besoin: besoin,
                                                 provenance: provenanceParBesoin[besoin.id] ?? null,
+                                                taille: taillesParBesoin[besoin.id].etiquette ?? null,
                                             } only %}
                                         {% endif %}
                                     </div>
@@ -193,6 +209,13 @@
                                             } only %}
                                         {% endif %}
                                     </div>
+                                </td>
+                                <td class="dot-table-menu">
+                                    {% include 'admin/dotations/_menu_ligne.html.twig' with {
+                                        besoin: besoin,
+                                        corrections: corrections,
+                                        actions: actions,
+                                    } only %}
                                 </td>
                             </tr>
                         {% endfor %}

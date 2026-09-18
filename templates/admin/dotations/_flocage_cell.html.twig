@@ -1,41 +1,33 @@
-{% import 'components/_icon.html.twig' as ui %}
-{# Texte de flocage d'un besoin, saisissable en ligne tant que la ligne n'est pas préparée :
-   le flocage se commande bien avant que le sac ne se fasse.
+{# Texte de flocage d'un besoin, saisissable tant que la ligne n'est pas préparée : le flocage
+   se commande bien avant que le sac ne se fasse. La saisie s'ouvre à la place du texte, depuis
+   le menu « ⋯ » de la ligne.
    Rien n'est affiché pour un article non floqué — la très grande majorité des lignes.
-   `besoin`   = App\Entity\DotationBesoin
-   `reglages` = App\DTO\DotationFlocageReglages, ou null si l'article ne se floque pas #}
-{% set saisissable = reglages is not null and not besoin.statut.contenuFige and peut_acceder('admin_dotations_besoin_personnalisation') %}
+   `besoin`      = App\Entity\DotationBesoin
+   `reglages`    = App\DTO\DotationFlocageReglages, ou null si l'article ne se floque pas
+   `corrections` = App\DTO\DotationLigneCorrections #}
+{% set saisissable = corrections.propose('flocage') %}
 {% if besoin.personnalisation or saisissable %}
-    <div class="dot-flocage" x-data="{ editing: false }">
-        <div x-show="!editing" class="dot-flocage-display">
-            {% if besoin.personnalisation %}
-                <span class="dot-flocage-value">Flocage : {{ besoin.personnalisation }}</span>
-            {% else %}
-                {# Floqué mais sans texte : le licencié n'a pas pu répondre. C'est au club de le saisir. #}
-                <span class="dot-flocage-missing">Flocage à renseigner</span>
-            {% endif %}
-            {% if saisissable %}
-                <button type="button" class="dot-taille-pen" @click="editing = true"
-                        title="{{ besoin.personnalisation ? 'Corriger le texte à floquer' : 'Saisir le texte à floquer' }}"
-                        aria-label="{{ besoin.personnalisation ? 'Corriger le texte à floquer' : 'Saisir le texte à floquer' }}">
-                    {{ ui.icon('edit', 12) }}
-                </button>
-            {% endif %}
-        </div>
-
-        {# droits-verifies-cote-serveur: `saisissable` porte déjà peut_acceder(), plus haut. #}
-        {% if saisissable %}
-            <form x-show="editing" x-cloak method="post"
-                  action="{{ path('admin_dotations_besoin_personnalisation', {id: besoin.id}) }}"
-                  class="dot-taille-form">
-                <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_personnalisation_' ~ besoin.id) }}">
-                <input type="text" name="personnalisation" class="field-input field-input-compact"
-                       maxlength="{{ reglages.maxLength }}" value="{{ besoin.personnalisation }}"
-                       placeholder="{{ reglages.label }}"
-                       x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
-                <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
-                <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
-            </form>
+    <div class="dot-flocage-display" x-show="correction !== 'flocage'">
+        {% if besoin.personnalisation %}
+            <span class="dot-flocage-value">Flocage : {{ besoin.personnalisation }}</span>
+        {% else %}
+            {# Floqué mais sans texte : le licencié n'a pas pu répondre. C'est au club de le saisir. #}
+            <span class="dot-flocage-missing">Flocage à renseigner</span>
         {% endif %}
     </div>
+
+    {# droits-verifies-cote-serveur: DotationLigneCorrectionsResolver filtre déjà sur DotationLigneCorrection::permission() #}
+    {% if saisissable %}
+        <form x-show="correction === 'flocage'" x-cloak method="post"
+              action="{{ path('admin_dotations_besoin_personnalisation', {id: besoin.id}) }}"
+              class="dot-taille-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_personnalisation_' ~ besoin.id) }}">
+            <input type="text" name="personnalisation" class="field-input field-input-compact"
+                   maxlength="{{ reglages.maxLength }}" value="{{ besoin.personnalisation }}"
+                   placeholder="{{ reglages.label }}"
+                   x-init="$watch('correction', v => v === 'flocage' && $nextTick(() => $el.focus()))">
+            <button type="submit" class="dot-taille-ok" title="Valider">✓</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="correction = null" title="Annuler">✕</button>
+        </form>
+    {% endif %}
 {% endif %}

@@ -1,4 +1,5 @@
 {% extends 'admin/layout.html.twig' %}
+{% import 'components/_icon.html.twig' as ui %}
 
 {% block title %}CoSync — Commandes{% endblock %}
 
@@ -12,10 +13,47 @@
 
 <div class="dot-page">
 
+    {# Les trois sorties de l'approvisionnement tiennent dans l'en-tête, l'étape du moment en
+       clair et le reste au « ⋯ ». La liste de flocage est de celles-là : elle part chez le
+       floqueur au moment où l'on commande, pas quand on remplit les sacs. #}
     <div class="dot-header">
         <div>
             <h1 class="dot-title">Commandes</h1>
             <p class="dot-subtitle">À commander = besoins « à donner » − stock − commandes en attente.</p>
+        </div>
+        <div class="dot-header-actions">
+            {% if aCommander is not empty and peut_acceder('admin_commandes_generer') %}
+                <form method="post" action="{{ path('admin_commandes_generer') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('commande_generer') }}">
+                    <button type="submit" class="btn btn-primary">Générer les bons de commande</button>
+                </form>
+            {% endif %}
+
+            {% embed 'components/_menu_actions.html.twig' with { label: 'Autres sorties de l\'écran' } %}
+                {% block items %}
+                    {# Un `embed` est un template à lui seul : les macros importées par la page
+                       ne descendent pas dans ses blocs, celui-ci refait son import. #}
+                    {% import 'components/_icon.html.twig' as ui %}
+                    {# Le justificatif reste proposé même sans rien à commander : « le stock couvre
+                       toute la saison » est une conclusion qui se prouve devant un conseil, au même
+                       titre qu'un achat. #}
+                    {% if peut_acceder('admin_commandes_justificatif') %}
+                        <form method="post" action="{{ path('admin_commandes_justificatif') }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('commande_justificatif') }}">
+                            <button type="submit" class="fiche-menu-item">
+                                {{ ui.icon('file-text', 15) }}
+                                Justificatif de commande
+                            </button>
+                        </form>
+                    {% endif %}
+                    {% if peut_acceder('admin_dotations_flocage') %}
+                        <a href="{{ path('admin_dotations_flocage') }}" class="fiche-menu-item">
+                            {{ ui.icon('tag', 15) }}
+                            Liste de flocage
+                        </a>
+                    {% endif %}
+                {% endblock %}
+            {% endembed %}
         </div>
     </div>
 
@@ -23,12 +61,6 @@
     <div class="dot-card">
         <div class="dot-card-header">
             <h2 class="dot-card-title">À commander</h2>
-            {% if aCommander is not empty and peut_acceder('admin_commandes_generer') %}
-                <form method="post" action="{{ path('admin_commandes_generer') }}" style="margin-left:auto">
-                    <input type="hidden" name="_token" value="{{ csrf_token('commande_generer') }}">
-                    <button type="submit" class="btn btn-primary">Générer les bons de commande</button>
-                </form>
-            {% endif %}
         </div>
 
         {% if aCommander is empty %}
@@ -55,7 +87,9 @@
                                         <td>
                                             {% include 'admin/commandes/_article_cell.html.twig' with { item: ligne.stockItem } only %}
                                         </td>
-                                        <td>{% if ligne.taille %}<span class="dot-item-taille">{{ ligne.taille }}</span>{% else %}—{% endif %}</td>
+                                        {# L'étiquette du carton (« 37-40 »), pas le libellé du stock : un « 37 » seul
+                                           se lisait comme une pointure. #}
+                                        <td>{% if ligne.taille %}<span class="dot-item-taille">{{ taille_carton(ligne.stockItem, ligne.taille) }}</span>{% else %}—{% endif %}</td>
                                         <td>{{ ligne.besoin }}</td>
                                         <td>{{ ligne.stock }}</td>
                                         <td>{{ ligne.enAttente }}</td>

@@ -15,7 +15,7 @@ use Symfony\Bundle\SecurityBundle\Security;
  *
  * La cellule alignait « Marquer remis » et « Dé-préparer » côte à côte : la colonne changeait de
  * largeur d'une ligne à l'autre, et mettait sur le même plan avancer et annuler. Un bouton pour
- * l'étape en cours ; le retour en arrière part vivre contre le badge de statut.
+ * l'étape en cours ; le retour en arrière part en bas du menu « ⋯ » de la ligne.
  */
 final class DotationLigneActionsResolverTest extends TestCase
 {

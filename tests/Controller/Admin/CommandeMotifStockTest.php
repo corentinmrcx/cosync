@@ -4,14 +4,18 @@ namespace App\Tests\Controller\Admin;
 
 use App\Entity\DotationBesoin;
 use App\Entity\GrilleTaille;
+use App\Entity\GrilleTailleValeur;
 use App\Entity\Season;
 use App\Entity\StockItem;
 use App\Entity\StockMovement;
+use App\Entity\Taille;
 use App\Entity\User;
 use App\Enum\StockItemKind;
 use App\Enum\StockItemVetementType;
 use App\Enum\StockMovementType;
 use App\Enum\TailleType;
+use App\Repository\TailleRepository;
+use App\Service\Referentiel\TailleReferentiel;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -98,6 +102,57 @@ final class CommandeMotifStockTest extends WebTestCase
             $crawler->filter('.cmd-motif'),
             'Commander ce qu\'on n\'a pas est le cas ordinaire : l\'expliquer noierait les lignes qui ont quelque chose à dire.',
         );
+    }
+
+    /**
+     * La colonne Taille et le motif parlent en cartons : « 41 » seul se lisait comme une pointure,
+     * alors que c'est l'étiquette Erima du 41-43 — et le bon de commande part chez le fournisseur.
+     */
+    public function testLesTaillesSeLisentEnPlagesDeCarton(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $grille = (new GrilleTaille())->setNom('Chaussettes Erima')->setType(TailleType::POINTURE);
+        $this->em->persist($grille);
+        foreach (['41' => ['41', '42', '43'], '44' => ['44', '45', '46']] as $cible => $couvertes) {
+            $valeur = (new GrilleTailleValeur())->setCible($this->pointure((string) $cible));
+            foreach ($couvertes as $pointure) {
+                $valeur->addCouverture($this->pointure($pointure));
+            }
+            $grille->addValeur($valeur);
+            $this->em->persist($valeur);
+        }
+
+        $chaussettes = $this->makeItem('Chaussettes', 'Erima', 'Noir');
+        $chaussettes->setTypeVetement(StockItemVetementType::CHAUSSURES)->setGrilleTaille($grille);
+        $this->makeStock($chaussettes, '44', 9);
+        $this->makeBesoin($chaussettes, '41');
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/admin/commandes');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('41-43', $crawler->filter('.dot-item-taille')->text());
+        self::assertStringContainsString(
+            'Aucun stock en « 41-43 » — cet article est rangé en 44-46.',
+            $crawler->filter('.cmd-motif')->text(),
+        );
+    }
+
+    private function pointure(string $libelle): Taille
+    {
+        $existante = self::getContainer()->get(TailleRepository::class)->findOneByLibelle(TailleType::POINTURE, $libelle);
+        if ($existante !== null) {
+            return $existante;
+        }
+
+        $taille = (new Taille())->setLibelle($libelle)->setType(TailleType::POINTURE);
+        $this->em->persist($taille);
+        $this->em->flush();
+        self::getContainer()->get(TailleReferentiel::class)->oublier();
+
+        return $taille;
     }
 
     private function makeItem(string $nom, string $marque, string $couleur): StockItem

@@ -26,12 +26,15 @@ use App\Service\Dotation\DotationEcoulementService;
 use App\Service\Dotation\DotationFlocageService;
 use App\Service\Dotation\DotationGroupeReglagesFactory;
 use App\Service\Dotation\DotationLigneActionsResolver;
+use App\Service\Dotation\DotationLigneCorrectionsResolver;
 use App\Service\Dotation\DotationModeleFormContext;
 use App\Service\Dotation\DotationModeleService;
 use App\Service\Dotation\DotationPreparationService;
 use App\Service\Dotation\DotationProvenanceResolver;
 use App\Service\Dotation\DotationRemiseService;
 use App\Service\Dotation\DotationSuiviPresenter;
+use App\Service\Dotation\ListeFlocageCollector;
+use App\Service\Pdf\ListeFlocagePdfService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,7 +56,10 @@ class DotationController extends AbstractController
         private readonly DotationEcoulementAllocator $ecoulementAllocator,
         private readonly DotationEcoulementService $ecoulementService,
         private readonly DotationFlocageService $flocageService,
+        private readonly ListeFlocageCollector $flocageCollector,
+        private readonly ListeFlocagePdfService $flocagePdf,
         private readonly DotationLigneActionsResolver $ligneActions,
+        private readonly DotationLigneCorrectionsResolver $ligneCorrections,
         private readonly DotationProvenanceResolver $provenance,
         private readonly DotationSuiviPresenter $suivi,
         private readonly DotationPreparationService $preparationService,
@@ -358,15 +364,19 @@ class DotationController extends AbstractController
         $this->ecoulementAllocator->allouer($season);
 
         $groupes = $this->suivi->groupesDeSuivi($season);
+        $options = $this->choixService->optionsParBesoin($groupes);
+        $articles = $this->ecoulementService->articlesParBesoin($groupes);
+        $flocages = $this->flocageService->reglagesParBesoin($groupes);
 
         return $this->render('admin/dotations/suivi.html.twig', [
             'season' => $season,
             'groupes' => $groupes,
-            'optionsParBesoin' => $this->choixService->optionsParBesoin($groupes),
-            'articlesParBesoin' => $this->ecoulementService->articlesParBesoin($groupes),
+            'optionsParBesoin' => $options,
+            'articlesParBesoin' => $articles,
             'taillesParBesoin' => $this->suivi->taillesParBesoin($groupes),
             'actionsParBesoin' => $this->ligneActions->parBesoin($groupes),
-            'flocagesParBesoin' => $this->flocageService->reglagesParBesoin($groupes),
+            'correctionsParBesoin' => $this->ligneCorrections->parBesoin($groupes, $options, $articles, $flocages),
+            'flocagesParBesoin' => $flocages,
             // Après l'arbitrage : la provenance se lit sur l'article servi, pas sur celui du kit.
             'provenanceParBesoin' => $this->provenance->parBesoin($season),
         ]);
@@ -465,6 +475,28 @@ class DotationController extends AbstractController
         return $this->render('admin/dotations/flocage.html.twig', [
             'season' => $season,
             'besoins' => $this->suivi->flocages($season),
+        ]);
+    }
+
+    /**
+     * La même liste, mise au format du floqueur : article, référence, taille, texte.
+     *
+     * L'écran garde le porteur et son équipe — c'est par là que le club se relit. Le document
+     * qui sort ne les porte pas : le floqueur ne pose pas la question « pour qui ? », et un
+     * nom de licencié n'a rien à faire sur une feuille qui quitte le club (§6).
+     *
+     * Reste sous `dotation.lire` comme l'écran : produire la feuille, c'est la lire.
+     */
+    #[Route('/flocage/pdf', name: 'flocage_pdf', methods: ['POST'])]
+    public function flocagePdf(Request $request, #[CurrentSeason] Season $season): Response
+    {
+        $this->csrf->valider('dotation_flocage_pdf', $request);
+
+        $doc = $this->flocageCollector->collecter($season);
+
+        return new Response($this->flocagePdf->generate($doc), Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="%s"', $this->flocagePdf->nomFichier($doc)),
         ]);
     }
 

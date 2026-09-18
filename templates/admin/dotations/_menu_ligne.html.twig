@@ -1,0 +1,79 @@
+{#
+  Le menu « ⋯ » d'une ligne du suivi : ce qu'on corrige, puis ce qui défait l'état de la ligne.
+
+  Corriger l'article, la taille ou le flocage n'a pas d'ordre : ce ne sont pas des étapes. En
+  crayons contre chaque valeur, ils s'empilaient jusqu'à quatre par ligne, et un crayon resté seul
+  sous une marque ne disait plus ce qu'il corrigeait. Le menu ne fait qu'ouvrir la saisie dans sa
+  cellule (`correction`, porté par la ligne) : la valeur se corrige toujours là où elle se lit.
+
+  « Défaire la préparation » et « Annuler la remise » ferment le menu, en rouge sous un filet :
+  ils défont un état enregistré. Leur formulaire vit dans `_action.html.twig`, avec l'étape
+  suivante — la route et le jeton d'un geste n'existent qu'une fois.
+
+  Les corrections sont filtrées sur leur permission par DotationLigneCorrectionsResolver, le retour
+  par DotationLigneActionsResolver. Aucun lien d'écriture n'est rendu ici même.
+
+  `besoin`      = App\Entity\DotationBesoin
+  `corrections` = App\DTO\DotationLigneCorrections
+  `actions`     = App\DTO\DotationLigneActions
+#}
+{% if not corrections.estVide or actions.retour %}
+    <div class="fiche-menu fiche-menu-ligne"
+         x-data="menuLigne()"
+         @click.outside="fermerMenu()"
+         @keydown.escape.window="fermerMenu()"
+         @scroll.window.capture="fermerMenu()">
+        <div class="fiche-menu-voile" x-show="ouvert" x-transition.opacity @click="fermerMenu()" x-cloak></div>
+
+        <button type="button"
+                class="btn btn-secondary btn-sm fiche-menu-declencheur"
+                @click="basculer()"
+                x-ref="declencheur"
+                :aria-expanded="ouvert"
+                aria-haspopup="true"
+                aria-label="Actions sur cette ligne">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+            </svg>
+        </button>
+
+        {# Le menu se referme sur le geste qu'on vient d'y prendre. #}
+        <div class="fiche-menu-panneau fiche-menu-panneau-ancre"
+             x-ref="panneau"
+             :style="ancrage"
+             @click="fermerMenu()"
+             x-show="ouvert"
+             x-transition:enter="fiche-menu-entre"
+             x-transition:enter-start="fiche-menu-cache"
+             x-transition:enter-end="fiche-menu-visible"
+             x-transition:leave="fiche-menu-sort"
+             x-transition:leave-start="fiche-menu-visible"
+             x-transition:leave-end="fiche-menu-cache"
+             x-cloak>
+            {% if corrections.propose('option') %}
+                <button type="button" class="fiche-menu-item" @click="correction = 'option'">Changer l'article choisi</button>
+            {% endif %}
+            {% if corrections.propose('article') %}
+                <button type="button" class="fiche-menu-item" @click="correction = 'article'">Choisir l'article servi</button>
+            {% endif %}
+            {% if corrections.propose('taille') %}
+                <button type="button" class="fiche-menu-item" @click="correction = 'taille'">
+                    {{- besoin.statut.estRemis ? 'Corriger la taille remise' : 'Corriger la taille' -}}
+                </button>
+            {% endif %}
+            {% if corrections.propose('flocage') %}
+                <button type="button" class="fiche-menu-item" @click="correction = 'flocage'">
+                    {{- besoin.personnalisation ? 'Corriger le texte à floquer' : 'Saisir le texte à floquer' -}}
+                </button>
+            {% endif %}
+
+            {% if actions.retour %}
+                {% include 'admin/dotations/_action.html.twig' with {
+                    besoin: besoin,
+                    action: actions.retour.value,
+                    contexte: 'menu',
+                } only %}
+            {% endif %}
+        </div>
+    </div>
+{% endif %}

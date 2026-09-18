@@ -1,0 +1,233 @@
+{# Pièce jointe au devis, lue par la présidente ou la trésorière, vite et une seule fois.
+
+   Elle ne raisonne pas en colonnes d'inventaire, elle raisonne article par article : « il en
+   faut combien ? on en a combien ? alors on en commande combien ? ». Le document tient donc
+   en trois nombres par ligne, et rien d'autre.
+
+   Ce qui a servi à les obtenir — l'ancienne référence qu'on écoule, le sac déjà préparé, une
+   commande en route — descend en note, et seulement quand ça explique un écart. Une colonne
+   de plus est une question de plus.
+
+   Il ne se lit jamais seul : le devis, posé à côté, porte les lignes, les prix et les
+   références. Ce document-ci ne répond qu'à « pourquoi ces quantités ». #}
+{% extends 'pdf/_layout.html.twig' %}
+
+{% block titre %}Justificatif de commande{% endblock %}
+{% block sous_titre %}{{ club_nom }} — Dotations {{ doc.saisonLabel }}{% endblock %}
+
+{% block styles %}
+        /* Titres de section : ceux de tous les documents du club. */
+        .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ff0033;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 6mm 0 3mm;
+            padding-bottom: 2mm;
+            border-bottom: 1px solid #ff0033;
+            page-break-after: avoid;
+        }
+        .section-title:first-child { margin-top: 0; }
+
+        /* ── Le modèle : une fiche par kit, pas un tableau ──
+           L'écart entre deux kits reste plus grand que celui qui sépare un titre de ses
+           lignes, sans quoi on ne voit plus où un kit finit — mais à peine plus : c'est le
+           titre en gras qui marque la rupture, pas le blanc. */
+        .kit { margin-bottom: 2.5mm; page-break-inside: avoid; }
+        .kit-titre { font-size: 12px; font-weight: 700; margin-bottom: 0; }
+        .kit-cibles { font-size: 11px; color: #555; margin-bottom: 1.5mm; }
+        .kit-lignes { width: 100%; border-collapse: collapse; }
+        .kit-lignes td { padding: 0.8mm 0; vertical-align: top; font-size: 11px; }
+        .kit-qte { width: 12mm; text-align: center; font-weight: 700; color: #ff0033; }
+        .kit-ou { color: #777; }
+        .kit-note { font-size: 10px; color: #777; }
+
+        /* ── L'effectif : un décompte, pas un tableau ── */
+        .effectifs { width: 100%; border-collapse: collapse; }
+        .effectifs td { padding: 4px 0; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+        .effectifs .kit-nom { color: #777; }
+        .effectifs .compte { text-align: right; width: 20mm; font-weight: 700; }
+        .effectifs tr.total td { border-bottom: none; border-top: 1px solid #d1d5db; font-weight: 700; }
+
+        /* ── La justification : le tableau du club ── */
+        .fournisseur {
+            font-size: 11px; font-weight: 700; margin: 4mm 0 2mm;
+            page-break-after: avoid;
+        }
+        table.lignes { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
+        table.lignes th {
+            background: #f3f4f6;
+            text-align: left;
+            padding: 6px 8px;
+            font-size: 11px;
+            border-bottom: 1px solid #d1d5db;
+        }
+        table.lignes td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+
+        .col-article { width: 52%; }
+        .col-faut { width: 16%; text-align: center; }
+        .col-a { width: 16%; text-align: center; }
+        .col-commander { width: 16%; text-align: center; font-weight: 700; }
+
+        /* `table.lignes th` l'emporte en spécificité sur les classes de colonne : sans ces
+           trois-là, les en-têtes restent à gauche au-dessus de valeurs centrées. */
+        table.lignes th.col-faut,
+        table.lignes th.col-a,
+        table.lignes th.col-commander { text-align: center; }
+
+        /* Un article déjà couvert s'efface : il est là pour prouver qu'on l'a regardé, pas
+           pour disputer l'attention aux lignes qu'on achète. */
+        table.lignes tr.couvert td { color: #777; }
+
+        /* Détail par taille : mêmes colonnes, en retrait, pour qu'on voie au premier coup
+           d'œil que ce sont les nombres du dessus, décomposés. */
+        table.lignes tr.detail td {
+            font-size: 10px; color: #777; border-bottom: none;
+            padding-top: 0; padding-bottom: 2px;
+        }
+        table.lignes tr.detail td.col-article { padding-left: 16px; }
+        table.lignes tr.total td {
+            background: #f3f4f6; font-weight: 700;
+            border-bottom: none; border-top: 1px solid #d1d5db;
+        }
+        /* Pas de `page-break-inside` sur les groupes : DomPDF ne l'honore pas sur un tbody.
+           Une ligne peut donc être séparée de ses tailles en bas de page — l'en-tête du
+           tableau, lui, se répète, et le détail reste lisible sous ses colonnes. */
+
+        .ref { color: #9aa1aa; }
+        .note { font-size: 10px; color: #777; font-style: italic; margin-top: 2px; }
+        .vide { padding: 14px 8px; color: #9aa1aa; font-style: italic; }
+
+        /* La date d'édition ferme le document : elle date ce qui précède, elle ne l'annonce pas. */
+        .recap-edite { margin-top: 4mm; font-size: 10px; color: #777; }
+{% endblock %}
+
+{% block corps %}
+
+{# ── Le modèle ── #}
+<h2 class="section-title">Modèle de dotation prévu</h2>
+
+{% if doc.kits is empty %}
+    <p class="vide">Aucun kit actif pour cette saison.</p>
+{% else %}
+    {% for kit in doc.kits %}
+        <div class="kit">
+            <p class="kit-titre">{{ kit.nom }}</p>
+            {# « Séniors, U13 et U16 » : une énumération se lit mieux qu'une suite de séparateurs. #}
+            <p class="kit-cibles">{{ kit.cibles is empty ? 'Aucune attribution' : kit.cibles|enumeration }}</p>
+            <table class="kit-lignes">
+                {% for entree in kit.entrees %}
+                    <tr>
+                        <td class="kit-qte">{{ entree.quantite }} ×</td>
+                        <td>
+                            {# Les options d'un même choix tiennent sur une entrée, reliées par
+                               « ou » : listées séparément, elles se cumulaient à la lecture et
+                               faisaient paraître la commande deux fois trop petite. #}
+                            {% for option in entree.options %}
+                                {% if not loop.first %}<br><span class="kit-ou">ou</span> {% endif %}{{ option.designation }}
+                            {% endfor %}
+                            {% if entree.auChoix() %}
+                                <span class="kit-note">— un seul au choix du licencié</span>
+                            {% elseif not entree.obligatoire %}
+                                <span class="kit-note">— optionnel</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td class="vide">Kit vide</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% endfor %}
+{% endif %}
+
+{# ── L'effectif ── #}
+<h2 class="section-title">Personnes à doter</h2>
+
+{% if doc.effectifs is empty %}
+    <p class="vide">Aucune personne à doter cette saison.</p>
+{% else %}
+    <table class="effectifs">
+        {% for effectif in doc.effectifs %}
+            <tr>
+                <td>
+                    {{ effectif.groupe }}
+                    {% if effectif.kits is not empty %}
+                        <span class="kit-nom">— {{ effectif.kits|enumeration }}</span>
+                    {% endif %}
+                </td>
+                <td class="compte">{{ effectif.personnes }}</td>
+            </tr>
+        {% endfor %}
+        <tr class="total">
+            <td>Total</td>
+            <td class="compte">{{ doc.personnes }}</td>
+        </tr>
+    </table>
+{% endif %}
+
+{# ── La justification ── #}
+<h2 class="section-title">Ce qu'il faut, ce qu'on a, ce qu'on commande</h2>
+
+{% for fournisseur in doc.fournisseurs %}
+    <p class="fournisseur">{{ fournisseur.nom }}</p>
+    <table class="lignes">
+        <thead>
+            <tr>
+                <th class="col-article">Article</th>
+                <th class="col-faut">Il en faut</th>
+                <th class="col-a">On en a</th>
+                <th class="col-commander">À commander</th>
+            </tr>
+        </thead>
+        {# Un tbody par article : la coupure de page ne sépare pas une ligne de ses tailles,
+           qui sans elle se retrouvaient orphelines en haut de la page suivante. #}
+        {% for article in fournisseur.articles %}
+            <tbody class="groupe">
+                <tr class="{{ article.couvert() ? 'couvert' : '' }}">
+                    <td class="col-article">
+                        {{ article.article.designation }}
+                        {% if article.article.refCatalogue %}
+                            <span class="ref">· réf. {{ article.article.refCatalogue }}</span>
+                        {% endif %}
+                        {% for note in article.notes %}
+                            <div class="note">{{ note }}</div>
+                        {% endfor %}
+                    </td>
+                    <td class="col-faut">{{ article.ilEnFaut }}</td>
+                    <td class="col-a">{{ article.onEnA }}</td>
+                    <td class="col-commander">{{ article.aCommander ?: '—' }}</td>
+                </tr>
+                {# Le détail ne sort que si l'article a plusieurs tailles : c'est le seul cas où
+                   la ligne au-dessus peut surprendre — « tu as 5 vestes et tu en recommandes
+                   5 ? », oui, elles sont en L et il les faut en M. C'est aussi par là que le
+                   devis se rapproche, ligne à ligne. #}
+                {% for taille in article.tailles %}
+                    <tr class="detail">
+                        <td class="col-article">{{ taille.etiquette }}</td>
+                        <td class="col-faut">{{ taille.ilEnFaut }}</td>
+                        <td class="col-a">{{ taille.onEnA }}</td>
+                        <td class="col-commander">{{ taille.aCommander ?: '—' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% else %}
+            <tbody><tr><td colspan="4" class="vide">Aucun article de dotation chez ce fournisseur.</td></tr></tbody>
+        {% endfor %}
+        <tbody>
+            <tr class="total">
+                <td class="col-article">Total {{ fournisseur.nom }}</td>
+                <td class="col-faut"></td>
+                <td class="col-a"></td>
+                <td class="col-commander">{{ fournisseur.total }}</td>
+            </tr>
+        </tbody>
+    </table>
+{% else %}
+    <p class="vide">Aucune dotation prévue cette saison.</p>
+{% endfor %}
+
+<p class="recap-edite">Édité le {{ doc.editeLe|date('d/m/Y à H:i') }} — à joindre au devis</p>
+
+{% endblock %}

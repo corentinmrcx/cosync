@@ -1,53 +1,47 @@
-{% import 'components/_icon.html.twig' as ui %}
 {% import 'components/_stock_item_label.html.twig' as article %}
 {# Article réellement servi, quand un stock en cours d'écoulement peut remplacer celui du kit.
 
    Ne s'affiche que si un écoulement concerne cette ligne : la quasi-totalité des dotations
    n'a rien à arbitrer, et une mention permanente alourdirait chaque ligne du tableau.
 
-   `besoin` = App\Entity\DotationBesoin, `articles` = [article du kit, ...articles d'écoulement]. #}
-{% if articles|length > 1 %}
-    {# Préparé comme remis : le carton est ouvert, on ne rechoisit plus lequel. #}
-    {% set fige = besoin.statut.contenuFige %}
+   L'article servi s'écrit déjà au-dessus, sa marque en badge : il ne reste à dire, en retrait,
+   que ce qu'il remplace. Le choix de l'article servi s'ouvre depuis le menu « ⋯ » de la ligne.
 
-    <div class="dot-ecoulement" x-data="{ editing: false }">
-        <div x-show="!editing" class="dot-ecoulement-display">
+   `besoin` = App\Entity\DotationBesoin, `articles` = [article du kit, ...articles d'écoulement],
+   `corrections` = App\DTO\DotationLigneCorrections. #}
+{% if articles|length > 1 %}
+    {% if besoin.estServiParEcoulement or besoin.articleManuel %}
+        <div class="dot-ecoulement-display" x-show="correction !== 'article'">
             {% if besoin.estServiParEcoulement %}
-                <span class="dot-ecoulement-badge" title="Servi depuis un stock en cours d'écoulement — cet article n'est pas racheté">
-                    ↳ {{ article.label(besoin.articleEcoulement) }}
+                <span class="dot-ecoulement-mention">
+                    au lieu de {{ article.details(besoin.stockItem)|trim ?: article.label(besoin.stockItem) }}
                 </span>
             {% endif %}
 
             {% if besoin.articleManuel %}
                 <span class="dot-ecoulement-lock" title="Article fixé à la main : l'arbitrage automatique ne le change plus">📌</span>
             {% endif %}
-
-            {% if not fige and peut_acceder('admin_dotations_besoin_article') %}
-                <button type="button" class="dot-option-pen" @click="editing = true"
-                        title="Choisir l'article servi" aria-label="Choisir l'article servi">
-                    {{ ui.icon('edit', 14) }}
-                </button>
-            {% endif %}
         </div>
+    {% endif %}
 
-        {% if not fige and peut_acceder('admin_dotations_besoin_article') %}
-            <form x-show="editing" x-cloak method="post"
-                  action="{{ path('admin_dotations_besoin_article', {id: besoin.id}) }}"
-                  class="dot-option-form">
-                <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_article_' ~ besoin.id) }}">
-                <select name="article" class="field-input field-input-compact"
-                        x-init="$watch('editing', v => v && $nextTick(() => $el.focus()))">
-                    <option value="auto"{{ not besoin.articleManuel ? ' selected' }}>Automatique (écouler d'abord)</option>
-                    {% for possible in articles %}
-                        <option value="{{ possible.id }}"
-                                {{- besoin.articleManuel and possible.id == besoin.articleServi.id ? ' selected' }}>
-                            {{ article.label(possible) }}{{ loop.first ? ' — article du kit' }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="dot-option-ok" title="Valider">✓</button>
-                <button type="button" class="btn btn-ghost btn-sm" @click="editing = false" title="Annuler">✕</button>
-            </form>
-        {% endif %}
-    </div>
+    {# droits-verifies-cote-serveur: DotationLigneCorrectionsResolver filtre déjà sur DotationLigneCorrection::permission() #}
+    {% if corrections.propose('article') %}
+        <form x-show="correction === 'article'" x-cloak method="post"
+              action="{{ path('admin_dotations_besoin_article', {id: besoin.id}) }}"
+              class="dot-option-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_article_' ~ besoin.id) }}">
+            <select name="article" class="field-input field-input-compact"
+                    x-init="$watch('correction', v => v === 'article' && $nextTick(() => $el.focus()))">
+                <option value="auto"{{ not besoin.articleManuel ? ' selected' }}>Automatique (écouler d'abord)</option>
+                {% for possible in articles %}
+                    <option value="{{ possible.id }}"
+                            {{- besoin.articleManuel and possible.id == besoin.articleServi.id ? ' selected' }}>
+                        {{ article.label(possible) }}{{ loop.first ? ' — article du kit' }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="dot-option-ok" title="Valider">✓</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="correction = null" title="Annuler">✕</button>
+        </form>
+    {% endif %}
 {% endif %}

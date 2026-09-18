@@ -294,11 +294,6 @@ class DotationBesoin
         return $this->licencie?->getNomPrenom() ?? $this->dirigeant?->getNomPrenom() ?? '—';
     }
 
-    public function getRoleLabel(): string
-    {
-        return $this->licencie !== null ? 'Licencié' : 'Dirigeant';
-    }
-
     public function getTeamName(): ?string
     {
         return $this->licencie?->getTeam()?->getName() ?? $this->dirigeant?->getTeam()?->getName();

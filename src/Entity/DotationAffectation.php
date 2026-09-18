@@ -175,6 +175,25 @@ class DotationAffectation
         };
     }
 
+    /**
+     * Le nom de la cible, sans dire ce qu'elle est.
+     *
+     * Sur un document sortant, « Dirigeant — MARCOUX Corentin, Dirigeant — WILK Anthony »
+     * répète une évidence à chaque nom et noie la liste. La nature de la cible n'est utile
+     * qu'à l'écran d'attribution, où les types se mélangent : c'est {@see cibleLabel()}.
+     */
+    public function cibleNom(): string
+    {
+        return match (true) {
+            $this->licencie !== null => $this->licencie->getNomPrenom(),
+            $this->dirigeant !== null => $this->dirigeant->getNomPrenom(),
+            $this->team !== null => $this->team->getName(),
+            $this->category !== null => $this->category->getLabel(),
+            $this->role !== null => $this->role->label(),
+            default => 'Toute la saison',
+        };
+    }
+
     /** Libellé lisible de la cible (pour l'admin). */
     public function cibleLabel(): string
     {

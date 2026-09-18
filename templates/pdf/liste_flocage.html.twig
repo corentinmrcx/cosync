@@ -1,0 +1,106 @@
+{# La feuille de travail du floqueur.
+
+   Il ne connaît personne au club et n'a pas à l'apprendre : ni nom, ni équipe, ni catégorie.
+   Trois questions, trois colonnes — quelle taille, quel texte, combien de fois — sous le
+   carton qu'il vient d'ouvrir, désigné par sa référence catalogue.
+
+   Il travaille debout, le document posé à côté de la presse : les lignes sont espacées et le
+   texte à marquer est le seul élément en gras et en gros, en capitales comme il partira sur
+   le vêtement. #}
+{% extends 'pdf/_layout.html.twig' %}
+
+{% block titre %}Liste de flocage{% endblock %}
+{% block sous_titre %}{{ club_nom }} — Dotations {{ doc.saisonLabel }}{% endblock %}
+
+{% block styles %}
+        /* Titre de section : celui de tous les documents du club. */
+        .article-titre {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ff0033;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 6mm 0 2mm;
+            padding-bottom: 2mm;
+            border-bottom: 1px solid #ff0033;
+            page-break-after: avoid;
+        }
+        .article-titre:first-child { margin-top: 0; }
+
+        /* La référence sur la même ligne que l'article, en gris : c'est elle qui identifie le
+           carton chez le fournisseur, mais c'est la désignation qu'on lit d'abord. */
+        .article-ref { color: #777; font-weight: normal; text-transform: none; letter-spacing: 0; }
+
+        table.pieces { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
+        table.pieces th {
+            background: #f3f4f6;
+            text-align: left;
+            padding: 5px 8px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #555;
+            border-bottom: 1px solid #d1d5db;
+        }
+        /* Des lignes hautes : on suit du doigt, debout devant la presse. */
+        table.pieces td { padding: 7px 8px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
+
+        .col-taille { width: 24mm; text-align: center; font-weight: 700; }
+        .col-qte { width: 18mm; text-align: center; font-weight: 700; }
+        table.pieces th.col-taille,
+        table.pieces th.col-qte { text-align: center; }
+
+        /* Le seul élément que le floqueur recopie : il doit se lire d'un mètre. */
+        .texte { font-size: 14px; font-weight: 700; letter-spacing: 0.02em; }
+
+        .total { font-size: 11px; color: #555; margin-top: 1mm; }
+        .vide { padding: 14px 8px; color: #9aa1aa; font-style: italic; }
+        .edite { margin-top: 6mm; font-size: 10px; color: #777; }
+{% endblock %}
+
+{% block corps %}
+
+{% if doc.articles is empty %}
+    <p class="vide">Aucun article à floquer pour cette saison.</p>
+{% else %}
+    {% for article in doc.articles %}
+        {# Un article et ses pièces ne se séparent pas d'une page à l'autre tant qu'ils
+           tiennent : DomPDF honore `page-break-inside` sur un bloc, pas sur un tbody. #}
+        <h2 class="article-titre">
+            {{ article.designation }}
+            {% if article.refCatalogue %}<span class="article-ref">· réf. {{ article.refCatalogue }}</span>{% endif %}
+        </h2>
+
+        <table class="pieces">
+            <thead>
+                <tr>
+                    <th class="col-taille">Taille</th>
+                    <th>Texte à floquer</th>
+                    <th class="col-qte">Qté</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligne in article.lignes %}
+                    <tr>
+                        <td class="col-taille">{{ ligne.etiquetteTaille ?: '—' }}</td>
+                        {# En capitales : c'est ainsi que ça part sur le vêtement. Le filtre Twig
+                           plutôt qu'un `text-transform`, pour que la feuille porte littéralement
+                           ce qu'il faut marquer — et non une mise en forme qu'on pourrait croire
+                           décorative. Le club, lui, garde à l'écran la casse qu'il a saisie. #}
+                        <td class="texte">{{ ligne.texte|upper }}</td>
+                        <td class="col-qte">{{ ligne.quantite }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p class="total">{{ article.pieces }} pièce{{ article.pieces > 1 ? 's' }} pour cet article.</p>
+    {% endfor %}
+
+    <p class="edite">
+        {{ doc.pieces }} pièce{{ doc.pieces > 1 ? 's' }} à floquer au total —
+        édité le {{ doc.editeLe|date('d/m/Y à H:i') }}.
+    </p>
+{% endif %}
+
+{% endblock %}

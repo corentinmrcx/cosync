@@ -22,6 +22,7 @@ final class AchatMotifPresenter
     public function __construct(
         private readonly StockMovementRepository $movementRepository,
         private readonly TailleReferentiel $referentiel,
+        private readonly StockTaillePresenter $etiquettes,
     ) {}
 
     /**
@@ -69,6 +70,7 @@ final class AchatMotifPresenter
      */
     private function motif(array $ligne, array $ailleurs): array
     {
+        $item = $ligne['stockItem'];
         $taille = $ligne['taille'];
         $autres = array_values(array_filter($ailleurs, static fn (string $l): bool => $l !== $taille));
 
@@ -76,11 +78,15 @@ final class AchatMotifPresenter
             return ['motif' => null, 'sansGrille' => false];
         }
 
+        // En étiquettes de carton, comme la colonne Taille : « rangé en 44 » se lisait comme une
+        // pointure, alors que c'est le carton Erima 44-46.
+        $carton = fn (string $libelle): string => $this->etiquettes->etiquette($item, $libelle);
+
         return [
             'motif' => sprintf(
                 'Aucun stock en « %s » — cet article est rangé en %s.',
-                $taille,
-                implode(', ', $autres),
+                $carton($taille),
+                implode(', ', array_map($carton, $autres)),
             ),
             // Cause n°1 : sans grille, la taille déclarée n'est jamais traduite en étiquette
             // fournisseur, et la ligne réclame une déclinaison qui n'existe à aucun carton.
