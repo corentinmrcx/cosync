@@ -9,8 +9,13 @@
    Deuxième ligne discrète, à dessein : elle aide à commander, elle n'est pas ce qu'on lit
    pour reconnaître l'article.
 
-   `item` = App\Entity\StockItem. #}
-<span class="cmd-article-nom">{{ article.label(item) }}</span>
+   `item` = App\Entity\StockItem.
+   `taille` = étiquette du carton, quand l'article ne se décline qu'une fois et qu'elle n'a
+   donc pas de ligne à elle — elle se lit alors au ras du nom, pas sous la référence. #}
+<span class="cmd-article-ligne">
+    <span class="cmd-article-nom">{{ article.label(item) }}</span>
+    {% if taille|default(null) %}<span class="dot-item-taille">{{ taille }}</span>{% endif %}
+</span>
 
 {% if item.refCatalogue or item.lienAchat %}
     <span class="cmd-article-meta">

@@ -8,6 +8,7 @@ use App\Entity\StockItem;
 use App\Repository\CommandeLigneRepository;
 use App\Repository\DotationBesoinRepository;
 use App\Repository\StockMovementRepository;
+use App\Service\Referentiel\TailleReferentiel;
 
 /**
  * Ce qu'il reste à acheter pour honorer les dotations de la saison.
@@ -21,6 +22,7 @@ final class AchatService
         private readonly DotationBesoinRepository $besoinRepository,
         private readonly StockMovementRepository $movementRepository,
         private readonly CommandeLigneRepository $commandeLigneRepository,
+        private readonly TailleReferentiel $tailles,
     ) {}
 
     public function compterACommander(Season $season): int
@@ -74,7 +76,61 @@ final class AchatService
             ]);
         }
 
-        return array_values($groupes);
+        return $this->ordonner(array_values($groupes));
+    }
+
+    /**
+     * L'ordre dans lequel ces lignes se relisent : fournisseurs alphabétiques — « Sans
+     * fournisseur » en fin de liste, comme partout où un groupe fourre-tout ferme un
+     * classement —, articles par désignation, déclinaisons dans l'ordre du référentiel.
+     *
+     * Le cumul par clé rendait l'ordre des besoins rencontrés : deux S entre deux M, un
+     * article revenant trois fois dans la page. Ça se trie ici et pas dans l'écran, parce
+     * que le bon de commande recopie ces lignes telles quelles — la feuille qu'on a sous
+     * les yeux chez le fournisseur doit se lire comme l'écran qui l'a produite.
+     *
+     * @param list<array{fournisseur: ?Fournisseur, fournisseurNom: string, lignes: array<int, array{stockItem: StockItem, taille: ?string, besoin: int, stock: int, enAttente: int, aCommander: int}>}> $groupes
+     *
+     * @return array<int, array{fournisseur: ?Fournisseur, fournisseurNom: string, lignes: array<int, array{stockItem: StockItem, taille: ?string, besoin: int, stock: int, enAttente: int, aCommander: int}>}>
+     */
+    private function ordonner(array $groupes): array
+    {
+        usort($groupes, static fn (array $a, array $b): int => [
+            $a['fournisseur'] === null ? 1 : 0,
+            mb_strtolower($a['fournisseurNom']),
+        ] <=> [
+            $b['fournisseur'] === null ? 1 : 0,
+            mb_strtolower($b['fournisseurNom']),
+        ]);
+
+        foreach ($groupes as $i => $groupe) {
+            $lignes = $groupe['lignes'];
+            usort($lignes, $this->comparerLignes(...));
+            $groupes[$i]['lignes'] = $lignes;
+        }
+
+        return $groupes;
+    }
+
+    /**
+     * @param array{stockItem: StockItem, taille: ?string, besoin: int, stock: int, enAttente: int, aCommander: int} $a
+     * @param array{stockItem: StockItem, taille: ?string, besoin: int, stock: int, enAttente: int, aCommander: int} $b
+     */
+    private function comparerLignes(array $a, array $b): int
+    {
+        $parNom = strnatcasecmp($a['stockItem']->getDesignation(), $b['stockItem']->getDesignation());
+        if ($parNom !== 0) {
+            return $parNom;
+        }
+
+        // Deux articles peuvent porter la même désignation sans être le même carton :
+        // l'identifiant départage, pour que leurs tailles ne s'entremêlent pas.
+        $parArticle = $a['stockItem']->getId() <=> $b['stockItem']->getId();
+
+        // Le référentiel ordonne les tailles : « L, M, S, XL » n'aurait été l'ordre de personne.
+        return $parArticle !== 0
+            ? $parArticle
+            : $this->tailles->comparer($a['taille'] ?? '', $b['taille'] ?? '');
     }
 
     /**

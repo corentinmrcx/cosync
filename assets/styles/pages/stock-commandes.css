@@ -15,6 +15,14 @@
      Deux niveaux : ce qui sert à reconnaître l'article, puis ce qui sert à le retrouver au
      catalogue. Mettre la référence au même poids que le nom ferait chercher au mauvais
      endroit — on lit d'abord « Chaussettes · Erima · Noir », la réf ne vient qu'après. */
+/* Nom et taille sur la même ligne, la taille repassant dessous si la colonne rétrécit. */
+.cmd-article-ligne {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
 .cmd-article-nom {
     display: block;
     font-weight: 600;
@@ -35,6 +43,57 @@
 
 .cmd-article-lien:hover {
     color: var(--color-primary-dark);
+}
+
+/* — Un article, ses tailles dessous —
+     Le filet ne tombe qu'entre deux articles : les tailles d'un même carton se lisent comme
+     un bloc, pas comme des lignes qui se ressemblent. Elles s'effacent d'un cran — ce sont
+     les nombres du dessus, décomposés — et se décalent franchement pour qu'on voie d'un
+     coup d'œil jusqu'où va l'article. */
+.cmd-detail td {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    color: var(--color-text-muted);
+}
+
+.table tbody tr.cmd-detail {
+    border-top: none;
+}
+
+.cmd-detail td:first-child {
+    padding-left: 3rem;
+}
+
+/* Le blanc appartient au bloc, pas à la ligne : l'article se colle à ses tailles, et c'est
+   la dernière taille qui porte le blanc de fin. Avec le blanc du tableau sous la ligne
+   d'article, les tailles paraissaient décrocher de leur article pour rejoindre le suivant.
+   Un article sans détail est à la fois premier et dernier : il garde le blanc de fin. */
+.cmd-groupe > tr:first-child > td {
+    padding-bottom: 0.25rem;
+}
+
+.cmd-groupe > tr:last-child > td {
+    padding-bottom: 0.875rem;
+}
+
+/* La quantité : le seul nombre de l'écran, au bout de la ligne, jamais coupé.
+   `.table th` l'emporterait en spécificité : sans la seconde règle, l'en-tête reste à
+   gauche au-dessus de valeurs alignées à droite. */
+.cmd-qte {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.table th.cmd-qte {
+    text-align: right;
+}
+
+/* Le total ferme le bloc du fournisseur : c'est le nombre de pièces qu'on retrouvera sur
+   son devis. */
+.cmd-total td {
+    background: var(--color-bg-muted);
+    font-weight: 700;
+    color: var(--color-text-base);
 }
 
 .cmd-inline {

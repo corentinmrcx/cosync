@@ -66,36 +66,60 @@
         {% if aCommander is empty %}
             <p class="dot-empty">Rien à commander : tous les besoins sont couverts par le stock ou des commandes en attente.</p>
         {% else %}
-            {% for groupe in aCommander %}
+            {# Un article, ses tailles dessous, une quantité — l'écran sert à recopier une
+               commande chez un fournisseur, rien d'autre.
+
+               Ni besoin, ni stock, ni « en attente » : ils entrent dans le calcul (le
+               sous-titre le dit) mais ce sont des faits d'inventaire, et ils ont leur écrit,
+               le justificatif de commande. Ici, une colonne de plus est une question de plus.
+
+               Deux colonnes tiennent sur un téléphone : pas de `resp-table`, qui imposerait
+               une largeur minimale et remettrait la page à défiler de côté. #}
+            {% for fournisseur in aCommander %}
                 <div class="cmd-fourn-block">
-                    <h3 class="cmd-fourn-title">{{ groupe.fournisseurNom }}</h3>
+                    <h3 class="cmd-fourn-title">{{ fournisseur.nom }}</h3>
                     <div class="table-wrapper">
-                        <table class="table resp-table">
+                        <table class="table">
                             <thead>
                                 <tr>
                                     <th>Article</th>
-                                    <th>Taille</th>
-                                    <th>Besoin</th>
-                                    <th>Stock</th>
-                                    <th>En attente</th>
-                                    <th>À commander</th>
+                                    <th class="cmd-qte">À commander</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {% for ligne in groupe.lignes %}
+                            {# Un tbody par article : c'est lui qui tient l'article et ses
+                               tailles ensemble, et le filet de séparation ne tombe qu'entre
+                               deux articles. #}
+                            {% for article in fournisseur.articles %}
+                                <tbody class="cmd-groupe">
                                     <tr>
                                         <td>
-                                            {% include 'admin/commandes/_article_cell.html.twig' with { item: ligne.stockItem } only %}
+                                            {# Une seule déclinaison : sa taille monte sur la ligne de
+                                               l'article. Sur cet écran la taille n'est pas un détail,
+                                               c'est ce qu'on écrit au fournisseur. #}
+                                            {% include 'admin/commandes/_article_cell.html.twig' with {
+                                                item: article.article,
+                                                taille: article.tailleUnique,
+                                            } only %}
                                         </td>
-                                        {# L'étiquette du carton (« 37-40 »), pas le libellé du stock : un « 37 » seul
-                                           se lisait comme une pointure. #}
-                                        <td>{% if ligne.taille %}<span class="dot-item-taille">{{ taille_carton(ligne.stockItem, ligne.taille) }}</span>{% else %}—{% endif %}</td>
-                                        <td>{{ ligne.besoin }}</td>
-                                        <td>{{ ligne.stock }}</td>
-                                        <td>{{ ligne.enAttente }}</td>
-                                        <td><strong>{{ ligne.aCommander }}</strong></td>
+                                        <td class="cmd-qte"><strong>{{ article.quantite }}</strong></td>
                                     </tr>
-                                {% endfor %}
+                                    {% if article.detaille %}
+                                        {% for taille in article.tailles %}
+                                            <tr class="cmd-detail">
+                                                {# L'étiquette du carton (« 37-40 »), pas le libellé du
+                                                   stock : un « 37 » seul se lisait comme une pointure. #}
+                                                <td><span class="dot-item-taille">{{ taille.etiquette }}</span></td>
+                                                <td class="cmd-qte">{{ taille.quantite }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                </tbody>
+                            {% endfor %}
+                            <tbody>
+                                <tr class="cmd-total">
+                                    <td>Total {{ fournisseur.nom }}</td>
+                                    <td class="cmd-qte">{{ fournisseur.total }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>

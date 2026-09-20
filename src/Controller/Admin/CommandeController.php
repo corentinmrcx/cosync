@@ -14,7 +14,8 @@ use App\Service\Dotation\DotationEcoulementAllocator;
 use App\Service\Drive\JustificatifAchatDriveSync;
 use App\Service\Pdf\BonCommandePdfService;
 use App\Service\Pdf\JustificatifAchatPdfService;
-use App\Service\Stock\AchatService;
+use App\Service\Stock\AchatPresenter;
+use App\Service\Stock\BonCommandePresenter;
 use App\Service\Stock\CommandeService;
 use App\Service\Stock\JustificatifAchatCollector;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,7 +31,8 @@ class CommandeController extends AbstractController
 {
     public function __construct(
         private readonly CsrfGuard $csrf,
-        private readonly AchatService $achatService,
+        private readonly AchatPresenter $achatPresenter,
+        private readonly BonCommandePresenter $bonPresenter,
         private readonly CommandeService $commandeService,
         private readonly CommandeRepository $commandeRepository,
         private readonly BonCommandePdfService $pdfService,
@@ -49,7 +51,7 @@ class CommandeController extends AbstractController
 
         return $this->render('admin/commandes/index.html.twig', [
             'season' => $season,
-            'aCommander' => $this->achatService->computeACommander($season),
+            'aCommander' => $this->achatPresenter->parFournisseur($season),
             'commandes' => $this->commandeRepository->findBySeason($season),
         ]);
     }
@@ -115,6 +117,8 @@ class CommandeController extends AbstractController
     {
         return $this->render('admin/commandes/show.html.twig', [
             'commande' => $commande,
+            // Le même ordre que le PDF qu'on a sous les yeux en déballant les cartons.
+            'lignes' => $this->bonPresenter->lignes($commande),
         ]);
     }
 
