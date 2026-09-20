@@ -70,6 +70,50 @@ final class AchatServiceTest extends StockIntegrationTestCase
         self::assertSame(3, $ligneM['aCommander']);
     }
 
+    /**
+     * L'ordre est celui de la relecture, pas celui des besoins rencontrés : le bon de
+     * commande recopie ces lignes telles quelles.
+     */
+    public function testOrdreDesFournisseursDesArticlesEtDesTailles(): void
+    {
+        $season = $this->makeSeason();
+        $alpha = $this->makeFournisseur('Alpha');
+        $zebra = $this->makeFournisseur('Zebra');
+
+        $veste = $this->makeItem('Veste', StockItemVetementType::HAUT, $zebra);
+        $short = $this->makeItem('Short', StockItemVetementType::BAS, $zebra);
+        $sac = $this->makeItem('Sac', null, $alpha);
+        $gants = $this->makeItem('Gants', null, null);
+
+        // Saisis dans le désordre, comme les licenciés arrivent.
+        $this->makeBesoin($season, $veste, 'XL', 1);
+        $this->makeBesoin($season, $veste, 'S', 2);
+        $this->makeBesoin($season, $veste, 'M', 3);
+        $this->makeBesoin($season, $short, 'L', 1);
+        $this->makeBesoin($season, $sac, null, 4);
+        $this->makeBesoin($season, $gants, null, 1);
+        $this->em->flush();
+
+        $groupes = $this->achat()->computeACommander($season);
+
+        self::assertSame(
+            ['Alpha', 'Zebra', 'Sans fournisseur'],
+            array_column($groupes, 'fournisseurNom'),
+            'Fournisseurs alphabétiques, le fourre-tout en fin de liste.',
+        );
+
+        $lignes = array_map(
+            static fn (array $ligne): string => $ligne['stockItem']->getNom() . ' ' . ($ligne['taille'] ?? '—'),
+            $groupes[1]['lignes'],
+        );
+
+        self::assertSame(
+            ['Short L', 'Veste S', 'Veste M', 'Veste XL'],
+            $lignes,
+            'Articles par désignation, tailles dans l\'ordre du référentiel.',
+        );
+    }
+
     public function testRegroupementParFournisseur(): void
     {
         $season = $this->makeSeason();

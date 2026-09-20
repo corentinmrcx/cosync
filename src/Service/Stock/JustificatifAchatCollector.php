@@ -20,6 +20,7 @@ use App\Repository\DotationModeleRepository;
 use App\Repository\StockItemRepository;
 use App\Repository\StockMovementRepository;
 use App\Service\Dotation\DotationResolver;
+use App\Service\Referentiel\TailleReferentiel;
 
 /**
  * Rassemble la pièce que le club présente avec un devis pour justifier une commande.
@@ -61,6 +62,7 @@ final class JustificatifAchatCollector
         private readonly StockMovementRepository $movementRepository,
         private readonly StockItemRepository $itemRepository,
         private readonly StockTaillePresenter $etiquettes,
+        private readonly TailleReferentiel $tailles,
     ) {}
 
     public function collecter(Season $season): JustificatifAchat
@@ -192,14 +194,47 @@ final class JustificatifAchatCollector
             $groupes[$cle]['total'] += $construit->aCommander;
         }
 
-        return array_map(
-            static fn (array $g): JustificatifFournisseur => new JustificatifFournisseur(
-                $g['nom'],
-                $g['articles'],
-                $g['total'],
-            ),
-            array_values($groupes),
-        );
+        return $this->ordonner($groupes);
+    }
+
+    /**
+     * Le même ordre que l'écran des commandes : fournisseurs alphabétiques, « Sans
+     * fournisseur » en fin de liste, articles par désignation. Les deux se relisent l'un
+     * l'autre en face du devis — il faut qu'on y retrouve les lignes au même endroit.
+     *
+     * @param array<string, array{nom: string, articles: list<JustificatifArticle>, total: int}> $groupes
+     *
+     * @return list<JustificatifFournisseur>
+     */
+    private function ordonner(array $groupes): array
+    {
+        $fournisseurs = [];
+
+        foreach ($groupes as $cle => $groupe) {
+            $articles = $groupe['articles'];
+            usort(
+                $articles,
+                static fn (JustificatifArticle $a, JustificatifArticle $b): int => strnatcasecmp(
+                    $a->article->getDesignation(),
+                    $b->article->getDesignation(),
+                ),
+            );
+
+            $fournisseurs[] = [
+                'sansFournisseur' => $cle === 'fournisseur-aucun',
+                'doc' => new JustificatifFournisseur($groupe['nom'], $articles, $groupe['total']),
+            ];
+        }
+
+        usort($fournisseurs, static fn (array $a, array $b): int => [
+            $a['sansFournisseur'] ? 1 : 0,
+            mb_strtolower($a['doc']->nom),
+        ] <=> [
+            $b['sansFournisseur'] ? 1 : 0,
+            mb_strtolower($b['doc']->nom),
+        ]);
+
+        return array_map(static fn (array $f): JustificatifFournisseur => $f['doc'], $fournisseurs);
     }
 
     /**
@@ -214,6 +249,13 @@ final class JustificatifAchatCollector
         $enAttente = 0;
         $references = [];
         $detail = [];
+
+        // Les déclinaisons dans l'ordre du référentiel : cumulées au fil des besoins, elles
+        // sortaient dans l'ordre des licenciés rencontrés, et deux S encadraient un M.
+        uasort(
+            $tailles,
+            fn (array $a, array $b): int => $this->tailles->comparer($a['taille'] ?? '', $b['taille'] ?? ''),
+        );
 
         foreach ($tailles as $cle => $ligne) {
             $achat = $aCommander[$cle] ?? ['aCommander' => 0, 'enAttente' => 0];

@@ -18,7 +18,15 @@ class CommandeRepository extends ServiceEntityRepository
         parent::__construct($registry, Commande::class);
     }
 
-    /** @return Commande[] */
+    /**
+     * Les commandes de la saison, la dernière en tête.
+     *
+     * Les bons d'une même génération naissent dans la même seconde : sans second critère,
+     * ils sortaient dans un ordre qui changeait d'un affichage à l'autre. Le fournisseur
+     * les range, comme partout ailleurs dans l'approvisionnement.
+     *
+     * @return Commande[]
+     */
     public function findBySeason(Season $season): array
     {
         return $this->createQueryBuilder('c')
@@ -26,6 +34,7 @@ class CommandeRepository extends ServiceEntityRepository
             ->where('c.season = :season')
             ->setParameter('season', $season)
             ->orderBy('c.createdAt', 'DESC')
+            ->addOrderBy('f.nom', 'ASC')
             ->getQuery()
             ->getResult();
     }
