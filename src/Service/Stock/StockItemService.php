@@ -136,6 +136,7 @@ final class StockItemService
             'il figure dans un kit de dotation.' => $this->modeleLigneRepository->count(['stockItem' => $item]),
             'il est attendu dans une dotation à remettre.' => $this->besoinRepository->count(['stockItem' => $item]),
             'il est servi à la place d\'un article de kit, dans une dotation à remettre.' => $this->besoinRepository->countByArticleEcoulement($item),
+            'il a été remis à la place d\'un article de kit, dans une dotation déjà donnée.' => $this->besoinRepository->countByArticleRemis($item),
             'des articles sont en cours d\'écoulement à sa place.' => $this->itemRepository->countSubstituts($item),
             'il figure sur un bon de commande.' => $this->commandeLigneRepository->count(['stockItem' => $item]),
         ];

@@ -29,6 +29,7 @@ class DotationBesoinRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('b')
             ->leftJoin('b.stockItem', 'i')->addSelect('i')
             ->leftJoin('b.articleEcoulement', 'e')->addSelect('e')
+            ->leftJoin('b.articleRemis', 'r')->addSelect('r')
             ->leftJoin('b.licencie', 'l')->addSelect('l')
             ->leftJoin('b.dirigeant', 'd')->addSelect('d')
             ->addSelect('COALESCE(l.nom, d.nom) AS HIDDEN personneNom')
@@ -72,6 +73,16 @@ class DotationBesoinRepository extends ServiceEntityRepository
     public function countByArticleEcoulement(StockItem $item): int
     {
         return $this->count(['articleEcoulement' => $item]);
+    }
+
+    /**
+     * Besoins qu'on a remis avec cet article à la place de celui du kit — garde de suppression
+     * du catalogue. Sans elle, la colonne étant en `SET NULL`, supprimer l'article effacerait
+     * en silence la trace de ce qui a été donné.
+     */
+    public function countByArticleRemis(StockItem $item): int
+    {
+        return $this->count(['articleRemis' => $item]);
     }
 
     /**

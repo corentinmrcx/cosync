@@ -182,7 +182,7 @@ final class DotationSuiviScreenTest extends WebTestCase
             $crawler->filter('.dot-ecoulement-badge')->each(static fn ($n): string => trim($n->text())),
             'Ce qu\'on donne ressort ; la ligne retombée sur le kit n\'a pas de badge.',
         );
-        self::assertSame('au lieu de Erima · Noir', trim($crawler->filter('.dot-ecoulement-mention')->text()));
+        self::assertSame('au lieu de Erima · Noir', trim($crawler->filter('.dot-article-mention')->text()));
     }
 
     /**
@@ -338,11 +338,83 @@ final class DotationSuiviScreenTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(
-            ['Corriger la taille'],
+            // « Remettre un autre article » ouvre le menu : il fait avancer la ligne, mais par
+            // exception — la colonne d'actions reste au geste ordinaire.
+            ['Remettre un autre article', 'Corriger la taille'],
             $crawler->filter('.dot-table-menu .fiche-menu-item')->each(static fn ($n): string => trim($n->text())),
         );
         self::assertCount(1, $crawler->filter('.dot-taille-edit form[action$="/taille"]'), 'La saisie reste dans la cellule de la taille.');
         self::assertCount(0, $crawler->filter('.dot-taille-pen, .dot-option-pen'), 'Plus de crayon contre les valeurs.');
+    }
+
+    /**
+     * Remettre autre chose que ce que le kit prévoit : la saisie s'ouvre dans la cellule de
+     * l'article, et le catalogue n'est écrit qu'une fois pour tout l'écran — recopié dans les
+     * centaines de lignes du suivi, il pesait plus lourd que le reste de la page.
+     */
+    public function testLeCatalogueDeRemiseNEstEcritQuUneFoisPourToutLEcran(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $this->makeItem('Chaussettes basses');
+        $montantes = $this->makeItem('Chaussettes montantes');
+        $this->makeBesoin($montantes)->setLicencie($this->makeLicencie(null));
+        $this->makeBesoin($montantes)->setLicencie($this->makeLicencie(null));
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/admin/dotations/suivi');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(
+            2,
+            $crawler->filter('.dot-article-cell form[action$="/remise-autre"]'),
+            'Une saisie par ligne, là où se lit l\'article.',
+        );
+        self::assertStringContainsString(
+            'Chaussettes basses',
+            (string) $crawler->filter('.dot-page')->attr('x-data'),
+            'Le catalogue est posé une seule fois, sur la page…',
+        );
+        self::assertCount(
+            0,
+            $crawler->filter('.dot-article-cell option[value]'),
+            '…et aucune ligne ne le recopie en options : elles y puisent à l\'ouverture.',
+        );
+    }
+
+    /**
+     * Le geste rend la ligne servie sans rien déclarer : c'est bien l'article donné qui sort du
+     * stock, et le suivi dit ce qu'il remplace.
+     */
+    public function testRemettreUnAutreArticleSertLaLigneEtDitCeQuIlRemplace(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+
+        $coupees = $this->makeItem('Chaussettes coupées');
+        $besoin = $this->makeBesoin($this->makeItem('Chaussettes montantes'))->setLicencie($this->makeLicencie(null));
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/admin/dotations/suivi');
+        $formulaire = $crawler->filter('form[action$="/remise-autre"]');
+
+        $client->request('POST', (string) $formulaire->attr('action'), [
+            'article' => (string) $coupees->getId(),
+            '_token' => (string) $formulaire->filter('input[name=_token]')->attr('value'),
+        ]);
+
+        self::assertResponseRedirects('/admin/dotations/suivi');
+
+        $crawler = $client->followRedirect();
+
+        self::assertSame('Chaussettes coupées', trim($crawler->filter('.dot-item-nom')->text()));
+        self::assertSame(
+            'au lieu de Chaussettes montantes',
+            trim($crawler->filter('.dot-article-mention')->text()),
+            'Six mois plus tard, personne ne doit se demander pourquoi.',
+        );
+        self::assertSame('Donné', trim($crawler->filter('.dot-badge')->text()));
     }
 
     private function taille(string $libelle): Taille

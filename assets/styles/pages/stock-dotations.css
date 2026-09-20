@@ -793,6 +793,18 @@
 .dot-taille-ok:hover,
 .dot-option-ok:hover { background: var(--color-success-bg); border-color: var(--color-success); }
 
+/* — Article remis hors kit (suivi) —
+   Cas isolé, pas une règle : le ton d'alerte douce dit « regarde », là où l'écoulement (juste
+   en dessous) est le fonctionnement voulu et se contente d'un ton d'info. */
+.dot-horskit-badge {
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
 /* — Article servi par écoulement de stock (suivi) —
    Ce qu'on donne ressort : la marque de l'ancien stock en badge. Ce qu'il remplace dans le kit
    suit en retrait. Ton d'info, pas d'alerte — un écoulement est le fonctionnement voulu pendant
@@ -812,7 +824,8 @@
     font-weight: 600;
 }
 
-.dot-ecoulement-mention {
+/* « au lieu de X » : ce que la ligne remplace, écoulement ou remise hors kit. */
+.dot-article-mention {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
 }

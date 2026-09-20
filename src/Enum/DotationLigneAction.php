@@ -9,6 +9,10 @@ namespace App\Enum;
  * **avancer** la ligne — un seul bouton à la fois, celui de l'étape en cours ; `DEPREPARER` et
  * `ANNULER_REMISE` **défont** ce qu'elle affiche, et ferment le menu « ⋯ » de la ligne.
  *
+ * `REMETTRE_AUTRE` mène au même terme que `REMETTRE` par un autre chemin : ce n'est pas l'étape
+ * attendue, c'est l'exception qu'on constate. Elle va donc au menu « ⋯ », au-dessus des
+ * corrections, et laisse la colonne d'actions au geste ordinaire.
+ *
  * **Les libellés ne sont pas ici** mais dans `admin/dotations/_action.html.twig`, avec le
  * balisage : deux sources de vérité pour un même mot se contrediraient au premier changement.
  */
@@ -16,6 +20,7 @@ enum DotationLigneAction: string
 {
     case PREPARER = 'preparer';
     case REMETTRE = 'remettre';
+    case REMETTRE_AUTRE = 'remettre_autre';
     case DEPREPARER = 'depreparer';
     case ANNULER_REMISE = 'annuler_remise';
 
@@ -35,7 +40,7 @@ enum DotationLigneAction: string
     {
         return match ($this) {
             self::PREPARER, self::DEPREPARER => Permission::DOTATION_PREPARER,
-            self::REMETTRE, self::ANNULER_REMISE => Permission::DOTATION_GERER,
+            self::REMETTRE, self::REMETTRE_AUTRE, self::ANNULER_REMISE => Permission::DOTATION_GERER,
         };
     }
 }

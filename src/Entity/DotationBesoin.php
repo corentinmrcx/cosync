@@ -51,6 +51,22 @@ class DotationBesoin
     #[ORM\Column(options: ['default' => false])]
     private bool $articleManuel = false;
 
+    /**
+     * Article réellement sorti de l'armoire quand la remise n'a pas suivi le kit : des
+     * chaussettes coupées là où le kit prévoit des montantes. Null dans le cas courant.
+     *
+     * Distinct d'`articleEcoulement`, et il le faut : l'écoulement est une **règle** que
+     * l'allocateur rejoue sur toute la saison, celle-ci est un **fait** constaté une fois sur
+     * une ligne remise. Les confondre reviendrait à déclarer que cet article-là remplace celui
+     * du kit, et l'arbitrage le servirait alors à tout le monde.
+     *
+     * Ne se renseigne qu'avec le statut `DONNE` : tant que rien n'est sorti, ce qu'on remettra
+     * n'est pas un fait.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?StockItem $articleRemis = null;
+
     #[ORM\Column]
     private int $quantite = 1;
 
@@ -170,20 +186,41 @@ class DotationBesoin
         return $this;
     }
 
+    public function getArticleRemis(): ?StockItem
+    {
+        return $this->articleRemis;
+    }
+
+    public function setArticleRemis(?StockItem $articleRemis): static
+    {
+        $this->articleRemis = $articleRemis;
+
+        return $this;
+    }
+
     /**
      * L'article à sortir du stock, à déduire des achats et à afficher au suivi : celui du kit,
-     * sauf quand un article d'écoulement le remplace. Point de lecture unique — lire
-     * `getStockItem()` en aval ferait commander du neuf alors que l'ancien stock est servi.
+     * sauf quand un article d'écoulement le remplace — et, une fois la ligne remise, celui
+     * qu'on a réellement donné. Point de lecture unique — lire `getStockItem()` en aval ferait
+     * commander du neuf alors que l'ancien stock est servi.
+     *
+     * L'ordre compte : ce qui est sorti prime sur ce qu'on prévoyait de sortir.
      */
     public function getArticleServi(): StockItem
     {
-        return $this->articleEcoulement ?? $this->stockItem;
+        return $this->articleRemis ?? $this->articleEcoulement ?? $this->stockItem;
     }
 
     /** Vrai quand cette ligne est servie depuis un stock en cours d'écoulement. */
     public function estServiParEcoulement(): bool
     {
         return $this->articleEcoulement !== null;
+    }
+
+    /** Vrai quand ce qui a été remis n'est pas ce que le kit prévoit — exception constatée. */
+    public function estRemisHorsKit(): bool
+    {
+        return $this->articleRemis !== null;
     }
 
     public function getQuantite(): int
