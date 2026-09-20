@@ -37,21 +37,6 @@
     color: var(--color-primary-dark);
 }
 
-/* — Pourquoi le stock est introuvable —
-     Sous la ligne, jamais à sa place : ce qui se lit d'abord reste le besoin et la quantité
-     à commander. La teinte d'alerte suffit à distinguer la mention d'une ligne de données. */
-.cmd-motif {
-    padding-top: 0;
-    font-size: var(--font-size-xs);
-    color: var(--color-warning-text);
-    background: var(--color-warning-bg);
-}
-
-.cmd-motif-lien {
-    color: var(--color-warning-text);
-    text-decoration: underline;
-}
-
 .cmd-inline {
     display: inline-flex;
     align-items: center;

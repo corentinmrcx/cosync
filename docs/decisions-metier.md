@@ -208,9 +208,15 @@ StockItem          // grilleTaille: ?GrilleTaille
   un 39 passait pour un 37, qu'on croyait servi par le carton Nike 34-38. Le suivi écrit donc
   « 37-40 », la pointure déclarée dessous, et la marque de l'article servi. Les achats, la fiche
   d'une commande et le bon de commande PDF passent par la même étiquette (fonction Twig
-  `taille_carton()`), motif « Aucun stock en… » compris : c'est ce document-là qui part chez le
-  fournisseur, et « 37-40 » est ce qu'il imprime sur le carton. Le libellé reste la clé du stock
+  `taille_carton()`) : c'est ce document-là qui part chez le fournisseur, et « 37-40 » est ce
+  qu'il imprime sur le carton. Le libellé reste la clé du stock
   et de la ligne de commande : seul l'affichage change.
+- **Un stock à 0 sur une déclinaison ne s'explique pas** : la phrase « Aucun stock en « M » — cet
+  article est rangé en S, L, XL… » a existé sous les lignes du bon de commande et dans le
+  justificatif, pour rattraper le carton rangé sous un autre libellé. Elle se déclenchait en fait
+  sur la **rupture ordinaire**, qui est le cas courant : être à sec d'une taille pendant qu'on en a
+  d'autres n'explique aucun écart, et la phrase se répétait une fois par taille manquante. Les
+  quatre colonnes (il en faut / on en a / en attente / à commander) portent déjà le raisonnement.
 
 ---
 

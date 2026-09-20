@@ -1,0 +1,32 @@
+{# droits-verifies-cote-serveur: DotationLigneActionsResolver filtre déjà sur DotationLigneAction::permission() #}
+{# Déclarer qu'on a remis autre chose que ce que le kit prévoit — des chaussettes coupées là où
+   il prévoit des montantes, parce qu'il y en avait dans l'armoire.
+
+   La saisie s'ouvre dans la cellule de l'article, sous son nom : c'est bien l'article qu'on
+   remplace, et le kit reste lisible pendant qu'on choisit. Elle se déclenche depuis le menu
+   « ⋯ » de la ligne (`correction`, porté par la ligne), comme les corrections — un sélecteur du
+   catalogue entier ouvert sur chaque ligne serait ingérable.
+
+   Le `<template x-if>` n'est pas un détail de style : sans lui, Alpine rendrait le catalogue
+   dans chacune des centaines de lignes du suivi. Les options viennent de `articlesRemisables`,
+   posé une fois par `suiviDotations()` sur la page.
+
+   `besoin` = App\Entity\DotationBesoin, `actions` = App\DTO\DotationLigneActions. #}
+{% if actions.alternative %}
+    <template x-if="correction === 'remise_autre'">
+        <form method="post"
+              action="{{ path('admin_dotations_besoin_remise_autre', {id: besoin.id}) }}"
+              class="dot-option-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('dotation_besoin_remise_autre_' ~ besoin.id) }}">
+            <select name="article" class="field-input field-input-compact"
+                    aria-label="Article réellement remis"
+                    x-init="$nextTick(() => $el.focus())">
+                <template x-for="possible in articlesRemisables" :key="possible.id">
+                    <option :value="possible.id" x-text="possible.label"></option>
+                </template>
+            </select>
+            <button type="submit" class="dot-option-ok" title="Marquer remis avec cet article">✓</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="correction = null" title="Annuler">✕</button>
+        </form>
+    </template>
+{% endif %}

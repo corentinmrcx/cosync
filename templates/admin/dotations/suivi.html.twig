@@ -14,7 +14,9 @@
 
 {# Chaque geste recharge la page : `suiviDotations` note les groupes ouverts et le défilement à
    l'envoi, et les rend au rechargement — sans quoi on remontait tout en haut après chaque sac. #}
-<div class="dot-page" x-data="suiviDotations()" @submit.capture="memoriser()">
+<div class="dot-page"
+     x-data="suiviDotations({{ articlesRemisables|json_encode|e('html_attr') }})"
+     @submit.capture="memoriser()">
 
     <div class="dot-header">
         <div>
@@ -98,14 +100,26 @@
                                             options: optionsParBesoin[besoin.id] ?? [],
                                             corrections: corrections,
                                         } only %}
-                                        {# Servi par un ancien stock : c'est ce carton-là qu'on ouvre, il ressort. #}
-                                        {% if besoin.estServiParEcoulement %}
+                                        {# Remis hors kit, ou servi par un ancien stock : dans les deux
+                                           cas ce n'est pas le carton du kit qu'on a ouvert, il ressort. #}
+                                        {% if besoin.estRemisHorsKit %}
+                                            <span class="dot-horskit-badge" title="Remis à la place de l'article du kit — cas isolé : aucune règle n'en découle, personne d'autre ne le recevra automatiquement">
+                                                {{- details ?: article.label(besoin.articleServi) -}}
+                                            </span>
+                                            <span class="dot-article-mention">
+                                                au lieu de {{ article.label(besoin.stockItem) }}
+                                            </span>
+                                        {% elseif besoin.estServiParEcoulement %}
                                             <span class="dot-ecoulement-badge" title="Servi depuis un stock en cours d'écoulement — l'article du kit n'est pas racheté">
                                                 {{- details ?: article.label(besoin.articleServi) -}}
                                             </span>
                                         {% elseif details %}
                                             <span class="dot-item-details">{{ details }}</span>
                                         {% endif %}
+                                        {% include 'admin/dotations/_remise_autre_cell.html.twig' with {
+                                            besoin: besoin,
+                                            actions: actions,
+                                        } only %}
                                         {% include 'admin/dotations/_ecoulement_cell.html.twig' with {
                                             besoin: besoin,
                                             articles: articlesParBesoin[besoin.id] ?? [],

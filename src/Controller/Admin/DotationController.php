@@ -377,6 +377,9 @@ class DotationController extends AbstractController
             'actionsParBesoin' => $this->ligneActions->parBesoin($groupes),
             'correctionsParBesoin' => $this->ligneCorrections->parBesoin($groupes, $options, $articles, $flocages),
             'flocagesParBesoin' => $flocages,
+            // Une seule fois pour tout l'écran : les lignes s'y servent quand on déclare avoir
+            // remis autre chose que ce que le kit prévoit.
+            'articlesRemisables' => $this->suivi->articlesRemisables(),
             // Après l'arbitrage : la provenance se lit sur l'article servi, pas sur celui du kit.
             'provenanceParBesoin' => $this->provenance->parBesoin($season),
         ]);
@@ -537,6 +540,43 @@ class DotationController extends AbstractController
 
         $this->remiseService->marquerRemis($besoin, $user);
         $this->addFlash('success', sprintf('Dotation remise à %s.', $besoin->getNomPrenom()));
+
+        return $this->redirectToRoute('admin_dotations_suivi');
+    }
+
+    /**
+     * Remise exceptionnelle : ce qui a quitté l'armoire n'est pas ce que le kit prévoit. Le
+     * geste ne déclare aucune règle — il constate, sur cette ligne-là, que la personne est
+     * servie et que c'est cet article-ci qui doit décrémenter.
+     */
+    #[Route('/besoins/{id}/remise-autre', name: 'besoin_remise_autre', methods: ['POST'])]
+    #[IsGranted(Permission::DOTATION_GERER->value)]
+    public function besoinRemiseAutre(DotationBesoin $besoin, Request $request, #[CurrentUser] ?User $user): Response
+    {
+        $this->csrf->valider('dotation_besoin_remise_autre_' . $besoin->getId(), $request);
+
+        $article = $this->itemRepository->find((int) $request->request->get('article'));
+
+        if ($article === null) {
+            $this->addFlash('error', 'Article introuvable.');
+
+            return $this->redirectToRoute('admin_dotations_suivi');
+        }
+
+        // Le libellé du kit se lit avant la remise : après, `getArticleServi()` répond l'autre.
+        $prevu = $besoin->getArticleServi()->getDesignation();
+
+        try {
+            $this->remiseService->remettreAutreArticle($besoin, $article, $user);
+            $this->addFlash('success', sprintf(
+                '%s a reçu %s à la place de %s.',
+                $besoin->getNomPrenom(),
+                $article->getDesignation(),
+                $prevu,
+            ));
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
 
         return $this->redirectToRoute('admin_dotations_suivi');
     }
