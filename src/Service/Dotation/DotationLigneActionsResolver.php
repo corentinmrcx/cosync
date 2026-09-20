@@ -18,6 +18,8 @@ use Symfony\Bundle\SecurityBundle\Security;
  *
  * Le geste de retour ({@see DotationLigneActions}) n'est pas rangé avec lui : il ferme le menu
  * « ⋯ » de la ligne, parce qu'il ne fait pas avancer la ligne, il défait ce qu'elle affiche.
+ * L'alternative — remettre un autre article que celui du kit — va au menu elle aussi : elle
+ * avance bien la ligne, mais par exception, et l'écran ne propose en bouton que l'ordinaire.
  */
 final class DotationLigneActionsResolver
 {
@@ -31,11 +33,16 @@ final class DotationLigneActionsResolver
             DotationBesoinStatut::DONNE => [null, DotationLigneAction::ANNULER_REMISE],
         };
 
+        // Tant que la ligne n'est pas partie, on peut constater qu'autre chose l'a servie —
+        // qu'un sac ait été fait ou non : ce qui compte est ce qui a quitté l'armoire.
+        $alternative = $besoin->getStatut()->resteAServir() ? DotationLigneAction::REMETTRE_AUTRE : null;
+
         // Un geste que le compte ne possède pas disparaît, sans motif : ce n'est pas une étape
         // bloquée, c'est un pan de l'application qui ne le regarde pas — et un bouton qui
         // répondrait « Access Denied » vaut moins que pas de bouton du tout.
         return new DotationLigneActions(
             $principale !== null && $this->possede($principale) ? $principale : null,
+            $alternative !== null && $this->possede($alternative) ? $alternative : null,
             $retour !== null && $this->possede($retour) ? $retour : null,
         );
     }

@@ -24,11 +24,17 @@ function lirePosition() {
     }
 }
 
-export function suiviDotations() {
+/**
+ * `articles` : le catalogue du stock, rendu une seule fois pour tout l'écran. Chaque ligne y
+ * puise le sélecteur de « Remettre un autre article » — recopier les options dans les
+ * centaines de lignes du suivi pesait plus lourd que tout le reste de la page.
+ */
+export function suiviDotations(articles = []) {
     const position = lirePosition();
 
     return {
         groupesOuverts: Array.isArray(position?.groupes) ? position.groupes : [],
+        articlesRemisables: articles,
 
         init() {
             if (position === null) {

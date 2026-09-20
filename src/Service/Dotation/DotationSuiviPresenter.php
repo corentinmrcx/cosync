@@ -13,6 +13,7 @@ use App\Enum\DotationAvancementStatut;
 use App\Enum\DotationBesoinStatut;
 use App\Enum\StockItemVetementType;
 use App\Repository\DotationBesoinRepository;
+use App\Repository\StockItemRepository;
 use App\Service\Stock\StockTaillePresenter;
 use App\Service\Stock\StockTailleResolver;
 
@@ -30,6 +31,7 @@ final class DotationSuiviPresenter
 
     public function __construct(
         private readonly DotationBesoinRepository $besoinRepository,
+        private readonly StockItemRepository $itemRepository,
         private readonly DotationResolver $resolver,
         private readonly StockTailleResolver $tailles,
         private readonly StockTaillePresenter $etiquettes,
@@ -129,6 +131,25 @@ final class DotationSuiviPresenter
         }
 
         return $out;
+    }
+
+    /**
+     * Le catalogue proposé quand on déclare avoir remis autre chose que ce que le kit prévoit.
+     *
+     * Les archivés compris : un article sorti du catalogue est justement celui qui traîne
+     * encore dans l'armoire, et c'est bien celui-là qu'on attrape un soir de match.
+     *
+     * Une liste pour tout l'écran, pas une par ligne : le suivi en affiche des centaines, et
+     * recopier le catalogue dans chacune pesait plus lourd que tout le reste de la page.
+     *
+     * @return list<array{id: int, label: string}>
+     */
+    public function articlesRemisables(): array
+    {
+        return array_map(
+            static fn (StockItem $item): array => ['id' => $item->getId(), 'label' => $item->getDesignation()],
+            $this->itemRepository->findAllOrdered(true),
+        );
     }
 
     private function ligneTaille(DotationBesoin $besoin): DotationLigneTaille

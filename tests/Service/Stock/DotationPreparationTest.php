@@ -249,6 +249,9 @@ final class DotationPreparationTest extends StockIntegrationTestCase
         $this->preparation()->preparer($besoin);
         $remise = $this->service(DotationRemiseService::class);
         $remise->marquerRemis($besoin, null);
+
+        self::assertSame(1, $this->mouvements()->getCurrentStockByTaille($item, 'L'), 'La veste est partie…');
+
         $remise->annulerRemise($besoin);
 
         self::assertSame(
@@ -256,6 +259,10 @@ final class DotationPreparationTest extends StockIntegrationTestCase
             $besoin->getStatut(),
             'On ne sait pas si le sac existe encore : on ne repose pas un verrou que personne n\'a demandé.',
         );
+        // Le point qui coûterait cher en silence : sans restitution, chaque remise annulée
+        // creuserait le stock d'une unité et le club recommanderait par-dessus.
+        self::assertSame(2, $this->mouvements()->getCurrentStockByTaille($item, 'L'), '…et revient en armoire.');
+        self::assertNull($besoin->getMouvementSortie());
     }
 
     /* ── Ce que la fiche et le suivi en disent ── */

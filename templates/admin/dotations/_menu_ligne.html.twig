@@ -6,6 +6,10 @@
   sous une marque ne disait plus ce qu'il corrigeait. Le menu ne fait qu'ouvrir la saisie dans sa
   cellule (`correction`, porté par la ligne) : la valeur se corrige toujours là où elle se lit.
 
+  « Remettre un autre article » ouvre la même saisie, dans la cellule de l'article : c'est une
+  exception qu'on constate — le kit prévoyait autre chose —, pas l'étape qu'attend l'écran, donc
+  elle n'a pas sa place en bouton dans la colonne d'actions.
+
   « Défaire la préparation » et « Annuler la remise » ferment le menu, en rouge sous un filet :
   ils défont un état enregistré. Leur formulaire vit dans `_action.html.twig`, avec l'étape
   suivante — la route et le jeton d'un geste n'existent qu'une fois.
@@ -17,7 +21,7 @@
   `corrections` = App\DTO\DotationLigneCorrections
   `actions`     = App\DTO\DotationLigneActions
 #}
-{% if not corrections.estVide or actions.retour %}
+{% if not corrections.estVide or actions.alternative or actions.retour %}
     <div class="fiche-menu fiche-menu-ligne"
          x-data="menuLigne()"
          @click.outside="fermerMenu()"
@@ -50,6 +54,9 @@
              x-transition:leave-start="fiche-menu-visible"
              x-transition:leave-end="fiche-menu-cache"
              x-cloak>
+            {% if actions.alternative %}
+                <button type="button" class="fiche-menu-item" @click="correction = 'remise_autre'">Remettre un autre article</button>
+            {% endif %}
             {% if corrections.propose('option') %}
                 <button type="button" class="fiche-menu-item" @click="correction = 'option'">Changer l'article choisi</button>
             {% endif %}

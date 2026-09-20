@@ -58,7 +58,6 @@ final class JustificatifAchatCollector
         private readonly DotationAffectationRepository $affectationRepository,
         private readonly DotationResolver $resolver,
         private readonly AchatService $achatService,
-        private readonly AchatMotifPresenter $motifPresenter,
         private readonly StockMovementRepository $movementRepository,
         private readonly StockItemRepository $itemRepository,
         private readonly StockTaillePresenter $etiquettes,
@@ -205,7 +204,7 @@ final class JustificatifAchatCollector
 
     /**
      * @param array<string, array{taille: ?string, besoin: int, ecoule: int, references: array<string, true>}> $tailles
-     * @param array<string, array{aCommander: int, enAttente: int, motif: ?string}>                            $aCommander
+     * @param array<string, array{aCommander: int, enAttente: int}>                                            $aCommander
      */
     private function article(StockItem $article, array $tailles, array $aCommander): JustificatifArticle
     {
@@ -214,21 +213,16 @@ final class JustificatifAchatCollector
         $ecoule = 0;
         $enAttente = 0;
         $references = [];
-        $motifs = [];
         $detail = [];
 
         foreach ($tailles as $cle => $ligne) {
-            $achat = $aCommander[$cle] ?? ['aCommander' => 0, 'enAttente' => 0, 'motif' => null];
+            $achat = $aCommander[$cle] ?? ['aCommander' => 0, 'enAttente' => 0];
 
             $ilEnFaut += $ligne['besoin'];
             $commande += $achat['aCommander'];
             $ecoule += $ligne['ecoule'];
             $enAttente += $achat['enAttente'];
             $references += $ligne['references'];
-
-            if ($achat['motif'] !== null) {
-                $motifs[$achat['motif']] = true;
-            }
 
             $detail[] = new JustificatifTaille(
                 $ligne['taille'] !== null ? $this->etiquettes->etiquette($article, $ligne['taille']) : '—',
@@ -248,7 +242,7 @@ final class JustificatifAchatCollector
             // Une seule déclinaison : la ligne d'article dit déjà tout, le détail ne ferait
             // que répéter les mêmes nombres une ligne plus bas.
             count($detail) > 1 ? $detail : [],
-            $this->notes($ecoule, $references, $enAttente, array_keys($motifs)),
+            $this->notes($ecoule, $references, $enAttente),
             $this->resteDe($article, $tailles),
         );
     }
@@ -258,11 +252,10 @@ final class JustificatifAchatCollector
      * n'est plus lue ; celle qui n'apparaît que quand le compte surprend est lue à coup sûr.
      *
      * @param array<string, true> $references
-     * @param list<string>        $motifs
      *
      * @return list<string>
      */
-    private function notes(int $ecoule, array $references, int $enAttente, array $motifs): array
+    private function notes(int $ecoule, array $references, int $enAttente): array
     {
         $notes = [];
 
@@ -284,7 +277,7 @@ final class JustificatifAchatCollector
             );
         }
 
-        return [...$notes, ...$motifs];
+        return $notes;
     }
 
     /**
@@ -349,18 +342,17 @@ final class JustificatifAchatCollector
     /**
      * Le « à commander » du bon de commande, indexé par déclinaison.
      *
-     * @return array<string, array{aCommander: int, enAttente: int, motif: ?string}>
+     * @return array<string, array{aCommander: int, enAttente: int}>
      */
     private function aCommanderParDeclinaison(Season $season): array
     {
         $out = [];
 
-        foreach ($this->motifPresenter->decorer($this->achatService->computeACommander($season)) as $groupe) {
+        foreach ($this->achatService->computeACommander($season) as $groupe) {
             foreach ($groupe['lignes'] as $ligne) {
                 $out[$this->cle($ligne['stockItem'], $ligne['taille'])] = [
                     'aCommander' => $ligne['aCommander'],
                     'enAttente' => $ligne['enAttente'],
-                    'motif' => $ligne['motif'],
                 ];
             }
         }

@@ -5,18 +5,23 @@ namespace App\DTO;
 use App\Enum\DotationLigneAction;
 
 /**
- * Ce qu'une ligne du suivi propose : **l'étape suivante du parcours**, et — si la ligne en a
- * franchi une — de quoi revenir en arrière.
+ * Ce qu'une ligne du suivi propose : **l'étape suivante du parcours**, l'autre façon de la
+ * franchir, et — si la ligne en a franchi une — de quoi revenir en arrière.
  *
- * Les deux ne vont pas au même endroit de la ligne. L'étape suivante est une action : elle
+ * Les trois ne vont pas au même endroit de la ligne. L'étape suivante est une action : elle
  * s'affiche en bouton, dans la colonne d'actions. Le retour, lui, défait un état : il ferme le
  * menu « ⋯ » de la ligne, en rouge sous un filet. Les mettre côte à côte faisait varier la largeur de la colonne d'actions
  * d'une ligne à l'autre et mettait sur le même plan « avancer » et « annuler ».
+ *
+ * L'alternative aboutit au même point que l'étape suivante, mais elle n'est pas ce qu'on attend
+ * de l'écran : remettre autre chose que ce que le kit prévoit est une exception qu'on constate.
+ * Elle ouvre donc le menu « ⋯ », là où la mettre en bouton l'aurait donnée pour un geste courant.
  */
 final class DotationLigneActions
 {
     public function __construct(
         public readonly ?DotationLigneAction $principale,
+        public readonly ?DotationLigneAction $alternative,
         public readonly ?DotationLigneAction $retour,
     ) {}
 }

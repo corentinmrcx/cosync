@@ -13,7 +13,7 @@
     {% if besoin.estServiParEcoulement or besoin.articleManuel %}
         <div class="dot-ecoulement-display" x-show="correction !== 'article'">
             {% if besoin.estServiParEcoulement %}
-                <span class="dot-ecoulement-mention">
+                <span class="dot-article-mention">
                     au lieu de {{ article.details(besoin.stockItem)|trim ?: article.label(besoin.stockItem) }}
                 </span>
             {% endif %}

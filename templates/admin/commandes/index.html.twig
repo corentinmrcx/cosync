@@ -95,25 +95,6 @@
                                         <td>{{ ligne.enAttente }}</td>
                                         <td><strong>{{ ligne.aCommander }}</strong></td>
                                     </tr>
-                                    {# Un stock à 0 pendant que l'article dort sous d'autres libellés est
-                                       un motif, pas un fait : la ligne le dit au lieu de laisser commander
-                                       du neuf par-dessus un carton plein (CLAUDE.md §5, l'action injouable
-                                       affiche son motif). #}
-                                    {% if ligne.motif %}
-                                        <tr>
-                                            <td colspan="6" class="cmd-motif">
-                                                {{ ligne.motif }}
-                                                {% if ligne.sansGrille %}
-                                                    Aucune grille de tailles n'est rattachée à cet article : ce
-                                                    que le licencié déclare sort tel quel, sans passer par
-                                                    l'étiquette du fournisseur.
-                                                    {% if peut_acceder('admin_grilles_index') %}
-                                                        <a href="{{ path('admin_grilles_index') }}" class="cmd-motif-lien">Grilles de tailles</a>
-                                                    {% endif %}
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                    {% endif %}
                                 {% endfor %}
                             </tbody>
                         </table>
