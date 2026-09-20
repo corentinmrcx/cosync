@@ -23,6 +23,7 @@ final class InventairePdfService
             'inventaire' => $inventaire,
             'saisonLabel' => $saisonLabel,
             'logoDataUrl' => $this->assets->logoClub(),
+            'foyerLogoDataUrl' => $this->assets->logoFoyer(),
             'generatedAt' => new \DateTimeImmutable(),
         ]);
     }

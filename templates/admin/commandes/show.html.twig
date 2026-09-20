@@ -59,7 +59,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for ligne in commande.lignes %}
+                    {% for ligne in lignes %}
                         <tr>
                             <td>
                                 {% include 'admin/commandes/_article_cell.html.twig' with { item: ligne.stockItem } only %}
